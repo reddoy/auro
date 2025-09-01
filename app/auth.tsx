@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Platform, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image, KeyboardAvoidingView } from 'react-native';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -16,6 +16,11 @@ export default function AuthScreen() {
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const insets = useSafeAreaInsets();
+
+  const nameRef = useRef<any>(null);
+  const ageRef = useRef<any>(null);
+  const emailRef = useRef<any>(null);
+  const passwordRef = useRef<any>(null);
 
   const handleSubmit = async () => {
     if (!email || !password || (!isLogin && (!name || !age))) {
@@ -116,6 +121,10 @@ export default function AuthScreen() {
                 onChangeText={setName}
                 placeholder="Enter your full name"
                 autoCapitalize="words"
+                ref={nameRef}
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => ageRef.current?.focus()}
               />
             </View>
 
@@ -127,6 +136,10 @@ export default function AuthScreen() {
                 onChangeText={setAge}
                 placeholder="Enter your age"
                 keyboardType="numeric"
+                ref={ageRef}
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => emailRef.current?.focus()}
               />
             </View>
           </>
@@ -141,6 +154,10 @@ export default function AuthScreen() {
             placeholder="Enter your email"
             keyboardType="email-address"
             autoCapitalize="none"
+            ref={emailRef}
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => passwordRef.current?.focus()}
           />
         </View>
 
@@ -152,6 +169,10 @@ export default function AuthScreen() {
             onChangeText={setPassword}
             placeholder="Enter your password"
             secureTextEntry
+            ref={passwordRef}
+            returnKeyType="go"
+            blurOnSubmit
+            onSubmitEditing={handleSubmit}
           />
         </View>
 

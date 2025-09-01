@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, TextInput, TouchableOpacity, View, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { router } from 'expo-router';
 
@@ -28,6 +28,15 @@ export default function ProfileSettingsScreen() {
   const [emailNotif, setEmailNotif] = useState(true);
   const [pushNotif, setPushNotif] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  const fullNameRef = useRef<any>(null);
+  const usernameRef = useRef<any>(null);
+  const skillsRef = useRef<any>(null);
+  const twitterRef = useRef<any>(null);
+  const linkedinRef = useRef<any>(null);
+  const githubRef = useRef<any>(null);
+  const hourlyRateRef = useRef<any>(null);
+  const availabilityRef = useRef<any>(null);
 
   useEffect(() => {
     const run = async () => {
@@ -143,13 +152,13 @@ export default function ProfileSettingsScreen() {
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Public Profile</Text>
-        <LabeledInput label="Full Name" value={fullName} onChangeText={setFullName} placeholder="Your name" />
-        <LabeledInput label="Username" value={username} onChangeText={setUsername} placeholder="username" autoCapitalize="none" />
+        <LabeledInput label="Full Name" value={fullName} onChangeText={setFullName} placeholder="Your name" inputRef={fullNameRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => usernameRef.current?.focus()} />
+        <LabeledInput label="Username" value={username} onChangeText={setUsername} placeholder="username" autoCapitalize="none" inputRef={usernameRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => skillsRef.current?.focus()} />
         <LabeledInput label="Bio" value={bio} onChangeText={setBio} placeholder="Tell us about yourself" multiline numberOfLines={4} />
-        <LabeledInput label="Skills" value={skills} onChangeText={setSkills} placeholder="e.g. fashion, design, photography" />
-        <LabeledInput label="Twitter" value={twitter} onChangeText={setTwitter} placeholder="https://twitter.com/username" autoCapitalize="none" />
-        <LabeledInput label="LinkedIn" value={linkedin} onChangeText={setLinkedin} placeholder="https://linkedin.com/in/username" autoCapitalize="none" />
-        <LabeledInput label="GitHub" value={github} onChangeText={setGithub} placeholder="https://github.com/username" autoCapitalize="none" />
+        <LabeledInput label="Skills" value={skills} onChangeText={setSkills} placeholder="e.g. fashion, design, photography" inputRef={skillsRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => twitterRef.current?.focus()} />
+        <LabeledInput label="Twitter" value={twitter} onChangeText={setTwitter} placeholder="https://twitter.com/username" autoCapitalize="none" inputRef={twitterRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => linkedinRef.current?.focus()} />
+        <LabeledInput label="LinkedIn" value={linkedin} onChangeText={setLinkedin} placeholder="https://linkedin.com/in/username" autoCapitalize="none" inputRef={linkedinRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => githubRef.current?.focus()} />
+        <LabeledInput label="GitHub" value={github} onChangeText={setGithub} placeholder="https://github.com/username" autoCapitalize="none" inputRef={githubRef} returnKeyType="done" blurOnSubmit />
       </View>
 
       <View style={styles.card}>
@@ -157,8 +166,8 @@ export default function ProfileSettingsScreen() {
         <LabeledSwitch label="Become a reviewer" value={isReviewer} onValueChange={setIsReviewer} />
         {isReviewer && (
           <>
-            <LabeledInput label="Hourly Rate (optional)" value={hourlyRate} onChangeText={setHourlyRate} keyboardType="numeric" placeholder="e.g. 50" />
-            <LabeledInput label="Availability (optional)" value={availability} onChangeText={setAvailability} placeholder="e.g. Weekends only" />
+            <LabeledInput label="Hourly Rate (optional)" value={hourlyRate} onChangeText={setHourlyRate} keyboardType="numeric" placeholder="e.g. 50" inputRef={hourlyRateRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => availabilityRef.current?.focus()} />
+            <LabeledInput label="Availability (optional)" value={availability} onChangeText={setAvailability} placeholder="e.g. Weekends only" inputRef={availabilityRef} returnKeyType="done" blurOnSubmit />
 
             <Text style={[styles.label, { marginTop: 10 }]}>Session Packages (up to 5)</Text>
             {packages.map((p, idx) => (
@@ -208,12 +217,13 @@ export default function ProfileSettingsScreen() {
 }
 
 function LabeledInput(props: any) {
-  const { label, style, multiline, numberOfLines, ...rest } = props;
+  const { label, style, multiline, numberOfLines, inputRef, ...rest } = props;
   return (
     <View style={{ marginBottom: 14 }}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
         {...rest}
+        ref={inputRef}
         style={[styles.input, multiline && { height: Math.max(96, (numberOfLines || 4) * 22) }, style]}
         placeholderTextColor={Colors.brand.textSecondary}
         multiline={multiline}

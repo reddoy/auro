@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, ActivityIndicator, Switch, KeyboardAvoidingView, Platform } from 'react-native';
 import { router } from 'expo-router';
 
@@ -16,6 +16,10 @@ export default function BecomeReviewerScreen() {
   const [hourlyRate, setHourlyRate] = useState<string>('');
   const [availability, setAvailability] = useState<string>('');
   const [agree, setAgree] = useState(false);
+
+  const skillsRef = useRef<any>(null);
+  const hourlyRateRef = useRef<any>(null);
+  const availabilityRef = useRef<any>(null);
 
   useEffect(() => {
     const run = async () => {
@@ -84,9 +88,9 @@ export default function BecomeReviewerScreen() {
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Reviewer Details</Text>
-        <LabeledInput label="Skills" value={skills} onChangeText={setSkills} placeholder="e.g. fashion, lighting, posing" />
-        <LabeledInput label="Hourly Rate (optional)" value={hourlyRate} onChangeText={setHourlyRate} keyboardType="numeric" placeholder="e.g. 50" />
-        <LabeledInput label="Availability (optional)" value={availability} onChangeText={setAvailability} placeholder="e.g. Weeknights, Weekends only" />
+        <LabeledInput label="Skills" value={skills} onChangeText={setSkills} placeholder="e.g. fashion, lighting, posing" inputRef={skillsRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => hourlyRateRef.current?.focus()} />
+        <LabeledInput label="Hourly Rate (optional)" value={hourlyRate} onChangeText={setHourlyRate} keyboardType="numeric" placeholder="e.g. 50" inputRef={hourlyRateRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => availabilityRef.current?.focus()} />
+        <LabeledInput label="Availability (optional)" value={availability} onChangeText={setAvailability} placeholder="e.g. Weeknights, Weekends only" inputRef={availabilityRef} returnKeyType="done" blurOnSubmit />
         <View style={styles.switchRow}>
           <Text style={styles.label}>I agree to the reviewer terms</Text>
           <Switch value={agree} onValueChange={setAgree} />
@@ -104,12 +108,13 @@ export default function BecomeReviewerScreen() {
 }
 
 function LabeledInput(props: any) {
-  const { label, style, multiline, numberOfLines, ...rest } = props;
+  const { label, style, multiline, numberOfLines, inputRef, ...rest } = props;
   return (
     <View style={{ marginBottom: 14 }}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
         {...rest}
+        ref={inputRef}
         style={[styles.input, multiline && { height: Math.max(96, (numberOfLines || 4) * 22) }, style]}
         placeholderTextColor={Colors.brand.textSecondary}
         multiline={multiline}

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform } from 'react-native';
 
 import { Text } from '@/components/Themed';
@@ -14,6 +14,9 @@ export default function ReviewerSettingsScreen() {
   const [hourlyRate, setHourlyRate] = useState<string>('');
   const [availability, setAvailability] = useState<string>('');
   const [packages, setPackages] = useState<ReviewerPackage[]>([]);
+
+  const hourlyRateRef = useRef<any>(null);
+  const availabilityRef = useRef<any>(null);
 
   useEffect(() => {
     const run = async () => {
@@ -74,8 +77,8 @@ export default function ReviewerSettingsScreen() {
         <Text style={styles.sectionTitle}>Reviewer Settings</Text>
         <Text style={styles.hint}>Set your rates and create up to 5 session packages. These appear on your request page.</Text>
 
-        <LabeledInput label="Hourly Rate (optional)" value={hourlyRate} onChangeText={setHourlyRate} keyboardType="numeric" placeholder="e.g. 50" />
-        <LabeledInput label="Availability (optional)" value={availability} onChangeText={setAvailability} placeholder="e.g. Weekends only" />
+        <LabeledInput label="Hourly Rate (optional)" value={hourlyRate} onChangeText={setHourlyRate} keyboardType="numeric" placeholder="e.g. 50" inputRef={hourlyRateRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => availabilityRef.current?.focus()} />
+        <LabeledInput label="Availability (optional)" value={availability} onChangeText={setAvailability} placeholder="e.g. Weekends only" inputRef={availabilityRef} returnKeyType="done" blurOnSubmit />
 
         <Text style={[styles.label, { marginTop: 10 }]}>Session Packages (up to 5)</Text>
         {packages.map((p, idx) => (
@@ -117,12 +120,13 @@ export default function ReviewerSettingsScreen() {
 }
 
 function LabeledInput(props: any) {
-  const { label, style, multiline, numberOfLines, ...rest } = props;
+  const { label, style, multiline, numberOfLines, inputRef, ...rest } = props;
   return (
     <View style={{ marginBottom: 14 }}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
         {...rest}
+        ref={inputRef}
         style={[styles.input, multiline && { height: Math.max(96, (numberOfLines || 4) * 22) }, style]}
         placeholderTextColor={Colors.brand.textSecondary}
         multiline={multiline}
