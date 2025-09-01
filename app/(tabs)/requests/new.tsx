@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, Image, Alert, TextInput, View as RNView } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, Image, Alert, TextInput, View as RNView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as VideoThumbnails from 'expo-video-thumbnails';
@@ -196,7 +196,14 @@ export default function NewRequestScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.select({ ios: 'interactive', default: 'on-drag' })}
+        contentInsetAdjustmentBehavior="always"
+      >
       <View style={styles.header}>
         <Text style={styles.title}>Request a Review</Text>
         <Text style={styles.subtitle}>Get feedback from top influencer women</Text>
@@ -352,7 +359,8 @@ export default function NewRequestScreen() {
         </TouchableOpacity>
         <Text style={styles.submitNote}>You'll be charged after the reviewer accepts your request</Text>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

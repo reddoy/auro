@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Platform, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
+import { Platform, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image, KeyboardAvoidingView } from 'react-native';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -56,13 +56,20 @@ export default function AuthScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={insets.top + 12}>
+      <View style={styles.container}>
       <StatusBar style="light" translucent />
       <ExpoLinearGradient
         colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
         style={styles.backgroundGradient}
       />
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.select({ ios: 'interactive', default: 'on-drag' })}
+        contentInsetAdjustmentBehavior="always"
+      >
       <ExpoLinearGradient
         colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
         start={{ x: 0, y: 0 }}
@@ -173,7 +180,8 @@ export default function AuthScreen() {
         </Text>
       </View>
       </ScrollView>
-    </View>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
