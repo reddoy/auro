@@ -11,15 +11,16 @@
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#1A0B2E"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "merchantIdentifier": "merchant.com.auro"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#1A0B2E"
       },
       "edgeToEdgeEnabled": true
     },
@@ -29,8 +30,25 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.auro",
+          "enableGooglePay": true,
+          "androidPayMode": "test"
+        }
+      ]
     ],
+    "extra": {
+      "supabaseUrl": "https://zxazjbduiistnfstnwka.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4YXpqYmR1aWlzdG5mc3Rud2thIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NTY0NDYsImV4cCI6MjA3MTMzMjQ0Nn0.apdP9iKtqvt8os_pdq8dgojMHSPUk5HsIVLjzw1gevA",
+      "eas": {
+        "projectId": ""
+      },
+      "stripePublishableKey": "pk_test_51S0FmFBCrjcqavovZGFC0KIhbtpwkwkpR34861yV4XqXG7Bcq4vcRwH4EPV3UQlIiYCRh8LlX3BJnvnfC2vxgDdX00OGXCh38S",
+      "apiUrl": "http://localhost:4242"
+    },
     "experiments": {
       "typedRoutes": true
     }

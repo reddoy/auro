@@ -1,0 +1,177 @@
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  age: number;
+  bio: string;
+  photos: string[];
+  isInfluencer: boolean;
+  verified?: boolean;
+  rating?: number;
+  reviewCount?: number;
+}
+
+export interface InfluencerProfile {
+  id: string;
+  name: string;
+  username: string;
+  profileImage: string;
+  verified: boolean;
+  followerCount: number;
+  specialties: string[];
+  rating: number;
+  reviewCount: number;
+  pricePerReview: number;
+  bio: string;
+}
+
+export interface ReviewRequest {
+  id: string;
+  userId: string;
+  influencerId: string;
+  photos: string[];
+  status: 'pending' | 'accepted' | 'paid' | 'in_progress' | 'completed' | 'rejected';
+  createdAt: Date;
+  completedAt?: Date;
+  review?: Review;
+  notes?: string | null;
+}
+
+export interface Review {
+  id: string;
+  requestId: string;
+  influencerId: string;
+  userId: string;
+  ratings: {
+    attractiveness: number;
+    wardrobe: number;
+    room: number;
+    overall: number;
+  };
+  feedback: {
+    strengths: string[];
+    improvements: string[];
+    generalFeedback: string;
+  };
+  createdAt: Date;
+}
+
+export interface PhotoCategory {
+  id: string;
+  name: string;
+  description: string;
+  required: boolean;
+  maxPhotos: number;
+}
+
+// Minimal DB-side types used by Supabase queries
+export interface DbInfluencerSummary {
+  id: string;
+  name: string;
+  username: string;
+  verified: boolean;
+  profileImage: string;
+  specialties: string[];
+  pricePerReview: number;
+  rating: number;
+  followerCount: number;
+}
+
+export interface DbRequestSummary {
+  id: string;
+  influencerId: string;
+  userId?: string;
+  createdAt: string;
+  status: 'pending' | 'accepted' | 'paid' | 'in_progress' | 'completed' | 'rejected';
+  photos: string[];
+  notes?: string | null;
+  review?: {
+    ratings?: {
+      overall?: number;
+      attractiveness?: number;
+      wardrobe?: number;
+      room?: number;
+    };
+    feedback?: {
+      strengths?: string[];
+      improvements?: string[];
+      generalFeedback?: string;
+    };
+    createdAt?: string;
+  } | null;
+}
+
+export interface DbUserProfile {
+  id: string;
+  email?: string;
+  name?: string;
+  bio?: string | null;
+  avatarUrl?: string | null;
+}
+
+// Reviewers sourced from profiles (users who opted-in)
+export interface DbReviewerSummary {
+  id: string;
+  displayName: string;
+  username?: string | null;
+  avatarUrl?: string | null;
+  skills?: string[] | null;
+  hourlyRate?: number | null;
+  rating?: number | null;
+  packages?: ReviewerPackage[] | null;
+}
+
+// Profile types for Profile/Settings screens
+export interface ProfileLinks {
+  twitter?: string | null;
+  linkedin?: string | null;
+  github?: string | null;
+  [key: string]: any;
+}
+
+export interface ProfilePreferences {
+  email_notifications?: boolean;
+  push_notifications?: boolean;
+  [key: string]: any;
+}
+
+export interface Profile {
+  id: string;
+  username?: string | null;
+  full_name?: string | null;
+  avatar_url?: string | null;
+  bio?: string | null;
+  is_reviewer?: boolean;
+  created_at?: string;
+  skills?: string[] | null;
+  links?: ProfileLinks | null;
+  preferences?: ProfilePreferences | null;
+  hourly_rate?: number | null;
+  availability?: string | null;
+  // Derived stats (optional, may be selected via RPC/views)
+  reviews_given_count?: number | null;
+  reviews_received_count?: number | null;
+  rating_average?: number | null;
+}
+
+// Session package a reviewer offers
+export interface ReviewerPackage {
+  id: string; // stable id for selection
+  label: string; // e.g. "3 × 30-minute sessions"
+  minutes?: number | null; // per session duration in minutes (optional)
+  sessions?: number | null; // number of sessions
+  price?: number | null; // price in USD (or app currency)
+}
+
+// Lightweight review item for lists (Given/Received)
+export interface UserReview {
+  id: string;
+  author_id: string; // who wrote the review
+  subject_id: string; // who the review is about
+  rating: number;
+  comment?: string | null;
+  created_at: string;
+  // Optional denormalized fields for UI rendering
+  author?: { id: string; username?: string | null; full_name?: string | null; avatar_url?: string | null };
+  subject?: { id: string; username?: string | null; full_name?: string | null; avatar_url?: string | null };
+}
