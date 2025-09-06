@@ -150,38 +150,97 @@ export async function getSignedAvatarUrl(pathOrUrl: string, expiresInSeconds: nu
   }
 }
 
-export async function getReviewsGiven(userId: string, opts: { page?: number; pageSize?: number } = {}): Promise<{ items: UserReview[]; nextPage: number | null }> {
+export async function getReviewsGiven(userId: string, opts: { page?: number; pageSize?: number; showArchived?: boolean } = {}): Promise<{ items: UserReview[]; nextPage: number | null }> {
   const page = Math.max(1, opts.page ?? 1);
   const pageSize = Math.min(50, Math.max(1, opts.pageSize ?? 10));
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
-  const { data, error } = await supabase
-    .from('reviews')
-    .select('id, author_id, subject_id, rating, comment, created_at, author:author_id(id, username, full_name, avatar_url), subject:subject_id(id, username, full_name, avatar_url)')
-    .eq('author_id', userId)
-    .order('created_at', { ascending: false })
-    .range(from, to);
-  if (error) throw error;
-  const items = (data as any[] as UserReview[]) || [];
+  // Try to include archived flags if they exist; if not, fall back gracefully
+  let items: UserReview[] = [];
+  try {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('id, author_id, subject_id, rating, comment, created_at, archived_by_author, archived_by_subject, author:author_id(id, username, full_name, avatar_url), subject:subject_id(id, username, full_name, avatar_url)')
+      .eq('author_id', userId)
+      .order('created_at', { ascending: false })
+      .range(from, to);
+    if (error) throw error;
+    items = (data as any[] as UserReview[]) || [];
+  } catch {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('id, author_id, subject_id, rating, comment, created_at, author:author_id(id, username, full_name, avatar_url), subject:subject_id(id, username, full_name, avatar_url)')
+      .eq('author_id', userId)
+      .order('created_at', { ascending: false })
+      .range(from, to);
+    if (error) throw error;
+    items = (data as any[] as UserReview[]) || [];
+  }
+  if (!opts.showArchived) {
+    items = items.filter((it) => !it.archived_by_author);
+  }
   const hasMore = items.length === pageSize;
   return { items, nextPage: hasMore ? page + 1 : null };
 }
 
-export async function getReviewsReceived(userId: string, opts: { page?: number; pageSize?: number } = {}): Promise<{ items: UserReview[]; nextPage: number | null }> {
+export async function getReviewsReceived(userId: string, opts: { page?: number; pageSize?: number; showArchived?: boolean } = {}): Promise<{ items: UserReview[]; nextPage: number | null }> {
   const page = Math.max(1, opts.page ?? 1);
   const pageSize = Math.min(50, Math.max(1, opts.pageSize ?? 10));
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
-  const { data, error } = await supabase
-    .from('reviews')
-    .select('id, author_id, subject_id, rating, comment, created_at, author:author_id(id, username, full_name, avatar_url), subject:subject_id(id, username, full_name, avatar_url)')
-    .eq('subject_id', userId)
-    .order('created_at', { ascending: false })
-    .range(from, to);
-  if (error) throw error;
-  const items = (data as any[] as UserReview[]) || [];
+  let items: UserReview[] = [];
+  try {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('id, author_id, subject_id, rating, comment, created_at, archived_by_author, archived_by_subject, author:author_id(id, username, full_name, avatar_url), subject:subject_id(id, username, full_name, avatar_url)')
+      .eq('subject_id', userId)
+      .order('created_at', { ascending: false })
+      .range(from, to);
+    if (error) throw error;
+    items = (data as any[] as UserReview[]) || [];
+  } catch {
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('id, author_id, subject_id, rating, comment, created_at, author:author_id(id, username, full_name, avatar_url), subject:subject_id(id, username, full_name, avatar_url)')
+      .eq('subject_id', userId)
+      .order('created_at', { ascending: false })
+      .range(from, to);
+    if (error) throw error;
+    items = (data as any[] as UserReview[]) || [];
+  }
+  if (!opts.showArchived) {
+    items = items.filter((it) => !it.archived_by_subject);
+  }
   const hasMore = items.length === pageSize;
   return { items, nextPage: hasMore ? page + 1 : null };
+}
+
+export async function archiveReviewForCurrentUser(reviewId: string, archived: boolean): Promise<void> {
+  const { data: userResult } = await supabase.auth.getUser();
+  const user = userResult.user;
+  if (!user) throw new Error('Not signed in');
+  let updatedCount = 0;
+  try {
+    const { count, error } = await supabase
+      .from('reviews')
+      .update({ archived_by_author: archived as any })
+      .eq('id', reviewId)
+      .eq('author_id', user.id)
+      .select('id', { count: 'exact', head: true });
+    if (!error) updatedCount += count || 0;
+  } catch {}
+  try {
+    const { count, error } = await supabase
+      .from('reviews')
+      .update({ archived_by_subject: archived as any })
+      .eq('id', reviewId)
+      .eq('subject_id', user.id)
+      .select('id', { count: 'exact', head: true });
+    if (!error) updatedCount += count || 0;
+  } catch {}
+  if (!updatedCount) {
+    throw new Error('Not permitted to archive this review or field missing');
+  }
 }
 
 export async function getReviewStats(userId: string): Promise<{ given: number; received: number; avgReceivedRating: number }> {

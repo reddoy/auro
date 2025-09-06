@@ -47,8 +47,8 @@
       "eas": {
         "projectId": ""
       },
-      "stripePublishableKey": "pk_test_51S0FmFBCrjcqavovZGFC0KIhbtpwkwkpR34861yV4XqXG7Bcq4vcRwH4EPV3UQlIiYCRh8LlX3BJnvnfC2vxgDdX00OGXCh38S",
-      "apiUrl": "http://localhost:4242"
+      "stripePublishableKey": "pk_test_51S0Fm0BQDAObfzKxA8RhgMCNkXTqid8x5b4dyTd8exSTsLJENNvmPOP2AkNAsBMsKq4w86D4cmiQFsosEpd9C1TU00rR5AOVDr",
+      "apiUrl": "https://zxazjbduiistnfstnwka.supabase.co/functions/v1/stripe_payment"
     },
     "experiments": {
       "typedRoutes": true

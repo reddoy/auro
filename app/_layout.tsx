@@ -12,6 +12,7 @@ import 'react-native-get-random-values';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StripeProvider } from '@/components/StripeProvider';
 import Constants from 'expo-constants';
+import { ToastProvider } from '@/components/Toast';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
@@ -97,12 +98,14 @@ function RootLayoutNav() {
         }
       >
         <ThemeProvider value={customTheme}>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="auth" />
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-          </Stack>
+          <ToastProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="auth" />
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+            </Stack>
+          </ToastProvider>
         </ThemeProvider>
       </StripeProvider>
     </SafeAreaProvider>

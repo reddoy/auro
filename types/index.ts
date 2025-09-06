@@ -116,7 +116,7 @@ export interface DbReviewerSummary {
   username?: string | null;
   avatarUrl?: string | null;
   skills?: string[] | null;
-  hourlyRate?: number | null;
+  pricePerReview?: number | null;
   rating?: number | null;
   packages?: ReviewerPackage[] | null;
 }
@@ -174,4 +174,7 @@ export interface UserReview {
   // Optional denormalized fields for UI rendering
   author?: { id: string; username?: string | null; full_name?: string | null; avatar_url?: string | null };
   subject?: { id: string; username?: string | null; full_name?: string | null; avatar_url?: string | null };
+  // Per-user archiving flags (optional, may not exist in all DBs)
+  archived_by_author?: boolean | null;
+  archived_by_subject?: boolean | null;
 }

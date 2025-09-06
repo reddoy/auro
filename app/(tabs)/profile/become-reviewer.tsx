@@ -14,12 +14,12 @@ export default function BecomeReviewerScreen() {
 
   const [skills, setSkills] = useState('');
   const [hourlyRate, setHourlyRate] = useState<string>('');
-  const [availability, setAvailability] = useState<string>('');
+  
   const [agree, setAgree] = useState(false);
 
   const skillsRef = useRef<any>(null);
   const hourlyRateRef = useRef<any>(null);
-  const availabilityRef = useRef<any>(null);
+  
 
   useEffect(() => {
     const run = async () => {
@@ -29,7 +29,7 @@ export default function BecomeReviewerScreen() {
         if (p) {
           setSkills((p.skills || []).join(', '));
           setHourlyRate(p.hourly_rate != null ? String(p.hourly_rate) : '');
-          setAvailability(p.availability || '');
+          
         }
       } catch (e: any) {
         Alert.alert('Error', e?.message || 'Failed to load profile');
@@ -53,7 +53,7 @@ export default function BecomeReviewerScreen() {
         is_reviewer: true,
         skills: parsedSkills.length ? parsedSkills : [],
         hourly_rate: hourlyRate ? Number(hourlyRate) : null,
-        availability: availability || null,
+        
       };
       await updateProfile(payload);
       Alert.alert('Welcome!', "You're now a reviewer.", [{ text: 'OK', onPress: () => router.back() }]);
@@ -89,8 +89,7 @@ export default function BecomeReviewerScreen() {
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Reviewer Details</Text>
         <LabeledInput label="Skills" value={skills} onChangeText={setSkills} placeholder="e.g. fashion, lighting, posing" inputRef={skillsRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => hourlyRateRef.current?.focus()} />
-        <LabeledInput label="Hourly Rate (optional)" value={hourlyRate} onChangeText={setHourlyRate} keyboardType="numeric" placeholder="e.g. 50" inputRef={hourlyRateRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => availabilityRef.current?.focus()} />
-        <LabeledInput label="Availability (optional)" value={availability} onChangeText={setAvailability} placeholder="e.g. Weeknights, Weekends only" inputRef={availabilityRef} returnKeyType="done" blurOnSubmit />
+        <LabeledInput label="Price per Review (optional)" value={hourlyRate} onChangeText={setHourlyRate} keyboardType="numeric" placeholder="e.g. 25" inputRef={hourlyRateRef} returnKeyType="done" blurOnSubmit />
         <View style={styles.switchRow}>
           <Text style={styles.label}>I agree to the reviewer terms</Text>
           <Switch value={agree} onValueChange={setAgree} />

@@ -13,7 +13,7 @@ export default function IndexGate() {
     const run = async () => {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        router.replace('/(tabs)/discover');
+        router.replace('/(tabs)/requests');
       } else {
         router.replace('/auth');
       }

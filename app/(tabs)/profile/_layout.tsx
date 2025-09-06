@@ -8,7 +8,6 @@ export default function ProfileStackLayout() {
       <Stack.Screen name="settings" options={{ headerShown: true, title: 'Settings' }} />
       <Stack.Screen name="become-reviewer" options={{ headerShown: true, title: 'Become a Reviewer' }} />
       <Stack.Screen name="reviewer-settings" options={{ headerShown: true, title: 'Reviewer Settings' }} />
-      <Stack.Screen name="reviewer-inbox" options={{ headerShown: true, title: 'Reviewer Inbox' }} />
     </Stack>
   );
 }

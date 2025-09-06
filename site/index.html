@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Auro — Expert feedback for your photos</title>
+    <meta name="description" content="Get fast, actionable reviews from real experts. Submit photos, learn, and improve with Auro." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@700&display=swap" rel="stylesheet" />
+    <link rel="icon" href="../assets/images/favicon.png" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="container nav">
+      <a class="brand" href="#">
+        <img src="../auro_font_logo.png" alt="Auro logo" height="38" />
+      </a>
+      <nav>
+        <a class="ghost" href="/" id="open-app">Open the App</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container hero__inner">
+          <div class="hero__copy">
+            <h1>Expert feedback for your photos.</h1>
+            <p class="sub">Auro helps creators get fast, actionable reviews from real experts. Submit a photo, get insights you can use right away.</p>
+
+            <form id="cta-form" class="cta" method="POST" action="/api/newsletter" novalidate>
+              <label class="visually-hidden" for="email">Email</label>
+              <input id="email" name="email" type="email" placeholder="Enter your email" required />
+              <button type="submit">Get Early Access</button>
+            </form>
+            <p class="legal">No spam. Unsubscribe anytime.</p>
+          </div>
+
+          <div class="hero__phones">
+            <div class="phone phone--left">
+              <img src="../assets/images/icon.png" alt="Auro review request screen (placeholder)" />
+            </div>
+            <div class="phone phone--right">
+              <img src="../assets/images/icon.png" alt="Reviewer feedback screen (placeholder)" />
+            </div>
+          </div>
+        </div>
+        <div class="bg-glow" aria-hidden="true"></div>
+      </section>
+
+      <section class="showcase">
+        <div class="container">
+          <div class="showcase__grid">
+            <figure class="mockup">
+              <img src="../assets/images/icon.png" alt="Auro request detail screen (placeholder)" />
+              <figcaption>Request detail</figcaption>
+            </figure>
+            <figure class="mockup">
+              <img src="../assets/images/icon.png" alt="Reviewer feedback thread (placeholder)" />
+              <figcaption>Feedback thread</figcaption>
+            </figure>
+            <figure class="mockup">
+              <img src="../assets/images/icon.png" alt="Profile & ratings (placeholder)" />
+              <figcaption>Profile & ratings</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="container footer__inner">
+        <span>© <span id="year"></span> Auro</span>
+        <nav class="footer__links">
+          <a href="/" id="footer-open-app">Open the App</a>
+          <a href="mailto:hello@appauro.com">Contact</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script>
+      // Prefill current year
+      document.getElementById('year').textContent = new Date().getFullYear();
+      // Prefetch app link on hover
+      const openAppLinks = [document.getElementById('open-app'), document.getElementById('footer-open-app')];
+      openAppLinks.forEach(function (el) {
+        if (!el) return;
+        el.addEventListener('mouseenter', function () {
+          var link = document.createElement('link');
+          link.rel = 'prefetch';
+          link.href = '/';
+          document.head.appendChild(link);
+        });
+      });
+      // Minimal email validation
+      document.getElementById('cta-form').addEventListener('submit', function (e) {
+        var email = document.getElementById('email');
+        var valid = /[^@\s]+@[^@\s]+\.[^@\s]+/.test(email.value);
+        if (!valid) {
+          e.preventDefault();
+          email.focus();
+          email.setAttribute('aria-invalid', 'true');
+        }
+      });
+    </script>
+  </body>
+  <!-- TODO: Replace placeholder images with real iPhone screenshots of the Auro app UI. -->
+  <!-- TODO: Point the newsletter form action to your backend endpoint. -->
+</html>
+
+

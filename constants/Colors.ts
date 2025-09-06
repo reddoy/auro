@@ -25,12 +25,23 @@ const brandColors = {
   shadow: 'rgba(0, 0, 0, 0.35)',
   shadowLight: 'rgba(0, 0, 0, 0.25)',
   shadowMedium: 'rgba(0, 0, 0, 0.45)',
+  avatarPlaceholder: '#A89BC5',
 
   // Status
   success: '#3DDC84',
   warning: '#FFB300',
   error: '#FF4D4F',
   info: '#64B5F6',
+  status: {
+    // Centralized request status colors
+    // Visual intent: pending (info), accepted (orange), paid (teal), in_progress (amber), completed (success), rejected (error)
+    pending: '#2196F3',
+    accepted: '#FF6F00',
+    paid: '#009688',
+    in_progress: '#FFB300',
+    completed: '#3DDC84',
+    rejected: '#EF4444',
+  },
 };
 
 const tintColor = brandColors.accentMagenta;

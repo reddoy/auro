@@ -122,7 +122,7 @@ export async function getReviewers(): Promise<DbReviewerSummary[]> {
     username: row.username,
     avatarUrl: row.avatar_url || null,
     skills: row.skills || null,
-    hourlyRate: row.hourly_rate ?? null,
+    pricePerReview: row.hourly_rate ?? null,
     rating: row.rating_average ?? null,
     packages: row.packages || null,
   })) as DbReviewerSummary[];
@@ -142,7 +142,7 @@ export async function getReviewerById(id: string): Promise<DbReviewerSummary | n
     username: data.username,
     avatarUrl: data.avatar_url || null,
     skills: data.skills || null,
-    hourlyRate: data.hourly_rate ?? null,
+    pricePerReview: data.hourly_rate ?? null,
     rating: data.rating_average ?? null,
     packages: (data as any).packages || null,
   } as DbReviewerSummary;
@@ -166,9 +166,34 @@ export async function updateRequestStatus(requestId: string, status: string): Pr
     .update({ status })
     .eq('id', requestId)
     .select('id,influencer_id,created_at,status,photos,review,user_id,notes')
-    .single();
+    .maybeSingle();
   if (error) throw error;
-  return mapRequestRow(data);
+  if (data) return mapRequestRow(data);
+  // Fallback: fetch the row to avoid "cannot coerce result to a single JSON object"
+  const refetched = await getRequestById(requestId);
+  if (!refetched) throw new Error('Request not found after update');
+  return refetched;
+}
+
+export async function submitRequestReview(params: {
+  requestId: string;
+  review: {
+    ratings: { overall: number; attractiveness?: number; wardrobe?: number; room?: number };
+    feedback: { strengths?: string[]; improvements?: string[]; generalFeedback?: string };
+  };
+}): Promise<DbRequestSummary> {
+  const { requestId, review } = params;
+  const { data, error } = await supabase
+    .from('requests')
+    .update({ review, status: 'completed' })
+    .eq('id', requestId)
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes')
+    .maybeSingle();
+  if (error) throw error;
+  if (data) return mapRequestRow(data);
+  const refetched = await getRequestById(requestId);
+  if (!refetched) throw new Error('Request not found after submitting review');
+  return refetched;
 }
 
 // New: minimal profile fetch by id

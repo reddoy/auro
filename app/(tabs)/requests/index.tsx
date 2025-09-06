@@ -1,8 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, Image, Alert, View as RNView } from 'react-native';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { StyleSheet, TouchableOpacity, Alert, View as RNView, FlatList, ActivityIndicator } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
@@ -10,8 +12,15 @@ import { getReviewerById, getRequestsByUser, getUserProfile, updateRequestStatus
 import { getSignedAvatarUrl } from '@/lib/profile';
 import { openPaymentSheet } from '@/lib/payments';
 import type { DbReviewerSummary, DbRequestSummary } from '@/types';
+import LightboxImage from '@/components/LightboxImage';
+import StatusBadge from '@/components/StatusBadge';
+import { Image } from 'expo-image';
+import { useToast } from '@/components/Toast';
+import Avatar from '@/components/Avatar';
 
 export default function RequestsScreen() {
+  const insets = useSafeAreaInsets();
+  const { show } = useToast();
   const [loading, setLoading] = useState(true);
   const [requests, setRequests] = useState<DbRequestSummary[]>([]);
   const [revMap, setRevMap] = useState<Record<string, DbReviewerSummary>>({});
@@ -79,9 +88,17 @@ export default function RequestsScreen() {
             } catch {}
             const uniqueUserIds = Array.from(new Set(gReqs.map(r => r.userId).filter(Boolean))) as string[];
             const users = await Promise.all(uniqueUserIds.map(id => getProfileById(id)));
-            const umap: Record<string, any> = {};
-            users.forEach(u => { if (u) umap[u.id] = u; });
-            setUserMap(umap);
+            const signedPairs = await Promise.all(
+              users.filter(Boolean).map(async (u) => {
+                const user = u as any;
+                let uri = user.avatarUrl || '';
+                if (uri && !/^https?:\/\//i.test(uri)) {
+                  try { uri = (await getSignedAvatarUrl(uri, 3600)) || ''; } catch {}
+                }
+                return [user.id, { ...user, avatarUrl: uri }] as const;
+              })
+            );
+            setUserMap(Object.fromEntries(signedPairs));
           }
         } catch {}
       } finally {
@@ -91,53 +108,73 @@ export default function RequestsScreen() {
     run();
   }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return '#4CAF50';
-      case 'in_progress':
-        return '#FF9800';
-      case 'accepted':
-        return '#673AB7';
-      case 'paid':
-        return '#009688';
-      case 'pending':
-        return '#2196F3';
-      case 'rejected':
-        return '#F44336';
-      default:
-        return '#999';
-    }
-  };
+  // Refresh data whenever this screen regains focus (e.g., after Accept/Deny)
+  const refreshData = useCallback(() => {
+    (async () => {
+      try {
+        const profile = await getUserProfile();
+        if (!profile?.id) {
+          setRequests([]);
+          setGivenRequests([]);
+          return;
+        }
+        const [reqs, gReqs] = await Promise.all([
+          getRequestsByUser(profile.id),
+          getRequestsByReviewer(profile.id),
+        ]);
+        setRequests(reqs);
+        setGivenRequests(gReqs || []);
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'Review Complete';
-      case 'in_progress':
-        return 'In Progress';
-      case 'accepted':
-        return 'Accepted — Awaiting Payment';
-      case 'paid':
-        return 'Paid';
-      case 'pending':
-        return 'Pending Review';
-      case 'rejected':
-        return 'Rejected';
-      default:
-        return status;
-    }
-  };
+        // Update reviewer map and avatars for received list
+        const uniqueIds = Array.from(new Set(reqs.map(r => r.influencerId).filter(Boolean)));
+        const reviewers = await Promise.all(uniqueIds.map(id => getReviewerById(String(id))));
+        const rMap: Record<string, DbReviewerSummary> = {};
+        reviewers.forEach(rev => { if (rev) rMap[rev.id] = rev; });
+        setRevMap(rMap);
+        try {
+          const pairs = await Promise.all(
+            reviewers.filter(Boolean).map(async (rev) => {
+              const r = rev as DbReviewerSummary;
+              let uri = r.avatarUrl || '';
+              if (uri && !/^https?:\/\//i.test(uri)) {
+                try { uri = (await getSignedAvatarUrl(uri, 3600)) || ''; } catch {}
+              }
+              return [r.id, uri] as const;
+            })
+          );
+          setAvatarMap(Object.fromEntries(pairs));
+        } catch {}
+
+        // Update user map and avatars for given list
+        const uniqueUserIds = Array.from(new Set((gReqs || []).map(r => r.userId).filter(Boolean))) as string[];
+        const users = await Promise.all(uniqueUserIds.map(id => getProfileById(id)));
+        const signedPairs = await Promise.all(
+          users.filter(Boolean).map(async (u) => {
+            const user = u as any;
+            let uri = user.avatarUrl || '';
+            if (uri && !/^https?:\/\//i.test(uri)) {
+              try { uri = (await getSignedAvatarUrl(uri, 3600)) || ''; } catch {}
+            }
+            return [user.id, { ...user, avatarUrl: uri }] as const;
+          })
+        );
+        setUserMap(Object.fromEntries(signedPairs));
+      } catch {}
+    })();
+  }, []);
+
+  useFocusEffect(useCallback(() => {
+    refreshData();
+    return () => {};
+  }, [refreshData]));
+
+  
 
   const handleRequestPress = (requestId: string) => {
     const request = requests.find(r => r.id === requestId);
     if (!request) return;
-    if (request.status === 'completed') {
-      router.push(`/(tabs)/requests/${requestId}`);
-      return;
-    }
-    // For non-completed requests, navigate to the reviewer's public profile
-    router.push(`/(tabs)/discover/influencer/${request.influencerId}`);
+    // Always open the review detail for the reviewee to see status, media, and feedback
+    router.push(`/review/${requestId}`);
   };
 
   const handleNewRequest = () => {
@@ -146,232 +183,217 @@ export default function RequestsScreen() {
 
   const handlePayNow = async (request: DbRequestSummary) => {
     const reviewer = revMap[request.influencerId];
-    const amount = reviewer?.hourlyRate != null ? reviewer.hourlyRate : 50;
+    const amount = reviewer?.pricePerReview != null ? reviewer.pricePerReview : 50;
     try {
       const res = await openPaymentSheet({ amountCents: Math.round(amount * 100), currency: 'usd', requestId: request.id });
       if (!res.completed) {
         if (res.errorMessage) Alert.alert('Payment failed', res.errorMessage);
         return;
       }
-      await updateRequestStatus(request.id, 'paid');
-      setRequests(prev => prev.map(r => (r.id === request.id ? { ...r, status: 'paid' as any } : r)));
-      Alert.alert('Payment successful', 'Thanks! Your reviewer has been notified.');
+      // Rely on webhook to update DB; refresh UI shortly after
+      show('Payment successful. Updating shortly...');
+      setTimeout(() => {
+        (async () => {
+          try {
+            const p = await getUserProfile();
+            if (p?.id) {
+              const refreshed = await getRequestsByUser(p.id);
+              setRequests(refreshed);
+            }
+          } catch {}
+        })();
+      }, 1500);
     } catch (e: any) {
       Alert.alert('Payment error', e?.message || 'Please try again.');
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <ExpoLinearGradient
-        colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-        style={styles.backgroundGradient}
-      />
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 72 }}>
-      <ExpoLinearGradient
-        colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.header}
+  const renderReceivedItem = ({ item }: { item: DbRequestSummary }) => {
+    const reviewer = revMap[item.influencerId];
+    return (
+      <TouchableOpacity
+        key={item.id}
+        style={styles.requestCard}
+        onPress={() => handleRequestPress(item.id)}
       >
-        <View style={styles.headerContent}>
-          <Text style={styles.title}>My Reviews</Text>
-          <Text style={styles.subtitle}>Track your review requests and feedback</Text>
-
-          <RNView style={styles.segmentedRow}>
-            <TouchableOpacity
-              style={[styles.segmentedBtn, mode === 'received' && styles.segmentedBtnActive]}
-              onPress={() => setMode('received')}
-            >
-              <Text style={styles.segmentedText}>Received</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.segmentedBtn, mode === 'given' && styles.segmentedBtnActive]}
-              onPress={() => setMode('given')}
-            >
-              <Text style={styles.segmentedText}>Given</Text>
-            </TouchableOpacity>
+        <View style={styles.requestHeader}>
+          <RNView style={styles.influencerImageWrapper}>
+            <Avatar
+              uri={(avatarMap[item.influencerId] || reviewer?.avatarUrl) || undefined}
+              name={reviewer?.displayName}
+              size={60}
+            />
           </RNView>
-          <RNView style={{ flexDirection: 'row', gap: 10, marginTop: 8, marginBottom: 6 }}>
-            <RNView style={{ flexDirection: 'row', backgroundColor: mode === 'received' ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.18)', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 12 }}>
-              <Text style={{ color: Colors.brand.textOnGradient, fontWeight: '700', fontSize: 12 }}>Received {receivedCount}</Text>
-            </RNView>
-            <RNView style={{ flexDirection: 'row', backgroundColor: mode === 'given' ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.18)', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 12 }}>
-              <Text style={{ color: Colors.brand.textOnGradient, fontWeight: '700', fontSize: 12 }}>Given {givenCount}</Text>
-            </RNView>
-          </RNView>
-          
-          <TouchableOpacity style={styles.newRequestButton} onPress={handleNewRequest}>
+          <View style={styles.requestInfo}>
+            <Text style={styles.influencerName}>{reviewer?.displayName}</Text>
+            <Text style={styles.requestDate}>
+              {new Date(item.createdAt).toLocaleDateString()}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <StatusBadge status={item.status as any} />
+              {item.status === 'paid' && (item as any).review ? (
+                <StatusBadge status={'completed'} label="Review completed" />
+              ) : null}
+            </View>
+          </View>
+        </View>
+        {item.status === 'completed' && (item as any).review && (item as any).review.ratings?.overall != null && (
+          <View style={styles.reviewPreview}>
+            <Text style={styles.reviewLabel}>Overall Rating:</Text>
+            <Text style={styles.overallRating}>
+              {(item as any).review.ratings?.overall}/10
+            </Text>
+          </View>
+        )}
+        {/* Photo previews removed per request */}
+        {item.status === 'accepted' ? (
+          <TouchableOpacity
+            style={styles.payNowButton}
+            onPress={() => handlePayNow(item)}
+          >
             <ExpoLinearGradient
               colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={{
-                position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 14,
-              }}
+              style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 12 }}
             />
-            <Text style={styles.newRequestButtonText}>+ New Review Request</Text>
+            <Text style={styles.payNowText}>Pay now</Text>
           </TouchableOpacity>
+        ) : null}
+      </TouchableOpacity>
+    );
+  };
+
+  const renderGivenItem = ({ item }: { item: DbRequestSummary }) => {
+    const u = userMap[item.userId || ''];
+    return (
+      <TouchableOpacity
+        key={item.id}
+        style={styles.requestCard}
+        onPress={() => {
+          router.push(`/(tabs)/requests/${item.id}`);
+        }}
+      >
+        <View style={styles.requestHeader}>
+          <RNView style={styles.influencerImageWrapper}>
+            <Avatar
+              uri={u?.avatarUrl || undefined}
+              name={u?.displayName}
+              size={60}
+            />
+          </RNView>
+          <View style={styles.requestInfo}>
+            <Text style={styles.influencerName}>{u?.displayName || 'User'}</Text>
+            <Text style={styles.requestDate}>
+              {new Date(item.createdAt).toLocaleDateString()}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <StatusBadge status={item.status as any} />
+              {item.status === 'paid' && (item as any).review ? (
+                <StatusBadge status={'completed'} label="Review completed" />
+              ) : null}
+            </View>
+          </View>
         </View>
-      </ExpoLinearGradient>
+        {/* Photo previews removed per request */}
+      </TouchableOpacity>
+    );
+  };
 
-      <View style={styles.requestsList}>
-        {loading ? (
-          <View style={styles.emptyState}><Text style={styles.emptyStateText}>Loading...</Text></View>
-        ) : mode === 'received' ? (
-          requests.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateTitle}>No reviews yet</Text>
-              <Text style={styles.emptyStateText}>
-                Start your journey by requesting your first review from an influencer!
-              </Text>
-            </View>
-          ) : (
-          requests.map((request) => {
-            const reviewer = revMap[request.influencerId];
-            return (
-              <TouchableOpacity
-                key={request.id}
-                style={styles.requestCard}
-                onPress={() => handleRequestPress(request.id)}
-              >
-                <View style={styles.requestHeader}>
-                  <Image
-                    source={{ uri: avatarMap[request.influencerId] || reviewer?.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200' }}
-                    style={styles.influencerImage}
-                  />
-                  <View style={styles.requestInfo}>
-                    <Text style={styles.influencerName}>{reviewer?.displayName}</Text>
-                    <Text style={styles.requestDate}>
-                      {new Date(request.createdAt).toLocaleDateString()}
-                    </Text>
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        { backgroundColor: getStatusColor(request.status) },
-                      ]}
-                    >
-                      <Text style={styles.statusText}>
-                        {getStatusText(request.status)}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-
-                {request.status === 'completed' && request.review && request.review.ratings?.overall != null && (
-                  <View style={styles.reviewPreview}>
-                    <Text style={styles.reviewLabel}>Overall Rating:</Text>
-                    <Text style={styles.overallRating}>
-                      {request.review.ratings?.overall}/10
-                    </Text>
-                  </View>
-                )}
-
-                {request.photos?.length > 0 && (
-                  <View style={styles.photosPreview}>
-                    <Text style={styles.photosLabel}>
-                      {request.photos.length} photo{request.photos.length > 1 ? 's' : ''} submitted
-                    </Text>
-                    <View style={styles.photoThumbnails}>
-                      {request.photos.slice(0, 3).map((photo, index) => (
-                        <Image
-                          key={index}
-                          source={{ uri: photo }}
-                          style={styles.photoThumbnail}
-                        />
-                      ))}
-                      {request.photos.length > 3 && (
-                        <View style={styles.morePhotos}>
-                          <Text style={styles.morePhotosText}>
-                            +{request.photos.length - 3}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  </View>
-                )}
-
-                {request.status === 'accepted' ? (
-                  <TouchableOpacity
-                    style={styles.payNowButton}
-                    onPress={() => handlePayNow(request)}
-                  >
-                    <ExpoLinearGradient
-                      colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 12 }}
-                    />
-                    <Text style={styles.payNowText}>Pay now</Text>
-                  </TouchableOpacity>
-                ) : null}
-              </TouchableOpacity>
-            );
-          }))
-        ) : (
-          givenRequests.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateTitle}>No reviews to give</Text>
-              <Text style={styles.emptyStateText}>Accepted and pending requests assigned to you will show here.</Text>
-            </View>
-          ) : (
-            givenRequests.map((request) => {
-              const u = userMap[request.userId || ''];
-              return (
-                <TouchableOpacity
-                  key={request.id}
-                  style={styles.requestCard}
-                  onPress={() => {
-                    if (request.status === 'completed') router.push(`/(tabs)/requests/${request.id}`);
-                    else Alert.alert('Request Status', `This request is currently ${getStatusText(request.status)}.`);
-                  }}
-                >
-                  <View style={styles.requestHeader}>
-                    <Image
-                      source={{ uri: u?.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200' }}
-                      style={styles.influencerImage}
-                    />
-                    <View style={styles.requestInfo}>
-                      <Text style={styles.influencerName}>{u?.displayName || 'User'}</Text>
-                      <Text style={styles.requestDate}>
-                        {new Date(request.createdAt).toLocaleDateString()}
-                      </Text>
-                      <View style={[styles.statusBadge, { backgroundColor: getStatusColor(request.status) }]}>
-                        <Text style={styles.statusText}>{getStatusText(request.status)}</Text>
-                      </View>
-                    </View>
-                  </View>
-                  {request.photos?.length > 0 && (
-                    <View style={styles.photosPreview}>
-                      <Text style={styles.photosLabel}>
-                        {request.photos.length} photo{request.photos.length > 1 ? 's' : ''} submitted
-                      </Text>
-                      <View style={styles.photoThumbnails}>
-                        {request.photos.slice(0, 3).map((photo, index) => (
-                          <Image
-                            key={index}
-                            source={{ uri: photo }}
-                            style={styles.photoThumbnail}
-                          />
-                        ))}
-                        {request.photos.length > 3 && (
-                          <View style={styles.morePhotos}>
-                            <Text style={styles.morePhotosText}>
-                              +{request.photos.length - 3}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })
-          )
-        )}
+  const SkeletonCard = () => (
+    <View style={[styles.requestCard, { backgroundColor: Colors.brand.cardBackground }]}> 
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={[styles.influencerImage, { backgroundColor: 'rgba(255,255,255,0.1)' }]} />
+        <View style={{ flex: 1 }}>
+          <View style={{ height: 12, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 6, marginBottom: 10, width: '60%' }} />
+          <View style={{ height: 10, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 6, marginBottom: 6, width: '40%' }} />
+        </View>
       </View>
-      </ScrollView>
+      <View style={{ height: 10, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 6, marginTop: 16, width: '80%' }} />
     </View>
+  );
+
+  const data = mode === 'received' ? requests : givenRequests;
+  const renderItem = mode === 'received' ? renderReceivedItem : renderGivenItem;
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <ExpoLinearGradient
+        colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+        style={styles.backgroundGradient}
+      />
+      <FlatList
+        data={data}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        refreshing={loading}
+        onRefresh={refreshData}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingTop: 12, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }}
+        ListHeaderComponent={(
+          <>
+            <ExpoLinearGradient
+              colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.header}
+            >
+              <View style={styles.headerContent}>
+                <Text style={styles.title}>My Reviews</Text>
+                <Text style={styles.subtitle}>Track your review requests and feedback</Text>
+
+                <RNView style={styles.countersRow}>
+                  <TouchableOpacity
+                    style={[styles.counterPill, mode === 'received' ? styles.counterPillActive : null]}
+                    onPress={() => setMode('received')}
+                    accessibilityLabel="Show reviews received"
+                  >
+                    <Text style={styles.counterText}>Received {receivedCount}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.counterPill, mode === 'given' ? styles.counterPillActive : null]}
+                    onPress={() => setMode('given')}
+                    accessibilityLabel="Show reviews given"
+                  >
+                    <Text style={styles.counterText}>Given {givenCount}</Text>
+                  </TouchableOpacity>
+                </RNView>
+              </View>
+            </ExpoLinearGradient>
+
+            {mode === 'received' && (
+              <TouchableOpacity style={[styles.newRequestButton, { marginHorizontal: 16, marginTop: 16 }]} onPress={handleNewRequest}>
+                <ExpoLinearGradient
+                  colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 14 }}
+                />
+                <Text style={styles.newRequestButtonText}>+ New Review Request</Text>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
+        ListEmptyComponent={(
+          <View style={{ paddingHorizontal: 16, paddingTop: 24 }}>
+            {loading ? (
+              <>
+                {[...Array(4)].map((_, i) => (
+                  <SkeletonCard key={`s-${i}`} />
+                ))}
+              </>
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateTitle}>{mode === 'received' ? 'No reviews yet' : 'No reviews to give'}</Text>
+                <Text style={styles.emptyStateText}>
+                  {mode === 'received' ? 'Start your journey by requesting your first review from an influencer!' : 'Accepted and pending requests assigned to you will show here.'}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+      />
+    </SafeAreaView>
   );
 }
 
@@ -392,8 +414,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   header: {
-    paddingTop: 60,
-    paddingBottom: 40,
+    paddingTop: 16,
+    paddingBottom: 24,
     paddingHorizontal: 0,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
@@ -429,6 +451,52 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontFamily: 'Inter_600SemiBold',
   },
+  segmentedRow: {
+    flexDirection: 'row',
+    alignSelf: 'stretch',
+    padding: 4,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    gap: 8,
+  },
+  segmentedBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 12,
+  },
+  segmentedBtnActive: {
+    backgroundColor: 'rgba(0,0,0,0.15)',
+  },
+  segmentedText: {
+    color: Colors.brand.textOnGradient,
+    fontWeight: '600',
+  },
+  segmentedTextActive: {
+    fontWeight: '700',
+  },
+  countersRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  counterPill: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  counterPillActive: {
+    backgroundColor: 'rgba(0,0,0,0.15)',
+  },
+  counterText: {
+    color: Colors.brand.textOnGradient,
+    fontWeight: '700',
+    fontSize: 12,
+  },
   newRequestButton: {
     paddingVertical: 18,
     paddingHorizontal: 36,
@@ -450,9 +518,9 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
   },
   requestsList: {
-    padding: 24,
-    paddingTop: 32,
-    paddingBottom: 100, // Extra padding for floating tab bar
+    padding: 16,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
   emptyState: {
     alignItems: 'center',
@@ -482,7 +550,7 @@ const styles = StyleSheet.create({
   requestCard: {
     backgroundColor: Colors.brand.cardBackground,
     borderRadius: 20,
-    padding: 20,
+    padding: 16,
     marginBottom: 16,
     shadowColor: Colors.brand.shadow,
     shadowOffset: { width: 0, height: 4 },
@@ -511,7 +579,24 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 4,
     overflow: 'hidden',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: 'transparent',
+  },
+  influencerImageWrapper: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 16,
+    overflow: 'hidden',
+    backgroundColor: Colors.brand.avatarPlaceholder,
+  },
+  influencerImageOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   requestInfo: {
     flex: 1,
@@ -574,10 +659,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   photoThumbnail: {
-    width: 54,
-    height: 54,
+    width: 72,
+    height: 72,
     borderRadius: 12,
-    marginRight: 10,
+    marginRight: 0,
     borderWidth: 0,
     shadowColor: Colors.brand.shadowLight,
     shadowOffset: { width: 0, height: 2 },
@@ -588,8 +673,21 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.brand.cardBackground,
   },
   morePhotos: {
-    width: 54,
-    height: 54,
+    width: 72,
+    height: 72,
+    borderRadius: 12,
+    backgroundColor: Colors.brand.cardBackgroundSecondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.brand.shadowLight,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  morePhotosSmall: {
+    width: 48,
+    height: 48,
     borderRadius: 12,
     backgroundColor: Colors.brand.cardBackgroundSecondary,
     justifyContent: 'center',

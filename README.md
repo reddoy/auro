@@ -4,20 +4,8 @@ Auro is a mobile app where men can sign up to get reviewed by popular influencer
 
 ## Features
 
-### 🔍 Discover Influencers
-- Browse popular influencer women
-- View their specialties (Fashion, Beauty, Interior Design, etc.)
-- See ratings, review counts, and pricing
-- Verified influencer badges
-
-### ⭐ Review System
-- Request reviews from specific influencers
-- Upload photos in different categories:
-  - Face Portrait (required)
-  - Full Body (required)
-  - Room/Space (required)
-  - Wardrobe (optional)
-- Track review status (pending, in progress, completed)
+### ⭐ My Reviews
+- Track your review requests and statuses
 - View detailed feedback with ratings out of 10
 
 ### 👤 Profile Management
@@ -46,9 +34,8 @@ Auro is a mobile app where men can sign up to get reviewed by popular influencer
 auro/
 ├── app/                    # App screens using Expo Router
 │   ├── (tabs)/            # Tab navigator screens
-│   │   ├── index.tsx      # Discover influencers
 │   │   ├── requests.tsx   # My reviews
-│   │   └── profile.tsx    # User profile
+│   │   ├── profile.tsx    # User profile
 │   ├── auth.tsx           # Authentication screen
 │   ├── request-review.tsx # Review request form
 │   └── review/[id].tsx    # Review detail screen
@@ -89,7 +76,7 @@ The app includes comprehensive mock data:
 ## Key Features Implemented
 
 ✅ **Navigation Setup** - Tab and stack navigation with Expo Router  
-✅ **Influencer Discovery** - Browse and select influencers  
+✅ **Reviews Tab** - Track submitted reviews  
 ✅ **Review Request Flow** - Complete photo upload and submission  
 ✅ **Review Viewing** - Detailed feedback with ratings  
 ✅ **Profile Management** - User stats and settings  
@@ -99,7 +86,6 @@ The app includes comprehensive mock data:
 ## Screenshots
 
 The app features:
-- **Discover Tab**: Grid of influencer cards with photos, stats, and pricing
 - **Reviews Tab**: List of your review requests with status tracking
 - **Profile Tab**: Personal stats, bio, and account settings
 - **Review Request**: Photo upload by category with influencer selection

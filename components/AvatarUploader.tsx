@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 
 import Colors from '@/constants/Colors';
@@ -91,7 +92,7 @@ export default function AvatarUploader(props: Props) {
       style={[styles.container, { width: size, height: size, borderRadius: radius }]}
     >
       {uri ? (
-        <Image source={{ uri }} style={{ width: size, height: size, borderRadius: radius }} />
+        <Image source={{ uri }} style={{ width: size, height: size, borderRadius: radius }} contentFit="cover" transition={200} />
       ) : (
         <View style={[styles.placeholder, { width: size, height: size, borderRadius: radius }]}>
           <Text style={styles.placeholderText}>Add Photo</Text>

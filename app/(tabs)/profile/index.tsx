@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { StyleSheet, TouchableOpacity, Image, Alert, FlatList, Platform } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { StyleSheet, TouchableOpacity, Alert, FlatList, Platform, Linking, Switch } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 
@@ -7,41 +7,20 @@ import { Text, View } from '@/components/Themed';
 import { supabase } from '@/lib/supabase';
 import Colors from '@/constants/Colors';
 import AvatarUploader from '@/components/AvatarUploader';
-import { getCurrentProfile, updateProfile, getReviewsGiven, getReviewsReceived, getReviewStats, getSignedAvatarUrl } from '@/lib/profile';
-import type { Profile, UserReview } from '@/types';
+import { getCurrentProfile, updateProfile, getSignedAvatarUrl } from '@/lib/profile';
+import type { Profile } from '@/types';
 
 export default function ProfileScreen() {
-  const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
-  const [stats, setStats] = useState<{ given: number; received: number; avgReceivedRating: number }>({ given: 0, received: 0, avgReceivedRating: 0 });
-  const [segment, setSegment] = useState<'given' | 'received'>('received');
-  const [listGiven, setListGiven] = useState<UserReview[]>([]);
-  const [listReceived, setListReceived] = useState<UserReview[]>([]);
-  const [pageGiven, setPageGiven] = useState<number | null>(1);
-  const [pageReceived, setPageReceived] = useState<number | null>(1);
-  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     const run = async () => {
       try {
         const p = await getCurrentProfile();
         setProfile(p);
-        if (p?.id) {
-          const s = await getReviewStats(p.id);
-          setStats(s);
-          const [given, received] = await Promise.all([
-            getReviewsGiven(p.id, { page: 1, pageSize: 10 }),
-            getReviewsReceived(p.id, { page: 1, pageSize: 10 }),
-          ]);
-          setListGiven(given.items);
-          setListReceived(received.items);
-          setPageGiven(given.nextPage);
-          setPageReceived(received.nextPage);
-        }
       } finally {
-        setLoading(false);
       }
     };
     run();
@@ -67,15 +46,7 @@ export default function ProfileScreen() {
     return () => { cancelled = true; };
   }, [profile?.avatar_url]);
 
-  const avgRating = stats.avgReceivedRating || 0;
-
-  const hasNextPage = useMemo(() => {
-    return segment === 'given' ? !!pageGiven : !!pageReceived;
-  }, [segment, pageGiven, pageReceived]);
-
-  useEffect(() => {
-    setLoadingMore(false);
-  }, [segment]);
+  
 
   const handleLogout = () => {
     if (Platform.OS === 'web') {
@@ -117,18 +88,6 @@ export default function ProfileScreen() {
       setRefreshing(true);
       const p = await getCurrentProfile();
       setProfile(p);
-      if (p?.id) {
-        const s = await getReviewStats(p.id);
-        setStats(s);
-        const [given, received] = await Promise.all([
-          getReviewsGiven(p.id, { page: 1, pageSize: 10 }),
-          getReviewsReceived(p.id, { page: 1, pageSize: 10 }),
-        ]);
-        setListGiven(given.items);
-        setListReceived(received.items);
-        setPageGiven(given.nextPage);
-        setPageReceived(received.nextPage);
-      }
     } finally {
       setRefreshing(false);
     }
@@ -141,68 +100,17 @@ export default function ProfileScreen() {
     }, [onRefresh])
   );
 
-  const loadMore = useCallback(async () => {
-    if (loadingMore || !profile?.id || !hasNextPage) return;
-    setLoadingMore(true);
-    try {
-      if (segment === 'given' && pageGiven) {
-        const res = await getReviewsGiven(profile.id, { page: pageGiven, pageSize: 10 });
-        setListGiven(prev => [...prev, ...res.items]);
-        setPageGiven(res.nextPage);
-      } else if (segment === 'received' && pageReceived) {
-        const res = await getReviewsReceived(profile.id, { page: pageReceived, pageSize: 10 });
-        setListReceived(prev => [...prev, ...res.items]);
-        setPageReceived(res.nextPage);
-      }
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [loadingMore, profile?.id, segment, pageGiven, pageReceived, hasNextPage]);
-
   
 
   return (
     <View style={styles.container}>
       <ExpoLinearGradient colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]} style={styles.backgroundGradient} />
       <FlatList
-        data={segment === 'received' ? listReceived : listGiven}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.reviewCard}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Image source={{ uri: (segment === 'received' ? item.author?.avatar_url : item.subject?.avatar_url) || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200' }} style={styles.reviewAvatar} />
-              <View style={{ marginLeft: 12, flex: 1 }}>
-                <Text style={{ color: Colors.brand.textPrimary, fontWeight: '600' }}>{segment === 'received' ? (item.author?.full_name || item.author?.username || 'User') : (item.subject?.full_name || item.subject?.username || 'User')}</Text>
-                <Text style={{ color: Colors.brand.textSecondary, fontSize: 12 }}>{new Date(item.created_at).toLocaleDateString()}</Text>
-              </View>
-              <Text style={{ color: Colors.brand.accentMagenta, fontWeight: '700' }}>{item.rating.toFixed(1)}</Text>
-            </View>
-            {!!item.comment && <Text style={{ color: Colors.brand.textSecondary, marginTop: 8 }}>{item.comment}</Text>}
-          </View>
-        )}
-        onEndReachedThreshold={0.2}
-        onEndReached={hasNextPage && (segment === 'received' ? listReceived.length > 0 : listGiven.length > 0) ? loadMore : undefined}
+        data={[]}
+        keyExtractor={(item) => String(item)}
+        renderItem={() => null}
         refreshing={refreshing}
         onRefresh={onRefresh}
-        ListEmptyComponent={
-          <View style={styles.emptyListWrapper}>
-            <ExpoLinearGradient
-              colors={[Colors.brand.cardBackground, 'rgba(255,255,255,0.03)']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.emptyList}
-            >
-              <Text style={styles.emptyListEmoji}>🗒️</Text>
-              <Text style={styles.emptyListTitle}>No reviews {segment === 'received' ? 'received' : 'given'} yet</Text>
-              <Text style={styles.emptyListText}>When you start {segment === 'received' ? 'receiving' : 'giving'} reviews, they will appear here.</Text>
-              {segment === 'received' ? (
-                <TouchableOpacity style={styles.primaryCta} onPress={() => router.push('/(tabs)/requests/new')}>
-                  <Text style={styles.primaryCtaText}>Request your first review</Text>
-                </TouchableOpacity>
-              ) : null}
-            </ExpoLinearGradient>
-          </View>
-        }
         ListHeaderComponent={(
           <>
             <ExpoLinearGradient colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.header}>
@@ -252,22 +160,59 @@ export default function ProfileScreen() {
               </View>
             </ExpoLinearGradient>
 
-            <View style={styles.statsSection}>
-              <Text style={styles.sectionTitle}>Your Stats</Text>
-              <View style={styles.statsGrid}>
-                <View style={styles.statCard}>
-                  <Text style={styles.statNumber}>{stats.given}</Text>
-                  <Text style={styles.statLabel}>Reviews Given</Text>
+            <View style={styles.bioSection}>
+              <Text style={styles.sectionTitle}>Reviewer Settings</Text>
+              <Text style={{ color: Colors.brand.textSecondary }}>Control your reviewer status and price per review.</Text>
+              <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={[styles.chip, { backgroundColor: 'rgba(255,255,255,0.06)' }]}>
+                    <Text style={[styles.chipText, { fontWeight: '700', color: profile?.is_reviewer ? Colors.brand.textPrimary : Colors.brand.textSecondary }]}>
+                      {profile?.is_reviewer ? 'Active' : 'Inactive'}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.statCard}>
-                  <Text style={styles.statNumber}>{stats.received}</Text>
-                  <Text style={styles.statLabel}>Reviews Received</Text>
-                </View>
-                <View style={styles.statCard}>
-                  <Text style={styles.statNumber}>{avgRating.toFixed(1)}</Text>
-                  <Text style={styles.statLabel}>Avg Rating</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ color: Colors.brand.textSecondary, marginRight: 10 }}>Reviewer Status</Text>
+                  <Switch
+                    value={!!profile?.is_reviewer}
+                    onValueChange={async (val) => {
+                      try {
+                        const updated = await updateProfile({ is_reviewer: val });
+                        setProfile(updated);
+                        if (val) {
+                          Alert.alert('Reviewer enabled', 'Your reviewer profile is now active.');
+                        } else {
+                          Alert.alert('Reviewer disabled', 'You will no longer appear as a reviewer.');
+                        }
+                      } catch (e: any) {
+                        Alert.alert('Error', e?.message || 'Failed to update reviewer status');
+                      }
+                    }}
+                  />
                 </View>
               </View>
+              {profile?.is_reviewer ? (
+                <>
+                  <View style={{ marginTop: 12 }}>
+                    <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Price per Review</Text>
+                    <View style={[styles.reviewCard, { marginHorizontal: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+                      <Text style={{ color: Colors.brand.textPrimary, fontWeight: '700' }}>{profile?.hourly_rate != null ? `$${profile.hourly_rate}/review` : 'Not set'}</Text>
+                      <TouchableOpacity onPress={() => router.push('/(tabs)/profile/reviewer-settings')} accessibilityLabel="Edit rate">
+                        <Text style={styles.archiveAction}>Edit</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </>
+              ) : (
+                <View style={{ marginTop: 12 }}>
+                  <Text style={{ color: Colors.brand.textSecondary }}>Turn on your reviewer profile to set a price and accept requests.</Text>
+                  <View style={{ marginTop: 12, flexDirection: 'row' }}>
+                    <TouchableOpacity onPress={() => router.push('/(tabs)/profile/become-reviewer')} style={styles.primaryCta} accessibilityLabel="Become a reviewer">
+                      <Text style={styles.primaryCtaText}>Become a Reviewer</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
             </View>
 
             {profile?.bio && (
@@ -293,74 +238,25 @@ export default function ProfileScreen() {
                 <Text style={styles.sectionTitle}>Links</Text>
                 <View style={{ flexDirection: 'row' }}>
                   {profile?.links?.twitter ? (
-                    <TouchableOpacity onPress={() => router.push(profile.links!.twitter!)} style={styles.linkBtn}><Text style={styles.linkText}>Twitter</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={() => Linking.openURL(profile.links!.twitter!)} style={styles.linkBtn}><Text style={styles.linkText}>Twitter</Text></TouchableOpacity>
                   ) : null}
                   {profile?.links?.linkedin ? (
-                    <TouchableOpacity onPress={() => router.push(profile.links!.linkedin!)} style={styles.linkBtn}><Text style={styles.linkText}>LinkedIn</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={() => Linking.openURL(profile.links!.linkedin!)} style={styles.linkBtn}><Text style={styles.linkText}>LinkedIn</Text></TouchableOpacity>
                   ) : null}
                   {profile?.links?.github ? (
-                    <TouchableOpacity onPress={() => router.push(profile.links!.github!)} style={styles.linkBtn}><Text style={styles.linkText}>GitHub</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={() => Linking.openURL(profile.links!.github!)} style={styles.linkBtn}><Text style={styles.linkText}>GitHub</Text></TouchableOpacity>
                   ) : null}
                 </View>
               </View>
             )}
-
-            <View style={styles.actionsSection}>
-              <View style={styles.segmentContainer}>
-                <TouchableOpacity style={[styles.segmentBtn, segment === 'received' && styles.segmentBtnActive]} onPress={() => setSegment('received')} accessibilityLabel="Show reviews received">
-                  <Text style={[styles.segmentText, segment === 'received' && styles.segmentTextActive]}>Received</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.segmentBtn, segment === 'given' && styles.segmentBtnActive]} onPress={() => setSegment('given')} accessibilityLabel="Show reviews given">
-                  <Text style={[styles.segmentText, segment === 'given' && styles.segmentTextActive]}>Given</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
           </>
         )}
         ListFooterComponent={(
           <>
-            {loadingMore && hasNextPage ? (
-              <Text style={{ color: Colors.brand.textSecondary, textAlign: 'center', padding: 12 }}>Loading...</Text>
-            ) : null}
-
             <View style={styles.actionsSection}>
-              <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/requests/new')} accessibilityLabel="Request a review">
-                <Text style={styles.actionIcon}>📝</Text>
-                <Text style={styles.actionText}>Request New Review</Text>
-                <Text style={styles.actionArrow}>›</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/requests')} accessibilityLabel="View my review requests">
-                <Text style={styles.actionIcon}>⭐</Text>
-                <Text style={styles.actionText}>My Reviews</Text>
-                <Text style={styles.actionArrow}>›</Text>
-              </TouchableOpacity>
-
-              {profile?.is_reviewer ? (
-                <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/reviewer-settings')} accessibilityLabel="Manage reviewer settings">
-                  <Text style={styles.actionIcon}>✅</Text>
-                  <Text style={styles.actionText}>You're a reviewer — Manage settings</Text>
-                  <Text style={styles.actionArrow}>›</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/become-reviewer')} accessibilityLabel="Become a reviewer">
-                  <Text style={styles.actionIcon}>🚀</Text>
-                  <Text style={styles.actionText}>Become a reviewer</Text>
-                  <Text style={styles.actionArrow}>›</Text>
-                </TouchableOpacity>
-              )}
-
-              {profile?.is_reviewer ? (
-                <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/reviewer-inbox')} accessibilityLabel="Open reviewer inbox">
-                  <Text style={styles.actionIcon}>📥</Text>
-                  <Text style={styles.actionText}>Reviewer Inbox</Text>
-                  <Text style={styles.actionArrow}>›</Text>
-                </TouchableOpacity>
-              ) : null}
-
-              <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/settings')} accessibilityLabel="Open settings">
+              <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/settings')} accessibilityLabel="Open account settings">
                 <Text style={styles.actionIcon}>⚙️</Text>
-                <Text style={styles.actionText}>Settings</Text>
+                <Text style={styles.actionText}>Account Settings</Text>
                 <Text style={styles.actionArrow}>›</Text>
               </TouchableOpacity>
             </View>
@@ -422,6 +318,9 @@ const styles = StyleSheet.create({
   primaryCtaText: { color: '#fff', fontWeight: '700' },
   chip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, backgroundColor: Colors.brand.cardBackgroundSecondary, marginRight: 8, marginBottom: 8 },
   chipText: { color: Colors.brand.textSecondary, fontSize: 12 },
+  linkBtn: { backgroundColor: Colors.brand.cardBackgroundSecondary, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, marginRight: 8 },
+  linkText: { color: Colors.brand.textPrimary, fontWeight: '600' },
+  archiveAction: { color: Colors.brand.accentMagenta, fontWeight: '700' },
 });
 
 

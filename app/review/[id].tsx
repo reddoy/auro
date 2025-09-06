@@ -1,18 +1,27 @@
 import React from 'react';
-import { StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, View as RNView, ActivityIndicator } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 
 import { Text, View } from '@/components/Themed';
 import { getRequestById } from '@/lib/api';
 import { getReviewerById } from '@/lib/api';
+import Colors from '@/constants/Colors';
+import { Image } from 'expo-image';
+import LightboxImage from '@/components/LightboxImage';
+import ImageGalleryModal from '@/components/ImageGalleryModal';
 
 export default function ReviewDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = React.useState(true);
   const [influencerName, setInfluencerName] = React.useState<string>('');
-  const [influencerImage, setInfluencerImage] = React.useState<string>('');
+  
   const [request, setRequest] = React.useState<any>(null);
   const review = request?.review;
+  const [galleryOpen, setGalleryOpen] = React.useState(false);
+  const [galleryUris, setGalleryUris] = React.useState<string[]>([]);
+  const [galleryIndex, setGalleryIndex] = React.useState(0);
 
   const parsedNotes = React.useMemo(() => {
     try {
@@ -36,7 +45,6 @@ export default function ReviewDetailScreen() {
           const rev = await getReviewerById(String(req.influencerId));
           if (rev) {
             setInfluencerName(rev.displayName);
-            setInfluencerImage(rev.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200');
           }
         }
       } finally {
@@ -63,9 +71,9 @@ export default function ReviewDetailScreen() {
   }
 
   const getRatingColor = (rating: number) => {
-    if (rating >= 8) return '#4CAF50';
-    if (rating >= 6) return '#FF9800';
-    return '#ff6b6b';
+    if (rating >= 8) return Colors.brand.status.completed;
+    if (rating >= 6) return Colors.brand.status.in_progress;
+    return Colors.brand.status.rejected;
   };
 
   const getRatingLabel = (rating: number) => {
@@ -76,20 +84,21 @@ export default function ReviewDetailScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Image source={{ uri: influencerImage }} style={styles.influencerImage} />
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }}>
+        <View style={styles.header}>
+          <RNView style={styles.influencerImageWrapper} />
         <View style={styles.headerInfo}>
           <Text style={styles.influencerName}>{influencerName}</Text>
           <Text style={styles.reviewDate}>
             {review?.createdAt ? `Reviewed on ${new Date(review.createdAt).toLocaleDateString()}` : 'Not completed'}
           </Text>
         </View>
-      </View>
+        </View>
 
       {hasConsent ? (
         <View style={styles.consentBadge}>
-          <Text style={[styles.consentBadgeText, { color: shareConsent ? '#4CAF50' : '#F44336' }]}>
+          <Text style={[styles.consentBadgeText, { color: shareConsent ? Colors.brand.status.completed : Colors.brand.status.rejected }]}>
             Sharing consent: {shareConsent ? 'Yes' : 'No'}
           </Text>
         </View>
@@ -157,16 +166,54 @@ export default function ReviewDetailScreen() {
         </View>
       </View>)}
 
-      <View style={styles.photosSection}>
-        <Text style={styles.sectionTitle}>Your Photos</Text>
-        <View style={styles.photosGrid}>
-          {request?.photos?.map((photo: string, index: number) => (
-            <Image key={index} source={{ uri: photo }} style={styles.photo} />
-          ))}
-        </View>
-      </View>
+        {!!parsedNotes?.message && (
+          <View style={styles.mediaSection}>
+            <Text style={styles.sectionTitle}>Selfie</Text>
+            {parsedNotes?.media?.selfie ? (
+              <TouchableOpacity onPress={() => { setGalleryUris([parsedNotes.media.selfie]); setGalleryIndex(0); setGalleryOpen(true); }}>
+                <Image source={{ uri: parsedNotes.media.selfie }} style={styles.selfie} contentFit="cover" transition={200} />
+              </TouchableOpacity>
+            ) : null}
+            <Text style={styles.promptLabel}>Prompt</Text>
+            <Text style={styles.promptText}>{parsedNotes.message}</Text>
+          </View>
+        )}
 
-      <View style={styles.actionsSection}>
+        {Array.isArray(parsedNotes?.media?.outfits) && parsedNotes.media.outfits.length ? (
+          <View style={styles.mediaSection}>
+            <Text style={styles.sectionTitle}>Outfits</Text>
+            <View style={styles.photosGrid}> 
+              {parsedNotes.media.outfits.map((p: string, i: number) => (
+                <TouchableOpacity key={`o-${i}`} onPress={() => { setGalleryUris(parsedNotes.media.outfits); setGalleryIndex(i); setGalleryOpen(true); }}>
+                  <Image source={{ uri: p }} style={styles.photo} contentFit="cover" transition={200} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ) : null}
+
+        {Array.isArray(parsedNotes?.media?.roomTourPhotos) && parsedNotes.media.roomTourPhotos.length ? (
+          <View style={styles.mediaSection}>
+            <Text style={styles.sectionTitle}>Room Tour</Text>
+            <View style={styles.photosGrid}>
+              {parsedNotes.media.roomTourPhotos.map((p: string, i: number) => (
+                <TouchableOpacity key={`r-${i}`} onPress={() => { setGalleryUris(parsedNotes.media.roomTourPhotos); setGalleryIndex(i); setGalleryOpen(true); }}>
+                  <Image source={{ uri: p }} style={styles.photo} contentFit="cover" transition={200} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ) : null}
+
+        {parsedNotes?.media?.datingProfile ? (
+          <View style={styles.mediaSection}>
+            <Text style={styles.sectionTitle}>Dating Profile</Text>
+            <Image source={{ uri: parsedNotes.media.datingProfile }} style={styles.videoThumb} contentFit="cover" transition={200} />
+            <Text style={styles.videoHint}>Open in original app to view the video</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.actionsSection}>
         <TouchableOpacity 
           style={styles.actionButton}
           onPress={() => router.push('/(tabs)/requests/new')}
@@ -182,26 +229,27 @@ export default function ReviewDetailScreen() {
             Back to Home
           </Text>
         </TouchableOpacity>
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+      <ImageGalleryModal visible={galleryOpen} uris={galleryUris} initialIndex={galleryIndex} onClose={() => setGalleryOpen(false)} />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1A0B2E',
+    backgroundColor: Colors.brand.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#24123B',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    shadowColor: 'rgba(0,0,0,0.35)',
+    padding: 16,
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 20,
+    shadowColor: Colors.brand.shadow,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.12,
     shadowRadius: 24,
     elevation: 10,
   },
@@ -211,35 +259,52 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     marginRight: 15,
   },
+  influencerImageWrapper: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 15,
+    overflow: 'hidden',
+    backgroundColor: Colors.brand.avatarPlaceholder,
+  },
+  influencerImageOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headerInfo: {
     flex: 1,
   },
   influencerName: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: Colors.brand.textPrimary,
     fontFamily: 'Poppins_700Bold',
     marginBottom: 4,
   },
   reviewDate: {
     fontSize: 14,
-    color: '#C7BFD9',
+    color: Colors.brand.textSecondary,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: Colors.brand.textPrimary,
     fontFamily: 'Poppins_700Bold',
     marginBottom: 15,
   },
   ratingsSection: {
     margin: 15,
-    backgroundColor: '#24123B',
+    backgroundColor: Colors.brand.cardBackground,
     borderRadius: 15,
     padding: 20,
-    shadowColor: 'rgba(0,0,0,0.35)',
+    shadowColor: Colors.brand.shadow,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.12,
     shadowRadius: 24,
     elevation: 10,
   },
@@ -258,71 +323,89 @@ const styles = StyleSheet.create({
   },
   ratingCategory: {
     fontSize: 14,
-    color: '#C7BFD9',
+    color: Colors.brand.textSecondary,
     marginBottom: 8,
   },
   ratingNumber: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 4,
+    color: Colors.brand.textPrimary,
   },
   ratingLabel: {
     fontSize: 12,
-    color: '#C7BFD9',
+    color: Colors.brand.textSecondary,
   },
   feedbackSection: {
     margin: 15,
   },
+  mediaSection: {
+    marginTop: 16,
+    marginBottom: 16,
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 15,
+    padding: 16,
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 10,
+  },
   feedbackCard: {
-    backgroundColor: '#24123B',
+    backgroundColor: Colors.brand.cardBackground,
     borderRadius: 15,
     padding: 20,
     marginBottom: 15,
-    shadowColor: 'rgba(0,0,0,0.35)',
+    shadowColor: Colors.brand.shadow,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.12,
     shadowRadius: 24,
     elevation: 10,
   },
   feedbackTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: Colors.brand.textPrimary,
     marginBottom: 12,
   },
   feedbackItem: {
     fontSize: 14,
-    color: '#C7BFD9',
+    color: Colors.brand.textSecondary,
     lineHeight: 22,
     marginBottom: 6,
   },
   generalFeedback: {
     fontSize: 14,
-    color: '#C7BFD9',
+    color: Colors.brand.textSecondary,
     lineHeight: 22,
   },
   photosSection: {
-    margin: 15,
-    backgroundColor: '#24123B',
+    marginTop: 16,
+    marginBottom: 16,
+    backgroundColor: Colors.brand.cardBackground,
     borderRadius: 15,
-    padding: 20,
-    shadowColor: 'rgba(0,0,0,0.35)',
+    padding: 16,
+    shadowColor: Colors.brand.shadow,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.12,
     shadowRadius: 24,
     elevation: 10,
   },
   photosGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    gap: 12,
   },
   photo: {
-    width: '48%',
-    height: 120,
-    borderRadius: 10,
-    marginBottom: 10,
+    width: '31%',
+    aspectRatio: 1,
+    borderRadius: 12,
   },
+  selfie: { width: '100%', aspectRatio: 1.5, borderRadius: 12 },
+  promptLabel: { color: Colors.brand.textSecondary, marginTop: 10, marginBottom: 6 },
+  promptText: { color: Colors.brand.textPrimary },
+  videoThumb: { width: '100%', aspectRatio: 1.77, borderRadius: 12 },
+  videoHint: { color: Colors.brand.textSecondary, marginTop: 6, fontSize: 12 },
   actionsSection: {
     margin: 15,
     marginBottom: 30,
@@ -334,15 +417,16 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 10,
-    backgroundColor: '#24123B',
+    backgroundColor: Colors.brand.cardBackground,
     alignSelf: 'flex-start',
   },
   consentBadgeText: {
     fontSize: 12,
     fontWeight: '700',
+    color: Colors.brand.textPrimary,
   },
   actionButton: {
-    backgroundColor: '#FF2D55',
+    backgroundColor: Colors.brand.accentMagenta,
     paddingVertical: 16,
     paddingHorizontal: 30,
     borderRadius: 14,
@@ -352,19 +436,19 @@ const styles = StyleSheet.create({
   secondaryButton: {
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: '#FF2D55',
+    borderColor: Colors.brand.accentMagenta,
   },
   actionButtonText: {
-    color: '#FFFFFF',
+    color: Colors.brand.textOnGradient,
     fontSize: 16,
     fontWeight: 'bold',
   },
   secondaryButtonText: {
-    color: '#FF2D55',
+    color: Colors.brand.accentMagenta,
   },
   errorText: {
     fontSize: 18,
-    color: '#C7BFD9',
+    color: Colors.brand.textSecondary,
     textAlign: 'center',
     marginTop: 50,
   },
