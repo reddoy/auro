@@ -8,9 +8,16 @@ export async function POST(req: Request) {
   const sig = (req.headers.get('stripe-signature') || '') as string;
   try {
     const event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+    console.log('[stripe-webhook] event', event.type);
     switch (event.type) {
       case 'checkout.session.completed':
         // TODO: mark review request as submitted/paid in DB
+        break;
+      case 'checkout.session.async_payment_succeeded':
+        // TODO: handle async payment success
+        break;
+      case 'checkout.session.async_payment_failed':
+        // TODO: handle async payment failure
         break;
       case 'charge.refunded':
       case 'charge.refund.updated':
