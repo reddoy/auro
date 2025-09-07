@@ -4,6 +4,8 @@ import RequestButton from './RequestButton';
 import { notFound } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import type { Metadata } from 'next';
+import Avatar from './Avatar';
+import { getDisplayAvatarUrl } from '../../../lib/avatar';
 
 function isUuidLike(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
@@ -73,16 +75,12 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 export default async function CreatorPage({ params }: { params: { slug: string } }) {
   const creator = await getCreator(params.slug);
   if (!creator) return notFound();
+  const avatarUrl = await getDisplayAvatarUrl(creator.avatarUrl);
   return (
     <section>
       <div className="card" style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ width: 64, height: 64, borderRadius: 12, background: '#2b1844', overflow: 'hidden' }}>
-            {creator.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={creator.avatarUrl} alt={creator.displayName} width={64} height={64} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : null}
-          </div>
+          <Avatar src={avatarUrl || undefined} alt={creator.displayName} size={64} />
           <div style={{ flex: 1 }}>
             <h1 style={{ margin: 0, fontSize: 24 }}>{creator.displayName}</h1>
             {creator.rating != null && (
