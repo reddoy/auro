@@ -1,7 +1,12 @@
 import { supabase } from './supabase';
+import { createClient } from '@supabase/supabase-js';
 
 const AVATAR_BUCKET = process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET || 'avatars';
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const storageClient = SUPABASE_SERVICE_ROLE_KEY && SUPABASE_URL
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  : supabase;
 
 function extractBucketPath(input: string): string {
   let path = input.replace(/^\/+/, '');
@@ -28,7 +33,7 @@ export async function getDisplayAvatarUrl(avatarUrlOrPath?: string | null): Prom
     if (avatarUrlOrPath.includes('/storage/v1/object/sign/') || avatarUrlOrPath.includes('/object/sign/')) {
       const objectPath = extractBucketPath(avatarUrlOrPath);
       try {
-        const { data, error } = await supabase.storage.from(AVATAR_BUCKET).createSignedUrl(objectPath, 3600);
+        const { data, error } = await storageClient.storage.from(AVATAR_BUCKET).createSignedUrl(objectPath, 3600);
         if (!error && data?.signedUrl) return data.signedUrl;
       } catch {}
       if (SUPABASE_URL) {
@@ -41,7 +46,7 @@ export async function getDisplayAvatarUrl(avatarUrlOrPath?: string | null): Prom
   const objectPath = extractBucketPath(avatarUrlOrPath);
   // Try signed URL first
   try {
-    const { data, error } = await supabase.storage.from(AVATAR_BUCKET).createSignedUrl(objectPath, 3600);
+    const { data, error } = await storageClient.storage.from(AVATAR_BUCKET).createSignedUrl(objectPath, 3600);
     if (!error && data?.signedUrl) return data.signedUrl;
   } catch {}
   // Fallback to public URL (works if bucket is public)
