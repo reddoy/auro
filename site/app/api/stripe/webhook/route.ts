@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 export async function POST(req: Request) {
   const secret = process.env.STRIPE_SECRET_KEY || '';
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
-  const stripe = new Stripe(secret, { apiVersion: '2024-06-20' });
+  const stripe = new Stripe(secret);
   const body = await req.text();
   const sig = (req.headers.get('stripe-signature') || '') as string;
   try {
