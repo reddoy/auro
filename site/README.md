@@ -75,6 +75,15 @@ Add any additional hidden fields or double opt‑in as needed.
 ## SEO
 - Add meta tags in creator pages. Use `robots.txt` to allow crawling of creator profiles.
 
+## Local development
+
+```bash
+cd site
+npm i
+npm run dev
+```
+
+
 ## TODOs
 - Replace placeholder images with real iPhone UI screenshots.
 - Point the newsletter form to your backend.
