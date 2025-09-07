@@ -2,7 +2,7 @@
 import React from 'react';
 import RequestButton from './RequestButton';
 import { notFound } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../../lib/supabase';
 
 function isUuidLike(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
