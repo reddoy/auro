@@ -63,9 +63,7 @@ export default function DiscoverReviewersScreen() {
           <Text style={styles.rowSkills} numberOfLines={1}>{item.skills.join(', ')}</Text>
         )}
       </View>
-      {item.pricePerReview != null && (
-        <Text style={styles.rowPrice}>${item.pricePerReview}</Text>
-      )}
+      {/* Removed the price badge */}
     </TouchableOpacity>
   );
 

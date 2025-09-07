@@ -112,7 +112,7 @@ export async function getUserProfile(): Promise<DbUserProfile | null> {
 export async function getReviewers(): Promise<DbReviewerSummary[]> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, is_reviewer, packages')
+    .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, is_reviewer, packages, links, bio')
     .eq('is_reviewer', true)
     .order('rating_average', { ascending: false, nullsFirst: false });
   if (error) throw error;
@@ -125,13 +125,15 @@ export async function getReviewers(): Promise<DbReviewerSummary[]> {
     pricePerReview: row.hourly_rate ?? null,
     rating: row.rating_average ?? null,
     packages: row.packages || null,
+    links: row.links || null,
+    bio: row.bio || null,
   })) as DbReviewerSummary[];
 }
 
 export async function getReviewerById(id: string): Promise<DbReviewerSummary | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, is_reviewer, packages')
+    .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, is_reviewer, packages, links, bio')
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;
@@ -145,6 +147,8 @@ export async function getReviewerById(id: string): Promise<DbReviewerSummary | n
     pricePerReview: data.hourly_rate ?? null,
     rating: data.rating_average ?? null,
     packages: (data as any).packages || null,
+    links: (data as any).links || null,
+    bio: (data as any).bio || null,
   } as DbReviewerSummary;
 }
 

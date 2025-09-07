@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, TouchableOpacity, View as RNView, Linking, ActivityIndicator } from 'react-native';
+import { StyleSheet, View as RNView, Linking, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import Constants from 'expo-constants';
 
@@ -9,6 +9,29 @@ import { getReviewerById } from '@/lib/api';
 import { getSignedAvatarUrl } from '@/lib/profile';
 import type { DbReviewerSummary } from '@/types';
 import Avatar from '@/components/Avatar';
+
+function normalizeUrl(raw?: string | null): string | null {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  if (!s) return null;
+  if (/^https?:\/\//i.test(s)) return s;
+  if (s.startsWith('@')) return null;
+  if (/^[a-z0-9.-]+\.[a-z]{2,}/i.test(s)) return `https://${s}`;
+  return null;
+}
+function renderLink(label: string, raw?: string | null) {
+  const url = normalizeUrl(raw);
+  if (!url) return null;
+  return (
+    <Text
+      onPress={() => Linking.openURL(url).catch(() => {})}
+      accessibilityRole="link"
+      style={{ color: Colors.brand.accentMagenta, marginTop: 6 }}
+    >
+      {label}
+    </Text>
+  );
+}
 
 export default function ReviewerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -36,12 +59,7 @@ export default function ReviewerDetailScreen() {
     run();
   }, [id]);
 
-  const openCreatorPage = async () => {
-    if (!reviewer) return;
-    const base = (Constants.expoConfig?.extra as any)?.creatorWebBase || (Constants.manifest2 as any)?.extra?.creatorWebBase || 'https://creators.auro.example';
-    const url = reviewer.username ? `${base}/c/${reviewer.username}` : `${base}/c/${reviewer.id}`;
-    try { await Linking.openURL(url); } catch {}
-  };
+  // External CTA removed to keep in-app only
 
   if (loading) {
     return (
@@ -77,17 +95,28 @@ export default function ReviewerDetailScreen() {
             <Text style={styles.value}>{reviewer.skills.join(', ')}</Text>
           </RNView>
         )}
-        {reviewer.pricePerReview != null && (
-          <RNView>
-            <Text style={styles.label}>Price</Text>
-            <Text style={styles.value}>${reviewer.pricePerReview} per review</Text>
+
+        {!!reviewer.bio && (
+          <RNView style={{ marginBottom: 10 }}>
+            <Text style={styles.label}>About</Text>
+            <Text style={styles.value}>{reviewer.bio}</Text>
+          </RNView>
+        )}
+
+        {!!reviewer.links && (
+          <RNView style={{ marginTop: 4 }}>
+            <Text style={styles.label}>Socials</Text>
+            {renderLink('Instagram', (reviewer.links as any).instagram || (reviewer.links as any).ig)}
+            {renderLink('TikTok', (reviewer.links as any).tiktok)}
+            {renderLink('Twitter', (reviewer.links as any).twitter || (reviewer.links as any).x)}
+            {renderLink('YouTube', (reviewer.links as any).youtube)}
+            {renderLink('LinkedIn', (reviewer.links as any).linkedin)}
+            {renderLink('Website', (reviewer.links as any).website || (reviewer.links as any).link)}
           </RNView>
         )}
       </View>
 
-      <TouchableOpacity style={styles.primaryBtn} onPress={openCreatorPage} accessibilityLabel="Go to creator page">
-        <Text style={styles.primaryBtnText}>Go to creator page</Text>
-      </TouchableOpacity>
+      {/* Removed price and external CTA to keep app purchase-free */}
     </View>
   );
 }
@@ -102,8 +131,7 @@ const styles = StyleSheet.create({
   section: { margin: 16, backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 16 },
   label: { fontSize: 12, color: Colors.brand.textSecondary, marginBottom: 6 },
   value: { fontSize: 14, color: Colors.brand.textPrimary, fontWeight: '600' },
-  primaryBtn: { backgroundColor: Colors.brand.accentMagenta, paddingVertical: 16, paddingHorizontal: 20, borderRadius: 999, alignItems: 'center', marginHorizontal: 16, marginTop: 8 },
-  primaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  // Primary button styles removed as CTA is removed
   emptyText: { color: Colors.brand.textSecondary },
 });
 

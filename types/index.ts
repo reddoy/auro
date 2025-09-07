@@ -119,6 +119,8 @@ export interface DbReviewerSummary {
   pricePerReview?: number | null;
   rating?: number | null;
   packages?: ReviewerPackage[] | null;
+  links?: ProfileLinks | null;
+  bio?: string | null;
 }
 
 // Profile types for Profile/Settings screens
