@@ -39,7 +39,7 @@ export default function ReviewerDetailScreen() {
   const openCreatorPage = async () => {
     if (!reviewer) return;
     const base = (Constants.expoConfig?.extra as any)?.creatorWebBase || (Constants.manifest2 as any)?.extra?.creatorWebBase || 'https://creators.auro.example';
-    const url = reviewer.username ? `${base}/c/${reviewer.username}` : `${base}?id=${reviewer.id}`;
+    const url = reviewer.username ? `${base}/c/${reviewer.username}` : `${base}/c/${reviewer.id}`;
     try { await Linking.openURL(url); } catch {}
   };
 
