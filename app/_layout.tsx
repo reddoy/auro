@@ -3,7 +3,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import { Poppins_700Bold } from '@expo-google-fonts/poppins';
-import { Stack } from 'expo-router';
+import { Stack, useRootNavigationState, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
@@ -12,6 +12,7 @@ import 'react-native-get-random-values';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StripeProvider } from '@/components/StripeProvider';
 import Constants from 'expo-constants';
+import * as Linking from 'expo-linking';
 import { ToastProvider } from '@/components/Toast';
 
 import { useColorScheme } from '@/components/useColorScheme';
@@ -62,6 +63,7 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const [sessionChecked, setSessionChecked] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
+  const router = useRouter();
 
   useEffect(() => {
     const init = async () => {
@@ -85,6 +87,30 @@ function RootLayoutNav() {
       background: Colors.brand.background,
     },
   };
+
+  // Handle deep links like auro://review?requestId=<id>
+  useEffect(() => {
+    const handler = (event: any) => {
+      try {
+        const url = event.url || '';
+        const parsed = Linking.parse(url);
+        const path = parsed?.path || '';
+        const params = parsed?.queryParams || {} as any;
+        if (path?.startsWith('review') && params?.requestId) {
+          // Navigate to review details screen
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const { router } = require('expo-router');
+          router.replace(`/review/${params.requestId}`);
+        }
+      } catch {}
+    };
+    const sub = Linking.addEventListener('url', handler);
+    Linking.getInitialURL().then((url) => {
+      if (!url) return;
+      handler({ url } as any);
+    });
+    return () => sub.remove();
+  }, []);
 
   if (!sessionChecked) return null;
 

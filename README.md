@@ -49,6 +49,39 @@ auro/
 ```
 
 ## Getting Started
+### New: Web checkout and public creator pages
+
+We moved purchase and request creation to the web to avoid Apple IAP:
+
+- Public creator pages under `site/` (Next.js app structure) serve SEO-friendly profiles and the "Request a review" flow.
+- All payments use Stripe Checkout + Connect. The mobile app deep-links users back for status and viewing the finished review.
+
+Configure these env variables (set in CI, local `.env`, or platform env):
+
+```
+CREATOR_WEB_BASE=https://creators.auro.<TLD>
+APP_UNIVERSAL_LINK_HOST=app.auro.<TLD>
+EXPO_PUBLIC_DEEP_LINK_SCHEME=auro
+WEB_CHECKOUT_ENABLED=true
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PLATFORM_FEE_BPS=0
+SUPABASE_URL=...
+SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+```
+
+iOS associated domains (in `app.json`):
+
+```
+ios.associatedDomains = [
+  "applinks:app.auro.<TLD>"
+]
+```
+
+Stripe Dashboard:
+- Add a webhook endpoint pointing to `https://creators.auro.<TLD>/api/stripe/webhook` with events: `checkout.session.completed`, `charge.refunded`, `charge.refund.updated`.
+
 
 1. **Install dependencies**
    ```bash

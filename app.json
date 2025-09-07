@@ -15,7 +15,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "merchantIdentifier": "merchant.com.auro"
+      "merchantIdentifier": "merchant.com.auro",
+      "associatedDomains": [
+        "applinks:app.appauro.com"
+      ]
     },
     "android": {
       "adaptiveIcon": {
@@ -48,7 +51,11 @@
         "projectId": ""
       },
       "stripePublishableKey": "pk_test_51S0Fm0BQDAObfzKxA8RhgMCNkXTqid8x5b4dyTd8exSTsLJENNvmPOP2AkNAsBMsKq4w86D4cmiQFsosEpd9C1TU00rR5AOVDr",
-      "apiUrl": "https://zxazjbduiistnfstnwka.supabase.co/functions/v1/stripe_payment"
+      "apiUrl": "https://zxazjbduiistnfstnwka.supabase.co/functions/v1/stripe_payment",
+      "webCheckoutEnabled": true,
+      "creatorWebBase": "https://creators.appauro.com",
+      "universalLinkHost": "app.appauro.com",
+      "deepLinkScheme": "auro"
     },
     "experiments": {
       "typedRoutes": true

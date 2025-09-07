@@ -1,20 +1,17 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { StyleSheet, TouchableOpacity, Alert, View as RNView, FlatList, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { StyleSheet, TouchableOpacity, Alert, View as RNView, FlatList, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import { getReviewerById, getRequestsByUser, getUserProfile, updateRequestStatus, getRequestsByReviewer, getProfileById } from '@/lib/api';
+import { getReviewerById, getRequestsByUser, getUserProfile } from '@/lib/api';
 import { getSignedAvatarUrl } from '@/lib/profile';
 import { openPaymentSheet } from '@/lib/payments';
 import type { DbReviewerSummary, DbRequestSummary } from '@/types';
-import LightboxImage from '@/components/LightboxImage';
 import StatusBadge from '@/components/StatusBadge';
-import { Image } from 'expo-image';
 import { useToast } from '@/components/Toast';
 import Avatar from '@/components/Avatar';
 
@@ -25,26 +22,7 @@ export default function RequestsScreen() {
   const [requests, setRequests] = useState<DbRequestSummary[]>([]);
   const [revMap, setRevMap] = useState<Record<string, DbReviewerSummary>>({});
   const [avatarMap, setAvatarMap] = useState<Record<string, string | undefined>>({});
-  const [givenRequests, setGivenRequests] = useState<DbRequestSummary[]>([]);
-  const [userMap, setUserMap] = useState<Record<string, { id: string; displayName: string; username?: string | null; avatarUrl?: string | null }>>({});
-  const [mode, setMode] = useState<'received' | 'given'>('received');
-  const PREF_KEY = 'auro:reviewsTab';
-
-  useEffect(() => {
-    const loadPref = async () => {
-      try {
-        const pref = await AsyncStorage.getItem(PREF_KEY);
-        if (pref === 'received' || pref === 'given') setMode(pref as 'received' | 'given');
-      } catch {}
-    };
-    loadPref();
-  }, []);
-
-  useEffect(() => {
-    AsyncStorage.setItem(PREF_KEY, mode).catch(() => {});
-  }, [mode]);
   const receivedCount = requests.length;
-  const givenCount = givenRequests.length;
 
   useEffect(() => {
     const run = async () => {
@@ -76,31 +54,6 @@ export default function RequestsScreen() {
           setAvatarMap(Object.fromEntries(pairs));
         } catch {}
 
-        // If this user is also a reviewer, load requests assigned to them
-        try {
-          const gReqs = await getRequestsByReviewer(profile.id);
-          if (gReqs?.length) {
-            setGivenRequests(gReqs);
-            // Default to Given if reviewer and no saved preference
-            try {
-              const saved = await AsyncStorage.getItem(PREF_KEY);
-              if (!saved) setMode('given');
-            } catch {}
-            const uniqueUserIds = Array.from(new Set(gReqs.map(r => r.userId).filter(Boolean))) as string[];
-            const users = await Promise.all(uniqueUserIds.map(id => getProfileById(id)));
-            const signedPairs = await Promise.all(
-              users.filter(Boolean).map(async (u) => {
-                const user = u as any;
-                let uri = user.avatarUrl || '';
-                if (uri && !/^https?:\/\//i.test(uri)) {
-                  try { uri = (await getSignedAvatarUrl(uri, 3600)) || ''; } catch {}
-                }
-                return [user.id, { ...user, avatarUrl: uri }] as const;
-              })
-            );
-            setUserMap(Object.fromEntries(signedPairs));
-          }
-        } catch {}
       } finally {
         setLoading(false);
       }
@@ -115,17 +68,12 @@ export default function RequestsScreen() {
         const profile = await getUserProfile();
         if (!profile?.id) {
           setRequests([]);
-          setGivenRequests([]);
           return;
         }
-        const [reqs, gReqs] = await Promise.all([
-          getRequestsByUser(profile.id),
-          getRequestsByReviewer(profile.id),
-        ]);
+        const reqs = await getRequestsByUser(profile.id);
         setRequests(reqs);
-        setGivenRequests(gReqs || []);
 
-        // Update reviewer map and avatars for received list
+        // Update reviewer map and avatars for inbox list
         const uniqueIds = Array.from(new Set(reqs.map(r => r.influencerId).filter(Boolean)));
         const reviewers = await Promise.all(uniqueIds.map(id => getReviewerById(String(id))));
         const rMap: Record<string, DbReviewerSummary> = {};
@@ -144,21 +92,6 @@ export default function RequestsScreen() {
           );
           setAvatarMap(Object.fromEntries(pairs));
         } catch {}
-
-        // Update user map and avatars for given list
-        const uniqueUserIds = Array.from(new Set((gReqs || []).map(r => r.userId).filter(Boolean))) as string[];
-        const users = await Promise.all(uniqueUserIds.map(id => getProfileById(id)));
-        const signedPairs = await Promise.all(
-          users.filter(Boolean).map(async (u) => {
-            const user = u as any;
-            let uri = user.avatarUrl || '';
-            if (uri && !/^https?:\/\//i.test(uri)) {
-              try { uri = (await getSignedAvatarUrl(uri, 3600)) || ''; } catch {}
-            }
-            return [user.id, { ...user, avatarUrl: uri }] as const;
-          })
-        );
-        setUserMap(Object.fromEntries(signedPairs));
       } catch {}
     })();
   }, []);
@@ -264,42 +197,6 @@ export default function RequestsScreen() {
     );
   };
 
-  const renderGivenItem = ({ item }: { item: DbRequestSummary }) => {
-    const u = userMap[item.userId || ''];
-    return (
-      <TouchableOpacity
-        key={item.id}
-        style={styles.requestCard}
-        onPress={() => {
-          router.push(`/(tabs)/requests/${item.id}`);
-        }}
-      >
-        <View style={styles.requestHeader}>
-          <RNView style={styles.influencerImageWrapper}>
-            <Avatar
-              uri={u?.avatarUrl || undefined}
-              name={u?.displayName}
-              size={60}
-            />
-          </RNView>
-          <View style={styles.requestInfo}>
-            <Text style={styles.influencerName}>{u?.displayName || 'User'}</Text>
-            <Text style={styles.requestDate}>
-              {new Date(item.createdAt).toLocaleDateString()}
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <StatusBadge status={item.status as any} />
-              {item.status === 'paid' && (item as any).review ? (
-                <StatusBadge status={'completed'} label="Review completed" />
-              ) : null}
-            </View>
-          </View>
-        </View>
-        {/* Photo previews removed per request */}
-      </TouchableOpacity>
-    );
-  };
-
   const SkeletonCard = () => (
     <View style={[styles.requestCard, { backgroundColor: Colors.brand.cardBackground }]}> 
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -313,14 +210,28 @@ export default function RequestsScreen() {
     </View>
   );
 
-  const data = mode === 'received' ? requests : givenRequests;
-  const renderItem = mode === 'received' ? renderReceivedItem : renderGivenItem;
+  const data = requests;
+  const renderItem = renderReceivedItem;
 
   return (
     <SafeAreaView style={styles.container}>
       <ExpoLinearGradient
         colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
         style={styles.backgroundGradient}
+      />
+      <RNView
+        style={{
+          height: insets.top,
+          backgroundColor: Colors.brand.cardBackground,
+          width: '100%',
+        }}
+      />
+      <RNView
+        style={{
+          height: Platform.select({ web: 6, default: 4 }),
+          backgroundColor: Colors.brand.cardBackground,
+          width: '100%',
+        }}
       />
       <FlatList
         data={data}
@@ -329,7 +240,7 @@ export default function RequestsScreen() {
         refreshing={loading}
         onRefresh={refreshData}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: 12, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }}
+        contentContainerStyle={{ paddingTop: 0, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }}
         ListHeaderComponent={(
           <>
             <ExpoLinearGradient
@@ -343,35 +254,22 @@ export default function RequestsScreen() {
                 <Text style={styles.subtitle}>Track your review requests and feedback</Text>
 
                 <RNView style={styles.countersRow}>
-                  <TouchableOpacity
-                    style={[styles.counterPill, mode === 'received' ? styles.counterPillActive : null]}
-                    onPress={() => setMode('received')}
-                    accessibilityLabel="Show reviews received"
-                  >
-                    <Text style={styles.counterText}>Received {receivedCount}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.counterPill, mode === 'given' ? styles.counterPillActive : null]}
-                    onPress={() => setMode('given')}
-                    accessibilityLabel="Show reviews given"
-                  >
-                    <Text style={styles.counterText}>Given {givenCount}</Text>
-                  </TouchableOpacity>
+                  <RNView style={[styles.counterPill, styles.counterPillActive]}>
+                    <Text style={styles.counterText}>Inbox {receivedCount}</Text>
+                  </RNView>
                 </RNView>
               </View>
             </ExpoLinearGradient>
 
-            {mode === 'received' && (
-              <TouchableOpacity style={[styles.newRequestButton, { marginHorizontal: 16, marginTop: 16 }]} onPress={handleNewRequest}>
-                <ExpoLinearGradient
-                  colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 14 }}
-                />
-                <Text style={styles.newRequestButtonText}>+ New Review Request</Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity style={[styles.newRequestButton, { marginHorizontal: 16, marginTop: 16 }]} onPress={handleNewRequest}>
+              <ExpoLinearGradient
+                colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 14 }}
+              />
+              <Text style={styles.newRequestButtonText}>Discover Reviewers</Text>
+            </TouchableOpacity>
           </>
         )}
         ListEmptyComponent={(
@@ -384,10 +282,8 @@ export default function RequestsScreen() {
               </>
             ) : (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyStateTitle}>{mode === 'received' ? 'No reviews yet' : 'No reviews to give'}</Text>
-                <Text style={styles.emptyStateText}>
-                  {mode === 'received' ? 'Start your journey by requesting your first review from an influencer!' : 'Accepted and pending requests assigned to you will show here.'}
-                </Text>
+                <Text style={styles.emptyStateTitle}>No reviews yet</Text>
+                <Text style={styles.emptyStateText}>Start your journey by requesting your first review from an influencer!</Text>
               </View>
             )}
           </View>

@@ -1,13 +1,18 @@
-# Auro Marketing Site (Static)
+# Auro Web (Public Creator Pages + Checkout)
 
-This `site/` directory contains a standalone, static marketing page for Auro. It is separate from the Expo app and intended for deployment at the root domain.
+This `site/` directory will host public creator pages and the web checkout flow. It is separate from the Expo app and intended for deployment on a public domain.
 
 - Root site: appauro.com → serves files from `site/`
 - App (Expo): app.appauro.com → serves your Expo web build (or mobile apps)
 
 ## Structure
-- `index.html` — single, semantic landing page with SEO tags
-- `styles.css` — responsive styles using the Auro brand palette
+- `app/c/[slug]/page.tsx` — public creator page
+- `app/c/[slug]/request/page.tsx` — request form (requires sign-in)
+- `app/checkout/success/page.tsx` — success page with deep link back to app
+- `app/checkout/cancel/page.tsx` — cancel page
+- `app/api/*` — route handlers (checkout, webhook, etc.)
+- `index.html` — temporary static landing page (will be replaced by Next.js)
+- `styles.css` — legacy styles; not used by Next.js
 
 Assets referenced from the app repo:
 - `../assets/images/favicon.png`
@@ -29,13 +34,13 @@ Then open `http://localhost:3000` (or the printed URL).
 ## Deployment
 You can deploy the `site/` folder to any static host (Netlify, Vercel, Cloudflare Pages, S3+CloudFront, GitHub Pages). Two common setups:
 
-### Vercel
+### Vercel (Next.js)
 - Project root: the repository root
-- Framework preset: Other
-- Build command: none
-- Output directory: `site`
-- Domain: `appauro.com` → points to this project
-- Subdomain: `app.appauro.com` → point to your Expo web deployment (separate project) or redirect to the native app stores
+- Framework: Next.js (App Router)
+- Build command: `next build` (from `site/` package, see below)
+- Output directory: `.vercel/output` (managed by Next.js)
+- Domain: `creators.auro.<TLD>` → points to this project
+- Universal links host: `app.auro.<TLD>`
 
 ### Netlify
 - Base directory: `site`
@@ -43,13 +48,20 @@ You can deploy the `site/` folder to any static host (Netlify, Vercel, Cloudflar
 - Publish directory: `site`
 - Domain: `appauro.com`
 
-## Configure links
-- "Open the App" links currently point to `/`. Update to your production app URL, for example:
-  - `https://app.appauro.com/` (Expo Web), or
-  - Deep link: `auro://` (mobile), or
-  - Store links (App Store / Google Play)
+## Configure env
+Create `.env` in `site/` (or Vercel Project Env):
 
-Update both anchors in `index.html` (`#open-app` and `#footer-open-app`).
+```
+NEXT_PUBLIC_CREATOR_WEB_BASE=https://creators.auro.<TLD>
+NEXT_PUBLIC_APP_UNIVERSAL_LINK_HOST=app.auro.<TLD>
+NEXT_PUBLIC_DEEP_LINK_SCHEME=auro
+NEXT_PUBLIC_WEB_CHECKOUT_ENABLED=true
+SUPABASE_URL=...
+SUPABASE_ANON_KEY=...
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PLATFORM_FEE_BPS=0
+```
 
 ## Newsletter form
 The hero form posts to `/api/newsletter`. Replace with your backend endpoint or a service (ConvertKit, Mailchimp, Resend, etc.).
@@ -61,8 +73,7 @@ The hero form posts to `/api/newsletter`. Replace with your backend endpoint or 
 Add any additional hidden fields or double opt‑in as needed.
 
 ## SEO
-- Title and meta description are set in `index.html`.
-- Add Open Graph/Twitter tags if you want rich link previews.
+- Add meta tags in creator pages. Use `robots.txt` to allow crawling of creator profiles.
 
 ## TODOs
 - Replace placeholder images with real iPhone UI screenshots.

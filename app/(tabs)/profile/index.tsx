@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, TouchableOpacity, Alert, FlatList, Platform, Linking, Switch } from 'react-native';
+import { StyleSheet, TouchableOpacity, Alert, FlatList, Platform, Linking, Switch, View as RNView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 
@@ -11,6 +12,7 @@ import { getCurrentProfile, updateProfile, getSignedAvatarUrl } from '@/lib/prof
 import type { Profile } from '@/types';
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
@@ -105,6 +107,7 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <ExpoLinearGradient colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]} style={styles.backgroundGradient} />
+      <RNView style={{ height: insets.top, backgroundColor: Colors.brand.cardBackground, width: '100%' }} />
       <FlatList
         data={[]}
         keyExtractor={(item) => String(item)}
