@@ -23,7 +23,21 @@ function extractBucketPath(input: string): string {
 
 export async function getDisplayAvatarUrl(avatarUrlOrPath?: string | null): Promise<string | null> {
   if (!avatarUrlOrPath) return null;
-  if (/^https?:\/\//i.test(avatarUrlOrPath)) return avatarUrlOrPath;
+  if (/^https?:\/\//i.test(avatarUrlOrPath)) {
+    // If it's a signed/public Supabase URL, normalize to object path and re-sign to avoid expiry issues
+    if (avatarUrlOrPath.includes('/storage/v1/object/sign/') || avatarUrlOrPath.includes('/object/sign/')) {
+      const objectPath = extractBucketPath(avatarUrlOrPath);
+      try {
+        const { data, error } = await supabase.storage.from(AVATAR_BUCKET).createSignedUrl(objectPath, 3600);
+        if (!error && data?.signedUrl) return data.signedUrl;
+      } catch {}
+      if (SUPABASE_URL) {
+        return `${SUPABASE_URL.replace(/\/$/, '')}/storage/v1/object/public/${AVATAR_BUCKET}/${objectPath}`;
+      }
+    }
+    // Otherwise return as-is
+    return avatarUrlOrPath;
+  }
   const objectPath = extractBucketPath(avatarUrlOrPath);
   // Try signed URL first
   try {
