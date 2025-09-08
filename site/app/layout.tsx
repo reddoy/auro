@@ -3,12 +3,12 @@ import React from 'react';
 import '../styles.css';
 
 export const metadata: Metadata = {
-  title: 'Auro - Get Reviewed by Influencer Women',
-  description: 'Level up your attractiveness, style, and room setup with honest feedback from popular female influencers. Get personalized ratings and actionable advice to improve your dating life.',
+  title: 'Auro - Are You Chopped?',
+  description: 'Level up your attractiveness, style, and room setup with honest feedback from popular influencers. Get personalized ratings and actionable advice to improve your dating life.',
   keywords: 'dating advice, style feedback, attractiveness rating, influencer reviews, wardrobe advice, room setup',
   openGraph: {
-    title: 'Auro - Get Reviewed by Influencer Women',
-    description: 'Level up your attractiveness, style, and room setup with honest feedback from popular female influencers.',
+    title: 'Auro - Are You Chopped?',
+    description: 'Level up your attractiveness, style, and room setup with honest feedback from popular influencers.',
     images: ['/auro_aura_logo.png'],
   },
 };
