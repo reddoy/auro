@@ -15,12 +15,40 @@ function normalizeUrl(raw?: string | null): string | null {
   const s = String(raw).trim();
   if (!s) return null;
   if (/^https?:\/\//i.test(s)) return s;
-  if (s.startsWith('@')) return null;
   if (/^[a-z0-9.-]+\.[a-z]{2,}/i.test(s)) return `https://${s}`;
   return null;
 }
+
+function normalizeSocialUrl(platform: string, raw?: string | null): string | null {
+  if (!raw) return null;
+  let s = String(raw).trim();
+  if (!s) return null;
+  
+  // If already a full URL, return as-is
+  if (/^https?:\/\//i.test(s)) return s;
+  
+  // Remove @ prefix if present
+  if (s.startsWith('@')) s = s.slice(1);
+  
+  // Convert username to platform URL
+  switch (platform.toLowerCase()) {
+    case 'instagram':
+      return `https://instagram.com/${s}`;
+    case 'tiktok':
+      return `https://tiktok.com/@${s}`;
+    case 'x':
+      return `https://x.com/${s}`;
+    case 'youtube':
+      return `https://youtube.com/@${s}`;
+    case 'onlyfans':
+      return `https://onlyfans.com/${s}`;
+    default:
+      return normalizeUrl(raw);
+  }
+}
+
 function renderLink(label: string, raw?: string | null) {
-  const url = normalizeUrl(raw);
+  const url = normalizeSocialUrl(label, raw);
   if (!url) return null;
   return (
     <Text
@@ -42,8 +70,13 @@ export default function ReviewerDetailScreen() {
   useEffect(() => {
     const run = async () => {
       try {
-        if (!id) return;
+        console.log('Reviewer ID:', id);
+        if (!id) {
+          console.log('No ID found in params');
+          return;
+        }
         const r = await getReviewerById(String(id));
+        console.log('Reviewer result:', r);
         setReviewer(r);
         if (r?.avatarUrl) {
           let uri = r.avatarUrl;
@@ -52,14 +85,14 @@ export default function ReviewerDetailScreen() {
           }
           setAvatarUri(uri);
         }
+      } catch (error) {
+        console.error('Error loading reviewer:', error);
       } finally {
         setLoading(false);
       }
     };
     run();
   }, [id]);
-
-  // External CTA removed to keep in-app only
 
   if (loading) {
     return (
@@ -106,12 +139,11 @@ export default function ReviewerDetailScreen() {
         {!!reviewer.links && (
           <RNView style={{ marginTop: 4 }}>
             <Text style={styles.label}>Socials</Text>
-            {renderLink('Instagram', (reviewer.links as any).instagram || (reviewer.links as any).ig)}
+            {renderLink('Instagram', (reviewer.links as any).instagram)}
             {renderLink('TikTok', (reviewer.links as any).tiktok)}
-            {renderLink('Twitter', (reviewer.links as any).twitter || (reviewer.links as any).x)}
+            {renderLink('X', (reviewer.links as any).x)}
             {renderLink('YouTube', (reviewer.links as any).youtube)}
-            {renderLink('LinkedIn', (reviewer.links as any).linkedin)}
-            {renderLink('Website', (reviewer.links as any).website || (reviewer.links as any).link)}
+            {renderLink('OnlyFans', (reviewer.links as any).onlyfans)}
           </RNView>
         )}
       </View>
@@ -131,8 +163,5 @@ const styles = StyleSheet.create({
   section: { margin: 16, backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 16 },
   label: { fontSize: 12, color: Colors.brand.textSecondary, marginBottom: 6 },
   value: { fontSize: 14, color: Colors.brand.textPrimary, fontWeight: '600' },
-  // Primary button styles removed as CTA is removed
   emptyText: { color: Colors.brand.textSecondary },
 });
-
-

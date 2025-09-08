@@ -3,8 +3,14 @@ import React from 'react';
 import '../styles.css';
 
 export const metadata: Metadata = {
-  title: 'Auro',
-  description: 'Public creator pages and checkout',
+  title: 'Auro - Get Reviewed by Influencer Women',
+  description: 'Level up your attractiveness, style, and room setup with honest feedback from popular female influencers. Get personalized ratings and actionable advice to improve your dating life.',
+  keywords: 'dating advice, style feedback, attractiveness rating, influencer reviews, wardrobe advice, room setup',
+  openGraph: {
+    title: 'Auro - Get Reviewed by Influencer Women',
+    description: 'Level up your attractiveness, style, and room setup with honest feedback from popular female influencers.',
+    images: ['/auro_aura_logo.png'],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -24,9 +30,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="container" style={{ padding: '24px 0' }}>{children}</main>
         <footer>
           <div className="container footer__inner">
-            <div>© {new Date().getFullYear()} Auro</div>
+            <div>© {new Date().getFullYear()} Auro. All rights reserved.</div>
             <div className="footer__links">
               <a href="/">Home</a>
+              <a href="/privacy">Privacy</a>
+              <a href="/terms">Terms</a>
+              <a href="/contact">Contact</a>
             </div>
           </div>
         </footer>

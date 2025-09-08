@@ -215,21 +215,17 @@ export default function RequestsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ExpoLinearGradient
-        colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-        style={styles.backgroundGradient}
-      />
       <RNView
         style={{
           height: insets.top,
-          backgroundColor: Colors.brand.cardBackground,
+          backgroundColor: Colors.brand.background,
           width: '100%',
         }}
       />
       <RNView
         style={{
           height: Platform.select({ web: 6, default: 4 }),
-          backgroundColor: Colors.brand.cardBackground,
+          backgroundColor: Colors.brand.background,
           width: '100%',
         }}
       />
@@ -243,33 +239,30 @@ export default function RequestsScreen() {
         contentContainerStyle={{ paddingTop: 0, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }}
         ListHeaderComponent={(
           <>
-            <ExpoLinearGradient
-              colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.header}
-            >
-              <View style={styles.headerContent}>
-                <Text style={styles.title}>My Reviews</Text>
-                <Text style={styles.subtitle}>Track your review requests and feedback</Text>
+            <View style={styles.headerPlain}>
+              <View style={styles.headerContentPlain}>
+                <Text style={styles.titlePlain}>My Reviews</Text>
+                <Text style={styles.subtitlePlain}>Track your review requests and feedback</Text>
 
-                <RNView style={styles.countersRow}>
-                  <RNView style={[styles.counterPill, styles.counterPillActive]}>
-                    <Text style={styles.counterText}>Inbox {receivedCount}</Text>
+                <RNView style={styles.countersRowPlain}>
+                  <RNView style={styles.counterPillPlain}>
+                    <Text style={styles.counterTextPlain}>Inbox {receivedCount}</Text>
                   </RNView>
                 </RNView>
               </View>
-            </ExpoLinearGradient>
+            </View>
 
-            <TouchableOpacity style={[styles.newRequestButton, { marginHorizontal: 16, marginTop: 16 }]} onPress={handleNewRequest}>
-              <ExpoLinearGradient
-                colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 14 }}
-              />
-              <Text style={styles.newRequestButtonText}>Discover Reviewers</Text>
-            </TouchableOpacity>
+            <View style={styles.discoverButtonContainer}>
+              <TouchableOpacity style={styles.newRequestButton} onPress={handleNewRequest}>
+                <ExpoLinearGradient
+                  colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 14 }}
+                />
+                <Text style={styles.newRequestButtonText}>Discover Reviewers</Text>
+              </TouchableOpacity>
+            </View>
           </>
         )}
         ListEmptyComponent={(
@@ -281,7 +274,7 @@ export default function RequestsScreen() {
                 ))}
               </>
             ) : (
-              <View style={styles.emptyState}>
+              <View style={styles.emptyStateMinimal}>
                 <Text style={styles.emptyStateTitle}>No reviews yet</Text>
                 <Text style={styles.emptyStateText}>Start your journey by requesting your first review from an influencer!</Text>
               </View>
@@ -297,13 +290,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.brand.background,
-  },
-  backgroundGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
   },
   scrollView: {
     flex: 1,
@@ -321,10 +307,22 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 12,
   },
+  headerPlain: {
+    paddingTop: 16,
+    paddingBottom: 24,
+    paddingHorizontal: 0,
+    backgroundColor: Colors.brand.background,
+  },
   headerContent: {
     paddingHorizontal: 20,
     alignItems: 'center',
     backgroundColor: 'transparent',
+    width: '100%',
+  },
+  headerContentPlain: {
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    backgroundColor: Colors.brand.background,
     width: '100%',
   },
   title: {
@@ -338,9 +336,26 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
+  titlePlain: {
+    fontSize: 32,
+    fontWeight: '700',
+    fontFamily: 'Poppins_700Bold',
+    marginBottom: 8,
+    color: Colors.brand.textPrimary,
+    textAlign: 'center',
+  },
   subtitle: {
     fontSize: 16,
     color: Colors.brand.textOnGradient,
+    marginBottom: 28,
+    textAlign: 'center',
+    opacity: 0.9,
+    fontWeight: '500',
+    fontFamily: 'Inter_600SemiBold',
+  },
+  subtitlePlain: {
+    fontSize: 16,
+    color: Colors.brand.textSecondary,
     marginBottom: 28,
     textAlign: 'center',
     opacity: 0.9,
@@ -378,6 +393,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 8,
   },
+  countersRowPlain: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+    marginBottom: 8,
+    backgroundColor: Colors.brand.background,
+  },
   counterPill: {
     flexDirection: 'row',
     backgroundColor: 'rgba(255,255,255,0.18)',
@@ -385,19 +407,42 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
+  counterPillPlain: {
+    flexDirection: 'row',
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
   counterPillActive: {
     backgroundColor: 'rgba(0,0,0,0.15)',
+  },
+  counterPillActivePlain: {
+    backgroundColor: Colors.brand.cardBackground,
   },
   counterText: {
     color: Colors.brand.textOnGradient,
     fontWeight: '700',
     fontSize: 12,
   },
+  counterTextPlain: {
+    color: Colors.brand.textPrimary,
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  discoverButtonContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.brand.background,
+  },
   newRequestButton: {
     paddingVertical: 18,
     paddingHorizontal: 36,
     borderRadius: 14,
     alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: Colors.brand.shadow,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,
@@ -430,6 +475,12 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 8,
     borderWidth: 0,
+  },
+  emptyStateMinimal: {
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: 'transparent',
+    marginTop: 12,
   },
   emptyStateTitle: {
     fontSize: 22,

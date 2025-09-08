@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import AvatarUploader from '@/components/AvatarUploader';
-import { getCurrentProfile, updateProfile } from '@/lib/profile';
+import { getCurrentProfile, updateProfile, getSignedAvatarUrl } from '@/lib/profile';
 import type { Profile } from '@/types';
 
 export default function ProfileSettingsScreen() {
@@ -18,9 +18,11 @@ export default function ProfileSettingsScreen() {
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [skills, setSkills] = useState('');
-  const [twitter, setTwitter] = useState('');
-  const [linkedin, setLinkedin] = useState('');
-  const [github, setGithub] = useState('');
+  const [instagram, setInstagram] = useState('');
+  const [tiktok, setTiktok] = useState('');
+  const [x, setX] = useState('');
+  const [youtube, setYoutube] = useState('');
+  const [onlyfans, setOnlyfans] = useState('');
   const [isReviewer, setIsReviewer] = useState(false);
   const [hourlyRate, setHourlyRate] = useState<string>('');
   
@@ -32,9 +34,11 @@ export default function ProfileSettingsScreen() {
   const fullNameRef = useRef<any>(null);
   const usernameRef = useRef<any>(null);
   const skillsRef = useRef<any>(null);
-  const twitterRef = useRef<any>(null);
-  const linkedinRef = useRef<any>(null);
-  const githubRef = useRef<any>(null);
+  const instagramRef = useRef<any>(null);
+  const tiktokRef = useRef<any>(null);
+  const xRef = useRef<any>(null);
+  const youtubeRef = useRef<any>(null);
+  const onlyfansRef = useRef<any>(null);
   const hourlyRateRef = useRef<any>(null);
   
 
@@ -48,16 +52,23 @@ export default function ProfileSettingsScreen() {
           setUsername(p.username || '');
           setBio(p.bio || '');
           setSkills((p.skills || []).join(', '));
-          setTwitter(p.links?.twitter || '');
-          setLinkedin(p.links?.linkedin || '');
-          setGithub(p.links?.github || '');
+          setInstagram((p.links as any)?.instagram || '');
+          setTiktok((p.links as any)?.tiktok || '');
+          setX((p.links as any)?.x || (p.links as any)?.twitter || '');
+          setYoutube((p.links as any)?.youtube || '');
+          setOnlyfans((p.links as any)?.onlyfans || '');
           setIsReviewer(!!p.is_reviewer);
           setHourlyRate(p.hourly_rate != null ? String(p.hourly_rate) : '');
-          
+          // Resolve avatar to a displayable URL if it's a storage path
+          let initialAvatar: string | null = p.avatar_url || null;
+          if (initialAvatar && !/^https?:\/\//i.test(initialAvatar)) {
+            try { initialAvatar = (await getSignedAvatarUrl(initialAvatar, 3600)) || initialAvatar; } catch {}
+          }
+          setAvatarUrl(initialAvatar);
+
           setEmailNotif(p.preferences?.email_notifications ?? true);
           setPushNotif(p.preferences?.push_notifications ?? true);
-          setAvatarUrl(p.avatar_url || null);
-          
+
         }
       } catch (e: any) {
         Alert.alert('Error', e?.message || 'Failed to load profile');
@@ -68,10 +79,12 @@ export default function ProfileSettingsScreen() {
     run();
   }, []);
 
-  const handleUploaded = async ({ publicUrl }: { publicUrl: string; path: string }) => {
+  const handleUploaded = async ({ publicUrl, path }: { publicUrl: string; path: string }) => {
     try {
-      setAvatarUrl(publicUrl);
-      const updated = await updateProfile({ avatar_url: publicUrl });
+      // Prefer storing the storage path in DB; use signed URL for immediate display
+      const displayUrl = publicUrl || (await getSignedAvatarUrl(path, 3600)) || path;
+      setAvatarUrl(displayUrl);
+      const updated = await updateProfile({ avatar_url: path });
       setProfile(updated);
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to update avatar');
@@ -98,7 +111,13 @@ export default function ProfileSettingsScreen() {
         username: username || null,
         bio: bio || null,
         skills: parsedSkills.length ? parsedSkills : [],
-        links: { twitter: twitter || null, linkedin: linkedin || null, github: github || null },
+        links: { 
+          instagram: instagram || null, 
+          tiktok: tiktok || null, 
+          x: x || null, 
+          youtube: youtube || null, 
+          onlyfans: onlyfans || null 
+        },
         is_reviewer: isReviewer,
         hourly_rate: hourlyRate ? Number(hourlyRate) : null,
         preferences: { email_notifications: emailNotif, push_notifications: pushNotif },
@@ -147,10 +166,16 @@ export default function ProfileSettingsScreen() {
         <LabeledInput label="Full Name" value={fullName} onChangeText={setFullName} placeholder="Your name" inputRef={fullNameRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => usernameRef.current?.focus()} />
         <LabeledInput label="Username" value={username} onChangeText={setUsername} placeholder="username" autoCapitalize="none" inputRef={usernameRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => skillsRef.current?.focus()} />
         <LabeledInput label="Bio" value={bio} onChangeText={setBio} placeholder="Tell us about yourself" multiline numberOfLines={4} />
-        <LabeledInput label="Skills" value={skills} onChangeText={setSkills} placeholder="e.g. fashion, design, photography" inputRef={skillsRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => twitterRef.current?.focus()} />
-        <LabeledInput label="Twitter" value={twitter} onChangeText={setTwitter} placeholder="https://twitter.com/username" autoCapitalize="none" inputRef={twitterRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => linkedinRef.current?.focus()} />
-        <LabeledInput label="LinkedIn" value={linkedin} onChangeText={setLinkedin} placeholder="https://linkedin.com/in/username" autoCapitalize="none" inputRef={linkedinRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => githubRef.current?.focus()} />
-        <LabeledInput label="GitHub" value={github} onChangeText={setGithub} placeholder="https://github.com/username" autoCapitalize="none" inputRef={githubRef} returnKeyType="done" blurOnSubmit />
+        <LabeledInput label="Skills" value={skills} onChangeText={setSkills} placeholder="e.g. fashion, design, photography" inputRef={skillsRef} returnKeyType="done" blurOnSubmit />
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Social Media</Text>
+        <LabeledInput label="Instagram" value={instagram} onChangeText={setInstagram} placeholder="@username or https://instagram.com/username" autoCapitalize="none" inputRef={instagramRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => tiktokRef.current?.focus()} />
+        <LabeledInput label="TikTok" value={tiktok} onChangeText={setTiktok} placeholder="@username or https://tiktok.com/@username" autoCapitalize="none" inputRef={tiktokRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => xRef.current?.focus()} />
+        <LabeledInput label="X (Twitter)" value={x} onChangeText={setX} placeholder="@username or https://x.com/username" autoCapitalize="none" inputRef={xRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => youtubeRef.current?.focus()} />
+        <LabeledInput label="YouTube" value={youtube} onChangeText={setYoutube} placeholder="@username or channel URL" autoCapitalize="none" inputRef={youtubeRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => onlyfansRef.current?.focus()} />
+        <LabeledInput label="OnlyFans" value={onlyfans} onChangeText={setOnlyfans} placeholder="@username or profile URL" autoCapitalize="none" inputRef={onlyfansRef} returnKeyType="done" blurOnSubmit />
       </View>
 
       <View style={styles.card}>

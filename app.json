@@ -15,18 +15,34 @@
     },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.auro.app",
       "merchantIdentifier": "merchant.com.auro",
       "associatedDomains": [
+        "applinks:app.appauro.com",
         "applinks:app.appauro.com"
-      ]
+      ],
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app needs access to camera to take photos for your review requests.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to photo library to select photos for your review requests.",
+        "NSMicrophoneUsageDescription": "This app may need access to microphone for video content in review requests.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.auro.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1A0B2E"
       },
       "edgeToEdgeEnabled": true,
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -40,7 +56,7 @@
         {
           "merchantIdentifier": "merchant.com.auro",
           "enableGooglePay": true,
-          "androidPayMode": "test"
+          "androidPayMode": "production"
         }
       ]
     ],
@@ -48,14 +64,15 @@
       "supabaseUrl": "https://zxazjbduiistnfstnwka.supabase.co",
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4YXpqYmR1aWlzdG5mc3Rud2thIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NTY0NDYsImV4cCI6MjA3MTMzMjQ0Nn0.apdP9iKtqvt8os_pdq8dgojMHSPUk5HsIVLjzw1gevA",
       "eas": {
-        "projectId": ""
+        "projectId": "e6197faa-5efd-4b7c-a473-a0d9f317c2b7"
       },
-      "stripePublishableKey": "pk_test_51S0Fm0BQDAObfzKxA8RhgMCNkXTqid8x5b4dyTd8exSTsLJENNvmPOP2AkNAsBMsKq4w86D4cmiQFsosEpd9C1TU00rR5AOVDr",
+      "stripePublishableKey": "pk_live_YOUR_LIVE_STRIPE_KEY_HERE",
       "apiUrl": "https://zxazjbduiistnfstnwka.supabase.co/functions/v1/stripe_payment",
       "webCheckoutEnabled": true,
       "creatorWebBase": "https://creators.appauro.com",
       "universalLinkHost": "app.appauro.com",
-      "deepLinkScheme": "auro"
+      "deepLinkScheme": "auro",
+      "router": {}
     },
     "experiments": {
       "typedRoutes": true

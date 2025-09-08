@@ -50,7 +50,7 @@ export default function DiscoverReviewersScreen() {
   const renderItem = ({ item }: { item: DbReviewerSummary }) => (
     <TouchableOpacity
       style={styles.row}
-      onPress={() => router.push(`/reviewers/${item.id}` as any)}
+      onPress={() => router.push(`/requests/reviewer/${item.id}` as any)}
       accessibilityRole="button"
       accessibilityLabel={`Open ${item.displayName || item.username}`}
     >

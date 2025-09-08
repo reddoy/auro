@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
   actionText: { flex: 1, fontSize: 16, color: Colors.brand.textPrimary, fontWeight: '500' },
   actionArrow: { fontSize: 22, color: Colors.brand.textLight },
   dangerSection: { margin: 24, marginBottom: 120 },
-  logoutButtonDark: { backgroundColor: Colors.brand.cardBackground, height: 52, borderRadius: Platform.select({ web: 999, default: 26 }) as number, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, borderWidth: 1, borderColor: Colors.brand.divider, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 6 },
+  logoutButtonDark: { backgroundColor: Colors.brand.cardBackground, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, borderWidth: 1, borderColor: Colors.brand.divider, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 6 },
   logoutText: { color: Colors.brand.textOnGradient, fontSize: 16, fontWeight: 'bold' },
   segmentContainer: { flexDirection: 'row', backgroundColor: Colors.brand.cardBackgroundSecondary, borderRadius: 10, margin: 16, overflow: 'hidden' },
   segmentBtn: { flex: 1, paddingVertical: 10, alignItems: 'center' },
