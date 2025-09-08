@@ -102,8 +102,8 @@ export async function POST(req: Request) {
         creator_id: resolvedCreatorId || '',
         creator_slug: creatorSlug || '',
       },
-      success_url: `${process.env.NEXT_PUBLIC_CREATOR_WEB_BASE || ''}/checkout/success?rid={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_CREATOR_WEB_BASE || ''}/checkout/cancel`,
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/checkout/success?rid={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/checkout/cancel`,
     });
 
     return new Response(JSON.stringify({ url: session.url, reviewRequestId: session.id }), { status: 200 });
