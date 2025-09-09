@@ -1,4 +1,17 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+
 export default function HomePage() {
+  const [isIOSTraffic, setIsIOSTraffic] = useState(false);
+
+  useEffect(() => {
+    // Check URL for iOS app flag
+    const urlParams = new URLSearchParams(window.location.search);
+    const isFromIOSApp = urlParams.get('src') === 'ios';
+    setIsIOSTraffic(isFromIOSApp);
+  }, []);
+
   return (
     <>
       {/* Hero Section */}
@@ -13,7 +26,9 @@ export default function HomePage() {
                 Get personalized ratings and actionable advice to improve your dating life.
               </p>
               <div className="cta-buttons">
-                <a href="/request" className="cta-primary">Request a Review</a>
+                {!isIOSTraffic && (
+                  <a href="/request" className="cta-primary">Request a Review</a>
+                )}
                 <div className="cta-secondary-container">
                   <input type="email" placeholder="Enter your email" />
                   <button>Get Early Access</button>
