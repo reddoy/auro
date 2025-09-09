@@ -106,8 +106,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <ExpoLinearGradient colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]} style={styles.backgroundGradient} />
-      <RNView style={{ height: insets.top, backgroundColor: Colors.brand.cardBackground, width: '100%' }} />
+      <RNView style={{ height: insets.top, backgroundColor: Colors.brand.background, width: '100%' }} />
       <FlatList
         data={[]}
         keyExtractor={(item) => String(item)}
@@ -116,7 +115,7 @@ export default function ProfileScreen() {
         onRefresh={onRefresh}
         ListHeaderComponent={(
           <>
-            <ExpoLinearGradient colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.header}>
+            <View style={styles.header}>
               <View style={styles.headerContent}>
                 <View style={styles.profileSection}>
                   <View style={styles.avatarContainer}>
@@ -158,18 +157,24 @@ export default function ProfileScreen() {
                 </View>
 
                 <TouchableOpacity style={styles.editButton} onPress={() => router.push('/(tabs)/profile/settings')} accessibilityLabel="Edit profile">
+                  <ExpoLinearGradient
+                    colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.editButtonGradient}
+                  />
                   <Text style={styles.editButtonText}>Edit Profile</Text>
                 </TouchableOpacity>
               </View>
-            </ExpoLinearGradient>
+            </View>
 
             <View style={styles.bioSection}>
               <Text style={styles.sectionTitle}>Reviewer Settings</Text>
               <Text style={{ color: Colors.brand.textSecondary }}>Control your reviewer status and price per review.</Text>
               <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <View style={[styles.chip, { backgroundColor: 'rgba(255,255,255,0.06)' }]}>
-                    <Text style={[styles.chipText, { fontWeight: '700', color: profile?.is_reviewer ? Colors.brand.textPrimary : Colors.brand.textSecondary }]}>
+                  <View style={[styles.statusChip, profile?.is_reviewer && styles.statusChipActive]}>
+                    <Text style={[styles.statusChipText, profile?.is_reviewer && styles.statusChipTextActive]}>
                       {profile?.is_reviewer ? 'Active' : 'Inactive'}
                     </Text>
                   </View>
@@ -198,10 +203,16 @@ export default function ProfileScreen() {
                 <>
                   <View style={{ marginTop: 12 }}>
                     <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Price per Review</Text>
-                    <View style={[styles.reviewCard, { marginHorizontal: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
-                      <Text style={{ color: Colors.brand.textPrimary, fontWeight: '700' }}>{profile?.hourly_rate != null ? `$${profile.hourly_rate}/review` : 'Not set'}</Text>
-                      <TouchableOpacity onPress={() => router.push('/(tabs)/profile/reviewer-settings')} accessibilityLabel="Edit rate">
-                        <Text style={styles.archiveAction}>Edit</Text>
+                    <View style={styles.priceCard}>
+                      <Text style={styles.priceText}>{profile?.hourly_rate != null ? `$${profile.hourly_rate}/review` : 'Not set'}</Text>
+                      <TouchableOpacity onPress={() => router.push('/(tabs)/profile/reviewer-settings')} accessibilityLabel="Edit rate" style={styles.editRateButton}>
+                        <ExpoLinearGradient
+                          colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                          style={styles.editRateGradient}
+                        />
+                        <Text style={styles.editRateText}>Edit</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -230,7 +241,7 @@ export default function ProfileScreen() {
                 <Text style={styles.sectionTitle}>Skills</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                   {profile.skills!.map((s, idx) => (
-                    <View key={`${s}-${idx}`} style={styles.chip}><Text style={styles.chipText}>{s}</Text></View>
+                    <View key={`${s}-${idx}`} style={styles.skillChip}><Text style={styles.skillChipText}>{s}</Text></View>
                   ))}
                 </View>
               </View>
@@ -241,13 +252,13 @@ export default function ProfileScreen() {
                 <Text style={styles.sectionTitle}>Links</Text>
                 <View style={{ flexDirection: 'row' }}>
                   {profile?.links?.twitter ? (
-                    <TouchableOpacity onPress={() => Linking.openURL(profile.links!.twitter!)} style={styles.linkBtn}><Text style={styles.linkText}>Twitter</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={() => Linking.openURL(profile.links!.twitter!)} style={styles.socialLinkBtn}><Text style={styles.socialLinkText}>Twitter</Text></TouchableOpacity>
                   ) : null}
                   {profile?.links?.linkedin ? (
-                    <TouchableOpacity onPress={() => Linking.openURL(profile.links!.linkedin!)} style={styles.linkBtn}><Text style={styles.linkText}>LinkedIn</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={() => Linking.openURL(profile.links!.linkedin!)} style={styles.socialLinkBtn}><Text style={styles.socialLinkText}>LinkedIn</Text></TouchableOpacity>
                   ) : null}
                   {profile?.links?.github ? (
-                    <TouchableOpacity onPress={() => Linking.openURL(profile.links!.github!)} style={styles.linkBtn}><Text style={styles.linkText}>GitHub</Text></TouchableOpacity>
+                    <TouchableOpacity onPress={() => Linking.openURL(profile.links!.github!)} style={styles.socialLinkBtn}><Text style={styles.socialLinkText}>GitHub</Text></TouchableOpacity>
                   ) : null}
                 </View>
               </View>
@@ -258,7 +269,15 @@ export default function ProfileScreen() {
           <>
             <View style={styles.actionsSection}>
               <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/settings')} accessibilityLabel="Open account settings">
-                <Text style={styles.actionIcon}>⚙️</Text>
+                <View style={styles.actionIconContainer}>
+                  <ExpoLinearGradient
+                    colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.actionIconGradient}
+                  />
+                  <Text style={styles.actionIcon}>⚙️</Text>
+                </View>
                 <Text style={styles.actionText}>Account Settings</Text>
                 <Text style={styles.actionArrow}>›</Text>
               </TouchableOpacity>
@@ -266,6 +285,7 @@ export default function ProfileScreen() {
 
             <View style={styles.dangerSection}>
               <TouchableOpacity style={styles.logoutButtonDark} onPress={handleLogout}>
+                <View style={styles.logoutButtonBorder} />
                 <Text style={styles.logoutText}>Logout</Text>
               </TouchableOpacity>
             </View>
@@ -278,39 +298,58 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
-  backgroundGradient: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
   scrollView: { flex: 1, backgroundColor: 'transparent' },
-  header: { paddingTop: 60, paddingBottom: 40, paddingHorizontal: 0, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 24, elevation: 12 },
+  header: { paddingTop: 60, paddingBottom: 40, paddingHorizontal: 0, backgroundColor: Colors.brand.cardBackground, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 24, elevation: 12 },
   headerContent: { paddingHorizontal: 20, backgroundColor: 'transparent', width: '100%' },
   profileSection: { flexDirection: 'row', alignItems: 'center', marginBottom: 24, backgroundColor: 'transparent' },
   avatarContainer: { position: 'relative', marginRight: 20, backgroundColor: 'transparent' },
   userInfo: { flex: 1, backgroundColor: 'transparent' },
-  userName: { fontSize: 28, fontWeight: '700', fontFamily: 'Poppins_700Bold', color: Colors.brand.textOnGradient, marginBottom: 4, textShadowColor: 'rgba(0, 0, 0, 0.1)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
-  userEmail: { fontSize: 16, color: Colors.brand.textOnGradient, marginBottom: 4, opacity: 0.9, fontWeight: '500' },
-  editButton: { backgroundColor: 'rgba(255,255,255,0.08)', paddingVertical: 16, paddingHorizontal: 36, borderRadius: 28, alignItems: 'center', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)' },
-  editButtonText: { color: Colors.brand.textOnGradient, fontSize: 16, fontWeight: '700', textShadowColor: 'rgba(0, 0, 0, 0.1)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
+  userName: { fontSize: 32, fontWeight: '700', fontFamily: 'Poppins_700Bold', color: Colors.brand.textPrimary, marginBottom: 4 },
+  userEmail: { fontSize: 18, color: Colors.brand.textSecondary, marginBottom: 4, fontWeight: '500' },
+  editButton: { paddingVertical: 16, paddingHorizontal: 36, borderRadius: 28, alignItems: 'center', justifyContent: 'center', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 8, overflow: 'hidden', position: 'relative' },
+  editButtonGradient: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 28 },
+  editButtonText: { color: Colors.brand.textOnGradient, fontSize: 18, fontWeight: '700', zIndex: 1, textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
   statsSection: { margin: 24, marginTop: 32, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, padding: 28, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 8, borderWidth: 0, overflow: 'hidden' },
-  sectionTitle: { fontSize: 22, fontWeight: 'bold', fontFamily: 'Poppins_700Bold', color: Colors.brand.textPrimary, marginBottom: 18 },
+  sectionTitle: { fontSize: 28, fontWeight: 'bold', fontFamily: 'Poppins_700Bold', color: Colors.brand.textPrimary, marginBottom: 18 },
   statsGrid: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: 'transparent' },
   statCard: { alignItems: 'center', flex: 1, backgroundColor: 'transparent' },
   statNumber: { fontSize: 26, fontWeight: 'bold', color: Colors.brand.accentMagenta, marginBottom: 6 },
   statLabel: { fontSize: 13, color: Colors.brand.textSecondary, textAlign: 'center', fontWeight: '500' },
-  bioSection: { margin: 24, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, padding: 28, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 8, borderWidth: 0, overflow: 'hidden' },
-  bioText: { fontSize: 16, color: Colors.brand.textSecondary, lineHeight: 24 },
-  actionsSection: { margin: 24, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 8, borderWidth: 0, overflow: 'hidden' },
+  bioSection: { margin: 24, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, padding: 28, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 12, borderWidth: 1, borderColor: 'rgba(255, 111, 0, 0.15)', overflow: 'hidden' },
+  bioText: { fontSize: 18, color: Colors.brand.textSecondary, lineHeight: 26 },
+  actionsSection: { margin: 24, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 8, borderWidth: 1, borderColor: 'rgba(255, 111, 0, 0.1)', overflow: 'hidden' },
   actionItem: { flexDirection: 'row', alignItems: 'center', padding: 24, borderBottomWidth: 1, borderBottomColor: Colors.brand.divider, marginHorizontal: 4 },
-  actionIcon: { fontSize: 22, marginRight: 16, width: 32 },
-  actionText: { flex: 1, fontSize: 16, color: Colors.brand.textPrimary, fontWeight: '500' },
+  actionIconContainer: { width: 44, height: 44, borderRadius: 22, marginRight: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 4 },
+  actionIconGradient: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 22 },
+  actionIcon: { fontSize: 20, zIndex: 1 },
+  actionText: { flex: 1, fontSize: 18, color: Colors.brand.textPrimary, fontWeight: '500' },
   actionArrow: { fontSize: 22, color: Colors.brand.textLight },
   dangerSection: { margin: 24, marginBottom: 120 },
-  logoutButtonDark: { backgroundColor: Colors.brand.cardBackground, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, borderWidth: 1, borderColor: Colors.brand.divider, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 6 },
-  logoutText: { color: Colors.brand.textOnGradient, fontSize: 16, fontWeight: 'bold' },
-  segmentContainer: { flexDirection: 'row', backgroundColor: Colors.brand.cardBackgroundSecondary, borderRadius: 10, margin: 16, overflow: 'hidden' },
+  logoutButtonDark: { backgroundColor: Colors.brand.cardBackground, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 6, overflow: 'hidden', position: 'relative' },
+  logoutButtonBorder: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 26, borderWidth: 2, borderColor: 'rgba(255, 111, 0, 0.3)' },
+  logoutText: { color: Colors.brand.textPrimary, fontSize: 18, fontWeight: 'bold', zIndex: 1 },
+  // New enhanced component styles
+  statusChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: Colors.brand.cardBackgroundLight, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
+  statusChipActive: { backgroundColor: 'rgba(255, 111, 0, 0.15)', borderColor: 'rgba(255, 111, 0, 0.3)' },
+  statusChipText: { color: Colors.brand.textSecondary, fontSize: 14, fontWeight: '600' },
+  statusChipTextActive: { color: Colors.brand.accentOrange, fontWeight: '700' },
+  
+  priceCard: { backgroundColor: Colors.brand.cardBackgroundLight, borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.08)' },
+  priceText: { color: Colors.brand.textPrimary, fontWeight: '700', fontSize: 16 },
+  
+  skillChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: Colors.brand.cardBackgroundLight, marginRight: 8, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(255, 111, 0, 0.1)' },
+  skillChipText: { color: Colors.brand.textPrimary, fontSize: 14, fontWeight: '500' },
+  
+  socialLinkBtn: { backgroundColor: Colors.brand.cardBackgroundLight, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, marginRight: 8, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
+  socialLinkText: { color: Colors.brand.textPrimary, fontWeight: '600', fontSize: 14 },
+  
+  // Legacy styles (keeping for backward compatibility)
+  segmentContainer: { flexDirection: 'row', backgroundColor: Colors.brand.cardBackgroundLight, borderRadius: 10, margin: 16, overflow: 'hidden' },
   segmentBtn: { flex: 1, paddingVertical: 10, alignItems: 'center' },
   segmentBtnActive: { backgroundColor: 'rgba(255,255,255,0.06)' },
   segmentText: { color: Colors.brand.textSecondary },
   segmentTextActive: { color: Colors.brand.textPrimary, fontWeight: '700' },
-  reviewCard: { marginHorizontal: 16, backgroundColor: Colors.brand.cardBackgroundSecondary, borderRadius: 12, padding: 12, marginBottom: 10 },
+  reviewCard: { marginHorizontal: 16, backgroundColor: Colors.brand.cardBackgroundLight, borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.08)' },
   reviewAvatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.brand.cardBackground },
   emptyListWrapper: { paddingHorizontal: 24, paddingVertical: 8 },
   emptyList: { padding: 24, alignItems: 'center', borderRadius: 20, borderWidth: 1, borderColor: Colors.brand.divider },
@@ -319,11 +358,11 @@ const styles = StyleSheet.create({
   emptyListText: { color: Colors.brand.textSecondary, textAlign: 'center', marginBottom: 10 },
   primaryCta: { backgroundColor: Colors.brand.accentMagenta, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10 },
   primaryCtaText: { color: '#fff', fontWeight: '700' },
-  chip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, backgroundColor: Colors.brand.cardBackgroundSecondary, marginRight: 8, marginBottom: 8 },
-  chipText: { color: Colors.brand.textSecondary, fontSize: 12 },
-  linkBtn: { backgroundColor: Colors.brand.cardBackgroundSecondary, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, marginRight: 8 },
+  linkBtn: { backgroundColor: Colors.brand.cardBackgroundLight, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, marginRight: 8 },
   linkText: { color: Colors.brand.textPrimary, fontWeight: '600' },
-  archiveAction: { color: Colors.brand.accentMagenta, fontWeight: '700' },
+  editRateButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 4 },
+  editRateGradient: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 16 },
+  editRateText: { color: Colors.brand.textOnGradient, fontWeight: '700', fontSize: 14, zIndex: 1, textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 },
 });
 
 

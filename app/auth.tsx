@@ -9,10 +9,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 
+// Password requirement component
+function PasswordRequirement({ met, text }: { met: boolean; text: string }) {
+  return (
+    <View style={styles.passwordReqItem}>
+      <Text style={[styles.passwordReqIcon, met && styles.passwordReqMet]}>
+        {met ? '✓' : '○'}
+      </Text>
+      <Text style={[styles.passwordReqText, met && styles.passwordReqMet]}>
+        {text}
+      </Text>
+    </View>
+  );
+}
+
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const insets = useSafeAreaInsets();
@@ -25,6 +40,23 @@ export default function AuthScreen() {
   const ageRef = useRef<any>(null);
   const emailRef = useRef<any>(null);
   const passwordRef = useRef<any>(null);
+  const confirmPasswordRef = useRef<any>(null);
+
+  const validatePassword = (pwd: string) => {
+    const requirements = {
+      length: pwd.length >= 8,
+      uppercase: /[A-Z]/.test(pwd),
+      lowercase: /[a-z]/.test(pwd),
+      number: /\d/.test(pwd),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(pwd)
+    };
+    return requirements;
+  };
+
+  const isPasswordValid = (pwd: string) => {
+    const reqs = validatePassword(pwd);
+    return reqs.length && reqs.uppercase && reqs.lowercase && reqs.number && reqs.special;
+  };
 
   const handleSubmit = async () => {
     if (!email || !password || (!isLogin && (!name || !age))) {
@@ -32,11 +64,55 @@ export default function AuthScreen() {
       return;
     }
 
+    // Password validation for signup
+    if (!isLogin) {
+      if (!isPasswordValid(password)) {
+        Alert.alert('Password Requirements', 
+          'Password must include:\n• At least 8 characters\n• One uppercase letter\n• One lowercase letter\n• One number\n• One special character');
+        return;
+      }
+      
+      if (password !== confirmPassword) {
+        Alert.alert('Error', 'Passwords do not match');
+        return;
+      }
+    }
+
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        router.replace('/(tabs)/requests');
+        
+        // Check if user has SMS 2FA enabled
+        const { data: sms2fa, error: sms2faError } = await supabase
+          .from('user_two_factor')
+          .select('*')
+          .single();
+
+        if (sms2faError && sms2faError.code !== 'PGRST116') {
+          throw sms2faError;
+        }
+
+        if (sms2fa && sms2fa.enabled) {
+          // User has SMS 2FA enabled, send verification code
+          const { data: smsData, error: smsError } = await supabase.functions.invoke('send-sms-code', {
+            body: {
+              phone: sms2fa.phone,
+              action: 'verify'
+            }
+          });
+          
+          if (smsError) throw smsError;
+          
+          // Redirect to 2FA verification
+          router.replace({
+            pathname: '/two-factor-verify',
+            params: { phoneNumber: sms2fa.phone }
+          });
+        } else {
+          // No SMS 2FA, proceed normally
+          router.replace('/(tabs)/requests');
+        }
       } else {
         const origin =
           typeof window !== 'undefined' && (window as any).location?.origin
@@ -65,10 +141,22 @@ export default function AuthScreen() {
   };
 
   const handleNextSignupStep = () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter your email and password');
+    if (!email || !password || !confirmPassword) {
+      Alert.alert('Error', 'Please enter your email and both passwords');
       return;
     }
+
+    if (!isPasswordValid(password)) {
+      Alert.alert('Password Requirements', 
+        'Password must include:\n• At least 8 characters\n• One uppercase letter\n• One lowercase letter\n• One number\n• One special character');
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
     setSignupStep(1);
     requestAnimationFrame(() => {
       nameRef.current?.focus?.();
@@ -111,7 +199,7 @@ export default function AuthScreen() {
       >
         <View style={styles.headerContent}>
           <Image
-            source={require('@/auro_font_logo.png')}
+            source={require('@/auro_aura_logo.png')}
             style={[styles.logoImage, isCompact && styles.logoImageCompact]}
             resizeMode="contain"
           />
@@ -217,9 +305,44 @@ export default function AuthScreen() {
                 ref={passwordRef}
                 returnKeyType={isLogin ? 'go' : 'next'}
                 blurOnSubmit={isLogin}
-                onSubmitEditing={isLogin ? handleSubmit : handleNextSignupStep}
+                onSubmitEditing={isLogin ? handleSubmit : () => confirmPasswordRef.current?.focus()}
               />
+              {!isLogin && password.length > 0 && (
+                <View style={styles.passwordRequirements}>
+                  <PasswordRequirement met={validatePassword(password).length} text="8+ characters" />
+                  <PasswordRequirement met={validatePassword(password).uppercase} text="Uppercase letter" />
+                  <PasswordRequirement met={validatePassword(password).lowercase} text="Lowercase letter" />
+                  <PasswordRequirement met={validatePassword(password).number} text="Number" />
+                  <PasswordRequirement met={validatePassword(password).special} text="Special character" />
+                </View>
+              )}
             </View>
+
+            {!isLogin && (
+              <View style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
+                {!isUltraCompact && (
+                  <Text style={[styles.label, isCompact && styles.labelCompact]}>Confirm Password</Text>
+                )}
+                <TextInput
+                  style={[styles.input, isCompact && styles.inputCompact]}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder={isUltraCompact ? 'Confirm Password' : 'Confirm your password'}
+                  secureTextEntry
+                  ref={confirmPasswordRef}
+                  returnKeyType="next"
+                  blurOnSubmit={false}
+                  onSubmitEditing={handleNextSignupStep}
+                />
+                {confirmPassword.length > 0 && (
+                  <View style={styles.passwordMatch}>
+                    <Text style={[styles.passwordMatchText, password === confirmPassword && styles.passwordMatchSuccess]}>
+                      {password === confirmPassword ? '✓ Passwords match' : '✗ Passwords do not match'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
           </>
         )}
 
@@ -269,6 +392,7 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
+    opacity: 0,
   },
   scrollView: {
     flex: 1,
@@ -332,15 +456,16 @@ const styles = StyleSheet.create({
   },
   form: {
     margin: 28,
-    backgroundColor: Colors.brand.cardBackground,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 32,
     padding: 36,
     shadowColor: Colors.brand.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 12,
-    borderWidth: 0,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.25,
+    shadowRadius: 30,
+    elevation: 20,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
     overflow: 'hidden',
   },
   formCompact: {
@@ -350,7 +475,7 @@ const styles = StyleSheet.create({
   },
   toggleContainer: {
     flexDirection: 'row',
-    backgroundColor: Colors.brand.cardBackgroundSecondary,
+    backgroundColor: 'rgba(26, 11, 46, 0.08)',
     borderRadius: 28,
     marginBottom: 36,
     padding: 6,
@@ -383,7 +508,7 @@ const styles = StyleSheet.create({
   toggleText: {
     fontSize: 15,
     fontWeight: '600',
-    color: Colors.brand.textSecondary,
+    color: Colors.brand.background,
     fontFamily: 'Inter_600SemiBold',
   },
   activeToggleText: {
@@ -399,7 +524,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.brand.textPrimary,
+    color: Colors.brand.background,
     marginBottom: 10,
     fontFamily: 'Inter_600SemiBold',
   },
@@ -408,13 +533,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    borderWidth: 0,
+    borderWidth: 1,
+    borderColor: 'rgba(26, 11, 46, 0.15)',
     borderRadius: 18,
     paddingHorizontal: 18,
     paddingVertical: 14,
     fontSize: 15,
-    backgroundColor: Colors.brand.cardBackgroundSecondary,
-    color: Colors.brand.textPrimary,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    color: Colors.brand.background,
     shadowColor: Colors.brand.shadowLight,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -485,5 +611,41 @@ const styles = StyleSheet.create({
     color: Colors.brand.accentMagenta,
     fontSize: 14,
     fontWeight: '600',
+  },
+  passwordRequirements: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: 'rgba(26, 11, 46, 0.05)',
+    borderRadius: 12,
+  },
+  passwordReqItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    backgroundColor: 'transparent',
+  },
+  passwordReqIcon: {
+    fontSize: 12,
+    color: '#666',
+    marginRight: 8,
+    width: 16,
+  },
+  passwordReqText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  passwordReqMet: {
+    color: Colors.brand.success,
+  },
+  passwordMatch: {
+    marginTop: 8,
+    backgroundColor: 'transparent',
+  },
+  passwordMatchText: {
+    fontSize: 12,
+    color: '#ff4444',
+  },
+  passwordMatchSuccess: {
+    color: Colors.brand.success,
   },
 });

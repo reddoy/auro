@@ -1,8 +1,9 @@
 import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -21,28 +22,45 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors.brand.textPrimary,
-        tabBarInactiveTintColor: Colors.brand.textSecondary,
-        tabBarStyle: {
-          backgroundColor: Colors.brand.cardBackground,
-          borderTopWidth: 0,
-          paddingBottom: Math.max(12, 12 + insets.bottom),
-          paddingTop: 8,
-          height: 68 + insets.bottom,
-          shadowColor: Colors.brand.shadow,
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.15,
-          shadowRadius: 16,
-          elevation: 12,
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-        },
+    <View style={{ flex: 1 }}>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: Colors.brand.textPrimary,
+          tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.7)',
+          tabBarStyle: {
+            backgroundColor: 'transparent',
+            borderTopWidth: 0,
+            paddingBottom: Math.max(12, 12 + insets.bottom),
+            paddingTop: 8,
+            height: 68 + insets.bottom,
+            shadowColor: Colors.brand.shadow,
+            shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.25,
+            shadowRadius: 16,
+            elevation: 12,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+          },
+          tabBarBackground: () => (
+            <ExpoLinearGradient
+              colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                top: 0,
+                bottom: 0,
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
+              }}
+            />
+          ),
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '600',
@@ -68,7 +86,8 @@ export default function TabLayout() {
           title: 'Profile',
           tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
         }}
-      />
-    </Tabs>
+        />
+      </Tabs>
+    </View>
   );
 }

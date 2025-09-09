@@ -89,7 +89,7 @@ export default function AuthCallback() {
       {status === 'success' && (
         <>
           <Image
-            source={require('@/auro_font_logo.png')}
+            source={require('@/auro_aura_logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -103,11 +103,11 @@ export default function AuthCallback() {
       {status === 'error' && (
         <>
           <Image
-            source={require('@/auro_font_logo.png')}
+            source={require('@/auro_aura_logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.title}>We couldn’t confirm your email</Text>
+          <Text style={styles.title}>We couldn't confirm your email</Text>
           <Text style={styles.body}>{message}</Text>
           <TouchableOpacity style={styles.button} onPress={() => router.replace('/auth')}>
             <Text style={styles.buttonText}>Back to Sign In</Text>

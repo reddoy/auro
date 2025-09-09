@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, TextInput, TouchableOpacity, View, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { router } from 'expo-router';
+import { supabase } from '@/lib/supabase';
 
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
@@ -30,6 +31,8 @@ export default function ProfileSettingsScreen() {
   const [emailNotif, setEmailNotif] = useState(true);
   const [pushNotif, setPushNotif] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [hasMFA, setHasMFA] = useState(false);
+  const [checkingMFA, setCheckingMFA] = useState(false);
 
   const fullNameRef = useRef<any>(null);
   const usernameRef = useRef<any>(null);
@@ -70,6 +73,9 @@ export default function ProfileSettingsScreen() {
           setPushNotif(p.preferences?.push_notifications ?? true);
 
         }
+        
+        // Check MFA status
+        await checkMFAStatus();
       } catch (e: any) {
         Alert.alert('Error', e?.message || 'Failed to load profile');
       } finally {
@@ -78,6 +84,60 @@ export default function ProfileSettingsScreen() {
     };
     run();
   }, []);
+
+  const checkMFAStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_two_factor')
+        .select('*')
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      setHasMFA(data && data.enabled);
+    } catch (error) {
+      console.error('Error checking SMS 2FA status:', error);
+    }
+  };
+
+  const handleSetup2FA = () => {
+    router.push('/two-factor-setup');
+  };
+
+  const handleDisable2FA = async () => {
+    Alert.alert(
+      'Disable SMS Two-Factor Authentication',
+      'Are you sure you want to disable SMS 2FA? This will make your account less secure.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Disable', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setCheckingMFA(true);
+              
+              const { error } = await supabase
+                .from('user_two_factor')
+                .update({ enabled: false, updated_at: new Date().toISOString() })
+                .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+                
+              if (error) throw error;
+              
+              setHasMFA(false);
+              Alert.alert('Success', 'SMS two-factor authentication has been disabled.');
+            } catch (error: any) {
+              Alert.alert('Error', 'Failed to disable SMS 2FA: ' + error.message);
+            } finally {
+              setCheckingMFA(false);
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const handleUploaded = async ({ publicUrl, path }: { publicUrl: string; path: string }) => {
     try {
@@ -189,6 +249,30 @@ export default function ProfileSettingsScreen() {
       </View>
 
       <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Security</Text>
+        <View style={styles.securityRow}>
+          <View style={styles.securityInfo}>
+            <Text style={styles.label}>SMS Two-Factor Authentication</Text>
+            <Text style={styles.securityDescription}>
+              {hasMFA ? 'Enabled - SMS codes protect your account' : 'Secure your account with SMS verification'}
+            </Text>
+          </View>
+          {checkingMFA ? (
+            <ActivityIndicator color={Colors.brand.accentMagenta} />
+          ) : (
+            <TouchableOpacity 
+              style={[styles.securityButton, hasMFA && styles.securityButtonDanger]} 
+              onPress={hasMFA ? handleDisable2FA : handleSetup2FA}
+            >
+              <Text style={[styles.securityButtonText, hasMFA && styles.securityButtonTextDanger]}>
+                {hasMFA ? 'Disable' : 'Enable'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      <View style={styles.card}>
         <Text style={styles.sectionTitle}>Privacy & Notifications</Text>
         <LabeledSwitch label="Email notifications" value={emailNotif} onValueChange={setEmailNotif} />
         <LabeledSwitch label="Push notifications" value={pushNotif} onValueChange={setPushNotif} />
@@ -233,16 +317,49 @@ function LabeledSwitch(props: { label: string; value: boolean; onValueChange: (v
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.brand.background },
-  card: { margin: 16, backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.brand.textPrimary, marginBottom: 12 },
-  label: { fontSize: 14, color: Colors.brand.textSecondary, marginBottom: 6 },
-  input: { borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: Colors.brand.textPrimary },
+  card: { margin: 16, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, padding: 24, borderWidth: 1, borderColor: 'rgba(255, 111, 0, 0.1)', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 8 },
+  sectionTitle: { fontSize: 24, fontWeight: 'bold', fontFamily: 'Poppins_700Bold', color: Colors.brand.textPrimary, marginBottom: 12 },
+  label: { fontSize: 16, color: Colors.brand.textSecondary, marginBottom: 6 },
+  input: { borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, color: Colors.brand.textPrimary, fontSize: 16 },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
-  hint: { marginTop: 8, color: Colors.brand.textSecondary, fontSize: 12 },
+  hint: { marginTop: 8, color: Colors.brand.textSecondary, fontSize: 14 },
   saveBar: { padding: 16 },
   saveButton: { backgroundColor: Colors.brand.accentMagenta, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
   saveButtonDisabled: { opacity: 0.6 },
-  saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  saveButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  securityRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingVertical: 8,
+    backgroundColor: 'transparent' 
+  },
+  securityInfo: { 
+    flex: 1, 
+    backgroundColor: 'transparent' 
+  },
+  securityDescription: { 
+    fontSize: 14, 
+    color: Colors.brand.textSecondary, 
+    marginTop: 4 
+  },
+  securityButton: { 
+    backgroundColor: Colors.brand.accentMagenta, 
+    paddingVertical: 8, 
+    paddingHorizontal: 16, 
+    borderRadius: 16 
+  },
+  securityButtonDanger: { 
+    backgroundColor: '#ff4444' 
+  },
+  securityButtonText: { 
+    color: '#fff', 
+    fontSize: 14, 
+    fontWeight: '600' 
+  },
+  securityButtonTextDanger: { 
+    color: '#fff' 
+  },
 });
 
 

@@ -12,9 +12,12 @@ export default function HomePage() {
                 Level up your attractiveness, style, and room setup with honest feedback from popular influencers. 
                 Get personalized ratings and actionable advice to improve your dating life.
               </p>
-              <div className="cta">
-                <input type="email" placeholder="Enter your email" />
-                <button>Get Early Access</button>
+              <div className="cta-buttons">
+                <a href="/request" className="cta-primary">Request a Review</a>
+                <div className="cta-secondary-container">
+                  <input type="email" placeholder="Enter your email" />
+                  <button>Get Early Access</button>
+                </div>
               </div>
               <p className="legal">Join thousands of men already improving themselves with Auro</p>
             </div>

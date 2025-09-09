@@ -2,8 +2,9 @@
 const brandColors = {
   // Core
   background: '#1A0B2E',
-  cardBackground: '#24123B',
-  cardBackgroundSecondary: '#24123B',
+  cardBackground: '#2A1B3D',
+  cardBackgroundSecondary: '#1F1629',
+  cardBackgroundLight: '#342346',
 
   // Primary gradient (orange → magenta)
   gradientStart: '#FF6F00',
@@ -51,6 +52,7 @@ export default {
     text: brandColors.textPrimary,
     background: brandColors.background,
     cardBackground: brandColors.cardBackground,
+    cardBackgroundLight: brandColors.cardBackgroundLight,
     tint: tintColor,
     tabIconDefault: brandColors.textSecondary,
     tabIconSelected: tintColor,
@@ -61,6 +63,7 @@ export default {
     text: brandColors.textPrimary,
     background: brandColors.background,
     cardBackground: brandColors.cardBackground,
+    cardBackgroundLight: brandColors.cardBackgroundLight,
     tint: tintColor,
     tabIconDefault: brandColors.textSecondary,
     tabIconSelected: tintColor,

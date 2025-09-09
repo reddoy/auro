@@ -126,17 +126,17 @@ function LabeledInput(props: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.brand.background },
-  card: { margin: 16, backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 16 },
-  title: { fontSize: 22, fontWeight: 'bold', color: Colors.brand.textPrimary, marginBottom: 8 },
-  subtitle: { fontSize: 14, color: Colors.brand.textSecondary },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.brand.textPrimary, marginBottom: 12 },
-  label: { fontSize: 14, color: Colors.brand.textSecondary, marginBottom: 6 },
-  input: { borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: Colors.brand.textPrimary },
+  card: { margin: 16, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, padding: 24, borderWidth: 1, borderColor: 'rgba(255, 111, 0, 0.1)', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 8 },
+  title: { fontSize: 28, fontWeight: 'bold', fontFamily: 'Poppins_700Bold', color: Colors.brand.textPrimary, marginBottom: 8 },
+  subtitle: { fontSize: 16, color: Colors.brand.textSecondary },
+  sectionTitle: { fontSize: 24, fontWeight: 'bold', fontFamily: 'Poppins_700Bold', color: Colors.brand.textPrimary, marginBottom: 12 },
+  label: { fontSize: 16, color: Colors.brand.textSecondary, marginBottom: 6 },
+  input: { borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, color: Colors.brand.textPrimary, fontSize: 16 },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
   saveBar: { padding: 16 },
   saveButton: { backgroundColor: Colors.brand.accentMagenta, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
   saveButtonDisabled: { opacity: 0.6 },
-  saveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  saveButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
 });
 
 
