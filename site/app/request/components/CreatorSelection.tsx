@@ -28,9 +28,16 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
 
   useEffect(() => {
     const fetchCreators = async () => {
-      if (!supabase || !supabase.from) {
-        console.error('Supabase client not available');
-        setError('Supabase client not available');
+      if (!supabase) {
+        console.error('Supabase client not available - likely missing environment variables');
+        setError('Configuration error: Supabase client not available. Please check environment variables.');
+        setLoading(false);
+        return;
+      }
+
+      if (!supabase.from) {
+        console.error('Supabase client malformed');
+        setError('Configuration error: Invalid Supabase client.');
         setLoading(false);
         return;
       }

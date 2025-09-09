@@ -54,7 +54,7 @@ export default function RequestPage() {
     // Initialize Supabase client only on the client side
     if (typeof window !== 'undefined') {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON;
       
       if (supabaseUrl && supabaseKey) {
         try {
@@ -84,13 +84,13 @@ export default function RequestPage() {
           return () => subscription.unsubscribe();
         } catch (error) {
           console.error('Supabase initialization error:', error);
-          // Set a dummy client to prevent infinite loading
-          setSupabase({});
+          // Set null to prevent infinite loading and show error
+          setSupabase(null);
         }
       } else {
         // Set a dummy client if env vars are missing to prevent infinite loading
         console.warn('Supabase environment variables are missing');
-        setSupabase({});
+        setSupabase(null);
       }
     }
   }, [currentStep]);
@@ -132,6 +132,22 @@ export default function RequestPage() {
 
   const renderStep = () => {
     // Show loading until Supabase is initialized
+    if (supabase === null) {
+      return (
+        <div className="loading-container">
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <h3 style={{ color: '#ff4444', marginBottom: '16px' }}>⚠️ Configuration Error</h3>
+            <p style={{ marginBottom: '16px' }}>
+              The application is missing required environment variables for database connection.
+            </p>
+            <p style={{ fontSize: '14px', color: '#888' }}>
+              Please ensure <code>NEXT_PUBLIC_SUPABASE_URL</code> and <code>NEXT_PUBLIC_SUPABASE_ANON</code> are configured.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     if (!supabase) {
       return (
         <div className="loading-container">
