@@ -24,36 +24,57 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
   const [creators, setCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     const fetchCreators = async () => {
+      if (!supabase || !supabase.from) {
+        console.error('Supabase client not available');
+        setError('Supabase client not available');
+        setLoading(false);
+        return;
+      }
+
       try {
+        console.log('Fetching creators...');
+        setError('');
         const { data, error } = await supabase
           .from('profiles')
           .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, bio, links')
           .eq('is_reviewer', true)
           .order('rating_average', { ascending: false, nullsFirst: false });
 
+        console.log('Query result:', { data, error });
+        
         if (error) throw error;
+        
+        console.log('Found creators:', data?.length || 0);
         setCreators(data || []);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching creators:', error);
+        setError(error.message || 'Failed to fetch reviewers');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCreators();
-  }, []);
+    if (supabase) {
+      fetchCreators();
+    }
+  }, [supabase]);
 
   const filteredCreators = creators.filter(creator => {
     const searchLower = searchTerm.toLowerCase();
+    if (!searchTerm.trim()) return true; // Show all when no search term
+    
     return (
       creator.full_name?.toLowerCase().includes(searchLower) ||
       creator.username?.toLowerCase().includes(searchLower) ||
       creator.skills?.some(skill => skill.toLowerCase().includes(searchLower))
     );
   });
+
+  console.log('Creators:', creators.length, 'Filtered:', filteredCreators.length, 'Search:', searchTerm);
 
   const getCreatorImageUrl = (creator: Creator) => {
     if (!creator.avatar_url) return '/auro_aura_logo.png';
@@ -152,9 +173,24 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
         ))}
       </div>
 
-      {filteredCreators.length === 0 && !loading && (
+      {error && (
+        <div className="error-state">
+          <p style={{ color: 'red' }}>Error: {error}</p>
+          <p>Please check the console for more details.</p>
+        </div>
+      )}
+
+      {filteredCreators.length === 0 && !loading && !error && (
         <div className="no-creators">
-          <p>No reviewers found matching your search.</p>
+          <p>No reviewers found{searchTerm ? ' matching your search' : ''}.</p>
+          {!searchTerm && <p>It looks like there are no reviewers set up yet.</p>}
+        </div>
+      )}
+
+      {creators.length > 0 && (
+        <div className="debug-info" style={{ fontSize: '12px', color: '#888', marginTop: '10px' }}>
+          Debug: {creators.length} total reviewers, {filteredCreators.length} filtered
+          {searchTerm && ` (searching for: "${searchTerm}")`}
         </div>
       )}
     </div>
