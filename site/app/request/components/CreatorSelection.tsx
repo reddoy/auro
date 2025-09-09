@@ -1,12 +1,6 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 type Creator = {
   id: string;
@@ -23,9 +17,10 @@ type Creator = {
 type Props = {
   selectedCreator?: string;
   onSelect: (creatorId: string, creatorSlug: string) => void;
+  supabase: any;
 };
 
-export default function CreatorSelection({ selectedCreator, onSelect }: Props) {
+export default function CreatorSelection({ selectedCreator, onSelect, supabase }: Props) {
   const [creators, setCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -63,7 +58,8 @@ export default function CreatorSelection({ selectedCreator, onSelect }: Props) {
   const getCreatorImageUrl = (creator: Creator) => {
     if (!creator.avatar_url) return '/auro_aura_logo.png';
     if (creator.avatar_url.startsWith('http')) return creator.avatar_url;
-    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${creator.avatar_url}`;
+    const supabaseUrl = supabase?.supabaseUrl || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    return `${supabaseUrl}/storage/v1/object/public/avatars/${creator.avatar_url}`;
   };
 
   const handleCreatorSelect = (creator: Creator) => {

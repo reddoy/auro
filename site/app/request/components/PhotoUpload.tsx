@@ -1,12 +1,6 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 type Photos = {
   selfie?: string;
@@ -20,9 +14,10 @@ type Props = {
   onPhotosChange: (photos: Photos) => void;
   onNext: () => void;
   onBack: () => void;
+  supabase: any;
 };
 
-export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack }: Props) {
+export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, supabase }: Props) {
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   

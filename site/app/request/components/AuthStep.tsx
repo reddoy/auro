@@ -1,20 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 type Props = {
   isAuthenticated: boolean;
   onNext: () => void;
   onBack: () => void;
+  supabase: any;
 };
 
-export default function AuthStep({ isAuthenticated, onNext, onBack }: Props) {
+export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: Props) {
   const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

@@ -1,21 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import type { RequestData } from '../page';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 type Props = {
   requestData: RequestData;
   onSuccess: (requestId: string) => void;
   onBack: () => void;
+  supabase: any;
 };
 
-export default function PaymentStep({ requestData, onSuccess, onBack }: Props) {
+export default function PaymentStep({ requestData, onSuccess, onBack, supabase }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [creatorInfo, setCreatorInfo] = useState<any>(null);
@@ -140,7 +135,8 @@ export default function PaymentStep({ requestData, onSuccess, onBack }: Props) {
   const getCreatorImageUrl = (avatarUrl?: string) => {
     if (!avatarUrl) return '/auro_aura_logo.png';
     if (avatarUrl.startsWith('http')) return avatarUrl;
-    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/avatars/${avatarUrl}`;
+    const supabaseUrl = supabase?.supabaseUrl || (typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_SUPABASE_URL : '') || '';
+    return `${supabaseUrl}/storage/v1/object/public/avatars/${avatarUrl}`;
   };
 
   return (

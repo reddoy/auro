@@ -12,11 +12,6 @@ import AuthStep from './components/AuthStep';
 import PaymentStep from './components/PaymentStep';
 import DownloadApp from './components/DownloadApp';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export type RequestData = {
   creatorId?: string;
   creatorSlug?: string;
@@ -53,25 +48,51 @@ export default function RequestPage() {
     }
   });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [supabase, setSupabase] = useState<any>(null);
 
   useEffect(() => {
-    // Check if user is already authenticated
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setIsAuthenticated(!!user);
-    };
-    checkAuth();
+    // Initialize Supabase client only on the client side
+    if (typeof window !== 'undefined') {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      
+      if (supabaseUrl && supabaseKey) {
+        try {
+          const client = createClient(supabaseUrl, supabaseKey);
+          setSupabase(client);
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session?.user);
-      if (session?.user && currentStep === 'auth') {
-        setRequestData(prev => ({ ...prev, userId: session.user.id }));
-        setCurrentStep('payment');
+          // Check if user is already authenticated
+          const checkAuth = async () => {
+            try {
+              const { data: { user } } = await client.auth.getUser();
+              setIsAuthenticated(!!user);
+            } catch (error) {
+              console.error('Auth check error:', error);
+            }
+          };
+          checkAuth();
+
+          // Listen for auth changes
+          const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
+            setIsAuthenticated(!!session?.user);
+            if (session?.user && currentStep === 'auth') {
+              setRequestData(prev => ({ ...prev, userId: session.user.id }));
+              setCurrentStep('payment');
+            }
+          });
+
+          return () => subscription.unsubscribe();
+        } catch (error) {
+          console.error('Supabase initialization error:', error);
+          // Set a dummy client to prevent infinite loading
+          setSupabase({});
+        }
+      } else {
+        // Set a dummy client if env vars are missing to prevent infinite loading
+        console.warn('Supabase environment variables are missing');
+        setSupabase({});
       }
-    });
-
-    return () => subscription.unsubscribe();
+    }
   }, [currentStep]);
 
   const updateRequestData = (updates: Partial<RequestData>) => {
@@ -110,6 +131,16 @@ export default function RequestPage() {
   };
 
   const renderStep = () => {
+    // Show loading until Supabase is initialized
+    if (!supabase) {
+      return (
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading...</p>
+        </div>
+      );
+    }
+
     switch (currentStep) {
       case 'creator-selection':
         return (
@@ -119,6 +150,7 @@ export default function RequestPage() {
               updateRequestData({ creatorId, creatorSlug });
               nextStep();
             }}
+            supabase={supabase}
           />
         );
       case 'photo-upload':
@@ -130,6 +162,7 @@ export default function RequestPage() {
             }}
             onNext={nextStep}
             onBack={previousStep}
+            supabase={supabase}
           />
         );
       case 'prompt-answers':
@@ -156,6 +189,7 @@ export default function RequestPage() {
             isAuthenticated={isAuthenticated}
             onNext={nextStep}
             onBack={previousStep}
+            supabase={supabase}
           />
         );
       case 'payment':
@@ -167,6 +201,7 @@ export default function RequestPage() {
               nextStep();
             }}
             onBack={previousStep}
+            supabase={supabase}
           />
         );
       case 'download-app':
