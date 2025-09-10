@@ -25,29 +25,36 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
   const datingInputRef = useRef<HTMLInputElement>(null);
 
   const uploadToSupabase = async (file: File, category: string): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}_${category}.${fileExt}`;
-    const filePath = `temp-uploads/${fileName}`;
-
     setUploadProgress(prev => ({ ...prev, [category]: 0 }));
 
-    const { data, error } = await supabase.storage
-      .from('request-media')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
+    // Ask server for a signed upload URL
+    const contentType = file.type || 'application/octet-stream';
+    const res = await fetch('/api/storage/signed-upload', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ fileName: file.name, contentType, category })
+    });
+    if (!res.ok) {
+      const msg = await res.text();
+      throw new Error(`Failed to get signed URL: ${msg}`);
+    }
+    const { signedUrl, path, bucket } = await res.json();
 
-    if (error) {
-      throw new Error(`Upload failed: ${error.message}`);
+    // Upload via the signed URL (Supabase signed upload expects multipart/form-data)
+    const formData = new FormData();
+    formData.append('file', file);
+    const putRes = await fetch(signedUrl, { method: 'PUT', body: formData });
+    if (!putRes.ok) {
+      const errText = await putRes.text();
+      throw new Error(`Signed upload failed: ${errText}`);
     }
 
+    // Create short-lived signed URL for display
     const { data: urlData } = await supabase.storage
-      .from('request-media')
-      .createSignedUrl(filePath, 60 * 60 * 24); // 24 hours
+      .from(bucket || 'request-media')
+      .createSignedUrl(path, 60 * 60 * 24);
 
     setUploadProgress(prev => ({ ...prev, [category]: 100 }));
-    
     return urlData?.signedUrl || '';
   };
 
