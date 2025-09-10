@@ -86,7 +86,7 @@ export async function getUserProfile(): Promise<DbUserProfile | null> {
   if (!user) return null;
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('id, username, full_name, avatar_url, bio')
+    .select('id, username, full_name, avatar_url, bio, is_reviewer')
     .eq('id', user.id)
     .maybeSingle();
   if (error) throw error;
@@ -97,6 +97,8 @@ export async function getUserProfile(): Promise<DbUserProfile | null> {
       name: profile.full_name || profile.username || undefined,
       bio: profile.bio ?? null,
       avatarUrl: profile.avatar_url ?? null,
+      // @ts-ignore - optional flag for app logic
+      is_reviewer: (profile as any)?.is_reviewer ?? undefined,
     } as DbUserProfile;
   }
   return {

@@ -12,6 +12,12 @@ export default function CheckoutSuccessPage() {
       const csId = url.searchParams.get('rid');
       if (csId) {
         setMessage('Payment confirmed. Your review request is being prepared.');
+        // Idempotent server-side confirmation in case webhook hasn't run yet
+        fetch('/api/checkout/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: csId }),
+        }).catch(() => {});
       } else {
         setMessage('Payment confirmed.');
       }

@@ -107,6 +107,8 @@ export interface DbUserProfile {
   name?: string;
   bio?: string | null;
   avatarUrl?: string | null;
+  // Optional flag surfaced for app logic
+  is_reviewer?: boolean;
 }
 
 // Reviewers sourced from profiles (users who opted-in)

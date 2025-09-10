@@ -7,7 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import { getReviewerById, getRequestsByUser, getUserProfile } from '@/lib/api';
+import { getReviewerById, getRequestsByUser, getUserProfile, getRequestsByReviewer, getProfileById } from '@/lib/api';
 import { getSignedAvatarUrl } from '@/lib/profile';
 import { openPaymentSheet } from '@/lib/payments';
 import type { DbReviewerSummary, DbRequestSummary } from '@/types';
@@ -22,6 +22,9 @@ export default function RequestsScreen() {
   const [requests, setRequests] = useState<DbRequestSummary[]>([]);
   const [revMap, setRevMap] = useState<Record<string, DbReviewerSummary>>({});
   const [avatarMap, setAvatarMap] = useState<Record<string, string | undefined>>({});
+  const [userMap, setUserMap] = useState<Record<string, { id: string; displayName: string; avatarUrl?: string | null }>>({});
+  const [userAvatarMap, setUserAvatarMap] = useState<Record<string, string | undefined>>({});
+  const [isReviewer, setIsReviewer] = useState(false);
   const receivedCount = requests.length;
 
   useEffect(() => {
@@ -32,27 +35,52 @@ export default function RequestsScreen() {
           setRequests([]);
           return;
         }
-        const reqs = await getRequestsByUser(profile.id);
+        const reviewerMode = !!(profile as any)?.is_reviewer;
+        setIsReviewer(reviewerMode);
+        const reqs = reviewerMode ? await getRequestsByReviewer(profile.id) : await getRequestsByUser(profile.id);
         setRequests(reqs);
-        const uniqueIds = Array.from(new Set(reqs.map(r => r.influencerId).filter(Boolean)));
-        const reviewers = await Promise.all(uniqueIds.map(id => getReviewerById(String(id))));
-        const map: Record<string, DbReviewerSummary> = {};
-        reviewers.forEach(rev => { if (rev) map[rev.id] = rev; });
-        setRevMap(map);
-        // Prefetch signed avatar URLs if needed
-        try {
-          const pairs = await Promise.all(
-            reviewers.filter(Boolean).map(async (rev) => {
-              const r = rev as DbReviewerSummary;
-              let uri = r.avatarUrl || '';
-              if (uri && !/^https?:\/\//i.test(uri)) {
-                try { uri = (await getSignedAvatarUrl(uri, 3600)) || ''; } catch {}
-              }
-              return [r.id, uri] as const;
-            })
-          );
-          setAvatarMap(Object.fromEntries(pairs));
-        } catch {}
+        if (reviewerMode) {
+          // Build reviewee map for reviewer inbox
+          const userIds = Array.from(new Set(reqs.map(r => r.userId).filter(Boolean))) as string[];
+          const users = await Promise.all(userIds.map(uid => getProfileById(uid)));
+          const uMap: Record<string, { id: string; displayName: string; avatarUrl?: string | null }> = {};
+          users.forEach(u => { if (u) uMap[u.id] = u; });
+          setUserMap(uMap);
+          try {
+            const pairs = await Promise.all(
+              users.filter(Boolean).map(async (u) => {
+                const usr = u as { id: string; displayName: string; avatarUrl?: string | null };
+                let uri = usr.avatarUrl || '';
+                if (uri && !/^https?:\/\//i.test(uri)) {
+                  try { uri = (await getSignedAvatarUrl(uri, 3600)) || ''; } catch {}
+                }
+                return [usr.id, uri] as const;
+              })
+            );
+            setUserAvatarMap(Object.fromEntries(pairs));
+          } catch {}
+        } else {
+          // Build reviewer map for reviewee inbox
+          const uniqueIds = Array.from(new Set(reqs.map(r => r.influencerId).filter(Boolean)));
+          const reviewers = await Promise.all(uniqueIds.map(id => getReviewerById(String(id))));
+          const map: Record<string, DbReviewerSummary> = {};
+          reviewers.forEach(rev => { if (rev) map[rev.id] = rev; });
+          setRevMap(map);
+          // Prefetch signed avatar URLs if needed
+          try {
+            const pairs = await Promise.all(
+              reviewers.filter(Boolean).map(async (rev) => {
+                const r = rev as DbReviewerSummary;
+                let uri = r.avatarUrl || '';
+                if (uri && !/^https?:\/\//i.test(uri)) {
+                  try { uri = (await getSignedAvatarUrl(uri, 3600)) || ''; } catch {}
+                }
+                return [r.id, uri] as const;
+              })
+            );
+            setAvatarMap(Object.fromEntries(pairs));
+          } catch {}
+        }
 
       } finally {
         setLoading(false);
@@ -70,28 +98,50 @@ export default function RequestsScreen() {
           setRequests([]);
           return;
         }
-        const reqs = await getRequestsByUser(profile.id);
+        const reviewerMode = !!(profile as any)?.is_reviewer;
+        setIsReviewer(reviewerMode);
+        const reqs = reviewerMode ? await getRequestsByReviewer(profile.id) : await getRequestsByUser(profile.id);
         setRequests(reqs);
 
-        // Update reviewer map and avatars for inbox list
-        const uniqueIds = Array.from(new Set(reqs.map(r => r.influencerId).filter(Boolean)));
-        const reviewers = await Promise.all(uniqueIds.map(id => getReviewerById(String(id))));
-        const rMap: Record<string, DbReviewerSummary> = {};
-        reviewers.forEach(rev => { if (rev) rMap[rev.id] = rev; });
-        setRevMap(rMap);
-        try {
-          const pairs = await Promise.all(
-            reviewers.filter(Boolean).map(async (rev) => {
-              const r = rev as DbReviewerSummary;
-              let uri = r.avatarUrl || '';
-              if (uri && !/^https?:\/\//i.test(uri)) {
-                try { uri = (await getSignedAvatarUrl(uri, 3600)) || ''; } catch {}
-              }
-              return [r.id, uri] as const;
-            })
-          );
-          setAvatarMap(Object.fromEntries(pairs));
-        } catch {}
+        if (reviewerMode) {
+          const userIds = Array.from(new Set(reqs.map(r => r.userId).filter(Boolean))) as string[];
+          const users = await Promise.all(userIds.map(uid => getProfileById(uid)));
+          const uMap: Record<string, { id: string; displayName: string; avatarUrl?: string | null }> = {};
+          users.forEach(u => { if (u) uMap[u.id] = u; });
+          setUserMap(uMap);
+          try {
+            const pairs = await Promise.all(
+              users.filter(Boolean).map(async (u) => {
+                const usr = u as { id: string; displayName: string; avatarUrl?: string | null };
+                let uri = usr.avatarUrl || '';
+                if (uri && !/^https?:\/\//i.test(uri)) {
+                  try { uri = (await getSignedAvatarUrl(uri, 3600)) || ''; } catch {}
+                }
+                return [usr.id, uri] as const;
+              })
+            );
+            setUserAvatarMap(Object.fromEntries(pairs));
+          } catch {}
+        } else {
+          const uniqueIds = Array.from(new Set(reqs.map(r => r.influencerId).filter(Boolean)));
+          const reviewers = await Promise.all(uniqueIds.map(id => getReviewerById(String(id))));
+          const rMap: Record<string, DbReviewerSummary> = {};
+          reviewers.forEach(rev => { if (rev) rMap[rev.id] = rev; });
+          setRevMap(rMap);
+          try {
+            const pairs = await Promise.all(
+              reviewers.filter(Boolean).map(async (rev) => {
+                const r = rev as DbReviewerSummary;
+                let uri = r.avatarUrl || '';
+                if (uri && !/^https?:\/\//i.test(uri)) {
+                  try { uri = (await getSignedAvatarUrl(uri, 3600)) || ''; } catch {}
+                }
+                return [r.id, uri] as const;
+              })
+            );
+            setAvatarMap(Object.fromEntries(pairs));
+          } catch {}
+        }
       } catch {}
     })();
   }, []);
@@ -143,6 +193,13 @@ export default function RequestsScreen() {
 
   const renderReceivedItem = ({ item }: { item: DbRequestSummary }) => {
     const reviewer = revMap[item.influencerId];
+    const reviewee = item.userId ? userMap[item.userId] : undefined;
+    const avatarUri = isReviewer
+      ? (item.userId ? userAvatarMap[item.userId] || reviewee?.avatarUrl || undefined : undefined)
+      : (avatarMap[item.influencerId] || reviewer?.avatarUrl) || undefined;
+    const displayName = isReviewer
+      ? (reviewee?.displayName || 'User')
+      : (reviewer?.displayName || 'Reviewer');
     return (
       <TouchableOpacity
         key={item.id}
@@ -151,14 +208,11 @@ export default function RequestsScreen() {
       >
         <View style={styles.requestHeader}>
           <RNView style={styles.influencerImageWrapper}>
-            <Avatar
-              uri={(avatarMap[item.influencerId] || reviewer?.avatarUrl) || undefined}
-              name={reviewer?.displayName}
-              size={60}
-            />
+            {/* For reviewers, show the reviewee avatar/name; for reviewees, show reviewer */}
+            <Avatar uri={avatarUri} name={displayName} size={60} />
           </RNView>
           <View style={styles.requestInfo}>
-            <Text style={styles.influencerName}>{reviewer?.displayName}</Text>
+            <Text style={styles.influencerName}>{displayName}</Text>
             <Text style={styles.requestDate}>
               {new Date(item.createdAt).toLocaleDateString()}
             </Text>

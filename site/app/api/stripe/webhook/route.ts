@@ -26,7 +26,7 @@ export async function POST(req: Request) {
               const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : (session.payment_intent as any)?.id;
               await admin
                 .from('requests')
-                .update({ payment_status: 'paid', stripe_session_id: session.id, stripe_payment_intent_id: paymentIntentId || null })
+                .update({ status: 'paid', payment_status: 'paid', stripe_session_id: session.id, stripe_payment_intent_id: paymentIntentId || null })
                 .eq('id', requestId);
 
               // Backfill customer email to user's profile if missing
