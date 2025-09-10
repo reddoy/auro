@@ -85,7 +85,8 @@ export default function RequestPage() {
                 }
               }
               const { data: { user: userAfter } } = await client.auth.getUser();
-              setIsAuthenticated(!!userAfter);
+              const isRealUser = !!userAfter && (userAfter as any)?.app_metadata?.provider !== 'anon';
+              setIsAuthenticated(isRealUser);
             } catch (error) {
               console.error('Auth check error:', error);
             }
@@ -94,9 +95,10 @@ export default function RequestPage() {
 
           // Listen for auth changes
           const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
-            setIsAuthenticated(!!session?.user);
-            if (session?.user && currentStep === 'auth') {
-              setRequestData(prev => ({ ...prev, userId: session.user.id }));
+            const isRealUser = !!session?.user && (session.user as any)?.app_metadata?.provider !== 'anon';
+            setIsAuthenticated(isRealUser);
+            if (isRealUser && currentStep === 'auth') {
+              setRequestData(prev => ({ ...prev, userId: session!.user!.id }));
               setCurrentStep('payment');
             }
           });

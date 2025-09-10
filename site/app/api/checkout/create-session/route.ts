@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { creatorId, creatorSlug, reviewPayload, requestId, uploadSessionId } = body || {};
+    const { creatorId, creatorSlug, reviewPayload, requestId, uploadSessionId, fallbackUserId, fallbackEmail } = body || {};
     if (!creatorId && !creatorSlug) {
       return new Response(JSON.stringify({ error: 'Missing creatorId or creatorSlug' }), { status: 400 });
     }
@@ -84,9 +84,48 @@ export async function POST(req: Request) {
       }
     } catch {}
 
+    // Create a request record on the server if not provided by client
+    let ensuredRequestId: string | undefined = requestId as string | undefined;
+    try {
+      if (!ensuredRequestId) {
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
+        if (url && key) {
+          const admin = createClient(url, key);
+          const allPhotos = [
+            ...((reviewPayload?.photos?.outfits as string[]) || []),
+            ...((reviewPayload?.photos?.roomTourPhotos as string[]) || []),
+            ...((reviewPayload?.photos?.datingProfileScreenshots as string[]) || []),
+          ];
+          const notes = {
+            message: reviewPayload?.message,
+            media: reviewPayload?.photos,
+            consent: reviewPayload?.consent,
+          };
+          const insertPayload: any = {
+            user_id: fallbackUserId || null,
+            influencer_id: resolvedCreatorId || null,
+            photos: allPhotos,
+            notes: JSON.stringify(notes),
+            status: 'pending',
+          };
+          const { data: inserted, error: insertError } = await admin
+            .from('requests')
+            .insert([insertPayload])
+            .select('id')
+            .single();
+          if (insertError) throw insertError;
+          ensuredRequestId = (inserted as any)?.id as string | undefined;
+        }
+      }
+    } catch (e) {
+      return new Response(JSON.stringify({ error: `Failed to create request: ${(e as any)?.message || 'unknown'}` }), { status: 400 });
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
+      customer_email: fallbackEmail || undefined,
       line_items: [
         {
           price_data: {
@@ -98,7 +137,7 @@ export async function POST(req: Request) {
         },
       ],
       metadata: {
-        request_id: requestId || '',
+        request_id: ensuredRequestId || '',
         creator_id: resolvedCreatorId || '',
         creator_slug: creatorSlug || '',
         upload_session_id: uploadSessionId || '',

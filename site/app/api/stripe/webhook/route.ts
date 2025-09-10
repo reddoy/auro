@@ -17,6 +17,7 @@ export async function POST(req: Request) {
           const metadata = (session.metadata || {}) as Record<string, string>;
           const requestId = metadata.request_id;
           const uploadSessionId = metadata.upload_session_id;
+          const customerEmail = (session.customer_details as any)?.email || (session as any)?.customer_email || '';
           if (requestId) {
             const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
             const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -27,6 +28,17 @@ export async function POST(req: Request) {
                 .from('requests')
                 .update({ payment_status: 'paid', stripe_session_id: session.id, stripe_payment_intent_id: paymentIntentId || null })
                 .eq('id', requestId);
+
+              // Backfill customer email to user's profile if missing
+              try {
+                if (customerEmail) {
+                  const { data: reqRow } = await admin.from('requests').select('user_id').eq('id', requestId).maybeSingle();
+                  const userId = (reqRow as any)?.user_id as string | undefined;
+                  if (userId) {
+                    await admin.from('profiles').update({ email: customerEmail }).eq('id', userId);
+                  }
+                }
+              } catch {}
 
               // Move any temp uploads belonging to this session into permanent user/request folder
               try {

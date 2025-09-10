@@ -41,19 +41,27 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
       if (error) throw error;
 
       if (data.user) {
-        // Update profile with full name
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: data.user.id,
-            full_name: fullName,
-            updated_at: new Date().toISOString(),
-          });
+        // Best-effort: save identifiers for server-side linking and later resume
+        try {
+          localStorage.setItem('auro_signup_user_id', data.user.id);
+          localStorage.setItem('auro_signup_email', email);
+        } catch {}
 
-        if (profileError) {
-          console.error('Profile update error:', profileError);
-        }
+        // Attempt to update profile with full name (may fail without session due to RLS)
+        try {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: data.user.id,
+              full_name: fullName,
+              updated_at: new Date().toISOString(),
+            });
+          if (profileError) {
+            console.warn('Profile update deferred until session exists');
+          }
+        } catch {}
 
+        // Do not force verified session here to reduce friction; proceed to payment
         onNext();
       }
     } catch (error: any) {
@@ -79,8 +87,13 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
       });
 
       if (error) throw error;
-
-      onNext();
+      const { data: u } = await supabase.auth.getUser();
+      const isRealUser = !!u?.user && (u.user as any)?.app_metadata?.provider !== 'anon';
+      if (isRealUser) {
+        onNext();
+      } else {
+        setError('Sign-in did not complete. Please try again.');
+      }
     } catch (error: any) {
       setError(error.message || 'Sign in failed');
     } finally {

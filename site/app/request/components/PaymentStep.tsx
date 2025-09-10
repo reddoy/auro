@@ -48,40 +48,30 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
     fetchCreatorInfo();
   }, [requestData.creatorId, requestData.creatorSlug]);
 
-  const createRequestInDB = async (): Promise<string> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
+  const getFallbackUserId = async (): Promise<string> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) return (user as any).id as string;
+    } catch {}
+    try {
+      if (typeof window !== 'undefined') {
+        return localStorage.getItem('auro_signup_user_id') || '';
+      }
+    } catch {}
+    return '';
+  };
 
-    // Combine all photos into a single array for the photos field
-    const allPhotos = [
-      ...requestData.photos.outfits,
-      ...requestData.photos.roomTourPhotos,
-      ...requestData.photos.datingProfileScreenshots
-    ];
-
-    // Create the notes object similar to the app structure
-    const notes = {
-      message: requestData.message,
-      media: requestData.photos,
-      consent: requestData.consent
-    };
-
-    const { data, error } = await supabase
-      .from('requests')
-      .insert([
-        {
-          user_id: user.id,
-          influencer_id: requestData.creatorId || creatorInfo?.id,
-          photos: allPhotos,
-          notes: JSON.stringify(notes),
-          status: 'pending'
-        }
-      ])
-      .select('id')
-      .single();
-
-    if (error) throw error;
-    return data.id;
+  const getFallbackEmail = async (): Promise<string> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if ((user as any)?.email) return (user as any).email as string;
+    } catch {}
+    try {
+      if (typeof window !== 'undefined') {
+        return localStorage.getItem('auro_signup_email') || '';
+      }
+    } catch {}
+    return '';
   };
 
   const handlePayment = async () => {
@@ -89,8 +79,11 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
     setError('');
 
     try {
-      // Create the request in the database first
-      const requestId = await createRequestInDB();
+      const fallbackUserId = await getFallbackUserId();
+      const fallbackEmail = await getFallbackEmail();
+      if (!fallbackUserId) {
+        throw new Error('Please sign up or sign in before paying.');
+      }
 
       // Create Stripe checkout session
       const response = await fetch('/api/checkout/create-session', {
@@ -101,8 +94,10 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
         body: JSON.stringify({
           creatorId: requestData.creatorId,
           creatorSlug: requestData.creatorSlug,
-          requestId: requestId,
+          requestId: undefined,
           uploadSessionId: requestData.uploadSessionId,
+          fallbackEmail,
+          fallbackUserId,
           reviewPayload: {
             message: requestData.message,
             photos: requestData.photos,
