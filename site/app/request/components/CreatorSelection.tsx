@@ -27,7 +27,6 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string>('');
-  const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchCreators = async () => {
@@ -59,35 +58,13 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
         if (error) throw error;
         
         console.log('Found creators:', data?.length || 0);
+        console.log('Creator data with avatars:', data?.map((c: Creator) => ({ 
+          id: c.id, 
+          username: c.username, 
+          avatar_url: c.avatar_url,
+          full_name: c.full_name 
+        })));
         setCreators(data || []);
-        
-        // Load avatar URLs for all creators (simplified approach)
-        if (data && data.length > 0) {
-          console.log('Processing avatar URLs for creators:', data.map(c => ({ id: c.id, username: c.username, avatar_url: c.avatar_url })));
-          
-          // Process avatars sequentially to avoid overwhelming the system
-          const urlMap: Record<string, string> = {};
-          
-          for (const creator of data) {
-            console.log(`Processing avatar for ${creator.username}:`, creator.avatar_url);
-            try {
-              if (creator.avatar_url) {
-                const avatarUrl = await getDisplayAvatarUrl(creator.avatar_url);
-                console.log(`Resolved avatar URL for ${creator.username}:`, avatarUrl);
-                urlMap[creator.id] = avatarUrl || '/auro_aura_logo.png';
-              } else {
-                console.log(`No avatar_url for ${creator.username}, using fallback`);
-                urlMap[creator.id] = '/auro_aura_logo.png';
-              }
-            } catch (error) {
-              console.error(`Error resolving avatar for ${creator.username}:`, error);
-              urlMap[creator.id] = '/auro_aura_logo.png';
-            }
-          }
-          
-          console.log('Final avatar URL map:', urlMap);
-          setAvatarUrls(urlMap);
-        }
       } catch (error: any) {
         console.error('Error fetching creators:', error);
         setError(error.message || 'Failed to fetch reviewers');
@@ -115,35 +92,29 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
   console.log('Creators:', creators.length, 'Filtered:', filteredCreators.length, 'Search:', searchTerm);
 
   const getCreatorImageUrl = (creator: Creator) => {
-    // Use the pre-loaded avatar URL from state
-    const preloadedUrl = avatarUrls[creator.id];
-    
-    // If we have a pre-loaded URL and it's not the fallback, use it
-    if (preloadedUrl && preloadedUrl !== '/auro_aura_logo.png') {
-      return preloadedUrl;
+    // If no avatar_url, use fallback
+    if (!creator.avatar_url) {
+      console.log(`No avatar_url for ${creator.username}, using fallback`);
+      return null; // Let Avatar component handle the fallback
     }
     
-    // Fallback: try to construct URL directly
-    if (creator.avatar_url) {
-      console.log('Trying direct URL construction for:', creator.username, creator.avatar_url);
-      
-      // If it's already a full URL, use it
-      if (creator.avatar_url.startsWith('http')) {
-        return creator.avatar_url;
-      }
-      
-      // Try to construct Supabase public URL
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      if (supabaseUrl) {
-        const cleanUrl = supabaseUrl.replace(/\/$/, '');
-        const directUrl = `${cleanUrl}/storage/v1/object/public/avatars/${creator.avatar_url}`;
-        console.log('Constructed direct URL:', directUrl);
-        return directUrl;
-      }
+    // If it's already a full URL, use it
+    if (creator.avatar_url.startsWith('http')) {
+      console.log(`Using full URL for ${creator.username}:`, creator.avatar_url);
+      return creator.avatar_url;
     }
     
-    console.log('Using fallback logo for:', creator.username);
-    return '/auro_aura_logo.png';
+    // Construct Supabase URL - hardcoded for now to test
+    // TODO: Get this from environment variables properly
+    const supabaseUrl = 'https://YOUR_SUPABASE_URL_HERE'; // Replace with actual URL
+    if (supabaseUrl && supabaseUrl !== 'https://YOUR_SUPABASE_URL_HERE') {
+      const fullUrl = `${supabaseUrl}/storage/v1/object/public/avatars/${creator.avatar_url}`;
+      console.log(`Constructed URL for ${creator.username}:`, fullUrl);
+      return fullUrl;
+    }
+    
+    console.log(`Could not construct URL for ${creator.username}, avatar_url:`, creator.avatar_url);
+    return null; // Let Avatar component handle the fallback
   };
 
   const handleCreatorSelect = (creator: Creator) => {
@@ -185,8 +156,8 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
           >
             <div className="creator-avatar">
               <Avatar 
-                src={getCreatorImageUrl(creator) !== '/auro_aura_logo.png' ? getCreatorImageUrl(creator) : undefined}
-                alt={`${creator.full_name || creator.username}'s avatar`}
+                src={getCreatorImageUrl(creator) || undefined}
+                alt={creator.full_name || creator.username || 'Reviewer'}
                 size={80}
               />
             </div>
@@ -253,11 +224,9 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
           Debug: {creators.length} total reviewers, {filteredCreators.length} filtered
           {searchTerm && ` (searching for: "${searchTerm}")`}
           <br />
-          Avatar URLs: {Object.keys(avatarUrls).length} loaded
-          <br />
           Supabase URL: {process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Present' : 'Missing'}
           <br />
-          Sample avatars: {JSON.stringify(Object.values(avatarUrls).slice(0, 2))}
+          Sample creator data: {JSON.stringify(creators.slice(0, 1).map((c: Creator) => ({ username: c.username, avatar_url: c.avatar_url })))}
         </div>
       )}
     </div>
