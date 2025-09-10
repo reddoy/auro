@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { getDisplayAvatarUrl } from '../../../lib/avatar';
 
 type Creator = {
   id: string;
@@ -25,6 +26,7 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string>('');
+  const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchCreators = async () => {
@@ -57,6 +59,22 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
         
         console.log('Found creators:', data?.length || 0);
         setCreators(data || []);
+        
+        // Load avatar URLs for all creators
+        if (data && data.length > 0) {
+          const urlPromises = data.map(async (creator: Creator) => {
+            const avatarUrl = await getDisplayAvatarUrl(creator.avatar_url);
+            return { id: creator.id, url: avatarUrl || '/auro_aura_logo.png' };
+          });
+          
+          const resolvedUrls = await Promise.all(urlPromises);
+          const urlMap = resolvedUrls.reduce((acc, { id, url }) => {
+            acc[id] = url;
+            return acc;
+          }, {} as Record<string, string>);
+          
+          setAvatarUrls(urlMap);
+        }
       } catch (error: any) {
         console.error('Error fetching creators:', error);
         setError(error.message || 'Failed to fetch reviewers');
@@ -84,10 +102,8 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
   console.log('Creators:', creators.length, 'Filtered:', filteredCreators.length, 'Search:', searchTerm);
 
   const getCreatorImageUrl = (creator: Creator) => {
-    if (!creator.avatar_url) return '/auro_aura_logo.png';
-    if (creator.avatar_url.startsWith('http')) return creator.avatar_url;
-    const supabaseUrl = supabase?.supabaseUrl || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    return `${supabaseUrl}/storage/v1/object/public/avatars/${creator.avatar_url}`;
+    // Use the pre-loaded avatar URL from state
+    return avatarUrls[creator.id] || '/auro_aura_logo.png';
   };
 
   const handleCreatorSelect = (creator: Creator) => {
@@ -132,7 +148,11 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
                 src={getCreatorImageUrl(creator)}
                 alt={`${creator.full_name || creator.username}'s avatar`}
                 onError={(e) => {
+                  console.error('Avatar load error for creator:', creator.id, creator.avatar_url);
                   e.currentTarget.src = '/auro_aura_logo.png';
+                }}
+                onLoad={() => {
+                  console.log('Avatar loaded successfully for creator:', creator.id);
                 }}
               />
             </div>
