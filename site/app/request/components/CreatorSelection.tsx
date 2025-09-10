@@ -104,11 +104,12 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
       return creator.avatar_url;
     }
     
-    // Construct Supabase URL - hardcoded for now to test
-    // TODO: Get this from environment variables properly
-    const supabaseUrl = 'https://YOUR_SUPABASE_URL_HERE'; // Replace with actual URL
-    if (supabaseUrl && supabaseUrl !== 'https://YOUR_SUPABASE_URL_HERE') {
-      const fullUrl = `${supabaseUrl}/storage/v1/object/public/avatars/${creator.avatar_url}`;
+    // Construct Supabase URL using environment variable
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    console.log(`Supabase URL from env:`, supabaseUrl);
+    if (supabaseUrl) {
+      const cleanUrl = supabaseUrl.replace(/\/$/, '');
+      const fullUrl = `${cleanUrl}/storage/v1/object/public/avatars/${creator.avatar_url}`;
       console.log(`Constructed URL for ${creator.username}:`, fullUrl);
       return fullUrl;
     }
