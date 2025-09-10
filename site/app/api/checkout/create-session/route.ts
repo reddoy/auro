@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { creatorId, creatorSlug, reviewPayload, requestId } = body || {};
+    const { creatorId, creatorSlug, reviewPayload, requestId, uploadSessionId } = body || {};
     if (!creatorId && !creatorSlug) {
       return new Response(JSON.stringify({ error: 'Missing creatorId or creatorSlug' }), { status: 400 });
     }
@@ -101,6 +101,7 @@ export async function POST(req: Request) {
         request_id: requestId || '',
         creator_id: resolvedCreatorId || '',
         creator_slug: creatorSlug || '',
+        upload_session_id: uploadSessionId || '',
       },
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/checkout/success?rid={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/checkout/cancel`,

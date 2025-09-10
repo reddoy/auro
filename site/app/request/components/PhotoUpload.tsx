@@ -14,15 +14,100 @@ type Props = {
   onNext: () => void;
   onBack: () => void;
   supabase: any;
+  uploadSessionId?: string;
 };
 
-export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, supabase }: Props) {
+export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, supabase, uploadSessionId }: Props) {
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [localPreviews, setLocalPreviews] = useState<{
+    outfits: string[];
+    roomTourPhotos: string[];
+    datingProfileScreenshots: string[];
+  }>({ outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] });
   
   const outfitsInputRef = useRef<HTMLInputElement>(null);
   const roomInputRef = useRef<HTMLInputElement>(null);
   const datingInputRef = useRef<HTMLInputElement>(null);
+  const isHeicLike = (file: File) => {
+    const name = (file.name || '').toLowerCase();
+    return file.type === 'image/heic' || file.type === 'image/heif' || name.endsWith('.heic') || name.endsWith('.heif');
+  };
+
+  const loadImageFromBlob = (blob: Blob): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      try {
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+        img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+        img.src = url;
+      } catch (e) { reject(e); }
+    });
+  };
+
+  const reencodeToJpeg = async (file: File): Promise<Blob> => {
+    const img = await loadImageFromBlob(file);
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas not supported');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('JPEG encode failed'))), 'image/jpeg', 0.9);
+    });
+    return blob;
+  };
+
+  const convertToJpeg = async (file: File): Promise<{ uploadFile: File; previewBlob: Blob }> => {
+    try {
+      if (isHeicLike(file)) {
+        const mod = await import('heic2any');
+        const heic2any: any = (mod as any).default || mod;
+        const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
+        const jpegBlob: Blob = Array.isArray(converted) ? converted[0] : converted;
+        const jpegFile = new File([jpegBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+        return { uploadFile: jpegFile, previewBlob: jpegBlob };
+      }
+      // Always convert any image to JPEG via canvas
+      const jpegBlob = await reencodeToJpeg(file);
+      const baseName = file.name.replace(/\.[^.]+$/, '');
+      const jpegFile = new File([jpegBlob], `${baseName}.jpg`, { type: 'image/jpeg' });
+      return { uploadFile: jpegFile, previewBlob: jpegBlob };
+    } catch {
+      // Fallback to original file if conversion fails
+      return { uploadFile: file, previewBlob: file };
+    }
+  };
+
+  const addLocalPreviews = (category: 'outfits' | 'roomTourPhotos' | 'datingProfileScreenshots', blobs: Blob[]) => {
+    const urls = blobs.map(b => URL.createObjectURL(b));
+    setLocalPreviews(prev => ({
+      ...prev,
+      [category]: [...prev[category], ...urls]
+    }));
+    return urls;
+  };
+
+  const removeLocalPreviewAt = (category: 'outfits' | 'roomTourPhotos' | 'datingProfileScreenshots', index: number) => {
+    setLocalPreviews(prev => {
+      const arr = [...prev[category]];
+      const [removed] = arr.splice(index, 1);
+      if (removed) URL.revokeObjectURL(removed);
+      return { ...prev, [category]: arr } as typeof prev;
+    });
+  };
+
+  React.useEffect(() => {
+    return () => {
+      try {
+        localPreviews.outfits.forEach(u => URL.revokeObjectURL(u));
+        localPreviews.roomTourPhotos.forEach(u => URL.revokeObjectURL(u));
+        localPreviews.datingProfileScreenshots.forEach(u => URL.revokeObjectURL(u));
+      } catch {}
+    };
+  }, []);
 
   const uploadToSupabase = async (file: File, category: string): Promise<string> => {
     setUploadProgress(prev => ({ ...prev, [category]: 0 }));
@@ -32,7 +117,7 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
     const res = await fetch('/api/storage/signed-upload', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ fileName: file.name, contentType, category })
+      body: JSON.stringify({ fileName: file.name, contentType, category, uploadSessionId })
     });
     if (!res.ok) {
       const msg = await res.text();
@@ -49,12 +134,21 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
     }
 
     // Create short-lived signed URL for display
-    const { data: urlData } = await supabase.storage
-      .from(bucket || 'request-media')
-      .createSignedUrl(path, 60 * 60 * 24);
+    // Ask server to sign a view URL to avoid client storage perms
+    const viewRes = await fetch('/api/storage/signed-upload', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action: 'sign-view', path, expiresIn: 60 * 60 * 24 })
+    });
+    if (!viewRes.ok) {
+      const errText = await viewRes.text();
+      throw new Error(`Failed to sign view URL: ${errText}`);
+    }
+    const viewJson = await viewRes.json();
+    const signedViewUrl = viewJson?.signedUrl as string;
 
     setUploadProgress(prev => ({ ...prev, [category]: 100 }));
-    return urlData?.signedUrl || '';
+    return signedViewUrl || '';
   };
 
   const handleFileUpload = async (files: FileList | null, category: 'outfits' | 'roomTourPhotos' | 'datingProfileScreenshots', isMultiple: boolean = false) => {
@@ -64,26 +158,38 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
 
     try {
       if (isMultiple) {
-        const uploadPromises = Array.from(files).map((file, index) => 
-          uploadToSupabase(file, `${category}_${index}`)
-        );
+        const prepared = await Promise.all(Array.from(files).map(async (file) => {
+          const { uploadFile, previewBlob } = await convertToJpeg(file);
+          return { uploadFile, previewBlob };
+        }));
+        addLocalPreviews(category, prepared.map(p => p.previewBlob));
+        const uploadPromises = prepared.map((p, index) => uploadToSupabase(p.uploadFile, `${category}_${index}`));
         const urls = await Promise.all(uploadPromises);
         
         if (category === 'outfits') {
           onPhotosChange({ ...photos, outfits: [...photos.outfits, ...urls] });
+          // remove the number of previews we just fulfilled
+          for (let i = 0; i < urls.length; i++) removeLocalPreviewAt('outfits', 0);
         } else if (category === 'roomTourPhotos') {
           onPhotosChange({ ...photos, roomTourPhotos: [...photos.roomTourPhotos, ...urls] });
+          for (let i = 0; i < urls.length; i++) removeLocalPreviewAt('roomTourPhotos', 0);
         } else if (category === 'datingProfileScreenshots') {
           onPhotosChange({ ...photos, datingProfileScreenshots: [...photos.datingProfileScreenshots, ...urls] });
+          for (let i = 0; i < urls.length; i++) removeLocalPreviewAt('datingProfileScreenshots', 0);
         }
       } else {
-        const url = await uploadToSupabase(files[0], category);
+        const { uploadFile, previewBlob } = await convertToJpeg(files[0]);
+        addLocalPreviews(category, [previewBlob]);
+        const url = await uploadToSupabase(uploadFile, category);
         if (category === 'outfits') {
           onPhotosChange({ ...photos, outfits: [...photos.outfits, url] });
+          removeLocalPreviewAt('outfits', 0);
         } else if (category === 'roomTourPhotos') {
           onPhotosChange({ ...photos, roomTourPhotos: [...photos.roomTourPhotos, url] });
+          removeLocalPreviewAt('roomTourPhotos', 0);
         } else if (category === 'datingProfileScreenshots') {
           onPhotosChange({ ...photos, datingProfileScreenshots: [...photos.datingProfileScreenshots, url] });
+          removeLocalPreviewAt('datingProfileScreenshots', 0);
         }
       }
     } catch (error) {
@@ -99,12 +205,15 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
     if (category === 'outfits') {
       const newOutfits = photos.outfits.filter((_, i) => i !== index);
       onPhotosChange({ ...photos, outfits: newOutfits });
+      removeLocalPreviewAt('outfits', index);
     } else if (category === 'roomTourPhotos') {
       const newRoomPhotos = photos.roomTourPhotos.filter((_, i) => i !== index);
       onPhotosChange({ ...photos, roomTourPhotos: newRoomPhotos });
+      removeLocalPreviewAt('roomTourPhotos', index);
     } else if (category === 'datingProfileScreenshots') {
       const newDating = photos.datingProfileScreenshots.filter((_, i) => i !== index);
       onPhotosChange({ ...photos, datingProfileScreenshots: newDating });
+      removeLocalPreviewAt('datingProfileScreenshots', index);
     }
   };
 
@@ -137,6 +246,14 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
                 >
                   ×
                 </button>
+              </div>
+            ))}
+            {localPreviews.outfits.map((preview, index) => (
+              <div key={`preview-outfit-${index}`} className="photo-item">
+                <img src={preview} alt={`Uploading outfit ${index + 1}`} />
+                <div className="upload-progress" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)', color: '#fff', borderRadius: 12 }}>
+                  <div className="spinner"></div>
+                </div>
               </div>
             ))}
             
@@ -199,6 +316,14 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
                 </button>
               </div>
             ))}
+            {localPreviews.roomTourPhotos.map((preview, index) => (
+              <div key={`preview-room-${index}`} className="photo-item">
+                <img src={preview} alt={`Uploading room ${index + 1}`} />
+                <div className="upload-progress" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)', color: '#fff', borderRadius: 12 }}>
+                  <div className="spinner"></div>
+                </div>
+              </div>
+            ))}
             
             {photos.roomTourPhotos.length < 3 && (
               <div 
@@ -257,6 +382,14 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
                 >
                   ×
                 </button>
+              </div>
+            ))}
+            {localPreviews.datingProfileScreenshots.map((preview, index) => (
+              <div key={`preview-dating-${index}`} className="photo-item">
+                <img src={preview} alt={`Uploading screenshot ${index + 1}`} />
+                <div className="upload-progress" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)', color: '#fff', borderRadius: 12 }}>
+                  <div className="spinner"></div>
+                </div>
               </div>
             ))}
             {photos.datingProfileScreenshots.length < 10 && (

@@ -23,6 +23,7 @@ export type RequestData = {
   };
   userId?: string;
   requestId?: string;
+  uploadSessionId?: string;
 };
 
 const STEPS = [
@@ -60,6 +61,16 @@ export default function RequestPage() {
         try {
           const client = createClient(supabaseUrl, supabaseKey);
           setSupabase(client);
+          // Generate or reuse a local upload session id for temp storage grouping
+          try {
+            const key = 'auro_upload_session_id';
+            let sid = localStorage.getItem(key) || '';
+            if (!sid) {
+              sid = `sess_${Math.random().toString(36).slice(2)}_${Date.now()}`;
+              localStorage.setItem(key, sid);
+            }
+            setRequestData(prev => ({ ...prev, uploadSessionId: sid }));
+          } catch {}
 
           // Check if user is already authenticated
           const checkAuth = async () => {
@@ -188,6 +199,7 @@ export default function RequestPage() {
             onNext={nextStep}
             onBack={previousStep}
             supabase={supabase}
+            uploadSessionId={requestData.uploadSessionId}
           />
         );
       case 'prompt-answers':

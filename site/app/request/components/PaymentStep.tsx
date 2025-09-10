@@ -102,6 +102,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
           creatorId: requestData.creatorId,
           creatorSlug: requestData.creatorSlug,
           requestId: requestId,
+          uploadSessionId: requestData.uploadSessionId,
           reviewPayload: {
             message: requestData.message,
             photos: requestData.photos,
