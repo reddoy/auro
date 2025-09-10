@@ -54,10 +54,9 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
 
     // Combine all photos into a single array for the photos field
     const allPhotos = [
-      ...(requestData.photos.selfie ? [requestData.photos.selfie] : []),
       ...requestData.photos.outfits,
       ...requestData.photos.roomTourPhotos,
-      ...(requestData.photos.datingProfile ? [requestData.photos.datingProfile] : [])
+      ...requestData.photos.datingProfileScreenshots
     ];
 
     // Create the notes object similar to the app structure

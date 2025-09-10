@@ -3,10 +3,9 @@
 import React, { useState, useRef } from 'react';
 
 type Photos = {
-  selfie?: string;
   outfits: string[];
   roomTourPhotos: string[];
-  datingProfile?: string;
+  datingProfileScreenshots: string[];
 };
 
 type Props = {
@@ -21,7 +20,6 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   
-  const selfieInputRef = useRef<HTMLInputElement>(null);
   const outfitsInputRef = useRef<HTMLInputElement>(null);
   const roomInputRef = useRef<HTMLInputElement>(null);
   const datingInputRef = useRef<HTMLInputElement>(null);
@@ -53,7 +51,7 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
     return urlData?.signedUrl || '';
   };
 
-  const handleFileUpload = async (files: FileList | null, category: 'selfie' | 'outfits' | 'roomTourPhotos' | 'datingProfile', isMultiple: boolean = false) => {
+  const handleFileUpload = async (files: FileList | null, category: 'outfits' | 'roomTourPhotos' | 'datingProfileScreenshots', isMultiple: boolean = false) => {
     if (!files || files.length === 0) return;
 
     setUploading(prev => ({ ...prev, [category]: true }));
@@ -69,10 +67,18 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
           onPhotosChange({ ...photos, outfits: [...photos.outfits, ...urls] });
         } else if (category === 'roomTourPhotos') {
           onPhotosChange({ ...photos, roomTourPhotos: [...photos.roomTourPhotos, ...urls] });
+        } else if (category === 'datingProfileScreenshots') {
+          onPhotosChange({ ...photos, datingProfileScreenshots: [...photos.datingProfileScreenshots, ...urls] });
         }
       } else {
         const url = await uploadToSupabase(files[0], category);
-        onPhotosChange({ ...photos, [category]: url });
+        if (category === 'outfits') {
+          onPhotosChange({ ...photos, outfits: [...photos.outfits, url] });
+        } else if (category === 'roomTourPhotos') {
+          onPhotosChange({ ...photos, roomTourPhotos: [...photos.roomTourPhotos, url] });
+        } else if (category === 'datingProfileScreenshots') {
+          onPhotosChange({ ...photos, datingProfileScreenshots: [...photos.datingProfileScreenshots, url] });
+        }
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -83,81 +89,35 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
     }
   };
 
-  const removePhoto = (category: 'selfie' | 'outfits' | 'roomTourPhotos' | 'datingProfile', index?: number) => {
-    if (category === 'outfits' && typeof index === 'number') {
+  const removePhoto = (category: 'outfits' | 'roomTourPhotos' | 'datingProfileScreenshots', index: number) => {
+    if (category === 'outfits') {
       const newOutfits = photos.outfits.filter((_, i) => i !== index);
       onPhotosChange({ ...photos, outfits: newOutfits });
-    } else if (category === 'roomTourPhotos' && typeof index === 'number') {
+    } else if (category === 'roomTourPhotos') {
       const newRoomPhotos = photos.roomTourPhotos.filter((_, i) => i !== index);
       onPhotosChange({ ...photos, roomTourPhotos: newRoomPhotos });
-    } else {
-      onPhotosChange({ ...photos, [category]: undefined });
+    } else if (category === 'datingProfileScreenshots') {
+      const newDating = photos.datingProfileScreenshots.filter((_, i) => i !== index);
+      onPhotosChange({ ...photos, datingProfileScreenshots: newDating });
     }
   };
 
-  const canProceed = photos.selfie && photos.outfits.length > 0;
+  // All optional now
+  const canProceed = true;
 
   return (
     <div className="photo-upload">
       <div className="step-header">
         <h2>Upload Your Photos</h2>
-        <p>Upload photos for your review. A selfie and at least one outfit photo are required.</p>
+        <p>All photo uploads are optional. Add up to 3 outfit photos, 3 room photos, and 10 dating profile screenshots.</p>
       </div>
 
       <div className="upload-sections">
-        {/* Selfie Section */}
-        <div className="upload-section">
-          <div className="section-header">
-            <h3>Selfie <span className="required">*</span></h3>
-            <p>A clear photo of your face for attractiveness rating</p>
-          </div>
-          
-          <div className="photo-grid">
-            {photos.selfie ? (
-              <div className="photo-item">
-                <img src={photos.selfie} alt="Selfie" />
-                <button
-                  type="button"
-                  className="remove-photo"
-                  onClick={() => removePhoto('selfie')}
-                >
-                  ×
-                </button>
-              </div>
-            ) : (
-              <div 
-                className={`upload-placeholder ${uploading.selfie ? 'uploading' : ''}`}
-                onClick={() => selfieInputRef.current?.click()}
-              >
-                {uploading.selfie ? (
-                  <div className="upload-progress">
-                    <div className="spinner"></div>
-                    <span>Uploading...</span>
-                  </div>
-                ) : (
-                  <>
-                    <div className="upload-icon">📸</div>
-                    <span>Click to upload selfie</span>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-          
-          <input
-            ref={selfieInputRef}
-            type="file"
-            accept="image/*"
-            style={{ display: 'none' }}
-            onChange={(e) => handleFileUpload(e.target.files, 'selfie')}
-          />
-        </div>
-
         {/* Outfits Section */}
         <div className="upload-section">
           <div className="section-header">
-            <h3>Outfit Photos <span className="required">*</span></h3>
-            <p>Full body photos showing your style and wardrobe</p>
+            <h3>Outfit Photos</h3>
+            <p>Up to 3 full-body photos showing your style (optional)</p>
           </div>
           
           <div className="photo-grid">
@@ -174,10 +134,11 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
               </div>
             ))}
             
-            <div 
-              className={`upload-placeholder ${uploading.outfits ? 'uploading' : ''}`}
-              onClick={() => outfitsInputRef.current?.click()}
-            >
+            {photos.outfits.length < 3 && (
+              <div 
+                className={`upload-placeholder ${uploading.outfits ? 'uploading' : ''}`}
+                onClick={() => outfitsInputRef.current?.click()}
+              >
               {uploading.outfits ? (
                 <div className="upload-progress">
                   <div className="spinner"></div>
@@ -186,10 +147,11 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
               ) : (
                 <>
                   <div className="upload-icon">👔</div>
-                  <span>Add outfit photos</span>
+                  <span>Add outfit photo ({3 - photos.outfits.length} left)</span>
                 </>
               )}
-            </div>
+              </div>
+            )}
           </div>
           
           <input
@@ -198,7 +160,16 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
             accept="image/*"
             multiple
             style={{ display: 'none' }}
-            onChange={(e) => handleFileUpload(e.target.files, 'outfits', true)}
+            onChange={(e) => {
+              const files = e.target.files;
+              if (!files) return;
+              const remaining = 3 - photos.outfits.length;
+              const limited = Array.from(files).slice(0, Math.max(0, remaining));
+              const dataTransfer = new DataTransfer();
+              limited.forEach(f => dataTransfer.items.add(f));
+              handleFileUpload(dataTransfer.files, 'outfits', true);
+              e.currentTarget.value = '';
+            }}
           />
         </div>
 
@@ -206,7 +177,7 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
         <div className="upload-section">
           <div className="section-header">
             <h3>Room Tour Photos</h3>
-            <p>Photos of your living space for room setup feedback</p>
+            <p>Up to 3 photos of your living space (optional)</p>
           </div>
           
           <div className="photo-grid">
@@ -223,10 +194,11 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
               </div>
             ))}
             
-            <div 
-              className={`upload-placeholder ${uploading.roomTourPhotos ? 'uploading' : ''}`}
-              onClick={() => roomInputRef.current?.click()}
-            >
+            {photos.roomTourPhotos.length < 3 && (
+              <div 
+                className={`upload-placeholder ${uploading.roomTourPhotos ? 'uploading' : ''}`}
+                onClick={() => roomInputRef.current?.click()}
+              >
               {uploading.roomTourPhotos ? (
                 <div className="upload-progress">
                   <div className="spinner"></div>
@@ -235,10 +207,11 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
               ) : (
                 <>
                   <div className="upload-icon">🏠</div>
-                  <span>Add room photos</span>
+                  <span>Add room photo ({3 - photos.roomTourPhotos.length} left)</span>
                 </>
               )}
-            </div>
+              </div>
+            )}
           </div>
           
           <input
@@ -247,35 +220,45 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
             accept="image/*"
             multiple
             style={{ display: 'none' }}
-            onChange={(e) => handleFileUpload(e.target.files, 'roomTourPhotos', true)}
+            onChange={(e) => {
+              const files = e.target.files;
+              if (!files) return;
+              const remaining = 3 - photos.roomTourPhotos.length;
+              const limited = Array.from(files).slice(0, Math.max(0, remaining));
+              const dataTransfer = new DataTransfer();
+              limited.forEach(f => dataTransfer.items.add(f));
+              handleFileUpload(dataTransfer.files, 'roomTourPhotos', true);
+              e.currentTarget.value = '';
+            }}
           />
         </div>
 
-        {/* Dating Profile Section */}
+        {/* Dating Profile Screenshots Section */}
         <div className="upload-section">
           <div className="section-header">
-            <h3>Dating Profile Screenshot</h3>
-            <p>Optional: Screenshot of your dating app profile for additional feedback</p>
+            <h3>Dating Profile Screenshots</h3>
+            <p>Up to 10 screenshots from your dating profile (optional)</p>
           </div>
           
           <div className="photo-grid">
-            {photos.datingProfile ? (
-              <div className="photo-item">
-                <img src={photos.datingProfile} alt="Dating profile" />
+            {photos.datingProfileScreenshots.map((shot, index) => (
+              <div key={index} className="photo-item">
+                <img src={shot} alt={`Dating profile ${index + 1}`} />
                 <button
                   type="button"
                   className="remove-photo"
-                  onClick={() => removePhoto('datingProfile')}
+                  onClick={() => removePhoto('datingProfileScreenshots', index)}
                 >
                   ×
                 </button>
               </div>
-            ) : (
+            ))}
+            {photos.datingProfileScreenshots.length < 10 && (
               <div 
-                className={`upload-placeholder ${uploading.datingProfile ? 'uploading' : ''}`}
+                className={`upload-placeholder ${uploading.datingProfileScreenshots ? 'uploading' : ''}`}
                 onClick={() => datingInputRef.current?.click()}
               >
-                {uploading.datingProfile ? (
+                {uploading.datingProfileScreenshots ? (
                   <div className="upload-progress">
                     <div className="spinner"></div>
                     <span>Uploading...</span>
@@ -283,7 +266,7 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
                 ) : (
                   <>
                     <div className="upload-icon">💕</div>
-                    <span>Add dating profile</span>
+                    <span>Add screenshot ({10 - photos.datingProfileScreenshots.length} left)</span>
                   </>
                 )}
               </div>
@@ -294,8 +277,18 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
             ref={datingInputRef}
             type="file"
             accept="image/*"
+            multiple
             style={{ display: 'none' }}
-            onChange={(e) => handleFileUpload(e.target.files, 'datingProfile')}
+            onChange={(e) => {
+              const files = e.target.files;
+              if (!files) return;
+              const remaining = 10 - photos.datingProfileScreenshots.length;
+              const limited = Array.from(files).slice(0, Math.max(0, remaining));
+              const dataTransfer = new DataTransfer();
+              limited.forEach(f => dataTransfer.items.add(f));
+              handleFileUpload(dataTransfer.files, 'datingProfileScreenshots', true);
+              e.currentTarget.value = '';
+            }}
           />
         </div>
       </div>

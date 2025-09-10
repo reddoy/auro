@@ -15,7 +15,7 @@ import DownloadApp from './components/DownloadApp';
 export type RequestData = {
   creatorId?: string;
   creatorSlug?: string;
-  photos: { selfie?: string; outfits: string[]; roomTourPhotos: string[]; datingProfile?: string };
+  photos: { outfits: string[]; roomTourPhotos: string[]; datingProfileScreenshots: string[] };
   message: string;
   consent: {
     shareOnSocial: boolean;
@@ -40,7 +40,7 @@ type Step = typeof STEPS[number];
 export default function RequestPage() {
   const [currentStep, setCurrentStep] = useState<Step>('creator-selection');
   const [requestData, setRequestData] = useState<RequestData>({
-    photos: { outfits: [], roomTourPhotos: [] },
+    photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
     message: '',
     consent: {
       shareOnSocial: false,
@@ -65,7 +65,16 @@ export default function RequestPage() {
           const checkAuth = async () => {
             try {
               const { data: { user } } = await client.auth.getUser();
-              setIsAuthenticated(!!user);
+              if (!user) {
+                try {
+                  // Ensure an authenticated session for storage uploads
+                  await client.auth.signInAnonymously();
+                } catch (anonErr) {
+                  console.warn('Anonymous sign-in failed:', anonErr);
+                }
+              }
+              const { data: { user: userAfter } } = await client.auth.getUser();
+              setIsAuthenticated(!!userAfter);
             } catch (error) {
               console.error('Auth check error:', error);
             }
