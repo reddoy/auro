@@ -83,36 +83,8 @@ export default function AuthScreen() {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         
-        // Check if user has SMS 2FA enabled
-        const { data: sms2fa, error: sms2faError } = await supabase
-          .from('user_two_factor')
-          .select('*')
-          .single();
-
-        if (sms2faError && sms2faError.code !== 'PGRST116') {
-          throw sms2faError;
-        }
-
-        if (sms2fa && sms2fa.enabled) {
-          // User has SMS 2FA enabled, send verification code
-          const { data: smsData, error: smsError } = await supabase.functions.invoke('send-sms-code', {
-            body: {
-              phone: sms2fa.phone,
-              action: 'verify'
-            }
-          });
-          
-          if (smsError) throw smsError;
-          
-          // Redirect to 2FA verification
-          router.replace({
-            pathname: '/two-factor-verify',
-            params: { phoneNumber: sms2fa.phone }
-          });
-        } else {
-          // No SMS 2FA, proceed normally
-          router.replace('/(tabs)/requests');
-        }
+        // SMS 2FA disabled: proceed directly to app after successful login
+        router.replace('/(tabs)/requests');
       } else {
         const origin =
           typeof window !== 'undefined' && (window as any).location?.origin

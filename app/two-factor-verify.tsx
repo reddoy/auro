@@ -19,57 +19,11 @@ export default function TwoFactorVerifyScreen() {
   const [sendingCode, setSendingCode] = useState(false);
 
   const handleVerify = async () => {
-    if (!verificationCode || !phoneNumber) {
-      Alert.alert('Error', 'Please enter the verification code');
-      return;
-    }
-
-    try {
-      setVerifying(true);
-      
-      const { data, error } = await supabase.functions.invoke('verify-sms-code', {
-        body: {
-          phone: phoneNumber,
-          code: verificationCode,
-          action: 'verify'
-        }
-      });
-
-      if (error) throw error;
-
-      // Success - redirect to main app
-      router.replace('/(tabs)/requests');
-    } catch (error: any) {
-      console.error('Error verifying SMS 2FA:', error);
-      Alert.alert('Error', 'Invalid verification code. Please try again.');
-      setVerificationCode('');
-    } finally {
-      setVerifying(false);
-    }
+    Alert.alert('Unavailable', 'SMS two-factor authentication is currently disabled.');
   };
 
   const handleResendCode = async () => {
-    if (!phoneNumber) return;
-
-    try {
-      setSendingCode(true);
-      
-      const { data, error } = await supabase.functions.invoke('send-sms-code', {
-        body: {
-          phone: phoneNumber,
-          action: 'verify'
-        }
-      });
-
-      if (error) throw error;
-
-      Alert.alert('Code Sent', 'A new verification code has been sent to your phone.');
-    } catch (error: any) {
-      console.error('Error resending SMS code:', error);
-      Alert.alert('Error', 'Failed to resend code. Please try again.');
-    } finally {
-      setSendingCode(false);
-    }
+    Alert.alert('Unavailable', 'SMS two-factor authentication is currently disabled.');
   };
 
   const handleBackToLogin = () => {
@@ -99,9 +53,9 @@ export default function TwoFactorVerifyScreen() {
         />
 
         <TouchableOpacity 
-          style={[styles.button, verifying && styles.buttonDisabled]} 
+          style={[styles.button, styles.buttonDisabled]} 
           onPress={handleVerify}
-          disabled={verifying || verificationCode.length !== 6}
+          disabled
         >
           {verifying ? (
             <ActivityIndicator color="#fff" />
@@ -113,7 +67,7 @@ export default function TwoFactorVerifyScreen() {
         <TouchableOpacity 
           style={styles.resendButton} 
           onPress={handleResendCode}
-          disabled={sendingCode}
+          disabled
         >
           <Text style={styles.resendButtonText}>
             {sendingCode ? 'Sending...' : 'Resend Code'}

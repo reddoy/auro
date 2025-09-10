@@ -31,6 +31,7 @@ export default function ProfileSettingsScreen() {
   const [emailNotif, setEmailNotif] = useState(true);
   const [pushNotif, setPushNotif] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  // SMS 2FA disabled
   const [hasMFA, setHasMFA] = useState(false);
   const [checkingMFA, setCheckingMFA] = useState(false);
 
@@ -74,8 +75,7 @@ export default function ProfileSettingsScreen() {
 
         }
         
-        // Check MFA status
-        await checkMFAStatus();
+        // SMS 2FA disabled: skip MFA status check
       } catch (e: any) {
         Alert.alert('Error', e?.message || 'Failed to load profile');
       } finally {
@@ -85,58 +85,15 @@ export default function ProfileSettingsScreen() {
     run();
   }, []);
 
-  const checkMFAStatus = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('user_two_factor')
-        .select('*')
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      setHasMFA(data && data.enabled);
-    } catch (error) {
-      console.error('Error checking SMS 2FA status:', error);
-    }
-  };
+  // SMS 2FA disabled: no-op
+  const checkMFAStatus = async () => {};
 
   const handleSetup2FA = () => {
-    router.push('/two-factor-setup');
+    Alert.alert('Unavailable', 'SMS two-factor authentication is currently disabled.');
   };
 
   const handleDisable2FA = async () => {
-    Alert.alert(
-      'Disable SMS Two-Factor Authentication',
-      'Are you sure you want to disable SMS 2FA? This will make your account less secure.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Disable', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setCheckingMFA(true);
-              
-              const { error } = await supabase
-                .from('user_two_factor')
-                .update({ enabled: false, updated_at: new Date().toISOString() })
-                .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
-                
-              if (error) throw error;
-              
-              setHasMFA(false);
-              Alert.alert('Success', 'SMS two-factor authentication has been disabled.');
-            } catch (error: any) {
-              Alert.alert('Error', 'Failed to disable SMS 2FA: ' + error.message);
-            } finally {
-              setCheckingMFA(false);
-            }
-          }
-        }
-      ]
-    );
+    Alert.alert('Unavailable', 'SMS two-factor authentication is currently disabled.');
   };
 
   const handleUploaded = async ({ publicUrl, path }: { publicUrl: string; path: string }) => {
@@ -248,29 +205,7 @@ export default function ProfileSettingsScreen() {
         )}
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Security</Text>
-        <View style={styles.securityRow}>
-          <View style={styles.securityInfo}>
-            <Text style={styles.label}>SMS Two-Factor Authentication</Text>
-            <Text style={styles.securityDescription}>
-              {hasMFA ? 'Enabled - SMS codes protect your account' : 'Secure your account with SMS verification'}
-            </Text>
-          </View>
-          {checkingMFA ? (
-            <ActivityIndicator color={Colors.brand.accentMagenta} />
-          ) : (
-            <TouchableOpacity 
-              style={[styles.securityButton, hasMFA && styles.securityButtonDanger]} 
-              onPress={hasMFA ? handleDisable2FA : handleSetup2FA}
-            >
-              <Text style={[styles.securityButtonText, hasMFA && styles.securityButtonTextDanger]}>
-                {hasMFA ? 'Disable' : 'Enable'}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+      {/* SMS 2FA disabled: hide Security card */}
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Privacy & Notifications</Text>
