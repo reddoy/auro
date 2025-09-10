@@ -38,15 +38,14 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
       const msg = await res.text();
       throw new Error(`Failed to get signed URL: ${msg}`);
     }
-    const { signedUrl, path, bucket } = await res.json();
+    const { signedUrl, path, bucket, token } = await res.json();
 
-    // Upload via the signed URL (Supabase signed upload expects multipart/form-data)
-    const formData = new FormData();
-    formData.append('file', file);
-    const putRes = await fetch(signedUrl, { method: 'PUT', body: formData });
-    if (!putRes.ok) {
-      const errText = await putRes.text();
-      throw new Error(`Signed upload failed: ${errText}`);
+    // Upload using Supabase helper with token
+    const { error: uploadErr } = await supabase.storage
+      .from(bucket || 'request-media')
+      .uploadToSignedUrl(path, token, file, { contentType });
+    if (uploadErr) {
+      throw new Error(`Signed upload failed: ${uploadErr.message}`);
     }
 
     // Create short-lived signed URL for display
