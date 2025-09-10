@@ -19,11 +19,11 @@ export default function TwoFactorVerifyScreen() {
   const [sendingCode, setSendingCode] = useState(false);
 
   const handleVerify = async () => {
-    Alert.alert('Unavailable', 'SMS two-factor authentication is currently disabled.');
+    Alert.alert('Unavailable', 'Two-factor authentication is disabled.');
   };
 
   const handleResendCode = async () => {
-    Alert.alert('Unavailable', 'SMS two-factor authentication is currently disabled.');
+    Alert.alert('Unavailable', 'Two-factor authentication is disabled.');
   };
 
   const handleBackToLogin = () => {

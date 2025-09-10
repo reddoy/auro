@@ -82,8 +82,8 @@ export default function AuthScreen() {
       if (isLogin) {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        
-        // SMS 2FA disabled: proceed directly to app after successful login
+
+        // Proceed directly to app after successful login (email-only auth)
         router.replace('/(tabs)/requests');
       } else {
         const origin =

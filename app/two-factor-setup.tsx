@@ -24,19 +24,42 @@ export default function TwoFactorSetupScreen() {
   const [hasSMS2FA, setHasSMS2FA] = useState(false);
 
   useEffect(() => {
-    // SMS 2FA disabled: skip status check
-    setLoading(false);
+    const init = async () => {
+      try {
+        const { data: userResult } = await supabase.auth.getUser();
+        const user = userResult.user;
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+        const { data, error } = await supabase
+          .from('user_two_factor')
+          .select('phone, enabled')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (error) throw error;
+        if (data) {
+          setHasSMS2FA(!!data.enabled);
+          setPhoneNumber(data.phone || '');
+        }
+      } catch (e) {
+        // best-effort
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
   }, []);
 
-  // SMS 2FA disabled: no-op
+  // Disabled screen: no-op
   const checkSMS2FAStatus = async () => {};
 
   const sendVerificationCode = async () => {
-    Alert.alert('Unavailable', 'SMS two-factor authentication is currently disabled.');
+    Alert.alert('Unavailable', 'Two-factor authentication is disabled.');
   };
 
   const verifyAndEnable = async () => {
-    Alert.alert('Unavailable', 'SMS two-factor authentication is currently disabled.');
+    Alert.alert('Unavailable', 'Two-factor authentication is disabled.');
   };
 
   if (loading) {
@@ -83,11 +106,7 @@ export default function TwoFactorSetupScreen() {
               onPress={sendVerificationCode}
               disabled
             >
-              {sendingCode ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Send Verification Code</Text>
-              )}
+              <Text style={styles.buttonText}>Send Verification Code</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -114,11 +133,7 @@ export default function TwoFactorSetupScreen() {
               onPress={verifyAndEnable}
               disabled
             >
-              {verifyingCode ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Verify & Enable</Text>
-              )}
+              <Text style={styles.buttonText}>Verify & Enable</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -126,9 +141,7 @@ export default function TwoFactorSetupScreen() {
               onPress={sendVerificationCode}
               disabled
             >
-              <Text style={styles.resendButtonText}>
-                {sendingCode ? 'Sending...' : 'Resend Code'}
-              </Text>
+              <Text style={styles.resendButtonText}>Resend Code</Text>
             </TouchableOpacity>
           </View>
         )}
