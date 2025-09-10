@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { getDisplayAvatarUrl } from '../../../lib/avatar';
+import Avatar from '../../creators/[slug]/Avatar';
 
 type Creator = {
   id: string;
@@ -60,19 +61,31 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
         console.log('Found creators:', data?.length || 0);
         setCreators(data || []);
         
-        // Load avatar URLs for all creators
+        // Load avatar URLs for all creators (simplified approach)
         if (data && data.length > 0) {
-          const urlPromises = data.map(async (creator: Creator) => {
-            const avatarUrl = await getDisplayAvatarUrl(creator.avatar_url);
-            return { id: creator.id, url: avatarUrl || '/auro_aura_logo.png' };
-          });
+          console.log('Processing avatar URLs for creators:', data.map(c => ({ id: c.id, username: c.username, avatar_url: c.avatar_url })));
           
-          const resolvedUrls = await Promise.all(urlPromises);
-          const urlMap = resolvedUrls.reduce((acc, { id, url }) => {
-            acc[id] = url;
-            return acc;
-          }, {} as Record<string, string>);
+          // Process avatars sequentially to avoid overwhelming the system
+          const urlMap: Record<string, string> = {};
           
+          for (const creator of data) {
+            console.log(`Processing avatar for ${creator.username}:`, creator.avatar_url);
+            try {
+              if (creator.avatar_url) {
+                const avatarUrl = await getDisplayAvatarUrl(creator.avatar_url);
+                console.log(`Resolved avatar URL for ${creator.username}:`, avatarUrl);
+                urlMap[creator.id] = avatarUrl || '/auro_aura_logo.png';
+              } else {
+                console.log(`No avatar_url for ${creator.username}, using fallback`);
+                urlMap[creator.id] = '/auro_aura_logo.png';
+              }
+            } catch (error) {
+              console.error(`Error resolving avatar for ${creator.username}:`, error);
+              urlMap[creator.id] = '/auro_aura_logo.png';
+            }
+          }
+          
+          console.log('Final avatar URL map:', urlMap);
           setAvatarUrls(urlMap);
         }
       } catch (error: any) {
@@ -103,7 +116,34 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
 
   const getCreatorImageUrl = (creator: Creator) => {
     // Use the pre-loaded avatar URL from state
-    return avatarUrls[creator.id] || '/auro_aura_logo.png';
+    const preloadedUrl = avatarUrls[creator.id];
+    
+    // If we have a pre-loaded URL and it's not the fallback, use it
+    if (preloadedUrl && preloadedUrl !== '/auro_aura_logo.png') {
+      return preloadedUrl;
+    }
+    
+    // Fallback: try to construct URL directly
+    if (creator.avatar_url) {
+      console.log('Trying direct URL construction for:', creator.username, creator.avatar_url);
+      
+      // If it's already a full URL, use it
+      if (creator.avatar_url.startsWith('http')) {
+        return creator.avatar_url;
+      }
+      
+      // Try to construct Supabase public URL
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (supabaseUrl) {
+        const cleanUrl = supabaseUrl.replace(/\/$/, '');
+        const directUrl = `${cleanUrl}/storage/v1/object/public/avatars/${creator.avatar_url}`;
+        console.log('Constructed direct URL:', directUrl);
+        return directUrl;
+      }
+    }
+    
+    console.log('Using fallback logo for:', creator.username);
+    return '/auro_aura_logo.png';
   };
 
   const handleCreatorSelect = (creator: Creator) => {
@@ -144,16 +184,10 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
             onClick={() => handleCreatorSelect(creator)}
           >
             <div className="creator-avatar">
-              <img
-                src={getCreatorImageUrl(creator)}
+              <Avatar 
+                src={getCreatorImageUrl(creator) !== '/auro_aura_logo.png' ? getCreatorImageUrl(creator) : undefined}
                 alt={`${creator.full_name || creator.username}'s avatar`}
-                onError={(e) => {
-                  console.error('Avatar load error for creator:', creator.id, creator.avatar_url);
-                  e.currentTarget.src = '/auro_aura_logo.png';
-                }}
-                onLoad={() => {
-                  console.log('Avatar loaded successfully for creator:', creator.id);
-                }}
+                size={80}
               />
             </div>
             
@@ -218,6 +252,12 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
         <div className="debug-info" style={{ fontSize: '12px', color: '#888', marginTop: '10px' }}>
           Debug: {creators.length} total reviewers, {filteredCreators.length} filtered
           {searchTerm && ` (searching for: "${searchTerm}")`}
+          <br />
+          Avatar URLs: {Object.keys(avatarUrls).length} loaded
+          <br />
+          Supabase URL: {process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Present' : 'Missing'}
+          <br />
+          Sample avatars: {JSON.stringify(Object.values(avatarUrls).slice(0, 2))}
         </div>
       )}
     </div>
