@@ -34,8 +34,8 @@ export async function POST(req: Request) {
                 const { data: reqRow } = await admin.from('requests').select('user_id').eq('id', requestId).maybeSingle();
                 const userId = (reqRow as any)?.user_id as string | undefined;
                 if (userId) {
-                const updates: any = { id: userId, updated_at: new Date().toISOString() };
-                // if (customerEmail) updates.email = customerEmail;  // Email column doesn't exist
+                const updates: any = { id: userId };
+                if (customerEmail) updates.email = customerEmail;
                 await admin.from('profiles').upsert(updates, { onConflict: 'id' });
                 }
               } catch {}

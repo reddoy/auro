@@ -66,7 +66,7 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
         try {
           await supabase
             .from('profiles')
-            .upsert({ id: data.user.id, full_name: fullName, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+            .upsert({ id: data.user.id, full_name: fullName, email }, { onConflict: 'id' });
         } catch {}
 
         // Do not force verified session here to reduce friction; proceed to payment
