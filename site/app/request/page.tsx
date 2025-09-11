@@ -78,6 +78,8 @@ export default function RequestPage() {
           const checkAuth = async () => {
             try {
               const { data: { user } } = await client.auth.getUser();
+              console.log('[RequestPage] Current user:', user ? { id: user.id, email: user.email, provider: (user as any)?.app_metadata?.provider } : 'null');
+              
               if (!user) {
                 try {
                   // Ensure an authenticated session for storage uploads
@@ -88,6 +90,7 @@ export default function RequestPage() {
               }
               const { data: { user: userAfter } } = await client.auth.getUser();
               const isRealUser = !!userAfter && (userAfter as any)?.app_metadata?.provider !== 'anon';
+              console.log('[RequestPage] Is real user:', isRealUser, 'Provider:', (userAfter as any)?.app_metadata?.provider);
               setIsAuthenticated(isRealUser);
             } catch (error) {
               console.error('Auth check error:', error);
@@ -272,6 +275,32 @@ export default function RequestPage() {
       <div className="container">
         <div className="request-header">
           <h1>Request a Review</h1>
+          {/* Debug: Clear auth session button */}
+          {isAuthenticated && (
+            <button 
+              onClick={async () => {
+                if (supabase) {
+                  await supabase.auth.signOut();
+                  localStorage.clear();
+                  window.location.reload();
+                }
+              }}
+              style={{ 
+                position: 'absolute', 
+                top: 10, 
+                right: 10, 
+                padding: '4px 8px', 
+                fontSize: '12px', 
+                background: '#ff4444', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Clear Auth (Debug)
+            </button>
+          )}
           <div className="progress-bar">
             {STEPS.map((step, index) => (
               <div

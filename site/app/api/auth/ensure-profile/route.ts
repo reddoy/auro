@@ -22,7 +22,8 @@ export async function POST(req: Request) {
     const admin = createClient(url, key);
 
     const updates: any = { id: userId, updated_at: new Date().toISOString() };
-    if (email) updates.email = email;
+    // Only add columns that exist in the profiles table
+    // if (email) updates.email = email;  // Commented out - email column doesn't exist
     if (fullName) updates.full_name = fullName;
     if (avatarUrl) updates.avatar_url = avatarUrl;
 

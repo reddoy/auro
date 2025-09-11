@@ -125,7 +125,7 @@ export async function POST(req: Request) {
             if (userId) {
               const fullName = (reviewPayload?.fullName || (reviewPayload?.consent?.fullName) || fallbackFullName) as string | undefined;
               const updates: any = { id: userId, updated_at: new Date().toISOString() };
-              if (fallbackEmail) updates.email = fallbackEmail;
+              // if (fallbackEmail) updates.email = fallbackEmail;  // Email column doesn't exist
               if (fullName) updates.full_name = fullName;
               // Apply selfie as avatar if provided
               if (reviewPayload?.selfieUrl) {
