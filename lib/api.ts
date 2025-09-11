@@ -139,7 +139,7 @@ export async function getReviewerById(id: string): Promise<DbReviewerSummary | n
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;
-  if (!data || !data.is_reviewer) return null;
+  if (!data) return null;
   return {
     id: data.id,
     displayName: data.full_name || data.username || 'Reviewer',

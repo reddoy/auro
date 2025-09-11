@@ -94,6 +94,23 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'You cannot request a review from your own reviewer account.' }), { status: 400 });
     }
 
+    // Ensure resolvedCreatorId is a valid reviewer (profiles.is_reviewer = true)
+    try {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
+      if (url && key) {
+        const admin = createClient(url, key);
+        const { data: reviewerRow } = await admin
+          .from('profiles')
+          .select('id, is_reviewer')
+          .eq('id', resolvedCreatorId)
+          .maybeSingle();
+        if (!reviewerRow || !(reviewerRow as any)?.is_reviewer) {
+          return new Response(JSON.stringify({ error: 'Selected user is not a reviewer. Please choose another reviewer.' }), { status: 400 });
+        }
+      }
+    } catch {}
+
     // Create a request record on the server if not provided by client
     let ensuredRequestId: string | undefined = requestId as string | undefined;
     try {
