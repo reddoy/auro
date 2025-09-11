@@ -30,6 +30,11 @@ export async function POST(req: Request) {
       }
     }
 
+    // Require a valid reviewer id
+    if (!resolvedCreatorId) {
+      return new Response(JSON.stringify({ error: 'Reviewer not found. Please select a valid reviewer.' }), { status: 400 });
+    }
+
     // Determine price (in cents) from creators_public or profiles.hourly_rate
     let priceCents = 1000; // default $10 fallback
     try {
@@ -83,6 +88,11 @@ export async function POST(req: Request) {
         }
       }
     } catch {}
+
+    // Prevent self-reviews (requester and reviewer cannot be the same)
+    if (fallbackUserId && resolvedCreatorId && String(fallbackUserId) === String(resolvedCreatorId)) {
+      return new Response(JSON.stringify({ error: 'You cannot request a review from your own reviewer account.' }), { status: 400 });
+    }
 
     // Create a request record on the server if not provided by client
     let ensuredRequestId: string | undefined = requestId as string | undefined;
