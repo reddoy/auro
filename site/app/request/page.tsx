@@ -16,6 +16,7 @@ export type RequestData = {
   creatorId?: string;
   creatorSlug?: string;
   photos: { outfits: string[]; roomTourPhotos: string[]; datingProfileScreenshots: string[] };
+  selfieUrl?: string | null;
   message: string;
   consent: {
     shareOnSocial: boolean;
@@ -42,6 +43,7 @@ export default function RequestPage() {
   const [currentStep, setCurrentStep] = useState<Step>('creator-selection');
   const [requestData, setRequestData] = useState<RequestData>({
     photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
+    selfieUrl: null,
     message: '',
     consent: {
       shareOnSocial: false,
@@ -202,6 +204,8 @@ export default function RequestPage() {
             onBack={previousStep}
             supabase={supabase}
             uploadSessionId={requestData.uploadSessionId}
+            onSelfieChange={(url) => updateRequestData({ selfieUrl: url || null })}
+            selfieUrl={requestData.selfieUrl || null}
           />
         );
       case 'prompt-answers':

@@ -92,6 +92,35 @@ export async function POST(req: Request) {
         const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
         if (url && key) {
           const admin = createClient(url, key);
+          // Ensure user profile exists and set basic fields
+          try {
+            const userId = fallbackUserId as string | undefined;
+            if (userId) {
+              const fullName = (reviewPayload?.fullName || (reviewPayload?.consent?.fullName)) as string | undefined;
+              const updates: any = { id: userId, updated_at: new Date().toISOString() };
+              if (fallbackEmail) updates.email = fallbackEmail;
+              if (fullName) updates.full_name = fullName;
+              // Apply selfie as avatar if provided
+              if (reviewPayload?.selfieUrl) {
+                // Store only the object path for avatars bucket
+                const raw = reviewPayload.selfieUrl as string;
+                let path = raw;
+                try {
+                  const urlObj = new URL(raw);
+                  const m = urlObj.pathname.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+)$/);
+                  if (m) {
+                    const bucket = m[1];
+                    const objPath = decodeURIComponent(m[2]);
+                    if (bucket === (process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET || 'avatars')) {
+                      path = objPath;
+                    }
+                  }
+                } catch {}
+                updates.avatar_url = path;
+              }
+              await admin.from('profiles').upsert(updates, { onConflict: 'id' });
+            }
+          } catch {}
           const allPhotos = [
             ...((reviewPayload?.photos?.outfits as string[]) || []),
             ...((reviewPayload?.photos?.roomTourPhotos as string[]) || []),
@@ -101,6 +130,7 @@ export async function POST(req: Request) {
             message: reviewPayload?.message,
             media: reviewPayload?.photos,
             consent: reviewPayload?.consent,
+            selfieUrl: reviewPayload?.selfieUrl || null,
           };
           const insertPayload: any = {
             user_id: fallbackUserId || null,

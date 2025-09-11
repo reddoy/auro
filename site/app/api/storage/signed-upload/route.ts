@@ -13,7 +13,8 @@ export async function POST(req: Request) {
 
     const supabase = createClient(url, key);
 
-    const bucket = process.env.NEXT_PUBLIC_SUPABASE_REQUEST_MEDIA_BUCKET || 'request-media';
+    const requestMediaBucket = process.env.NEXT_PUBLIC_SUPABASE_REQUEST_MEDIA_BUCKET || 'request-media';
+    const avatarBucket = process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET || 'avatars';
 
     // Server-signed view URL
     if (action === 'sign-view') {
@@ -21,7 +22,9 @@ export async function POST(req: Request) {
         return new Response(JSON.stringify({ error: 'Missing path' }), { status: 400 });
       }
       const seconds = Number(expiresIn || 60 * 60 * 24);
-      const { data: signed, error: signErr } = await supabase.storage.from(bucket).createSignedUrl(path, seconds);
+      // Determine bucket from path if category specified in path; default to request-media
+      const whichBucket = (typeof path === 'string' && path.includes('temp-uploads/') && path.includes('/selfie/')) ? avatarBucket : requestMediaBucket;
+      const { data: signed, error: signErr } = await supabase.storage.from(whichBucket).createSignedUrl(path, seconds);
       if (signErr) {
         return new Response(JSON.stringify({ error: signErr.message }), { status: 400 });
       }
@@ -38,6 +41,7 @@ export async function POST(req: Request) {
     const fileExt = (fileName.split('.').pop() || 'jpg').toLowerCase();
     const objectPath = `temp-uploads/${safeSession}/${safeCategory}/${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
 
+    const bucket = safeCategory === 'selfie' ? avatarBucket : requestMediaBucket;
     const { data, error } = await (supabase.storage as any).from(bucket).createSignedUploadUrl(objectPath);
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), { status: 500 });

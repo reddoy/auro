@@ -15,9 +15,11 @@ type Props = {
   onBack: () => void;
   supabase: any;
   uploadSessionId?: string;
+  onSelfieChange?: (url: string | null) => void;
+  selfieUrl?: string | null;
 };
 
-export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, supabase, uploadSessionId }: Props) {
+export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, supabase, uploadSessionId, onSelfieChange, selfieUrl }: Props) {
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [localPreviews, setLocalPreviews] = useState<{
@@ -25,10 +27,12 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
     roomTourPhotos: string[];
     datingProfileScreenshots: string[];
   }>({ outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] });
+  const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
   
   const outfitsInputRef = useRef<HTMLInputElement>(null);
   const roomInputRef = useRef<HTMLInputElement>(null);
   const datingInputRef = useRef<HTMLInputElement>(null);
+  const selfieInputRef = useRef<HTMLInputElement>(null);
   const isHeicLike = (file: File) => {
     const name = (file.name || '').toLowerCase();
     return file.type === 'image/heic' || file.type === 'image/heif' || name.endsWith('.heic') || name.endsWith('.heif');
@@ -201,6 +205,23 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
     }
   };
 
+  const handleSelfieUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(prev => ({ ...prev, selfie: true }));
+    try {
+      const { uploadFile, previewBlob } = await convertToJpeg(files[0]);
+      const previewUrl = URL.createObjectURL(previewBlob);
+      setSelfiePreview(previewUrl);
+      const url = await uploadToSupabase(uploadFile, 'selfie');
+      onSelfieChange && onSelfieChange(url || null);
+    } catch (e) {
+      console.error('Selfie upload error:', e);
+      alert('Selfie upload failed. Please try again.');
+    } finally {
+      setUploading(prev => ({ ...prev, selfie: false }));
+    }
+  };
+
   const removePhoto = (category: 'outfits' | 'roomTourPhotos' | 'datingProfileScreenshots', index: number) => {
     if (category === 'outfits') {
       const newOutfits = photos.outfits.filter((_, i) => i !== index);
@@ -224,10 +245,67 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
     <div className="photo-upload">
       <div className="step-header">
         <h2>Upload Your Photos</h2>
-        <p>All photo uploads are optional. Add up to 3 outfit photos, 3 room photos, and 10 dating profile screenshots.</p>
+        <p>All photo uploads are optional. Add 1 selfie (optional), up to 3 outfit photos, 3 room photos, and 10 dating profile screenshots.</p>
       </div>
 
       <div className="upload-sections">
+        {/* Selfie Section */}
+        <div className="upload-section">
+          <div className="section-header">
+            <h3>Selfie</h3>
+            <p>1 clear photo of your face (optional). Used as your profile picture.</p>
+          </div>
+          <div className="photo-grid">
+            {(selfieUrl || selfiePreview) && (
+              <div className="photo-item">
+                <img src={(selfieUrl || selfiePreview) as string} alt="Selfie" />
+                <button
+                  type="button"
+                  className="remove-photo"
+                  onClick={() => {
+                    if (selfiePreview) {
+                      try { URL.revokeObjectURL(selfiePreview); } catch {}
+                    }
+                    setSelfiePreview(null);
+                    onSelfieChange && onSelfieChange(null);
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            )}
+            {!selfieUrl && !selfiePreview && (
+              <div 
+                className={`upload-placeholder ${uploading.selfie ? 'uploading' : ''}`}
+                onClick={() => selfieInputRef.current?.click()}
+              >
+                {uploading.selfie ? (
+                  <div className="upload-progress">
+                    <div className="spinner"></div>
+                    <span>Uploading...</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="upload-icon">🤳</div>
+                    <span>Add selfie</span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          <input
+            ref={selfieInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              handleSelfieUpload(e.target.files);
+              e.currentTarget.value = '';
+            }}
+          />
+        </div>
+
         {/* Outfits Section */}
         <div className="upload-section">
           <div className="section-header">

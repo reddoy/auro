@@ -101,7 +101,8 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
           reviewPayload: {
             message: requestData.message,
             photos: requestData.photos,
-            consent: requestData.consent
+            consent: requestData.consent,
+            selfieUrl: requestData.selfieUrl || null
           }
         }),
       });
