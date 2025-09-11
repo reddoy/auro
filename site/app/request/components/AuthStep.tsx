@@ -47,18 +47,13 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
           localStorage.setItem('auro_signup_email', email);
         } catch {}
 
-        // Attempt to update profile with full name (may fail without session due to RLS)
+        // Ensure profile via server (service role), independent of RLS
         try {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .upsert({
-              id: data.user.id,
-              full_name: fullName,
-              updated_at: new Date().toISOString(),
-            });
-          if (profileError) {
-            console.warn('Profile update deferred until session exists');
-          }
+          await fetch('/api/auth/ensure-profile', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ userId: data.user.id, email, fullName })
+          });
         } catch {}
 
         // Do not force verified session here to reduce friction; proceed to payment
@@ -90,6 +85,14 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
       const { data: u } = await supabase.auth.getUser();
       const isRealUser = !!u?.user && (u.user as any)?.app_metadata?.provider !== 'anon';
       if (isRealUser) {
+        // Backfill profile via server, best-effort
+        try {
+          await fetch('/api/auth/ensure-profile', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ userId: (u!.user as any).id, email: (u!.user as any).email || email })
+          });
+        } catch {}
         onNext();
       } else {
         setError('Sign-in did not complete. Please try again.');

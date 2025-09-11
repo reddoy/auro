@@ -103,6 +103,16 @@ export default function RequestPage() {
               setRequestData(prev => ({ ...prev, userId: session!.user!.id }));
               setCurrentStep('payment');
             }
+            // Ensure profile exists server-side whenever we get a real session
+            if (isRealUser && session?.user) {
+              try {
+                fetch('/api/auth/ensure-profile', {
+                  method: 'POST',
+                  headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({ userId: session.user.id, email: (session.user as any).email || '' })
+                });
+              } catch {}
+            }
           });
 
           return () => subscription.unsubscribe();
