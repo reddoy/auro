@@ -45,6 +45,7 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
         try {
           localStorage.setItem('auro_signup_user_id', data.user.id);
           localStorage.setItem('auro_signup_email', email);
+          localStorage.setItem('auro_signup_full_name', fullName);
         } catch {}
 
         // Ensure profile via server (service role), independent of RLS

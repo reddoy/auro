@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { creatorId, creatorSlug, reviewPayload, requestId, uploadSessionId, fallbackUserId, fallbackEmail } = body || {};
+    const { creatorId, creatorSlug, reviewPayload, requestId, uploadSessionId, fallbackUserId, fallbackEmail, fallbackFullName } = body || {};
     if (!creatorId && !creatorSlug) {
       return new Response(JSON.stringify({ error: 'Missing creatorId or creatorSlug' }), { status: 400 });
     }
@@ -106,7 +106,7 @@ export async function POST(req: Request) {
           try {
             const userId = fallbackUserId as string | undefined;
             if (userId) {
-              const fullName = (reviewPayload?.fullName || (reviewPayload?.consent?.fullName)) as string | undefined;
+              const fullName = (reviewPayload?.fullName || (reviewPayload?.consent?.fullName) || fallbackFullName) as string | undefined;
               const updates: any = { id: userId, updated_at: new Date().toISOString() };
               if (fallbackEmail) updates.email = fallbackEmail;
               if (fullName) updates.full_name = fullName;

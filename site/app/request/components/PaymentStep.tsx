@@ -74,6 +74,15 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
     return '';
   };
 
+  const getFallbackFullName = async (): Promise<string> => {
+    try {
+      if (typeof window !== 'undefined') {
+        return localStorage.getItem('auro_signup_full_name') || '';
+      }
+    } catch {}
+    return '';
+  };
+
   const handlePayment = async () => {
     setLoading(true);
     setError('');
@@ -81,6 +90,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
     try {
       const fallbackUserId = await getFallbackUserId();
       const fallbackEmail = await getFallbackEmail();
+      const fallbackFullName = await getFallbackFullName();
       if (!fallbackUserId) {
         throw new Error('Please sign up or sign in before paying.');
       }
@@ -97,6 +107,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
           requestId: undefined,
           uploadSessionId: requestData.uploadSessionId,
           fallbackEmail,
+          fallbackFullName,
           fallbackUserId,
           reviewPayload: {
             message: requestData.message,
