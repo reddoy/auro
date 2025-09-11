@@ -29,14 +29,14 @@ export async function POST(req: Request) {
                 .update({ status: 'paid', payment_status: 'paid', stripe_session_id: session.id, stripe_payment_intent_id: paymentIntentId || null })
                 .eq('id', requestId);
 
-              // Backfill customer email to user's profile if missing
+              // Backfill customer email and ensure profile exists for the user
               try {
-                if (customerEmail) {
-                  const { data: reqRow } = await admin.from('requests').select('user_id').eq('id', requestId).maybeSingle();
-                  const userId = (reqRow as any)?.user_id as string | undefined;
-                  if (userId) {
-                    await admin.from('profiles').update({ email: customerEmail }).eq('id', userId);
-                  }
+                const { data: reqRow } = await admin.from('requests').select('user_id').eq('id', requestId).maybeSingle();
+                const userId = (reqRow as any)?.user_id as string | undefined;
+                if (userId) {
+                  const updates: any = { id: userId, updated_at: new Date().toISOString() };
+                  if (customerEmail) updates.email = customerEmail;
+                  await admin.from('profiles').upsert(updates, { onConflict: 'id' });
                 }
               } catch {}
 

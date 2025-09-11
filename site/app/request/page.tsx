@@ -109,7 +109,7 @@ export default function RequestPage() {
                 fetch('/api/auth/ensure-profile', {
                   method: 'POST',
                   headers: { 'content-type': 'application/json' },
-                  body: JSON.stringify({ userId: session.user.id, email: (session.user as any).email || '' })
+                  body: JSON.stringify({ userId: session.user.id, email: (session.user as any).email || localStorage.getItem('auro_signup_email') || '', fullName: localStorage.getItem('auro_signup_full_name') || undefined })
                 });
               } catch {}
             }
