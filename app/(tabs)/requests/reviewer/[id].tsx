@@ -1,98 +1,113 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View as RNView, Linking, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import Constants from 'expo-constants';
+import { StyleSheet, View as RNView, ActivityIndicator, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { useLocalSearchParams, router } from 'expo-router';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import { getReviewerById } from '@/lib/api';
+import { getRequestById, updateRequestStatus, getProfileById } from '@/lib/api';
 import { getSignedAvatarUrl } from '@/lib/profile';
-import type { DbReviewerSummary } from '@/types';
+import type { DbRequestSummary } from '@/types';
 import Avatar from '@/components/Avatar';
+import { Image } from 'expo-image';
 
-function normalizeUrl(raw?: string | null): string | null {
-  if (!raw) return null;
-  const s = String(raw).trim();
-  if (!s) return null;
-  if (/^https?:\/\//i.test(s)) return s;
-  if (/^[a-z0-9.-]+\.[a-z]{2,}/i.test(s)) return `https://${s}`;
-  return null;
-}
+// Removed unused URL helper functions since we're not showing social links in this screen
 
-function normalizeSocialUrl(platform: string, raw?: string | null): string | null {
-  if (!raw) return null;
-  let s = String(raw).trim();
-  if (!s) return null;
-  
-  // If already a full URL, return as-is
-  if (/^https?:\/\//i.test(s)) return s;
-  
-  // Remove @ prefix if present
-  if (s.startsWith('@')) s = s.slice(1);
-  
-  // Convert username to platform URL
-  switch (platform.toLowerCase()) {
-    case 'instagram':
-      return `https://instagram.com/${s}`;
-    case 'tiktok':
-      return `https://tiktok.com/@${s}`;
-    case 'x':
-      return `https://x.com/${s}`;
-    case 'youtube':
-      return `https://youtube.com/@${s}`;
-    case 'onlyfans':
-      return `https://onlyfans.com/${s}`;
-    default:
-      return normalizeUrl(raw);
-  }
-}
-
-function renderLink(label: string, raw?: string | null) {
-  const url = normalizeSocialUrl(label, raw);
-  if (!url) return null;
-  return (
-    <Text
-      onPress={() => Linking.openURL(url).catch(() => {})}
-      accessibilityRole="link"
-      style={{ color: Colors.brand.accentMagenta, marginTop: 6 }}
-    >
-      {label}
-    </Text>
-  );
-}
-
-export default function ReviewerDetailScreen() {
+export default function ReviewerRequestScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [reviewer, setReviewer] = useState<DbReviewerSummary | null>(null);
+  const insets = useSafeAreaInsets();
+  const [request, setRequest] = useState<DbRequestSummary | null>(null);
+  const [reviewee, setReviewee] = useState<any>(null);
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Move useMemo to the top level, always called
+  const parsedNotes = React.useMemo(() => {
+    try {
+      if (!request?.notes) return null;
+      return typeof request.notes === 'string' ? JSON.parse(request.notes) : request.notes;
+    } catch {
+      return null;
+    }
+  }, [request?.notes]);
 
   useEffect(() => {
     const run = async () => {
       try {
-        console.log('Reviewer ID:', id);
+        console.log('Request ID:', id);
         if (!id) {
           console.log('No ID found in params');
           return;
         }
-        const r = await getReviewerById(String(id));
-        console.log('Reviewer result:', r);
-        setReviewer(r);
-        if (r?.avatarUrl) {
-          let uri = r.avatarUrl;
-          if (uri && !/^https?:\/\//i.test(uri)) {
-            try { uri = (await getSignedAvatarUrl(uri, 3600)) || uri; } catch {}
+        const req = await getRequestById(String(id));
+        console.log('Request result:', req);
+        setRequest(req);
+        
+        if (req?.userId) {
+          const profile = await getProfileById(req.userId);
+          console.log('Reviewee profile:', profile);
+          setReviewee(profile);
+          
+          if (profile?.avatarUrl) {
+            let uri = profile.avatarUrl;
+            if (uri && !/^https?:\/\//i.test(uri)) {
+              try { uri = (await getSignedAvatarUrl(uri, 3600)) || uri; } catch {}
+            }
+            setAvatarUri(uri);
           }
-          setAvatarUri(uri);
         }
       } catch (error) {
-        console.error('Error loading reviewer:', error);
+        console.error('Error loading request:', error);
       } finally {
         setLoading(false);
       }
     };
     run();
   }, [id]);
+
+  const handleAccept = async () => {
+    if (!request?.id) return;
+    setActionLoading(true);
+    try {
+      // Change status to 'in_progress' (paid + pending review)
+      await updateRequestStatus(request.id, 'in_progress');
+      Alert.alert('Request Accepted', 'You can now submit your review for this request.');
+      router.back();
+    } catch (error: any) {
+      Alert.alert('Error', error?.message || 'Failed to accept request');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeny = async () => {
+    if (!request?.id) return;
+    Alert.alert(
+      'Deny Request',
+      'Are you sure you want to deny this request? The payment will be refunded.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Deny & Refund',
+          style: 'destructive',
+          onPress: async () => {
+            setActionLoading(true);
+            try {
+              // Change status to 'rejected' and payment_status will be handled by webhook/refund logic
+              await updateRequestStatus(request.id, 'rejected');
+              Alert.alert('Request Denied', 'The request has been denied and will be refunded.');
+              router.back();
+            } catch (error: any) {
+              Alert.alert('Error', error?.message || 'Failed to deny request');
+            } finally {
+              setActionLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
 
   if (loading) {
     return (
@@ -102,54 +117,102 @@ export default function ReviewerDetailScreen() {
     );
   }
 
-  if (!reviewer) {
+  if (!request) {
     return (
       <View style={[styles.container, { alignItems: 'center', justifyContent: 'center' }]}>
-        <Text style={styles.emptyText}>Reviewer not found</Text>
+        <Text style={styles.emptyText}>Request not found</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <RNView style={styles.avatarWrap}>
-          <Avatar uri={avatarUri || reviewer.avatarUrl || undefined} name={reviewer.displayName} size={84} />
-        </RNView>
-        <Text style={styles.name}>{reviewer.displayName}</Text>
-        {!!reviewer.username && <Text style={styles.username}>@{reviewer.username}</Text>}
-        {!!reviewer.rating && <Text style={styles.rating}>Rating {reviewer.rating.toFixed(1)}/5</Text>}
-      </View>
-
-      <View style={styles.section}>
-        {!!reviewer.skills?.length && (
-          <RNView style={{ marginBottom: 10 }}>
-            <Text style={styles.label}>Skills</Text>
-            <Text style={styles.value}>{reviewer.skills.join(', ')}</Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }}>
+        <View style={styles.header}>
+          <RNView style={styles.avatarWrap}>
+            <Avatar uri={avatarUri} name={reviewee?.displayName || 'User'} size={84} />
           </RNView>
+          <Text style={styles.name}>{reviewee?.displayName || 'User'}</Text>
+          <Text style={styles.requestStatus}>Status: {request.status}</Text>
+          <Text style={styles.requestDate}>
+            Requested on {new Date(request.createdAt).toLocaleDateString()}
+          </Text>
+        </View>
+
+        {parsedNotes?.message && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Message</Text>
+            <Text style={styles.value}>{parsedNotes.message}</Text>
+          </View>
         )}
 
-        {!!reviewer.bio && (
-          <RNView style={{ marginBottom: 10 }}>
-            <Text style={styles.label}>About</Text>
-            <Text style={styles.value}>{reviewer.bio}</Text>
-          </RNView>
+        {parsedNotes?.selfieUrl && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Selfie</Text>
+            <Image source={{ uri: parsedNotes.selfieUrl }} style={styles.selfie} contentFit="cover" />
+          </View>
         )}
 
-        {!!reviewer.links && (
-          <RNView style={{ marginTop: 4 }}>
-            <Text style={styles.label}>Socials</Text>
-            {renderLink('Instagram', (reviewer.links as any).instagram)}
-            {renderLink('TikTok', (reviewer.links as any).tiktok)}
-            {renderLink('X', (reviewer.links as any).x)}
-            {renderLink('YouTube', (reviewer.links as any).youtube)}
-            {renderLink('OnlyFans', (reviewer.links as any).onlyfans)}
-          </RNView>
+        {Array.isArray(request.photos) && request.photos.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Photos</Text>
+            <View style={styles.photosGrid}>
+              {request.photos.slice(0, 6).map((photo, index) => (
+                <Image key={index} source={{ uri: photo }} style={styles.photo} contentFit="cover" />
+              ))}
+            </View>
+          </View>
         )}
-      </View>
 
-      {/* Removed price and external CTA to keep app purchase-free */}
-    </View>
+        {(request.status === 'pending' || request.status === 'paid') && (
+          <View style={styles.actionsSection}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.acceptButton]}
+              onPress={handleAccept}
+              disabled={actionLoading}
+            >
+              <Text style={styles.actionButtonText}>
+                {actionLoading ? 'Processing...' : 'Accept Request'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.denyButton]}
+              onPress={handleDeny}
+              disabled={actionLoading}
+            >
+              <Text style={[styles.actionButtonText, styles.denyButtonText]}>
+                {actionLoading ? 'Processing...' : 'Deny Request'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {request.status === 'in_progress' && (
+          <View style={styles.actionsSection}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.acceptButton]}
+              onPress={() => {
+                router.push(`/(tabs)/requests/${request.id}` as any);
+              }}
+            >
+              <Text style={styles.actionButtonText}>Submit Review</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {(request.status === 'completed' || request.status === 'rejected') && (
+          <View style={styles.actionsSection}>
+            <Text style={styles.statusMessage}>
+              {request.status === 'completed' 
+                ? '✅ Review submitted successfully' 
+                : '❌ Request was denied and refunded'
+              }
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -158,10 +221,20 @@ const styles = StyleSheet.create({
   header: { alignItems: 'center', paddingVertical: 24, backgroundColor: Colors.brand.cardBackground, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, marginBottom: 12 },
   avatarWrap: { width: 84, height: 84, borderRadius: 42, overflow: 'hidden', backgroundColor: Colors.brand.avatarPlaceholder, marginBottom: 10 },
   name: { fontSize: 22, fontWeight: '700', color: Colors.brand.textPrimary },
-  username: { fontSize: 14, color: Colors.brand.textSecondary, marginTop: 4 },
-  rating: { fontSize: 14, color: Colors.brand.textSecondary, marginTop: 4 },
+  requestStatus: { fontSize: 14, color: Colors.brand.accentMagenta, marginTop: 4, fontWeight: '600' },
+  requestDate: { fontSize: 14, color: Colors.brand.textSecondary, marginTop: 4 },
   section: { margin: 16, backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 16 },
-  label: { fontSize: 12, color: Colors.brand.textSecondary, marginBottom: 6 },
-  value: { fontSize: 14, color: Colors.brand.textPrimary, fontWeight: '600' },
+  label: { fontSize: 16, color: Colors.brand.textPrimary, marginBottom: 8, fontWeight: '600' },
+  value: { fontSize: 14, color: Colors.brand.textSecondary, lineHeight: 20 },
+  selfie: { width: '100%', aspectRatio: 1.5, borderRadius: 12, marginTop: 8 },
+  photosGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  photo: { width: '31%', aspectRatio: 1, borderRadius: 8 },
+  actionsSection: { margin: 16, gap: 12 },
+  actionButton: { paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
+  acceptButton: { backgroundColor: Colors.brand.status.completed },
+  denyButton: { backgroundColor: 'transparent', borderWidth: 2, borderColor: Colors.brand.status.rejected },
+  actionButtonText: { fontSize: 16, fontWeight: '700', color: Colors.brand.textOnGradient },
+  denyButtonText: { color: Colors.brand.status.rejected },
+  statusMessage: { fontSize: 16, fontWeight: '600', color: Colors.brand.textSecondary, textAlign: 'center', padding: 16 },
   emptyText: { color: Colors.brand.textSecondary },
 });
