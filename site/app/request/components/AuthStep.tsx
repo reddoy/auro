@@ -50,12 +50,17 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
 
         // Ensure profile via server (service role), independent of RLS
         try {
-          await fetch('/api/auth/ensure-profile', {
+          console.log('[AuthStep] Calling ensure-profile with:', { userId: data.user.id, email, fullName });
+          const response = await fetch('/api/auth/ensure-profile', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ userId: data.user.id, email, fullName })
           });
-        } catch {}
+          const result = await response.json();
+          console.log('[AuthStep] ensure-profile response:', { status: response.status, result });
+        } catch (err: any) {
+          console.error('[AuthStep] ensure-profile error:', err?.message);
+        }
 
         // On the client, also attempt to upsert profile using authenticated session if available
         try {
