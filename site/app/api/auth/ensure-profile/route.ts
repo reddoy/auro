@@ -21,6 +21,18 @@ export async function POST(req: Request) {
     if (fullName) updates.full_name = fullName;
     if (avatarUrl) updates.avatar_url = avatarUrl;
 
+    // Backfill username if missing: use email local-part when available
+    try {
+      const { data: existing } = await admin.from('profiles').select('id, username').eq('id', userId).maybeSingle();
+      if (!existing || !existing.username) {
+        let derivedUsername: string | undefined = undefined;
+        if (email && typeof email === 'string') {
+          derivedUsername = (email.split('@')[0] || '').replace(/[^a-zA-Z0-9_]/g, '').slice(0, 24) || undefined;
+        }
+        if (derivedUsername) updates.username = derivedUsername;
+      }
+    } catch {}
+
     const { error } = await admin.from('profiles').upsert(updates, { onConflict: 'id' });
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), { status: 400 });

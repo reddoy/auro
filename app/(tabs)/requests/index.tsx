@@ -156,8 +156,12 @@ export default function RequestsScreen() {
   const handleRequestPress = (requestId: string) => {
     const request = requests.find(r => r.id === requestId);
     if (!request) return;
-    // Always open the review detail for the reviewee to see status, media, and feedback
-    router.push(`/review/${requestId}`);
+    // Route based on role: reviewers go to reviewer detail; reviewees go to review detail
+    if (isReviewer) {
+      router.push(`/requests/reviewer/${requestId}` as any);
+    } else {
+      router.push(`/review/${requestId}`);
+    }
   };
 
   const handleNewRequest = () => {
