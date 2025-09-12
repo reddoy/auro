@@ -74,3 +74,42 @@ export async function uploadRequestMedia(
 }
 
 
+// Helpers to display media reliably by re-signing short-lived URLs to fresh signed URLs
+function extractBucketAndPath(maybeUrlOrPath: string): { bucket: string; path: string } | null {
+  if (!maybeUrlOrPath) return null;
+  // Full signed/public URL → extract bucket and object path
+  try {
+    const url = new URL(maybeUrlOrPath);
+    const m = url.pathname.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+)$/);
+    if (m) {
+      return { bucket: m[1], path: decodeURIComponent(m[2]) };
+    }
+  } catch {}
+  // Bare object path → assume request-media bucket
+  const MEDIA_BUCKET =
+    process.env.EXPO_PUBLIC_SUPABASE_REQUEST_MEDIA_BUCKET ||
+    (Constants.expoConfig?.extra as any)?.supabaseRequestMediaBucket ||
+    (Constants.manifest2 as any)?.extra?.supabaseRequestMediaBucket ||
+    'request-media';
+  return { bucket: MEDIA_BUCKET, path: maybeUrlOrPath };
+}
+
+export async function getSignedRequestMediaUrl(maybeUrlOrPath: string, expiresIn: number = 3600): Promise<string> {
+  const info = extractBucketAndPath(maybeUrlOrPath);
+  if (!info) return maybeUrlOrPath;
+  try {
+    const { data, error } = await supabase.storage.from(info.bucket).createSignedUrl(info.path, expiresIn);
+    if (error) throw error;
+    return data?.signedUrl || maybeUrlOrPath;
+  } catch {
+    return maybeUrlOrPath;
+  }
+}
+
+export async function signRequestMediaUrls(urls: string[] | undefined | null, expiresIn: number = 3600): Promise<string[]> {
+  if (!Array.isArray(urls) || urls.length === 0) return [];
+  const result = await Promise.all(urls.map((u) => getSignedRequestMediaUrl(u, expiresIn)));
+  return result.filter(Boolean) as string[];
+}
+
+

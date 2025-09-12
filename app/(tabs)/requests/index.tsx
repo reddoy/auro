@@ -222,7 +222,10 @@ export default function RequestsScreen() {
               {new Date(item.createdAt).toLocaleDateString()}
             </Text>
             <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.brand.cardBackground }}>
-              <StatusBadge status={item.status as any} />
+              <StatusBadge
+                status={item.status as any}
+                label={isReviewer && item.status === 'paid' ? 'Pending acceptance' : undefined}
+              />
               {item.status === 'paid' && (item as any).review ? (
                 <StatusBadge status={'completed'} label="Review Submitted" />
               ) : null}

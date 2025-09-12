@@ -8,8 +8,10 @@ import { getRequestById } from '@/lib/api';
 import { getReviewerById } from '@/lib/api';
 import Colors from '@/constants/Colors';
 import { Image } from 'expo-image';
+import { signRequestMediaUrls, getSignedRequestMediaUrl } from '@/lib/uploads';
 import LightboxImage from '@/components/LightboxImage';
 import ImageGalleryModal from '@/components/ImageGalleryModal';
+import PhotoCarousel from '@/components/PhotoCarousel';
 import StatusBadge from '@/components/StatusBadge';
 
 export default function ReviewDetailScreen() {
@@ -53,6 +55,23 @@ export default function ReviewDetailScreen() {
       return null;
     }
   }, [request?.notes]);
+
+  const [signedOutfits, setSignedOutfits] = React.useState<string[]>([]);
+  const [signedRoom, setSignedRoom] = React.useState<string[]>([]);
+  const [signedSelfie, setSignedSelfie] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const outfits = Array.isArray(parsedNotes?.media?.outfits) ? parsedNotes?.media?.outfits as string[] : [];
+        const room = Array.isArray(parsedNotes?.media?.roomTourPhotos) ? parsedNotes?.media?.roomTourPhotos as string[] : [];
+        const selfie = (parsedNotes?.media?.selfie || parsedNotes?.selfieUrl) as string | undefined;
+        setSignedOutfits(await signRequestMediaUrls(outfits));
+        setSignedRoom(await signRequestMediaUrls(room));
+        setSignedSelfie(selfie ? await getSignedRequestMediaUrl(selfie) : null);
+      } catch {}
+    })();
+  }, [parsedNotes?.media]);
 
   const hasConsent = React.useMemo(() => typeof parsedNotes?.consent?.shareOnSocial === 'boolean', [parsedNotes]);
   const shareConsent = React.useMemo(() => !!parsedNotes?.consent?.shareOnSocial, [parsedNotes]);
@@ -200,9 +219,9 @@ export default function ReviewDetailScreen() {
         {!!parsedNotes?.message && (
           <View style={styles.mediaSection}>
             <Text style={styles.sectionTitle}>Selfie</Text>
-            {parsedNotes?.media?.selfie ? (
-              <TouchableOpacity onPress={() => { setGalleryUris([parsedNotes.media.selfie]); setGalleryIndex(0); setGalleryOpen(true); }}>
-                <Image source={{ uri: parsedNotes.media.selfie }} style={styles.selfie} contentFit="cover" transition={200} />
+            {signedSelfie ? (
+              <TouchableOpacity onPress={() => { setGalleryUris([signedSelfie]); setGalleryIndex(0); setGalleryOpen(true); }}>
+                <Image source={{ uri: signedSelfie }} style={styles.selfie} contentFit="cover" transition={200} />
               </TouchableOpacity>
             ) : null}
             <Text style={styles.promptLabel}>Prompt</Text>
@@ -210,29 +229,17 @@ export default function ReviewDetailScreen() {
           </View>
         )}
 
-        {Array.isArray(parsedNotes?.media?.outfits) && parsedNotes.media.outfits.length ? (
+        {signedOutfits.length ? (
           <View style={styles.mediaSection}>
             <Text style={styles.sectionTitle}>Outfits</Text>
-            <RNView style={styles.photosGrid}> 
-              {parsedNotes.media.outfits.map((p: string, i: number) => (
-                <TouchableOpacity key={`o-${i}`} onPress={() => { setGalleryUris(parsedNotes.media.outfits); setGalleryIndex(i); setGalleryOpen(true); }}>
-                  <Image source={{ uri: p }} style={styles.photo} contentFit="cover" transition={200} />
-                </TouchableOpacity>
-              ))}
-            </RNView>
+            <PhotoCarousel uris={signedOutfits} onPressItem={(i) => { setGalleryUris(signedOutfits); setGalleryIndex(i); setGalleryOpen(true); }} />
           </View>
         ) : null}
 
-        {Array.isArray(parsedNotes?.media?.roomTourPhotos) && parsedNotes.media.roomTourPhotos.length ? (
+        {signedRoom.length ? (
           <View style={styles.mediaSection}>
             <Text style={styles.sectionTitle}>Room Tour</Text>
-            <RNView style={styles.photosGrid}>
-              {parsedNotes.media.roomTourPhotos.map((p: string, i: number) => (
-                <TouchableOpacity key={`r-${i}`} onPress={() => { setGalleryUris(parsedNotes.media.roomTourPhotos); setGalleryIndex(i); setGalleryOpen(true); }}>
-                  <Image source={{ uri: p }} style={styles.photo} contentFit="cover" transition={200} />
-                </TouchableOpacity>
-              ))}
-            </RNView>
+            <PhotoCarousel uris={signedRoom} onPressItem={(i) => { setGalleryUris(signedRoom); setGalleryIndex(i); setGalleryOpen(true); }} />
           </View>
         ) : null}
 
