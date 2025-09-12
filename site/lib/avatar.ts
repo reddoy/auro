@@ -28,27 +28,23 @@ function extractBucketPath(input: string): string {
 
 export async function getDisplayAvatarUrl(avatarUrlOrPath?: string | null): Promise<string | null> {
   if (!avatarUrlOrPath) return null;
-  if (/^https?:\/\//i.test(avatarUrlOrPath)) {
-    // If it's a signed/public Supabase URL, normalize to object path and re-sign to avoid expiry issues
-    if (avatarUrlOrPath.includes('/storage/v1/object/sign/') || avatarUrlOrPath.includes('/object/sign/')) {
-      const objectPath = extractBucketPath(avatarUrlOrPath);
-      try {
-        const { data, error } = await storageClient.storage.from(AVATAR_BUCKET).createSignedUrl(objectPath, 3600);
-        if (!error && data?.signedUrl) return data.signedUrl;
-      } catch {}
-      if (SUPABASE_URL) {
-        return `${SUPABASE_URL.replace(/\/$/, '')}/storage/v1/object/public/${AVATAR_BUCKET}/${objectPath}`;
-      }
-    }
-    // Otherwise return as-is
-    return avatarUrlOrPath;
-  }
-  const objectPath = extractBucketPath(avatarUrlOrPath);
-  // Try signed URL first
+  // If full http(s) URL and not a Supabase signed URL, return as-is
+  const isHttp = /^https?:\/\//i.test(avatarUrlOrPath);
+  const isSigned = avatarUrlOrPath.includes('/storage/v1/object/sign/') || avatarUrlOrPath.includes('/object/sign/');
+  if (isHttp && !isSigned) return avatarUrlOrPath;
+
+  const objectPath = isHttp ? extractBucketPath(avatarUrlOrPath) : extractBucketPath(String(avatarUrlOrPath));
+
+  // Prefer server-side signing to avoid client auth issues
   try {
-    const { data, error } = await storageClient.storage.from(AVATAR_BUCKET).createSignedUrl(objectPath, 3600);
-    if (!error && data?.signedUrl) return data.signedUrl;
+    const params = new URLSearchParams({ path: objectPath, bucket: AVATAR_BUCKET, expiresIn: String(3600) });
+    const res = await fetch(`/api/storage/signed-view?${params.toString()}`, { cache: 'no-store' });
+    if (res.ok) {
+      const json = await res.json();
+      if (json?.url) return json.url as string;
+    }
   } catch {}
+
   // Fallback to public URL (works if bucket is public)
   if (SUPABASE_URL) {
     return `${SUPABASE_URL.replace(/\/$/, '')}/storage/v1/object/public/${AVATAR_BUCKET}/${objectPath}`;
