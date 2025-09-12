@@ -10,6 +10,9 @@ import { getSignedAvatarUrl } from '@/lib/profile';
 import type { DbRequestSummary } from '@/types';
 import Avatar from '@/components/Avatar';
 import { Image } from 'expo-image';
+import ImageGalleryModal from '@/components/ImageGalleryModal';
+import PhotoCarousel from '@/components/PhotoCarousel';
+import { signRequestMediaUrls, getSignedRequestMediaUrl } from '@/lib/uploads';
 import RatingBar from '@/components/RatingBar';
 import MediaRecorder from '@/components/MediaRecorder';
 import { uploadRequestMedia } from '@/lib/uploads';
@@ -37,6 +40,12 @@ export default function ReviewerRequestScreen() {
   const [notes, setNotes] = useState('');
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [imageUri, setImageUri] = useState<string | null>(null);
+
+  const [signedPhotos, setSignedPhotos] = useState<string[]>([]);
+  const [signedSelfie, setSignedSelfie] = useState<string | null>(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryUris, setGalleryUris] = useState<string[]>([]);
+  const [galleryIndex, setGalleryIndex] = useState(0);
 
   // Move useMemo to the top level, always called
   const parsedNotes = React.useMemo(() => {
@@ -73,6 +82,29 @@ export default function ReviewerRequestScreen() {
             setAvatarUri(uri);
           }
         }
+        // Sign media URLs for reliable viewing
+        try {
+          const basePhotos = Array.isArray((req as any)?.photos) ? ((req as any).photos as string[]) : [];
+          const fromNotes = (() => {
+            try {
+              const n = req?.notes ? (typeof req.notes === 'string' ? JSON.parse(req.notes) : req.notes) : null;
+              const outfits = Array.isArray(n?.media?.outfits) ? n.media.outfits as string[] : [];
+              const room = Array.isArray(n?.media?.roomTourPhotos) ? n.media.roomTourPhotos as string[] : [];
+              const dating = Array.isArray(n?.media?.datingProfileScreenshots) ? n.media.datingProfileScreenshots as string[] : [];
+              const combined = [...outfits, ...room, ...dating];
+              return combined.length ? combined : null;
+            } catch { return null; }
+          })();
+          const toShow = fromNotes || basePhotos;
+          setSignedPhotos(await signRequestMediaUrls(toShow));
+          const selfieUrl = (() => {
+            try {
+              const n = req?.notes ? (typeof req.notes === 'string' ? JSON.parse(req.notes) : req.notes) : null;
+              return (n?.media?.selfie || n?.selfieUrl) as string | undefined;
+            } catch { return undefined; }
+          })();
+          setSignedSelfie(selfieUrl ? await getSignedRequestMediaUrl(selfieUrl) : null);
+        } catch {}
       } catch (error) {
         console.error('Error loading request:', error);
       } finally {
@@ -213,21 +245,19 @@ export default function ReviewerRequestScreen() {
           </View>
         )}
 
-        {parsedNotes?.selfieUrl && (
+        {signedSelfie && (
           <View style={styles.section}>
             <Text style={styles.label}>Selfie</Text>
-            <Image source={{ uri: parsedNotes.selfieUrl }} style={styles.selfie} contentFit="cover" />
+            <TouchableOpacity onPress={() => { setGalleryUris([signedSelfie]); setGalleryIndex(0); setGalleryOpen(true); }}>
+              <Image source={{ uri: signedSelfie }} style={styles.selfie} contentFit="cover" />
+            </TouchableOpacity>
           </View>
         )}
 
-        {Array.isArray(request.photos) && request.photos.length > 0 && (
+        {signedPhotos.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.label}>Photos</Text>
-            <View style={styles.photosGrid}>
-              {request.photos.slice(0, 6).map((photo, index) => (
-                <Image key={index} source={{ uri: photo }} style={styles.photo} contentFit="cover" />
-              ))}
-            </View>
+            <PhotoCarousel uris={signedPhotos} onPressItem={(i) => { setGalleryUris(signedPhotos); setGalleryIndex(i); setGalleryOpen(true); }} />
           </View>
         )}
 
@@ -305,6 +335,7 @@ export default function ReviewerRequestScreen() {
           </View>
         )}
       </ScrollView>
+      <ImageGalleryModal visible={galleryOpen} uris={galleryUris} initialIndex={galleryIndex} onClose={() => setGalleryOpen(false)} />
     </SafeAreaView>
   );
 }

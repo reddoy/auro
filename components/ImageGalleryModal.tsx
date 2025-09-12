@@ -49,6 +49,11 @@ export default function ImageGalleryModal({ visible, uris, initialIndex = 0, onC
           )}
         />
         <View style={styles.counter}><Text style={styles.counterText}>{index + 1}/{uris.length}</Text></View>
+        <View style={styles.footer}>
+          <Pressable onPress={onClose} style={styles.closeButton} accessibilityLabel="Close gallery">
+            <Text style={styles.closeButtonText}>Close</Text>
+          </Pressable>
+        </View>
       </View>
     </Modal>
   );
@@ -58,6 +63,9 @@ const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)' },
   counter: { position: 'absolute', bottom: 32, alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
   counterText: { color: '#fff', fontWeight: '700' },
+  footer: { position: 'absolute', left: 0, right: 0, bottom: 24, alignItems: 'center' },
+  closeButton: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
+  closeButtonText: { color: '#fff', fontWeight: '700' },
 });
 
 
