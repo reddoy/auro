@@ -67,9 +67,20 @@ function RootLayoutNav() {
 
   useEffect(() => {
     const init = async () => {
-      const { data } = await supabase.auth.getSession();
-      setIsSignedIn(!!data.session);
-      setSessionChecked(true);
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.warn('Auth session error:', error.message);
+          // Clear any corrupted session data
+          await supabase.auth.signOut();
+        }
+        setIsSignedIn(!!data.session);
+      } catch (err) {
+        console.warn('Failed to get session:', err);
+        setIsSignedIn(false);
+      } finally {
+        setSessionChecked(true);
+      }
     };
     init();
 

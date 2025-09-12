@@ -11,7 +11,11 @@ export default function IndexGate() {
 
   useEffect(() => {
     const run = async () => {
-      const { data } = await supabase.auth.getSession();
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.warn('Auth session error:', error.message);
+        return;
+      }
       if (data.session) {
         router.replace('/(tabs)/requests');
       } else {

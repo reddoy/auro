@@ -16,6 +16,11 @@ const supabaseAnonKey =
   (Constants.manifest2 as any)?.extra?.supabaseAnonKey ||
   '';
 
+// Validate environment variables
+if (!supabaseUrl || !supabaseAnonKey) {
+	console.warn('⚠️  Supabase configuration missing. Please set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY environment variables.');
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 	auth: {
 		autoRefreshToken: true,
