@@ -168,11 +168,33 @@ export async function POST(req: Request) {
             // Persist consent flag explicitly for app logic
             consent_social: !!(reviewPayload?.consent?.shareOnSocial),
           };
-          const { data: inserted, error: insertError } = await admin
-            .from('requests')
-            .insert([insertPayload])
-            .select('id')
-            .single();
+          let inserted: any = null;
+          let insertError: any = null;
+          try {
+            const res = await admin
+              .from('requests')
+              .insert([insertPayload])
+              .select('id')
+              .single();
+            inserted = res.data; insertError = res.error;
+          } catch (e: any) {
+            insertError = e;
+          }
+          if (insertError && String(insertError?.message || '').includes("consent_social")) {
+            // Retry without consent_social for older schemas
+            try {
+              const retryPayload = { ...insertPayload } as any;
+              delete retryPayload.consent_social;
+              const res2 = await admin
+                .from('requests')
+                .insert([retryPayload])
+                .select('id')
+                .single();
+              inserted = res2.data; insertError = res2.error;
+            } catch (e2: any) {
+              insertError = e2;
+            }
+          }
           if (insertError) throw insertError;
           ensuredRequestId = (inserted as any)?.id as string | undefined;
         }
