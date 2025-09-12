@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import type { RequestData } from '../page';
+import AsyncAvatar from './AsyncAvatar';
 
 type Props = {
   requestData: RequestData;
@@ -139,12 +140,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
     }
   };
 
-  const getCreatorImageUrl = (avatarUrl?: string) => {
-    if (!avatarUrl) return '/auro_aura_logo.png';
-    if (avatarUrl.startsWith('http')) return avatarUrl;
-    const supabaseUrl = supabase?.supabaseUrl || (typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_SUPABASE_URL : '') || '';
-    return `${supabaseUrl}/storage/v1/object/public/avatars/${avatarUrl}`;
-  };
+  // Avatar URLs are resolved by AsyncAvatar
 
   return (
     <div className="payment-step">
@@ -161,12 +157,10 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
           {creatorInfo && (
             <div className="reviewer-summary">
               <div className="reviewer-avatar">
-                <img
-                  src={getCreatorImageUrl(creatorInfo.avatar_url)}
-                  alt={`${creatorInfo.full_name || creatorInfo.username}'s avatar`}
-                  onError={(e) => {
-                    e.currentTarget.src = '/auro_aura_logo.png';
-                  }}
+                <AsyncAvatar
+                  avatarPathOrUrl={creatorInfo.avatar_url}
+                  alt={`${creatorInfo.full_name || creatorInfo.username}`}
+                  size={48}
                 />
               </div>
               <div className="reviewer-info">

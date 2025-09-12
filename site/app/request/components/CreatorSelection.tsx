@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { getDisplayAvatarUrl } from '../../../lib/avatar';
-import Avatar from '../../creators/[slug]/Avatar';
+import AsyncAvatar from './AsyncAvatar';
 
 type Creator = {
   id: string;
@@ -91,33 +90,6 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
 
   console.log('Creators:', creators.length, 'Filtered:', filteredCreators.length, 'Search:', searchTerm);
 
-  const getCreatorImageUrl = (creator: Creator) => {
-    // If no avatar_url, use fallback
-    if (!creator.avatar_url) {
-      console.log(`No avatar_url for ${creator.username}, using fallback`);
-      return null; // Let Avatar component handle the fallback
-    }
-    
-    // If it's already a full URL, use it
-    if (creator.avatar_url.startsWith('http')) {
-      console.log(`Using full URL for ${creator.username}:`, creator.avatar_url);
-      return creator.avatar_url;
-    }
-    
-    // Construct Supabase URL using environment variable
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    console.log(`Supabase URL from env:`, supabaseUrl);
-    if (supabaseUrl) {
-      const cleanUrl = supabaseUrl.replace(/\/$/, '');
-      const fullUrl = `${cleanUrl}/storage/v1/object/public/avatars/${creator.avatar_url}`;
-      console.log(`Constructed URL for ${creator.username}:`, fullUrl);
-      return fullUrl;
-    }
-    
-    console.log(`Could not construct URL for ${creator.username}, avatar_url:`, creator.avatar_url);
-    return null; // Let Avatar component handle the fallback
-  };
-
   const handleCreatorSelect = (creator: Creator) => {
     onSelect(creator.id, creator.username);
   };
@@ -156,8 +128,8 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
             onClick={() => handleCreatorSelect(creator)}
           >
             <div className="creator-avatar">
-              <Avatar 
-                src={getCreatorImageUrl(creator) || undefined}
+              <AsyncAvatar
+                avatarPathOrUrl={creator.avatar_url || null}
                 alt={creator.full_name || creator.username || 'Reviewer'}
                 size={80}
               />
