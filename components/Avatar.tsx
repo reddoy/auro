@@ -34,12 +34,13 @@ export default function Avatar({ uri, name, size = 48 }: AvatarProps) {
     >
       {showImage ? (
         <Image
+          key={uri || 'avatar-placeholder'}
           source={{ uri: uri || undefined }}
           style={{ width: '100%', height: '100%' }}
           contentFit="cover"
           transition={200}
-          cachePolicy="disk"
-          onError={() => setFailed(true)}
+          cachePolicy="none"
+          onError={(e) => { try { console.warn('Avatar load failed for URI:', uri); } catch {} setFailed(true); }}
         />
       ) : (
         <Text style={{ color: Colors.brand.textOnGradient, fontWeight: '700' }}>{initials}</Text>

@@ -41,7 +41,10 @@ export default function ReviewerRequestScreen() {
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [imageUri, setImageUri] = useState<string | null>(null);
 
-  const [signedPhotos, setSignedPhotos] = useState<string[]>([]);
+  const [signedPhotos, setSignedPhotos] = useState<string[]>([]); // fallback when categories aren't present
+  const [signedOutfits, setSignedOutfits] = useState<string[]>([]);
+  const [signedRoom, setSignedRoom] = useState<string[]>([]);
+  const [signedSocials, setSignedSocials] = useState<string[]>([]);
   const [signedSelfie, setSignedSelfie] = useState<string | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryUris, setGalleryUris] = useState<string[]>([]);
@@ -84,22 +87,25 @@ export default function ReviewerRequestScreen() {
         }
         // Sign media URLs for reliable viewing
         try {
+          const n = req?.notes ? (typeof req.notes === 'string' ? JSON.parse(req.notes) : req.notes) : null;
           const basePhotos = Array.isArray((req as any)?.photos) ? ((req as any).photos as string[]) : [];
-          const fromNotes = (() => {
-            try {
-              const n = req?.notes ? (typeof req.notes === 'string' ? JSON.parse(req.notes) : req.notes) : null;
-              const outfits = Array.isArray(n?.media?.outfits) ? n.media.outfits as string[] : [];
-              const room = Array.isArray(n?.media?.roomTourPhotos) ? n.media.roomTourPhotos as string[] : [];
-              const dating = Array.isArray(n?.media?.datingProfileScreenshots) ? n.media.datingProfileScreenshots as string[] : [];
-              const combined = [...outfits, ...room, ...dating];
-              return combined.length ? combined : null;
-            } catch { return null; }
-          })();
-          const toShow = fromNotes || basePhotos;
-          setSignedPhotos(await signRequestMediaUrls(toShow));
+          const outfits: string[] = Array.isArray(n?.media?.outfits) ? (n.media.outfits as string[]) : [];
+          const room: string[] = Array.isArray(n?.media?.roomTourPhotos) ? (n.media.roomTourPhotos as string[]) : [];
+          const socials: string[] = Array.isArray(n?.media?.datingProfileScreenshots) ? (n.media.datingProfileScreenshots as string[]) : [];
+
+          if (outfits.length) setSignedOutfits(await signRequestMediaUrls(outfits)); else setSignedOutfits([]);
+          if (room.length) setSignedRoom(await signRequestMediaUrls(room)); else setSignedRoom([]);
+          if (socials.length) setSignedSocials(await signRequestMediaUrls(socials)); else setSignedSocials([]);
+
+          // Fallback: if no categorized media present, show whatever is in basePhotos under a generic section
+          if (!outfits.length && !room.length && !socials.length && basePhotos.length) {
+            setSignedPhotos(await signRequestMediaUrls(basePhotos));
+          } else {
+            setSignedPhotos([]);
+          }
+
           const selfieUrl = (() => {
             try {
-              const n = req?.notes ? (typeof req.notes === 'string' ? JSON.parse(req.notes) : req.notes) : null;
               return (n?.media?.selfie || n?.selfieUrl) as string | undefined;
             } catch { return undefined; }
           })();
@@ -226,7 +232,7 @@ export default function ReviewerRequestScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <RNView style={styles.avatarWrap}>
             <Avatar uri={avatarUri} name={reviewee?.displayName || 'User'} size={84} />
@@ -251,6 +257,27 @@ export default function ReviewerRequestScreen() {
             <TouchableOpacity onPress={() => { setGalleryUris([signedSelfie]); setGalleryIndex(0); setGalleryOpen(true); }}>
               <Image source={{ uri: signedSelfie }} style={styles.selfie} contentFit="cover" />
             </TouchableOpacity>
+          </View>
+        )}
+
+        {signedOutfits.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Outfits</Text>
+            <PhotoCarousel uris={signedOutfits} onPressItem={(i) => { setGalleryUris(signedOutfits); setGalleryIndex(i); setGalleryOpen(true); }} />
+          </View>
+        )}
+
+        {signedRoom.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Room Tour</Text>
+            <PhotoCarousel uris={signedRoom} onPressItem={(i) => { setGalleryUris(signedRoom); setGalleryIndex(i); setGalleryOpen(true); }} />
+          </View>
+        )}
+
+        {signedSocials.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Socials</Text>
+            <PhotoCarousel uris={signedSocials} onPressItem={(i) => { setGalleryUris(signedSocials); setGalleryIndex(i); setGalleryOpen(true); }} />
           </View>
         )}
 

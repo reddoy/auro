@@ -22,7 +22,7 @@ const defaultLabelForStatus = (status: RequestStatus) => {
     case 'accepted':
       return 'Awaiting payment';
     case 'paid':
-      return 'Pending review';
+      return 'Pending acceptance';
     case 'pending':
       return 'Pending acceptance';
     case 'rejected':

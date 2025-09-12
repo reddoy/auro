@@ -53,6 +53,19 @@ export default function RequestPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [supabase, setSupabase] = useState<any>(null);
 
+  // Scroll to top on step change for better UX
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const headerEl = document.querySelector('.request-header');
+      if (headerEl && 'scrollIntoView' in headerEl) {
+        (headerEl as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } catch {}
+  }, [currentStep]);
+
   useEffect(() => {
     // Initialize Supabase client only on the client side
     if (typeof window !== 'undefined') {

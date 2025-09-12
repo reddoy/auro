@@ -5,7 +5,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 
 import { Text, View } from '@/components/Themed';
 import { getRequestById } from '@/lib/api';
-import { getReviewerById } from '@/lib/api';
+import { getReviewerById, getProfileById } from '@/lib/api';
 import Colors from '@/constants/Colors';
 import { Image } from 'expo-image';
 import { signRequestMediaUrls, getSignedRequestMediaUrl } from '@/lib/uploads';
@@ -13,12 +13,16 @@ import LightboxImage from '@/components/LightboxImage';
 import ImageGalleryModal from '@/components/ImageGalleryModal';
 import PhotoCarousel from '@/components/PhotoCarousel';
 import StatusBadge from '@/components/StatusBadge';
+import Avatar from '@/components/Avatar';
+import { getSignedAvatarUrl } from '@/lib/profile';
 
 export default function ReviewDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = React.useState(true);
   const [influencerName, setInfluencerName] = React.useState<string>('');
+  const [influencerAvatar, setInfluencerAvatar] = React.useState<string | undefined>(undefined);
+  const [revieweeName, setRevieweeName] = React.useState<string>('You');
   
   const [request, setRequest] = React.useState<any>(null);
   const review = request?.review;
@@ -30,12 +34,15 @@ export default function ReviewDetailScreen() {
     const s = request?.status as string | undefined;
     if (!s) return null;
     if (s === 'pending') {
-      return { labelOverride: undefined, text: 'Pending acceptance means the reviewer has 30 days to accept or deny your request.' };
+      return { labelOverride: 'Pending acceptance', text: 'Awaiting reviewer approval — if declined or no response in 30 days, you will be refunded.' };
     }
     if (s === 'accepted') {
       return { labelOverride: undefined, text: 'Accepted means the reviewer agreed to your request. Complete payment to proceed—after payment, they have 30 days to submit your review.' };
     }
-    if (s === 'paid' || s === 'in_progress') {
+    if (s === 'paid') {
+      return { labelOverride: 'Pending acceptance', text: 'Awaiting reviewer approval — if declined or no response in 30 days, you will be refunded.' };
+    }
+    if (s === 'in_progress') {
       return { labelOverride: undefined, text: 'Pending review means the reviewer accepted your request and now has 30 days to submit your review.' };
     }
     if (s === 'completed') {
@@ -58,6 +65,7 @@ export default function ReviewDetailScreen() {
 
   const [signedOutfits, setSignedOutfits] = React.useState<string[]>([]);
   const [signedRoom, setSignedRoom] = React.useState<string[]>([]);
+  const [signedSocials, setSignedSocials] = React.useState<string[]>([]);
   const [signedSelfie, setSignedSelfie] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -65,9 +73,11 @@ export default function ReviewDetailScreen() {
       try {
         const outfits = Array.isArray(parsedNotes?.media?.outfits) ? parsedNotes?.media?.outfits as string[] : [];
         const room = Array.isArray(parsedNotes?.media?.roomTourPhotos) ? parsedNotes?.media?.roomTourPhotos as string[] : [];
+        const socials = Array.isArray(parsedNotes?.media?.datingProfileScreenshots) ? parsedNotes?.media?.datingProfileScreenshots as string[] : [];
         const selfie = (parsedNotes?.media?.selfie || parsedNotes?.selfieUrl) as string | undefined;
         setSignedOutfits(await signRequestMediaUrls(outfits));
         setSignedRoom(await signRequestMediaUrls(room));
+        setSignedSocials(await signRequestMediaUrls(socials));
         setSignedSelfie(selfie ? await getSignedRequestMediaUrl(selfie) : null);
       } catch {}
     })();
@@ -86,7 +96,20 @@ export default function ReviewDetailScreen() {
           const rev = await getReviewerById(String(req.influencerId));
           if (rev) {
             setInfluencerName(rev.displayName);
+            try {
+              // Normalize known copy/paste artifacts (e.g., leading '@') and re-sign
+              const raw = (rev.avatarUrl || '').trim().replace(/^@+/, '');
+              const signed = raw ? await getSignedAvatarUrl(raw, 3600) : null;
+              setInfluencerAvatar(signed || raw || undefined);
+            } catch {}
           }
+        }
+        // Resolve reviewee display name for "About {name}" label
+        if (req?.userId) {
+          try {
+            const profile = await getProfileById(String(req.userId));
+            if (profile?.displayName) setRevieweeName(profile.displayName);
+          } catch {}
         }
       } finally {
         setLoading(false);
@@ -128,31 +151,37 @@ export default function ReviewDetailScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }}>
         <View style={styles.header}>
-          <RNView style={styles.influencerImageWrapper} />
+          <RNView style={styles.influencerImageWrapper}>
+            <Avatar uri={influencerAvatar} name={influencerName} size={60} />
+          </RNView>
         <RNView style={styles.headerInfo}>
           <Text style={styles.influencerName}>{influencerName}</Text>
-          <Text style={styles.reviewDate}>
-            {review?.createdAt ? `Reviewed on ${new Date(review.createdAt).toLocaleDateString()}` : 'Not completed'}
-          </Text>
+          {review?.createdAt ? (
+            <Text style={styles.reviewDate}>
+              {`Reviewed on ${new Date(review.createdAt).toLocaleDateString()}`}
+            </Text>
+          ) : null}
         </RNView>
         </View>
 
       {statusBanner && (
-        <View style={styles.infoBanner}>
-          <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.brand.cardBackground }}>
+        <View style={styles.statusSection}>
+          <Text style={styles.statusTitle}>Status</Text>
+          <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
             <StatusBadge status={request.status as any} label={statusBanner.labelOverride} />
-            <Text style={styles.infoText}>{statusBanner.text}</Text>
           </RNView>
+          <Text style={styles.statusText}>{statusBanner.text}</Text>
+          {hasConsent ? (
+            <RNView style={[styles.consentPill, { borderColor: shareConsent ? Colors.brand.status.completed : Colors.brand.status.rejected }] }>
+              <Text style={[styles.consentPillText, { color: shareConsent ? Colors.brand.status.completed : Colors.brand.status.rejected }]}>
+                {`Consent to share review on socials? ${shareConsent ? 'Yes' : 'No'}`}
+              </Text>
+            </RNView>
+          ) : null}
         </View>
       )}
 
-      {hasConsent ? (
-        <View style={styles.consentBadge}>
-          <Text style={[styles.consentBadgeText, { color: shareConsent ? Colors.brand.status.completed : Colors.brand.status.rejected }]}>
-            Sharing consent: {shareConsent ? 'Yes' : 'No'}
-          </Text>
-        </View>
-      ) : null}
+      {/* Consent pill is now shown inside the status card */}
 
       {review ? (<View style={styles.ratingsSection}>
         <Text style={styles.sectionTitle}>Your Ratings</Text>
@@ -186,12 +215,7 @@ export default function ReviewDetailScreen() {
             <Text style={styles.ratingLabel}>{getRatingLabel(review?.ratings?.room ?? 0)}</Text>
           </View>
         </RNView>
-      </View>) : (
-        <View style={styles.ratingsSection}>
-          <Text style={styles.sectionTitle}>Not completed</Text>
-          <Text style={{ color: '#C7BFD9' }}>This request has not been reviewed yet.</Text>
-        </View>
-      )}
+      </View>) : null}
 
       {review && (<View style={styles.feedbackSection}>
         <Text style={styles.sectionTitle}>Feedback</Text>
@@ -224,7 +248,7 @@ export default function ReviewDetailScreen() {
                 <Image source={{ uri: signedSelfie }} style={styles.selfie} contentFit="cover" transition={200} />
               </TouchableOpacity>
             ) : null}
-            <Text style={styles.promptLabel}>Prompt</Text>
+            <Text style={styles.promptLabel}>{`About ${revieweeName || 'You'}`}</Text>
             <Text style={styles.promptText}>{parsedNotes.message}</Text>
           </View>
         )}
@@ -240,6 +264,13 @@ export default function ReviewDetailScreen() {
           <View style={styles.mediaSection}>
             <Text style={styles.sectionTitle}>Room Tour</Text>
             <PhotoCarousel uris={signedRoom} onPressItem={(i) => { setGalleryUris(signedRoom); setGalleryIndex(i); setGalleryOpen(true); }} />
+          </View>
+        ) : null}
+
+        {signedSocials.length ? (
+          <View style={styles.mediaSection}>
+            <Text style={styles.sectionTitle}>Socials</Text>
+            <PhotoCarousel uris={signedSocials} onPressItem={(i) => { setGalleryUris(signedSocials); setGalleryIndex(i); setGalleryOpen(true); }} />
           </View>
         ) : null}
 
@@ -298,12 +329,7 @@ const styles = StyleSheet.create({
     marginRight: 15,
   },
   influencerImageWrapper: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
     marginRight: 15,
-    overflow: 'hidden',
-    backgroundColor: Colors.brand.avatarPlaceholder,
   },
   influencerImageOverlay: {
     position: 'absolute',
@@ -457,6 +483,28 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: Colors.brand.cardBackground,
   },
+  statusSection: {
+    margin: 15,
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 15,
+    padding: 16,
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 10,
+  },
+  statusTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+    marginBottom: 10,
+  },
+  statusText: {
+    color: Colors.brand.textSecondary,
+    lineHeight: 20,
+    marginBottom: 10,
+  },
   infoText: {
     color: Colors.brand.textSecondary,
     flex: 1,
@@ -470,6 +518,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: Colors.brand.cardBackground,
     alignSelf: 'flex-start',
+  },
+  consentPill: {
+    alignSelf: 'center',
+    borderWidth: 1,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  consentPillText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   consentBadgeText: {
     fontSize: 12,

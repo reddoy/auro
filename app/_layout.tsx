@@ -3,7 +3,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import { Poppins_700Bold } from '@expo-google-fonts/poppins';
-import { Stack, useRootNavigationState, useRouter } from 'expo-router';
+import { Stack, useRootNavigationState, useRouter, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
@@ -64,6 +64,7 @@ function RootLayoutNav() {
   const [sessionChecked, setSessionChecked] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const init = async () => {
@@ -89,6 +90,15 @@ function RootLayoutNav() {
     });
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  // Simple navigation logger: logs the current route on every navigation
+  useEffect(() => {
+    try {
+      if (typeof pathname === 'string') {
+        console.log(`[NAV] ${pathname}`);
+      }
+    } catch {}
+  }, [pathname]);
 
   // Custom theme with Auro deep purple background
   const customTheme = {

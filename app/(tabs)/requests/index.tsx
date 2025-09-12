@@ -48,17 +48,24 @@ export default function RequestsScreen() {
           users.forEach(u => { if (u) uMap[u.id] = u; });
           setUserMap(uMap);
           try {
-            const pairs = await Promise.all(
+            const entries = await Promise.all(
               users.filter(Boolean).map(async (u) => {
                 const usr = u as { id: string; displayName: string; avatarUrl?: string | null };
-                let uri = usr.avatarUrl || '';
-                if (uri && !/^https?:\/\//i.test(uri)) {
-                  try { uri = (await getSignedAvatarUrl(uri, 3600)) || ''; } catch {}
+                const raw = (usr.avatarUrl || '').trim().replace(/^@+/, '');
+                let uri = raw;
+                if (raw) {
+                  try { uri = (await getSignedAvatarUrl(raw, 3600)) || raw; } catch {}
                 }
                 return [usr.id, uri] as const;
               })
             );
-            setUserAvatarMap(Object.fromEntries(pairs));
+            setUserAvatarMap((prev) => {
+              const merged: Record<string, string | undefined> = { ...prev };
+              for (const [id, uri] of entries) {
+                merged[id] = uri || prev[id];
+              }
+              return merged;
+            });
           } catch {}
         } else {
           // Build reviewer map for reviewee inbox
@@ -69,17 +76,24 @@ export default function RequestsScreen() {
           setRevMap(map);
           // Prefetch signed avatar URLs if needed
           try {
-            const pairs = await Promise.all(
+            const entries = await Promise.all(
               reviewers.filter(Boolean).map(async (rev) => {
                 const r = rev as DbReviewerSummary;
-                let uri = r.avatarUrl || '';
-                if (uri && !/^https?:\/\//i.test(uri)) {
-                  try { uri = (await getSignedAvatarUrl(uri, 3600)) || ''; } catch {}
+                const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
+                let uri = raw;
+                if (raw) {
+                  try { uri = (await getSignedAvatarUrl(raw, 3600)) || raw; } catch {}
                 }
                 return [r.id, uri] as const;
               })
             );
-            setAvatarMap(Object.fromEntries(pairs));
+            setAvatarMap((prev) => {
+              const merged: Record<string, string | undefined> = { ...prev };
+              for (const [id, uri] of entries) {
+                merged[id] = uri || prev[id];
+              }
+              return merged;
+            });
           } catch {}
         }
 
@@ -111,17 +125,24 @@ export default function RequestsScreen() {
           users.forEach(u => { if (u) uMap[u.id] = u; });
           setUserMap(uMap);
           try {
-            const pairs = await Promise.all(
+            const entries = await Promise.all(
               users.filter(Boolean).map(async (u) => {
                 const usr = u as { id: string; displayName: string; avatarUrl?: string | null };
-                let uri = usr.avatarUrl || '';
-                if (uri && !/^https?:\/\//i.test(uri)) {
-                  try { uri = (await getSignedAvatarUrl(uri, 3600)) || ''; } catch {}
+                const raw = (usr.avatarUrl || '').trim().replace(/^@+/, '');
+                let uri = raw;
+                if (raw) {
+                  try { uri = (await getSignedAvatarUrl(raw, 3600)) || raw; } catch {}
                 }
                 return [usr.id, uri] as const;
               })
             );
-            setUserAvatarMap(Object.fromEntries(pairs));
+            setUserAvatarMap((prev) => {
+              const merged: Record<string, string | undefined> = { ...prev };
+              for (const [id, uri] of entries) {
+                merged[id] = uri || prev[id];
+              }
+              return merged;
+            });
           } catch {}
         } else {
           const uniqueIds = Array.from(new Set(reqs.map(r => r.influencerId).filter(Boolean)));
@@ -130,17 +151,24 @@ export default function RequestsScreen() {
           reviewers.forEach(rev => { if (rev) rMap[rev.id] = rev; });
           setRevMap(rMap);
           try {
-            const pairs = await Promise.all(
+            const entries = await Promise.all(
               reviewers.filter(Boolean).map(async (rev) => {
                 const r = rev as DbReviewerSummary;
-                let uri = r.avatarUrl || '';
-                if (uri && !/^https?:\/\//i.test(uri)) {
-                  try { uri = (await getSignedAvatarUrl(uri, 3600)) || ''; } catch {}
+                const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
+                let uri = raw;
+                if (raw) {
+                  try { uri = (await getSignedAvatarUrl(raw, 3600)) || raw; } catch {}
                 }
                 return [r.id, uri] as const;
               })
             );
-            setAvatarMap(Object.fromEntries(pairs));
+            setAvatarMap((prev) => {
+              const merged: Record<string, string | undefined> = { ...prev };
+              for (const [id, uri] of entries) {
+                merged[id] = uri || prev[id];
+              }
+              return merged;
+            });
           } catch {}
         }
       } catch {}
@@ -523,6 +551,7 @@ const styles = StyleSheet.create({
   discoverButtonContainer: {
     paddingHorizontal: 16,
     paddingTop: 16,
+    marginBottom: 16,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.brand.background,

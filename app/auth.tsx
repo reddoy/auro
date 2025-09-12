@@ -81,7 +81,17 @@ export default function AuthScreen() {
     try {
       if (isLogin) {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          const message = String((error as any)?.message || '');
+          const status = (error as any)?.status;
+          if (status === 400 || /confirm/i.test(message)) {
+            if (/confirm/i.test(message) || /not\s*confirmed/i.test(message)) {
+              router.replace({ pathname: '/auth/confirm', params: { email } });
+              return;
+            }
+          }
+          throw error;
+        }
 
         // Proceed directly to app after successful login (email-only auth)
         router.replace('/(tabs)/requests');

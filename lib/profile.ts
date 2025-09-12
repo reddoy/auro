@@ -64,7 +64,35 @@ export async function updateProfile(partial: Partial<Profile>): Promise<Profile>
   const { data: userResult } = await supabase.auth.getUser();
   const user = userResult.user;
   if (!user) throw new Error('Not signed in');
-  const update = { ...partial, id: user.id } as Partial<Profile> & { id: string };
+  // If the profile row doesn't exist yet, we should seed key identity fields
+  // (full_name, username, and optionally avatar_url) from auth metadata so we
+  // don't create a new row that wipes the displayed name to "User".
+  let existing: any | null = null;
+  try {
+    const { data: existingRow } = await supabase
+      .from('profiles')
+      .select('id, username, full_name, avatar_url')
+      .eq('id', user.id)
+      .maybeSingle();
+    existing = existingRow || null;
+  } catch {}
+
+  const seeded: Partial<Profile> = {};
+  if (!existing) {
+    const metadata = user.user_metadata || {};
+    if (metadata.user_name) {
+      (seeded as any).username = metadata.user_name;
+    }
+    if (metadata.name) {
+      (seeded as any).full_name = metadata.name;
+    }
+    // Only seed avatar_url from metadata if caller isn't explicitly updating it
+    if (partial.avatar_url === undefined && metadata.avatar_url) {
+      (seeded as any).avatar_url = metadata.avatar_url;
+    }
+  }
+
+  const update = { id: user.id, ...seeded, ...partial } as Partial<Profile> & { id: string };
   const { data, error } = await supabase
     .from('profiles')
     .upsert(update, { onConflict: 'id' })
@@ -139,10 +167,30 @@ export async function getSignedAvatarUrl(pathOrUrl: string, expiresInSeconds: nu
     (Constants.manifest2 as any)?.extra?.supabaseAvatarBucket ||
     'avatars';
   if (!pathOrUrl) return null;
-  // If it's already an absolute URL, return as-is
-  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
+  let bucket = AVATAR_BUCKET;
+  let objectPath = pathOrUrl;
+
+  // If it looks like a full Supabase storage URL, extract bucket and object path and re-sign
   try {
-    const { data, error } = await supabase.storage.from(AVATAR_BUCKET).createSignedUrl(pathOrUrl, expiresInSeconds);
+    if (/^https?:\/\//i.test(pathOrUrl)) {
+      const url = new URL(pathOrUrl);
+      const m = url.pathname.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+)$/);
+      if (m) {
+        bucket = m[1];
+        objectPath = decodeURIComponent(m[2]);
+      } else {
+        // Not a Supabase storage URL → return as-is
+        return pathOrUrl;
+      }
+    } else if (pathOrUrl.startsWith('avatars/')) {
+      // Some rows may store "avatars/..." including bucket prefix
+      objectPath = pathOrUrl.replace(/^avatars\//, '');
+      bucket = 'avatars';
+    }
+  } catch {}
+
+  try {
+    const { data, error } = await supabase.storage.from(bucket).createSignedUrl(objectPath, expiresInSeconds);
     if (error) throw error;
     return data?.signedUrl || null;
   } catch {
