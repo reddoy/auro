@@ -10,6 +10,7 @@ import Colors from '@/constants/Colors';
 import { Image } from 'expo-image';
 import LightboxImage from '@/components/LightboxImage';
 import ImageGalleryModal from '@/components/ImageGalleryModal';
+import StatusBadge from '@/components/StatusBadge';
 
 export default function ReviewDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -22,6 +23,27 @@ export default function ReviewDetailScreen() {
   const [galleryOpen, setGalleryOpen] = React.useState(false);
   const [galleryUris, setGalleryUris] = React.useState<string[]>([]);
   const [galleryIndex, setGalleryIndex] = React.useState(0);
+
+  const statusBanner = React.useMemo(() => {
+    const s = request?.status as string | undefined;
+    if (!s) return null;
+    if (s === 'pending') {
+      return { labelOverride: undefined, text: 'Pending acceptance means the reviewer has 30 days to accept or deny your request.' };
+    }
+    if (s === 'accepted') {
+      return { labelOverride: undefined, text: 'Accepted means the reviewer agreed to your request. Complete payment to proceed—after payment, they have 30 days to submit your review.' };
+    }
+    if (s === 'paid' || s === 'in_progress') {
+      return { labelOverride: undefined, text: 'Pending review means the reviewer accepted your request and now has 30 days to submit your review.' };
+    }
+    if (s === 'completed') {
+      return { labelOverride: 'Review Submitted', text: 'Review Submitted means the reviewer has completed the review.' };
+    }
+    if (s === 'rejected') {
+      return { labelOverride: undefined, text: 'This request was declined by the reviewer.' };
+    }
+    return null;
+  }, [request?.status]);
 
   const parsedNotes = React.useMemo(() => {
     try {
@@ -95,6 +117,15 @@ export default function ReviewDetailScreen() {
           </Text>
         </View>
         </View>
+
+      {statusBanner && (
+        <View style={styles.infoBanner}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <StatusBadge status={request.status as any} label={statusBanner.labelOverride} />
+            <Text style={styles.infoText}>{statusBanner.text}</Text>
+          </View>
+        </View>
+      )}
 
       {hasConsent ? (
         <View style={styles.consentBadge}>
@@ -409,6 +440,19 @@ const styles = StyleSheet.create({
   actionsSection: {
     margin: 15,
     marginBottom: 30,
+  },
+  infoBanner: {
+    marginHorizontal: 15,
+    marginTop: 12,
+    marginBottom: 0,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: Colors.brand.cardBackground,
+  },
+  infoText: {
+    color: Colors.brand.textSecondary,
+    flex: 1,
   },
   consentBadge: {
     marginHorizontal: 15,

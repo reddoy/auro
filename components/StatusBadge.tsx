@@ -16,7 +16,7 @@ type Props = {
 const defaultLabelForStatus = (status: RequestStatus) => {
   switch (status) {
     case 'completed':
-      return 'Review Complete';
+      return 'Review Submitted';
     case 'in_progress':
       return 'In Progress';
     case 'accepted':

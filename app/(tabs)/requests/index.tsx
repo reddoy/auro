@@ -223,7 +223,7 @@ export default function RequestsScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <StatusBadge status={item.status as any} />
               {item.status === 'paid' && (item as any).review ? (
-                <StatusBadge status={'completed'} label="Review completed" />
+                <StatusBadge status={'completed'} label="Review Submitted" />
               ) : null}
             </View>
           </View>
