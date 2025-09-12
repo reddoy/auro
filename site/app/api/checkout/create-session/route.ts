@@ -165,6 +165,8 @@ export async function POST(req: Request) {
             photos: allPhotos,
             notes: JSON.stringify(notes),
             status: 'pending',
+            // Persist consent flag explicitly for app logic
+            consent_social: !!(reviewPayload?.consent?.shareOnSocial),
           };
           const { data: inserted, error: insertError } = await admin
             .from('requests')

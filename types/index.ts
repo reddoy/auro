@@ -35,6 +35,10 @@ export interface ReviewRequest {
   completedAt?: Date;
   review?: Review;
   notes?: string | null;
+  // New: consent flag to allow social sharing by reviewer
+  consent_social?: boolean;
+  // New: archived timestamp to hide from active lists when present
+  archived_at?: string | null;
 }
 
 export interface Review {
@@ -99,6 +103,9 @@ export interface DbRequestSummary {
     };
     createdAt?: string;
   } | null;
+  // New fields mirrored from DB
+  consent_social?: boolean;
+  archived_at?: string | null;
 }
 
 export interface DbUserProfile {

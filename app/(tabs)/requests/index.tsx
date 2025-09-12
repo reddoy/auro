@@ -7,7 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import { getReviewerById, getRequestsByUser, getUserProfile, getRequestsByReviewer, getProfileById } from '@/lib/api';
+import { getReviewerById, getRequestsByUser, getUserProfile, getRequestsByReviewer, getProfileById, archiveRequest, unarchiveRequest } from '@/lib/api';
 import { getSignedAvatarUrl } from '@/lib/profile';
 import { openPaymentSheet } from '@/lib/payments';
 import type { DbReviewerSummary, DbRequestSummary } from '@/types';
@@ -26,6 +26,7 @@ export default function RequestsScreen() {
   const [userAvatarMap, setUserAvatarMap] = useState<Record<string, string | undefined>>({});
   const [isReviewer, setIsReviewer] = useState(false);
   const receivedCount = requests.length;
+  const [filter, setFilter] = useState<'active' | 'completed' | 'archived'>('active');
 
   useEffect(() => {
     const run = async () => {
@@ -251,6 +252,24 @@ export default function RequestsScreen() {
             <Text style={styles.payNowText}>Pay now</Text>
           </TouchableOpacity>
         ) : null}
+
+        {item.status === 'completed' && (
+          <RNView style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
+            {!item.archived_at ? (
+              <TouchableOpacity onPress={async () => {
+                try { await archiveRequest(item.id); setRequests(prev => prev.map(r => r.id === item.id ? { ...r, archived_at: new Date().toISOString() } as any : r)); } catch {}
+              }}>
+                <Text style={{ color: Colors.brand.textSecondary }}>Archive</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity onPress={async () => {
+                try { await unarchiveRequest(item.id); setRequests(prev => prev.map(r => r.id === item.id ? { ...r, archived_at: null } as any : r)); } catch {}
+              }}>
+                <Text style={{ color: Colors.brand.textSecondary }}>Unarchive</Text>
+              </TouchableOpacity>
+            )}
+          </RNView>
+        )}
       </TouchableOpacity>
     );
   };
@@ -268,7 +287,12 @@ export default function RequestsScreen() {
     </View>
   );
 
-  const data = requests;
+  const data = requests.filter(r => {
+    if (filter === 'archived') return !!r.archived_at;
+    if (filter === 'completed') return r.status === 'completed' && !r.archived_at;
+    // active
+    return (r.status === 'pending' || r.status === 'accepted' || r.status === 'paid' || r.status === 'in_progress') && !r.archived_at;
+  });
   const renderItem = renderReceivedItem;
 
   return (
@@ -303,11 +327,25 @@ export default function RequestsScreen() {
                 <Text style={styles.subtitlePlain}>Track your review requests and feedback</Text>
 
                 <RNView style={styles.countersRowPlain}>
-                  <RNView style={styles.counterPillPlain}>
-                    <Text style={styles.counterTextPlain}>Inbox {receivedCount}</Text>
+                  <RNView style={[styles.counterPillPlain, filter === 'active' && { borderColor: 'rgba(255,255,255,0.4)' }]}>
+                    <Text style={styles.counterTextPlain}>Active {requests.filter(r => (r.status === 'pending' || r.status === 'accepted' || r.status === 'paid' || r.status === 'in_progress') && !r.archived_at).length}</Text>
+                  </RNView>
+                  <RNView style={[styles.counterPillPlain, filter === 'completed' && { borderColor: 'rgba(255,255,255,0.4)' }]}>
+                    <Text style={styles.counterTextPlain}>Completed {requests.filter(r => r.status === 'completed' && !r.archived_at).length}</Text>
+                  </RNView>
+                  <RNView style={[styles.counterPillPlain, filter === 'archived' && { borderColor: 'rgba(255,255,255,0.4)' }]}>
+                    <Text style={styles.counterTextPlain}>Archived {requests.filter(r => !!r.archived_at).length}</Text>
                   </RNView>
                 </RNView>
               </View>
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 8 }}>
+              {(['active','completed','archived'] as const).map(f => (
+                <TouchableOpacity key={f} onPress={() => setFilter(f)} style={{ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, backgroundColor: filter === f ? 'rgba(255,255,255,0.12)' : 'transparent', borderWidth: 1, borderColor: 'rgba(255, 111, 0, 0.15)' }}>
+                  <Text style={{ color: Colors.brand.textPrimary, fontWeight: '700', textTransform: 'capitalize' }}>{f}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
 
             <View style={styles.discoverButtonContainer}>

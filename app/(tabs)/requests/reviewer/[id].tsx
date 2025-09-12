@@ -5,11 +5,15 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import { getRequestById, updateRequestStatus, getProfileById } from '@/lib/api';
+import { getRequestById, getProfileById, acceptRequest, denyRequest, submitRequestReview } from '@/lib/api';
 import { getSignedAvatarUrl } from '@/lib/profile';
 import type { DbRequestSummary } from '@/types';
 import Avatar from '@/components/Avatar';
 import { Image } from 'expo-image';
+import RatingBar from '@/components/RatingBar';
+import MediaRecorder from '@/components/MediaRecorder';
+import { uploadRequestMedia } from '@/lib/uploads';
+import * as Sharing from 'expo-sharing';
 
 // Removed unused URL helper functions since we're not showing social links in this screen
 
@@ -21,6 +25,18 @@ export default function ReviewerRequestScreen() {
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [overall, setOverall] = useState(0);
+  const [subs, setSubs] = useState<{ key: string; label: string; value: number }[]>([
+    { key: 'composition', label: 'Composition', value: 0 },
+    { key: 'lighting', label: 'Lighting', value: 0 },
+    { key: 'originality', label: 'Originality', value: 0 },
+  ]);
+  const [tags, setTags] = useState<string[]>(['Great pose', 'Strong wardrobe', 'Good background', 'Try natural light', 'Mind clutter']);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [notes, setNotes] = useState('');
+  const [videoUri, setVideoUri] = useState<string | null>(null);
+  const [imageUri, setImageUri] = useState<string | null>(null);
 
   // Move useMemo to the top level, always called
   const parsedNotes = React.useMemo(() => {
@@ -70,10 +86,11 @@ export default function ReviewerRequestScreen() {
     if (!request?.id) return;
     setActionLoading(true);
     try {
-      // Change status to 'in_progress' (paid + pending review)
-      await updateRequestStatus(request.id, 'in_progress');
+      // Accept: backend/webhook will move to paid when captured; set accepted now
+      await acceptRequest(request.id);
       Alert.alert('Request Accepted', 'You can now submit your review for this request.');
-      router.back();
+      const refreshed = await getRequestById(request.id);
+      setRequest(refreshed);
     } catch (error: any) {
       Alert.alert('Error', error?.message || 'Failed to accept request');
     } finally {
@@ -94,8 +111,7 @@ export default function ReviewerRequestScreen() {
           onPress: async () => {
             setActionLoading(true);
             try {
-              // Change status to 'rejected' and payment_status will be handled by webhook/refund logic
-              await updateRequestStatus(request.id, 'rejected');
+              await denyRequest(request.id);
               Alert.alert('Request Denied', 'The request has been denied and will be refunded.');
               router.back();
             } catch (error: any) {
@@ -107,6 +123,53 @@ export default function ReviewerRequestScreen() {
         }
       ]
     );
+  };
+
+  const handleSubmitReview = async () => {
+    if (!request?.id) return;
+    if (overall <= 0) {
+      Alert.alert('Missing rating', 'Please provide an overall rating.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      let uploadedVideoUrl: string | undefined;
+      let uploadedImageUrl: string | undefined;
+      if (videoUri) {
+        const res = await uploadRequestMedia(videoUri, { category: 'other' });
+        uploadedVideoUrl = res.publicUrl;
+      }
+      if (imageUri) {
+        const res = await uploadRequestMedia(imageUri, { category: 'other' });
+        uploadedImageUrl = res.publicUrl;
+      }
+      const subMap = Object.fromEntries(subs.map(s => [s.key, s.value]));
+      const updated = await submitRequestReview({
+        requestId: request.id,
+        review: {
+          ratings: { overall, attractiveness: undefined, wardrobe: undefined, room: undefined, ...subMap },
+          feedback: { strengths: selectedTags, improvements: [], generalFeedback: notes },
+        },
+        videoUrl: uploadedVideoUrl || null,
+        imageUrl: uploadedImageUrl || null,
+      });
+      setRequest(updated);
+      Alert.alert('Success', 'Review submitted successfully.');
+      // If consented, prompt share sheet
+      if ((updated as any)?.consent_social && (uploadedVideoUrl || uploadedImageUrl)) {
+        try {
+          const uri = uploadedVideoUrl || uploadedImageUrl!;
+          if (await Sharing.isAvailableAsync()) {
+            await Sharing.shareAsync(uri);
+          }
+        } catch {}
+      }
+      router.back();
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Failed to submit review');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -209,6 +272,32 @@ export default function ReviewerRequestScreen() {
                 : '❌ Request was denied and refunded'
               }
             </Text>
+          </View>
+        )}
+
+        {(request.status === 'paid' || request.status === 'in_progress' || request.status === 'accepted') && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Compose Review</Text>
+            <RatingBar
+              value={overall}
+              onChange={setOverall}
+              subRatings={subs}
+              onChangeSub={(key, v) => setSubs(prev => prev.map(s => s.key === key ? { ...s, value: v } : s))}
+              tags={tags}
+              selectedTags={selectedTags}
+              onToggleTag={(t) => setSelectedTags(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])}
+            />
+            <RNView style={{ height: 12 }} />
+            <Text style={styles.label}>Optional video review</Text>
+            <MediaRecorder photos={request.photos || []} onRecorded={setVideoUri} />
+            <RNView style={{ height: 12 }} />
+            <TouchableOpacity
+              style={[styles.actionButton, styles.acceptButton]}
+              onPress={handleSubmitReview}
+              disabled={submitting}
+            >
+              <Text style={styles.actionButtonText}>{submitting ? 'Submitting...' : 'Submit Review'}</Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>

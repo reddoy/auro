@@ -11,6 +11,8 @@ function mapRequestRow(row: any): DbRequestSummary {
     photos: row.photos || [],
     notes: row.notes ?? null,
     review: row.review ?? null,
+    consent_social: row.consent_social ?? (row.notes?.consent?.shareOnSocial ?? undefined),
+    archived_at: row.archived_at ?? null,
   } as DbRequestSummary;
 }
 
@@ -40,7 +42,7 @@ export async function getInfluencerById(id: string): Promise<DbInfluencerSummary
 export async function getRequestsByUser(userId: string): Promise<DbRequestSummary[]> {
   const { data, error } = await supabase
     .from('requests')
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -50,7 +52,7 @@ export async function getRequestsByUser(userId: string): Promise<DbRequestSummar
 export async function getRequestById(id: string): Promise<DbRequestSummary | null> {
   const { data, error } = await supabase
     .from('requests')
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_at')
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;
@@ -62,6 +64,7 @@ export async function createRequest(params: {
   influencerId: string;
   photos: string[];
   notes?: string;
+  consent_social?: boolean;
 }): Promise<DbRequestSummary> {
   const { data, error } = await supabase
     .from('requests')
@@ -71,10 +74,11 @@ export async function createRequest(params: {
         influencer_id: params.influencerId,
         photos: params.photos,
         notes: params.notes ?? null,
+        consent_social: params.consent_social ?? false,
         status: 'pending',
       },
     ])
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_at')
     .single();
   if (error) throw error;
   return mapRequestRow(data);
@@ -158,7 +162,7 @@ export async function getReviewerById(id: string): Promise<DbReviewerSummary | n
 export async function getRequestsByReviewer(reviewerId: string): Promise<DbRequestSummary[]> {
   const { data, error } = await supabase
     .from('requests')
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_at')
     .eq('influencer_id', reviewerId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -171,7 +175,7 @@ export async function updateRequestStatus(requestId: string, status: string): Pr
     .from('requests')
     .update({ status })
     .eq('id', requestId)
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_at')
     .maybeSingle();
   if (error) throw error;
   if (data) return mapRequestRow(data);
@@ -187,18 +191,58 @@ export async function submitRequestReview(params: {
     ratings: { overall: number; attractiveness?: number; wardrobe?: number; room?: number };
     feedback: { strengths?: string[]; improvements?: string[]; generalFeedback?: string };
   };
+  videoUrl?: string | null;
+  imageUrl?: string | null;
 }): Promise<DbRequestSummary> {
   const { requestId, review } = params;
   const { data, error } = await supabase
     .from('requests')
     .update({ review, status: 'completed' })
     .eq('id', requestId)
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_at')
     .maybeSingle();
   if (error) throw error;
   if (data) return mapRequestRow(data);
   const refetched = await getRequestById(requestId);
   if (!refetched) throw new Error('Request not found after submitting review');
+  return refetched;
+}
+
+// Reviewer decisions
+export async function acceptRequest(id: string): Promise<DbRequestSummary> {
+  // For now just set accepted; webhook/payment may later move to paid
+  return updateRequestStatus(id, 'accepted');
+}
+
+export async function denyRequest(id: string): Promise<DbRequestSummary> {
+  return updateRequestStatus(id, 'rejected');
+}
+
+export async function archiveRequest(id: string): Promise<DbRequestSummary> {
+  const { data, error } = await supabase
+    .from('requests')
+    .update({ archived_at: new Date().toISOString() })
+    .eq('id', id)
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_at')
+    .maybeSingle();
+  if (error) throw error;
+  if (data) return mapRequestRow(data);
+  const refetched = await getRequestById(id);
+  if (!refetched) throw new Error('Request not found after archiving');
+  return refetched;
+}
+
+export async function unarchiveRequest(id: string): Promise<DbRequestSummary> {
+  const { data, error } = await supabase
+    .from('requests')
+    .update({ archived_at: null })
+    .eq('id', id)
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_at')
+    .maybeSingle();
+  if (error) throw error;
+  if (data) return mapRequestRow(data);
+  const refetched = await getRequestById(id);
+  if (!refetched) throw new Error('Request not found after unarchiving');
   return refetched;
 }
 
