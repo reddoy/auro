@@ -326,28 +326,19 @@ export default function RequestsScreen() {
                 <Text style={styles.titlePlain}>My Reviews</Text>
                 <Text style={styles.subtitlePlain}>Track your review requests and feedback</Text>
 
-                <RNView style={styles.countersRowPlain}>
-                  <RNView style={[styles.counterPillPlain, filter === 'active' && { borderColor: 'rgba(255,255,255,0.4)' }]}>
+                <RNView style={[styles.countersRowPlain, { justifyContent: 'center' }]}>
+                  <TouchableOpacity onPress={() => setFilter('active')} style={[styles.counterPillPlain, filter === 'active' && { borderColor: 'rgba(255,255,255,0.4)', backgroundColor: Colors.brand.cardBackgroundLight }]}>
                     <Text style={styles.counterTextPlain}>Active {requests.filter(r => (r.status === 'pending' || r.status === 'accepted' || r.status === 'paid' || r.status === 'in_progress') && !r.archived_at).length}</Text>
-                  </RNView>
-                  <RNView style={[styles.counterPillPlain, filter === 'completed' && { borderColor: 'rgba(255,255,255,0.4)' }]}>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setFilter('completed')} style={[styles.counterPillPlain, filter === 'completed' && { borderColor: 'rgba(255,255,255,0.4)', backgroundColor: Colors.brand.cardBackgroundLight }]}>
                     <Text style={styles.counterTextPlain}>Completed {requests.filter(r => r.status === 'completed' && !r.archived_at).length}</Text>
-                  </RNView>
-                  <RNView style={[styles.counterPillPlain, filter === 'archived' && { borderColor: 'rgba(255,255,255,0.4)' }]}>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setFilter('archived')} style={[styles.counterPillPlain, filter === 'archived' && { borderColor: 'rgba(255,255,255,0.4)', backgroundColor: Colors.brand.cardBackgroundLight }]}>
                     <Text style={styles.counterTextPlain}>Archived {requests.filter(r => !!r.archived_at).length}</Text>
-                  </RNView>
+                  </TouchableOpacity>
                 </RNView>
               </View>
             </View>
-
-            <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 8 }}>
-              {(['active','completed','archived'] as const).map(f => (
-                <TouchableOpacity key={f} onPress={() => setFilter(f)} style={{ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, backgroundColor: filter === f ? 'rgba(255,255,255,0.12)' : 'transparent', borderWidth: 1, borderColor: 'rgba(255, 111, 0, 0.15)' }}>
-                  <Text style={{ color: Colors.brand.textPrimary, fontWeight: '700', textTransform: 'capitalize' }}>{f}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
             <View style={styles.discoverButtonContainer}>
               <TouchableOpacity style={styles.newRequestButton} onPress={handleNewRequest}>
                 <ExpoLinearGradient

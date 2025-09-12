@@ -171,15 +171,15 @@ export default function ProfileScreen() {
             <View style={styles.bioSection}>
               <Text style={styles.sectionTitle}>Reviewer Settings</Text>
               <Text style={{ color: Colors.brand.textSecondary }}>Control your reviewer status and price per review.</Text>
-              <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.brand.cardBackground }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.brand.cardBackground }}>
                   <View style={[styles.statusChip, profile?.is_reviewer && styles.statusChipActive]}>
                     <Text style={[styles.statusChipText, profile?.is_reviewer && styles.statusChipTextActive]}>
                       {profile?.is_reviewer ? 'Active' : 'Inactive'}
                     </Text>
                   </View>
                 </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.brand.cardBackground }}>
                   <Text style={{ color: Colors.brand.textSecondary, marginRight: 10 }}>Reviewer Status</Text>
                   <Switch
                     value={!!profile?.is_reviewer}
@@ -201,7 +201,7 @@ export default function ProfileScreen() {
               </View>
               {profile?.is_reviewer ? (
                 <>
-                  <View style={{ marginTop: 12 }}>
+                  <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
                     <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Price per Review</Text>
                     <View style={styles.priceCard}>
                       <Text style={styles.priceText}>{profile?.hourly_rate != null ? `$${profile.hourly_rate}/review` : 'Not set'}</Text>
@@ -218,9 +218,9 @@ export default function ProfileScreen() {
                   </View>
                 </>
               ) : (
-                <View style={{ marginTop: 12 }}>
+                <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
                   <Text style={{ color: Colors.brand.textSecondary }}>Turn on your reviewer profile to set a price and accept requests.</Text>
-                  <View style={{ marginTop: 12, flexDirection: 'row' }}>
+                  <View style={{ marginTop: 12, flexDirection: 'row', backgroundColor: Colors.brand.cardBackground }}>
                     <TouchableOpacity onPress={() => router.push('/(tabs)/profile/become-reviewer')} style={styles.primaryCta} accessibilityLabel="Become a reviewer">
                       <Text style={styles.primaryCtaText}>Become a Reviewer</Text>
                     </TouchableOpacity>
