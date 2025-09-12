@@ -42,7 +42,7 @@ export async function getInfluencerById(id: string): Promise<DbInfluencerSummary
 export async function getRequestsByUser(userId: string): Promise<DbRequestSummary[]> {
   const { data, error } = await supabase
     .from('requests')
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_at,archived_by_influencer,updated_at')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,updated_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -52,7 +52,7 @@ export async function getRequestsByUser(userId: string): Promise<DbRequestSummar
 export async function getRequestById(id: string): Promise<DbRequestSummary | null> {
   const { data, error } = await supabase
     .from('requests')
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_at,archived_by_influencer,updated_at')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,updated_at')
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;
@@ -79,7 +79,7 @@ export async function createRequest(params: {
         status: 'pending',
       },
     ])
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_at,archived_by_influencer,updated_at')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,updated_at')
     .single();
   if (error) throw error;
   return mapRequestRow(data);
@@ -163,7 +163,7 @@ export async function getReviewerById(id: string): Promise<DbReviewerSummary | n
 export async function getRequestsByReviewer(reviewerId: string): Promise<DbRequestSummary[]> {
   const { data, error } = await supabase
     .from('requests')
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_at,archived_by_influencer,updated_at')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,updated_at')
     .eq('influencer_id', reviewerId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -200,7 +200,7 @@ export async function submitRequestReview(params: {
     .from('requests')
     .update({ review, status: 'completed' })
     .eq('id', requestId)
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_at')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social')
     .maybeSingle();
   if (error) throw error;
   if (data) return mapRequestRow(data);
@@ -224,7 +224,7 @@ export async function archiveRequest(id: string): Promise<DbRequestSummary> {
     .from('requests')
     .update({ archived_by_influencer: true })
     .eq('id', id)
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_at,archived_by_influencer,updated_at')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,updated_at')
     .maybeSingle();
   if (error) throw error;
   if (data) return mapRequestRow(data);
@@ -238,7 +238,7 @@ export async function unarchiveRequest(id: string): Promise<DbRequestSummary> {
     .from('requests')
     .update({ archived_by_influencer: false })
     .eq('id', id)
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_at,archived_by_influencer,updated_at')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,updated_at')
     .maybeSingle();
   if (error) throw error;
   if (data) return mapRequestRow(data);
