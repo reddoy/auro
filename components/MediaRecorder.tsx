@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, Pressable, Image as RNImage, FlatList } from 'react-native';
+import { View, Text, Pressable, Image as RNImage, FlatList, Platform } from 'react-native';
 import { Camera, CameraType } from 'expo-camera';
 import { Video } from 'expo-av';
 
@@ -14,6 +14,15 @@ export default function MediaRecorder({ photos, onRecorded }: Props) {
   const [recording, setRecording] = useState(false);
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [activeIdx, setActiveIdx] = useState(0);
+
+  if (Platform.OS === 'web') {
+    return (
+      <View style={{ gap: 12 }}>
+        <Text style={{ fontWeight: '700' }}>Recording not supported in web preview</Text>
+        <Text style={{ opacity: 0.8 }}>Open this screen in the mobile app to record a video review, or proceed without a video.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={{ gap: 12 }}>

@@ -86,8 +86,12 @@ export default function ReviewerRequestScreen() {
     if (!request?.id) return;
     setActionLoading(true);
     try {
-      // Accept: backend/webhook will move to paid when captured; set accepted now
-      await acceptRequest(request.id);
+      // Accept: if already paid, move directly to in_progress; otherwise mark accepted
+      if (request.status === 'paid') {
+        await updateRequestStatus(request.id, 'in_progress');
+      } else {
+        await acceptRequest(request.id);
+      }
       Alert.alert('Request Accepted', 'You can now submit your review for this request.');
       const refreshed = await getRequestById(request.id);
       setRequest(refreshed);
@@ -275,7 +279,7 @@ export default function ReviewerRequestScreen() {
           </View>
         )}
 
-        {(request.status === 'paid' || request.status === 'in_progress' || request.status === 'accepted') && (
+        {request.status === 'in_progress' && (
           <View style={styles.section}>
             <Text style={styles.label}>Compose Review</Text>
             <RatingBar

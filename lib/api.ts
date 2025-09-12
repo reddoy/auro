@@ -12,7 +12,7 @@ function mapRequestRow(row: any): DbRequestSummary {
     notes: row.notes ?? null,
     review: row.review ?? null,
     consent_social: row.consent_social ?? (row.notes?.consent?.shareOnSocial ?? undefined),
-    archived_at: row.archived_at ?? (row.archived_by_influencer ? (row.updated_at || row.created_at || new Date().toISOString()) : null),
+    archived_at: row.archived_at ?? (row.archived_by_influencer ? (row.created_at || new Date().toISOString()) : null),
   } as DbRequestSummary;
 }
 
@@ -42,7 +42,7 @@ export async function getInfluencerById(id: string): Promise<DbInfluencerSummary
 export async function getRequestsByUser(userId: string): Promise<DbRequestSummary[]> {
   const { data, error } = await supabase
     .from('requests')
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,updated_at')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -52,7 +52,7 @@ export async function getRequestsByUser(userId: string): Promise<DbRequestSummar
 export async function getRequestById(id: string): Promise<DbRequestSummary | null> {
   const { data, error } = await supabase
     .from('requests')
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,updated_at')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer')
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;
@@ -79,7 +79,7 @@ export async function createRequest(params: {
         status: 'pending',
       },
     ])
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,updated_at')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer')
     .single();
   if (error) throw error;
   return mapRequestRow(data);
@@ -163,7 +163,7 @@ export async function getReviewerById(id: string): Promise<DbReviewerSummary | n
 export async function getRequestsByReviewer(reviewerId: string): Promise<DbRequestSummary[]> {
   const { data, error } = await supabase
     .from('requests')
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,updated_at')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer')
     .eq('influencer_id', reviewerId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -176,7 +176,7 @@ export async function updateRequestStatus(requestId: string, status: string): Pr
     .from('requests')
     .update({ status })
     .eq('id', requestId)
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_at,archived_by_influencer,updated_at')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer')
     .maybeSingle();
   if (error) throw error;
   if (data) return mapRequestRow(data);
@@ -224,7 +224,7 @@ export async function archiveRequest(id: string): Promise<DbRequestSummary> {
     .from('requests')
     .update({ archived_by_influencer: true })
     .eq('id', id)
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,updated_at')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer')
     .maybeSingle();
   if (error) throw error;
   if (data) return mapRequestRow(data);
@@ -238,7 +238,7 @@ export async function unarchiveRequest(id: string): Promise<DbRequestSummary> {
     .from('requests')
     .update({ archived_by_influencer: false })
     .eq('id', id)
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,updated_at')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer')
     .maybeSingle();
   if (error) throw error;
   if (data) return mapRequestRow(data);

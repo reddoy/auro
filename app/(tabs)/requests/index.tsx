@@ -221,12 +221,12 @@ export default function RequestsScreen() {
             <Text style={styles.requestDate}>
               {new Date(item.createdAt).toLocaleDateString()}
             </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.brand.cardBackground }}>
               <StatusBadge status={item.status as any} />
               {item.status === 'paid' && (item as any).review ? (
                 <StatusBadge status={'completed'} label="Review Submitted" />
               ) : null}
-            </View>
+            </RNView>
           </View>
         </View>
         {item.status === 'completed' && (item as any).review && (item as any).review.ratings?.overall != null && (

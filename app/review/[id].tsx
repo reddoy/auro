@@ -110,20 +110,20 @@ export default function ReviewDetailScreen() {
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }}>
         <View style={styles.header}>
           <RNView style={styles.influencerImageWrapper} />
-        <View style={styles.headerInfo}>
+        <RNView style={styles.headerInfo}>
           <Text style={styles.influencerName}>{influencerName}</Text>
           <Text style={styles.reviewDate}>
             {review?.createdAt ? `Reviewed on ${new Date(review.createdAt).toLocaleDateString()}` : 'Not completed'}
           </Text>
-        </View>
+        </RNView>
         </View>
 
       {statusBanner && (
         <View style={styles.infoBanner}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.brand.cardBackground }}>
             <StatusBadge status={request.status as any} label={statusBanner.labelOverride} />
             <Text style={styles.infoText}>{statusBanner.text}</Text>
-          </View>
+          </RNView>
         </View>
       )}
 
@@ -137,7 +137,7 @@ export default function ReviewDetailScreen() {
 
       {review ? (<View style={styles.ratingsSection}>
         <Text style={styles.sectionTitle}>Your Ratings</Text>
-        <View style={styles.ratingsGrid}>
+        <RNView style={styles.ratingsGrid}>
           <View style={styles.ratingCard}>
             <Text style={styles.ratingCategory}>Overall</Text>
             <Text style={[styles.ratingNumber, { color: getRatingColor(review?.ratings?.overall ?? 0) }]}>
@@ -166,7 +166,7 @@ export default function ReviewDetailScreen() {
             </Text>
             <Text style={styles.ratingLabel}>{getRatingLabel(review?.ratings?.room ?? 0)}</Text>
           </View>
-        </View>
+        </RNView>
       </View>) : (
         <View style={styles.ratingsSection}>
           <Text style={styles.sectionTitle}>Not completed</Text>
@@ -213,26 +213,26 @@ export default function ReviewDetailScreen() {
         {Array.isArray(parsedNotes?.media?.outfits) && parsedNotes.media.outfits.length ? (
           <View style={styles.mediaSection}>
             <Text style={styles.sectionTitle}>Outfits</Text>
-            <View style={styles.photosGrid}> 
+            <RNView style={styles.photosGrid}> 
               {parsedNotes.media.outfits.map((p: string, i: number) => (
                 <TouchableOpacity key={`o-${i}`} onPress={() => { setGalleryUris(parsedNotes.media.outfits); setGalleryIndex(i); setGalleryOpen(true); }}>
                   <Image source={{ uri: p }} style={styles.photo} contentFit="cover" transition={200} />
                 </TouchableOpacity>
               ))}
-            </View>
+            </RNView>
           </View>
         ) : null}
 
         {Array.isArray(parsedNotes?.media?.roomTourPhotos) && parsedNotes.media.roomTourPhotos.length ? (
           <View style={styles.mediaSection}>
             <Text style={styles.sectionTitle}>Room Tour</Text>
-            <View style={styles.photosGrid}>
+            <RNView style={styles.photosGrid}>
               {parsedNotes.media.roomTourPhotos.map((p: string, i: number) => (
                 <TouchableOpacity key={`r-${i}`} onPress={() => { setGalleryUris(parsedNotes.media.roomTourPhotos); setGalleryIndex(i); setGalleryOpen(true); }}>
                   <Image source={{ uri: p }} style={styles.photo} contentFit="cover" transition={200} />
                 </TouchableOpacity>
               ))}
-            </View>
+            </RNView>
           </View>
         ) : null}
 
