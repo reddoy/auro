@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Appearance, ColorSchemeName } from 'react-native';
+import { Appearance, ColorSchemeName, Platform } from 'react-native';
 import Colors from '@/constants/Colors';
 
 interface ThemeContextType {
@@ -10,28 +10,29 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [colorScheme, setColorScheme] = useState<ColorSchemeName>(
-    Appearance.getColorScheme()
-  );
-
-  useEffect(() => {
-    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
-      setColorScheme(colorScheme);
-    });
-
-    return () => subscription?.remove();
-  }, []);
-
-  const isDark = colorScheme === 'dark';
-  const colors = isDark ? Colors.dark : Colors.light;
-
-  return (
-    <ThemeContext.Provider value={{ colorScheme, colors, brandColors: Colors.brand }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+export function shadowStyle({
+  color = 'rgba(0,0,0,0.2)',
+  offsetY = 4,
+  blur = 12,
+  spread = 0,
+}: {
+  color?: string;
+  offsetY?: number;
+  blur?: number;
+  spread?: number;
+}) {
+  if (Platform.OS === 'web') {
+    return {
+      boxShadow: `0 ${offsetY}px ${blur}px ${spread}px ${color}`,
+      // On web, the RN shadow* props are deprecated, so we return only boxShadow
+    } as any;
+  }
+  return {} as any;
 }
+
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return <>{children}</>;
+};
 
 export function useTheme() {
   const context = useContext(ThemeContext);

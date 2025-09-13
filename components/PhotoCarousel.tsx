@@ -7,10 +7,11 @@ import Colors from '@/constants/Colors';
 type Props = {
   uris: string[];
   onPressItem?: (index: number) => void;
+  onLongPressItem?: (index: number) => void;
   height?: number;
 };
 
-export default function PhotoCarousel({ uris, onPressItem, height = 110 }: Props) {
+export default function PhotoCarousel({ uris, onPressItem, onLongPressItem, height = 110 }: Props) {
   if (!Array.isArray(uris) || uris.length === 0) return null;
   return (
     <View style={{ backgroundColor: 'transparent' }}>
@@ -21,7 +22,7 @@ export default function PhotoCarousel({ uris, onPressItem, height = 110 }: Props
         keyExtractor={(u, i) => `${u}-${i}`}
         contentContainerStyle={{ paddingHorizontal: 4 }}
         renderItem={({ item, index }) => (
-          <Pressable onPress={() => onPressItem?.(index)} style={styles.thumbWrap} accessibilityLabel={`Open photo ${index + 1}`}>
+          <Pressable onPress={() => onPressItem?.(index)} onLongPress={() => onLongPressItem?.(index)} style={styles.thumbWrap} accessibilityLabel={`Open photo ${index + 1}`}>
             <Image
               source={{ uri: item }}
               style={{ width: height * 0.66, height, borderRadius: 12 }}

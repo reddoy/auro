@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View as RNView, ActivityIndicator, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { StyleSheet, View as RNView, ActivityIndicator, TouchableOpacity, Alert, ScrollView, Modal, TextInput } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -49,6 +49,17 @@ export default function ReviewerRequestScreen() {
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryUris, setGalleryUris] = useState<string[]>([]);
   const [galleryIndex, setGalleryIndex] = useState(0);
+
+  // Section ratings
+  const [outfitsRating, setOutfitsRating] = useState(0);
+  const [roomTourRating, setRoomTourRating] = useState(0);
+  const [socialsRating, setSocialsRating] = useState(0);
+
+  // Per-photo notes
+  const [photoNotes, setPhotoNotes] = useState<Record<string, string>>({});
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [noteUri, setNoteUri] = useState<string | null>(null);
+  const [noteText, setNoteText] = useState('');
 
   // Move useMemo to the top level, always called
   const parsedNotes = React.useMemo(() => {
@@ -189,8 +200,8 @@ export default function ReviewerRequestScreen() {
       const updated = await submitRequestReview({
         requestId: request.id,
         review: {
-          ratings: { overall, attractiveness: undefined, wardrobe: undefined, room: undefined, ...subMap },
-          feedback: { strengths: selectedTags, improvements: [], generalFeedback: notes },
+          ratings: { overall, wardrobe: outfitsRating || undefined, room: roomTourRating || undefined, socials: socialsRating || undefined, ...subMap },
+          feedback: { strengths: selectedTags, improvements: [], generalFeedback: notes, photoNotes },
         },
         videoUrl: uploadedVideoUrl || null,
         imageUrl: uploadedImageUrl || null,
@@ -263,21 +274,51 @@ export default function ReviewerRequestScreen() {
         {signedOutfits.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.label}>Outfits</Text>
-            <PhotoCarousel uris={signedOutfits} onPressItem={(i) => { setGalleryUris(signedOutfits); setGalleryIndex(i); setGalleryOpen(true); }} />
+            <PhotoCarousel 
+              uris={signedOutfits}
+              onPressItem={(i) => { setGalleryUris(signedOutfits); setGalleryIndex(i); setGalleryOpen(true); }}
+              onLongPressItem={request.status === 'in_progress' ? (i) => { setNoteUri(signedOutfits[i]); setNoteText(photoNotes[signedOutfits[i]] || ''); setNoteModalOpen(true); } : undefined}
+            />
+            {request.status === 'in_progress' && (
+              <>
+                <RNView style={{ height: 8 }} />
+                <RatingBar value={outfitsRating} onChange={setOutfitsRating} label="Rate Outfits" />
+              </>
+            )}
           </View>
         )}
 
         {signedRoom.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.label}>Room Tour</Text>
-            <PhotoCarousel uris={signedRoom} onPressItem={(i) => { setGalleryUris(signedRoom); setGalleryIndex(i); setGalleryOpen(true); }} />
+            <PhotoCarousel 
+              uris={signedRoom}
+              onPressItem={(i) => { setGalleryUris(signedRoom); setGalleryIndex(i); setGalleryOpen(true); }}
+              onLongPressItem={request.status === 'in_progress' ? (i) => { setNoteUri(signedRoom[i]); setNoteText(photoNotes[signedRoom[i]] || ''); setNoteModalOpen(true); } : undefined}
+            />
+            {request.status === 'in_progress' && (
+              <>
+                <RNView style={{ height: 8 }} />
+                <RatingBar value={roomTourRating} onChange={setRoomTourRating} label="Rate Room Tour" />
+              </>
+            )}
           </View>
         )}
 
         {signedSocials.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.label}>Socials</Text>
-            <PhotoCarousel uris={signedSocials} onPressItem={(i) => { setGalleryUris(signedSocials); setGalleryIndex(i); setGalleryOpen(true); }} />
+            <PhotoCarousel 
+              uris={signedSocials}
+              onPressItem={(i) => { setGalleryUris(signedSocials); setGalleryIndex(i); setGalleryOpen(true); }}
+              onLongPressItem={request.status === 'in_progress' ? (i) => { setNoteUri(signedSocials[i]); setNoteText(photoNotes[signedSocials[i]] || ''); setNoteModalOpen(true); } : undefined}
+            />
+            {request.status === 'in_progress' && (
+              <>
+                <RNView style={{ height: 8 }} />
+                <RatingBar value={socialsRating} onChange={setSocialsRating} label="Rate Socials" />
+              </>
+            )}
           </View>
         )}
 
@@ -312,18 +353,7 @@ export default function ReviewerRequestScreen() {
           </View>
         )}
 
-        {request.status === 'in_progress' && (
-          <View style={styles.actionsSection}>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.acceptButton]}
-              onPress={() => {
-                router.push(`/(tabs)/requests/${request.id}` as any);
-              }}
-            >
-              <Text style={styles.actionButtonText}>Submit Review</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        {/* Removed duplicate Submit Review button to avoid confusion */}
 
         {(request.status === 'completed' || request.status === 'rejected') && (
           <View style={styles.actionsSection}>
@@ -362,6 +392,30 @@ export default function ReviewerRequestScreen() {
           </View>
         )}
       </ScrollView>
+      {/* Per-photo note editor */}
+      <Modal visible={noteModalOpen} transparent animationType="fade" onRequestClose={() => setNoteModalOpen(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.label}>Add a note for this photo</Text>
+            <TextInput
+              value={noteText}
+              onChangeText={setNoteText}
+              placeholder="Type your note..."
+              placeholderTextColor={Colors.brand.textSecondary}
+              style={styles.noteInput}
+              multiline
+            />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <TouchableOpacity style={[styles.actionButton, styles.denyButton]} onPress={() => { setNoteModalOpen(false); setNoteText(''); setNoteUri(null); }}>
+                <Text style={[styles.actionButtonText, styles.denyButtonText]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.actionButton, styles.acceptButton]} onPress={() => { if (noteUri) { setPhotoNotes(prev => ({ ...prev, [noteUri]: noteText })); } setNoteModalOpen(false); }}>
+                <Text style={styles.actionButtonText}>Save Note</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
       <ImageGalleryModal visible={galleryOpen} uris={galleryUris} initialIndex={galleryIndex} onClose={() => setGalleryOpen(false)} />
     </SafeAreaView>
   );
@@ -388,4 +442,7 @@ const styles = StyleSheet.create({
   denyButtonText: { color: Colors.brand.status.rejected },
   statusMessage: { fontSize: 16, fontWeight: '600', color: Colors.brand.textSecondary, textAlign: 'center', padding: 16 },
   emptyText: { color: Colors.brand.textSecondary },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+  modalCard: { width: '90%', backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 16 },
+  noteInput: { minHeight: 100, borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 12, padding: 12, color: Colors.brand.textPrimary, marginBottom: 12 },
 });

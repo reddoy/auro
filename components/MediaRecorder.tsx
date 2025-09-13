@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { View, Text, Pressable, Image as RNImage, FlatList, Platform } from 'react-native';
+import Colors from '@/constants/Colors';
 import { Camera, CameraType } from 'expo-camera';
-import { Video } from 'expo-av';
+import { VideoView } from 'expo-video';
 
 type Props = {
   photos: string[];
@@ -18,8 +19,8 @@ export default function MediaRecorder({ photos, onRecorded }: Props) {
   if (Platform.OS === 'web') {
     return (
       <View style={{ gap: 12 }}>
-        <Text style={{ fontWeight: '700' }}>Recording not supported in web preview</Text>
-        <Text style={{ opacity: 0.8 }}>Open this screen in the mobile app to record a video review, or proceed without a video.</Text>
+        <Text style={{ fontWeight: '700', color: Colors.brand.textPrimary }}>Recording not supported in web preview</Text>
+        <Text style={{ opacity: 0.8, color: Colors.brand.textSecondary }}>Open this screen in the mobile app to record a video review, or proceed without a video.</Text>
       </View>
     );
   }
@@ -48,7 +49,13 @@ export default function MediaRecorder({ photos, onRecorded }: Props) {
           </View>
         </View>
       ) : (
-        <Video source={{ uri: videoUri }} style={{ aspectRatio: 9/16, borderRadius: 16 }} useNativeControls />
+        <VideoView
+          style={{ aspectRatio: 9/16, borderRadius: 16 }}
+          source={{ uri: videoUri || undefined }}
+          allowsFullscreen
+          allowsPictureInPicture
+          nativeControls
+        />
       )}
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16 }}>
         {!recording && !videoUri && <Pressable onPress={async () => { if (!cameraRef.current) return; setRecording(true); const r = await cameraRef.current.recordAsync({ maxDuration: 180 }); setRecording(false); setVideoUri(r?.uri || null); }}><Text>Record</Text></Pressable>}

@@ -56,7 +56,8 @@
           "enableGooglePay": true,
           "androidPayMode": "production"
         }
-      ]
+      ],
+      "expo-video"
     ],
     "extra": {
       "supabaseUrl": "https://zxazjbduiistnfstnwka.supabase.co",

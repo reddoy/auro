@@ -91,6 +91,17 @@ function RootLayoutNav() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  // Redirect unauthenticated users to /auth, except when already on /auth
+  useEffect(() => {
+    if (!sessionChecked) return;
+    try {
+      const onAuth = pathname?.startsWith('/auth');
+      if (!isSignedIn && !onAuth) {
+        router.replace('/auth');
+      }
+    } catch {}
+  }, [sessionChecked, isSignedIn, pathname]);
+
   // Simple navigation logger: logs the current route on every navigation
   useEffect(() => {
     try {

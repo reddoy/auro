@@ -8,6 +8,7 @@ import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import { shadowStyle } from '@/components/ThemeProvider';
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
@@ -44,6 +45,7 @@ export default function TabLayout() {
             bottom: 0,
             left: 0,
             right: 0,
+            ...(shadowStyle({ color: Colors.brand.shadow, offsetY: -4, blur: 16 }) as any),
           },
           tabBarBackground: () => (
             <ExpoLinearGradient
