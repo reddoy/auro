@@ -2,12 +2,14 @@ import { createClient } from '@supabase/supabase-js';
 
 function corsHeaders(req: Request): HeadersInit {
   const origin = req.headers.get('origin') || '*';
+  const requestedHeaders = req.headers.get('access-control-request-headers');
   return {
     'Access-Control-Allow-Origin': origin,
     'Vary': 'Origin',
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'content-type',
+    'Access-Control-Allow-Headers': requestedHeaders || 'content-type, authorization, accept',
     'Access-Control-Max-Age': '86400',
+    'Access-Control-Allow-Credentials': 'true',
   };
 }
 
@@ -20,8 +22,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { fileName, contentType, category, uploadSessionId, action, path, expiresIn } = body || {};
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || process.env.SUPABASE_ANON_KEY || '';
     if (!url || !key) {
       return new Response(JSON.stringify({ error: 'Supabase not configured' }), { status: 500, headers: { ...corsHeaders(req), 'content-type': 'application/json' } });
     }
@@ -69,7 +71,10 @@ export async function POST(req: Request) {
       { status: 200, headers: { ...corsHeaders(req), 'content-type': 'application/json' } }
     );
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err?.message || 'Unknown error' }), { status: 500, headers: { 'content-type': 'application/json' } });
+    return new Response(
+      JSON.stringify({ error: err?.message || 'Unknown error' }),
+      { status: 500, headers: { ...corsHeaders(req), 'content-type': 'application/json' } }
+    );
   }
 }
 

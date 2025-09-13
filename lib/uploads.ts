@@ -100,7 +100,7 @@ function extractBucketAndPath(maybeUrlOrPath: string): { bucket: string; path: s
 export async function getSignedRequestMediaUrl(maybeUrlOrPath: string, expiresIn: number = 60 * 60 * 24 * 30): Promise<string> {
   const info = extractBucketAndPath(maybeUrlOrPath);
   if (!info) return maybeUrlOrPath;
-  // Prefer server-side signing to avoid client auth/policy issues
+  // Prefer GET-based server signing first to avoid CORS preflights
   try {
     const base =
       process.env.EXPO_PUBLIC_CREATOR_WEB_BASE ||
@@ -108,24 +108,25 @@ export async function getSignedRequestMediaUrl(maybeUrlOrPath: string, expiresIn
       (Constants.manifest2 as any)?.extra?.creatorWebBase ||
       '';
     if (base) {
-      const resp = await fetch(`${base}/api/storage/signed-upload`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action: 'sign-view', path: info.path, expiresIn }),
-      });
-      if (resp.ok) {
-        const json = await resp.json();
-        const url = json?.signedUrl as string | undefined;
-        if (url) return url;
+      // GET-first
+      const params = new URLSearchParams({ path: info.path, bucket: info.bucket, expiresIn: String(expiresIn) });
+      const r2 = await fetch(`${base}/api/storage/signed-view?${params.toString()}`, { method: 'GET' });
+      if (r2.ok) {
+        const j2 = await r2.json();
+        const u2 = (j2?.url || j2?.signedUrl) as string | undefined;
+        if (u2) return u2;
       }
-      // Fallback to GET-based signer endpoint
+      // Fallback to POST signer
       try {
-        const params = new URLSearchParams({ path: info.path, bucket: info.bucket, expiresIn: String(expiresIn) });
-        const r2 = await fetch(`${base}/api/storage/signed-view?${params.toString()}`, { method: 'GET' });
-        if (r2.ok) {
-          const j2 = await r2.json();
-          const u2 = (j2?.url || j2?.signedUrl) as string | undefined;
-          if (u2) return u2;
+        const resp = await fetch(`${base}/api/storage/signed-upload`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ action: 'sign-view', path: info.path, expiresIn }),
+        });
+        if (resp.ok) {
+          const json = await resp.json();
+          const url = json?.signedUrl as string | undefined;
+          if (url) return url;
         }
       } catch {}
     }
