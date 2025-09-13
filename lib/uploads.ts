@@ -66,7 +66,7 @@ export async function uploadRequestMedia(
 
   let publicUrl = '';
   try {
-    const { data: signed } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, 60 * 60);
+    const { data: signed } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, 60 * 60 * 24 * 30);
     publicUrl = signed?.signedUrl || '';
   } catch {}
   try { opts.onProgress?.(100); } catch {}
@@ -94,9 +94,29 @@ function extractBucketAndPath(maybeUrlOrPath: string): { bucket: string; path: s
   return { bucket: MEDIA_BUCKET, path: maybeUrlOrPath };
 }
 
-export async function getSignedRequestMediaUrl(maybeUrlOrPath: string, expiresIn: number = 3600): Promise<string> {
+export async function getSignedRequestMediaUrl(maybeUrlOrPath: string, expiresIn: number = 60 * 60 * 24 * 30): Promise<string> {
   const info = extractBucketAndPath(maybeUrlOrPath);
   if (!info) return maybeUrlOrPath;
+  // Prefer server-side signing to avoid client auth/policy issues
+  try {
+    const base =
+      process.env.EXPO_PUBLIC_CREATOR_WEB_BASE ||
+      (Constants.expoConfig?.extra as any)?.creatorWebBase ||
+      (Constants.manifest2 as any)?.extra?.creatorWebBase ||
+      '';
+    if (base) {
+      const resp = await fetch(`${base}/api/storage/signed-upload`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'sign-view', path: info.path, expiresIn }),
+      });
+      if (resp.ok) {
+        const json = await resp.json();
+        const url = json?.signedUrl as string | undefined;
+        if (url) return url;
+      }
+    }
+  } catch {}
   try {
     const { data, error } = await supabase.storage.from(info.bucket).createSignedUrl(info.path, expiresIn);
     if (error) throw error;
@@ -106,7 +126,7 @@ export async function getSignedRequestMediaUrl(maybeUrlOrPath: string, expiresIn
   }
 }
 
-export async function signRequestMediaUrls(urls: string[] | undefined | null, expiresIn: number = 3600): Promise<string[]> {
+export async function signRequestMediaUrls(urls: string[] | undefined | null, expiresIn: number = 60 * 60 * 24 * 30): Promise<string[]> {
   if (!Array.isArray(urls) || urls.length === 0) return [];
   const result = await Promise.all(urls.map((u) => getSignedRequestMediaUrl(u, expiresIn)));
   return result.filter(Boolean) as string[];

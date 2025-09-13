@@ -128,7 +128,7 @@ export async function uploadAvatar(fileUri: string): Promise<{ publicUrl: string
   // For private buckets, generate a short-lived signed URL for immediate display
   let publicUrl = '';
   try {
-    const { data: signed } = await supabase.storage.from(AVATAR_BUCKET).createSignedUrl(path, 60 * 60);
+    const { data: signed } = await supabase.storage.from(AVATAR_BUCKET).createSignedUrl(path, 60 * 60 * 24 * 30);
     publicUrl = signed?.signedUrl || '';
   } catch {}
   return { publicUrl, path };
@@ -160,7 +160,7 @@ export async function removeAvatar(pathOrUrl: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function getSignedAvatarUrl(pathOrUrl: string, expiresInSeconds: number = 3600): Promise<string | null> {
+export async function getSignedAvatarUrl(pathOrUrl: string, expiresInSeconds: number = 60 * 60 * 24 * 30): Promise<string | null> {
   const AVATAR_BUCKET =
     process.env.EXPO_PUBLIC_SUPABASE_AVATAR_BUCKET ||
     (Constants.expoConfig?.extra as any)?.supabaseAvatarBucket ||
