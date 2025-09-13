@@ -16,9 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.auro.app",
-      "merchantIdentifier": "merchant.com.auro",
       "associatedDomains": [
-        "applinks:app.appauro.com",
         "applinks:app.appauro.com"
       ],
       "buildNumber": "1",
@@ -69,7 +67,7 @@
       "stripePublishableKey": "pk_live_YOUR_LIVE_STRIPE_KEY_HERE",
       "apiUrl": "https://zxazjbduiistnfstnwka.supabase.co/functions/v1/stripe_payment",
       "webCheckoutEnabled": true,
-      "creatorWebBase": "https://creators.appauro.com",
+      "creatorWebBase": "https://www.appauro.com",
       "universalLinkHost": "app.appauro.com",
       "deepLinkScheme": "auro",
       "router": {}
