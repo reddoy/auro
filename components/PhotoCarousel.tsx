@@ -26,7 +26,7 @@ export default function PhotoCarousel({ uris, onPressItem, height = 110 }: Props
               source={{ uri: item }}
               style={{ width: height * 0.66, height, borderRadius: 12 }}
               contentFit="cover"
-              cachePolicy="disk"
+              cachePolicy="none"
               transition={200}
             />
           </Pressable>

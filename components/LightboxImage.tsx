@@ -21,7 +21,7 @@ export default function LightboxImage({ uri, thumbStyle, accessibilityLabel }: P
     <>
       <Pressable onPress={onOpen} accessibilityLabel={accessibilityLabel || 'Open image'}>
         {!thumbError ? (
-          <Image source={{ uri }} style={thumbStyle} contentFit="cover" transition={200} cachePolicy="disk" onError={() => setThumbError(true)} />
+          <Image source={{ uri }} style={thumbStyle} contentFit="cover" transition={200} cachePolicy="none" onError={() => setThumbError(true)} />
         ) : (
           <View style={[thumbStyle, { alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.brand.cardBackgroundSecondary, borderRadius: 12 }]}>
             <Text style={{ color: Colors.brand.textSecondary, fontSize: 10 }}>No Img</Text>
@@ -37,7 +37,7 @@ export default function LightboxImage({ uri, thumbStyle, accessibilityLabel }: P
               style={styles.full}
               contentFit="contain"
               transition={200}
-              cachePolicy="disk"
+              cachePolicy="none"
               onError={() => setFullError(true)}
             />
           ) : (

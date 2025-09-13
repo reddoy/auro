@@ -80,10 +80,13 @@ function extractBucketAndPath(maybeUrlOrPath: string): { bucket: string; path: s
   // Full signed/public URL → extract bucket and object path
   try {
     const url = new URL(maybeUrlOrPath);
-    const m = url.pathname.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+)$/);
-    if (m) {
-      return { bucket: m[1], path: decodeURIComponent(m[2]) };
+    // Support both "/storage/v1/object/..." and legacy "/object/..." paths
+    const withStorage = url.pathname.match(/\/(?:storage\/v1\/)?object\/(?:public|sign)\/([^/]+)\/(.+)$/);
+    if (withStorage) {
+      return { bucket: withStorage[1], path: decodeURIComponent(withStorage[2]) };
     }
+    // Not a Supabase storage URL we recognize → don't transform
+    return null;
   } catch {}
   // Bare object path → assume request-media bucket
   const MEDIA_BUCKET =
@@ -115,6 +118,16 @@ export async function getSignedRequestMediaUrl(maybeUrlOrPath: string, expiresIn
         const url = json?.signedUrl as string | undefined;
         if (url) return url;
       }
+      // Fallback to GET-based signer endpoint
+      try {
+        const params = new URLSearchParams({ path: info.path, bucket: info.bucket, expiresIn: String(expiresIn) });
+        const r2 = await fetch(`${base}/api/storage/signed-view?${params.toString()}`, { method: 'GET' });
+        if (r2.ok) {
+          const j2 = await r2.json();
+          const u2 = (j2?.url || j2?.signedUrl) as string | undefined;
+          if (u2) return u2;
+        }
+      } catch {}
     }
   } catch {}
   try {

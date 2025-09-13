@@ -5,7 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import { getRequestById, getProfileById, acceptRequest, denyRequest, submitRequestReview } from '@/lib/api';
+import { getRequestById, getProfileById, acceptRequest, denyRequest, submitRequestReview, updateRequestStatus } from '@/lib/api';
 import { getSignedAvatarUrl } from '@/lib/profile';
 import type { DbRequestSummary } from '@/types';
 import Avatar from '@/components/Avatar';
@@ -80,7 +80,7 @@ export default function ReviewerRequestScreen() {
           if (profile?.avatarUrl) {
             let uri = profile.avatarUrl;
             if (uri && !/^https?:\/\//i.test(uri)) {
-              try { uri = (await getSignedAvatarUrl(uri, 3600)) || uri; } catch {}
+              try { uri = (await getSignedAvatarUrl(uri)) || uri; } catch {}
             }
             setAvatarUri(uri);
           }
@@ -255,7 +255,7 @@ export default function ReviewerRequestScreen() {
           <View style={styles.section}>
             <Text style={styles.label}>Selfie</Text>
             <TouchableOpacity onPress={() => { setGalleryUris([signedSelfie]); setGalleryIndex(0); setGalleryOpen(true); }}>
-              <Image source={{ uri: signedSelfie }} style={styles.selfie} contentFit="cover" />
+              <Image source={{ uri: signedSelfie }} style={styles.selfie} contentFit="cover" cachePolicy="none" />
             </TouchableOpacity>
           </View>
         )}

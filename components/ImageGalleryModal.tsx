@@ -43,7 +43,7 @@ export default function ImageGalleryModal({ visible, uris, initialIndex = 0, onC
               source={{ uri: item }}
               style={{ width, height, resizeMode: 'contain' }}
               contentFit="contain"
-              cachePolicy="disk"
+              cachePolicy="none"
               transition={200}
             />
           )}

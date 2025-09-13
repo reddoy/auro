@@ -99,7 +99,7 @@ export default function ReviewDetailScreen() {
             try {
               // Normalize known copy/paste artifacts (e.g., leading '@') and re-sign
               const raw = (rev.avatarUrl || '').trim().replace(/^@+/, '');
-              const signed = raw ? await getSignedAvatarUrl(raw, 3600) : null;
+              const signed = raw ? await getSignedAvatarUrl(raw) : null;
               setInfluencerAvatar(signed || raw || undefined);
             } catch {}
           }
@@ -245,7 +245,7 @@ export default function ReviewDetailScreen() {
             <Text style={styles.sectionTitle}>Selfie</Text>
             {signedSelfie ? (
               <TouchableOpacity onPress={() => { setGalleryUris([signedSelfie]); setGalleryIndex(0); setGalleryOpen(true); }}>
-                <Image source={{ uri: signedSelfie }} style={styles.selfie} contentFit="cover" transition={200} />
+                <Image source={{ uri: signedSelfie }} style={styles.selfie} contentFit="cover" transition={200} cachePolicy="none" />
               </TouchableOpacity>
             ) : null}
             <Text style={styles.promptLabel}>{`About ${revieweeName || 'You'}`}</Text>

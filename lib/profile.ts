@@ -174,10 +174,11 @@ export async function getSignedAvatarUrl(pathOrUrl: string, expiresInSeconds: nu
   try {
     if (/^https?:\/\//i.test(pathOrUrl)) {
       const url = new URL(pathOrUrl);
-      const m = url.pathname.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+)$/);
-      if (m) {
-        bucket = m[1];
-        objectPath = decodeURIComponent(m[2]);
+      // Support both "/storage/v1/object/..." and legacy "/object/..." paths
+      const withStorage = url.pathname.match(/\/(?:storage\/v1\/)?object\/(?:public|sign)\/([^/]+)\/(.+)$/);
+      if (withStorage) {
+        bucket = withStorage[1];
+        objectPath = decodeURIComponent(withStorage[2]);
       } else {
         // Not a Supabase storage URL → return as-is
         return pathOrUrl;
@@ -186,6 +187,24 @@ export async function getSignedAvatarUrl(pathOrUrl: string, expiresInSeconds: nu
       // Some rows may store "avatars/..." including bucket prefix
       objectPath = pathOrUrl.replace(/^avatars\//, '');
       bucket = 'avatars';
+    }
+  } catch {}
+
+  // Prefer server-side signing when creator web base is configured
+  try {
+    const base =
+      process.env.EXPO_PUBLIC_CREATOR_WEB_BASE ||
+      (Constants.expoConfig?.extra as any)?.creatorWebBase ||
+      (Constants.manifest2 as any)?.extra?.creatorWebBase ||
+      '';
+    if (base) {
+      const params = new URLSearchParams({ path: objectPath, bucket, expiresIn: String(expiresInSeconds) });
+      const res = await fetch(`${base}/api/storage/signed-view?${params.toString()}`, { method: 'GET' });
+      if (res.ok) {
+        const json = await res.json();
+        const url = (json?.url || json?.signedUrl) as string | undefined;
+        if (url) return url;
+      }
     }
   } catch {}
 
