@@ -95,11 +95,14 @@ export interface DbRequestSummary {
       attractiveness?: number;
       wardrobe?: number;
       room?: number;
+      socials?: number;
     };
     feedback?: {
       strengths?: string[];
       improvements?: string[];
       generalFeedback?: string;
+      sectionNotes?: { outfits?: string; room?: string; socials?: string };
+      photoNotes?: Record<string, string>;
     };
     createdAt?: string;
   } | null;

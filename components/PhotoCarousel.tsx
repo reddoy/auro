@@ -14,13 +14,20 @@ type Props = {
 export default function PhotoCarousel({ uris, onPressItem, onLongPressItem, height = 110 }: Props) {
   if (!Array.isArray(uris) || uris.length === 0) return null;
   return (
-    <View style={{ backgroundColor: 'transparent' }}>
+    <View style={{ backgroundColor: Colors.brand.cardBackground }}>
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
         data={uris}
         keyExtractor={(u, i) => `${u}-${i}`}
-        contentContainerStyle={{ paddingHorizontal: 4 }}
+        getItemLayout={(_, i) => ({ length: height * 0.66 + 10, offset: (height * 0.66 + 10) * i, index: i })}
+        onScrollToIndexFailed={(info) => {
+          try {
+            // Jump near the item then retry
+            (info as any)._listRef?.scrollToOffset?.({ offset: info.averageItemLength * info.index, animated: false });
+          } catch {}
+        }}
+        contentContainerStyle={{ paddingHorizontal: 0 }}
         renderItem={({ item, index }) => (
           <Pressable onPress={() => onPressItem?.(index)} onLongPress={() => onLongPressItem?.(index)} style={styles.thumbWrap} accessibilityLabel={`Open photo ${index + 1}`}>
             <Image
@@ -42,9 +49,9 @@ const styles = StyleSheet.create({
     marginRight: 10,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: Colors.brand.cardBackgroundSecondary,
+    backgroundColor: Colors.brand.cardBackground,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)'
+    borderColor: Colors.brand.border,
   },
 });
 

@@ -151,6 +151,11 @@ export default function ReviewerSubmitScreen() {
         <RNView style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <StatusBadge status={request.status as any} />
+            {request.status === 'in_progress' ? (
+              <Text style={{ color: Colors.brand.textSecondary, fontSize: 12 }}>
+                Reviewer is working on your review. They have 30 days to complete it or your money back.
+              </Text>
+            ) : null}
           </RNView>
           {canModerate && (request.status === 'pending' || request.status === 'accepted' || request.status === 'paid') && (
             <RNView style={{ flexDirection: 'row', gap: 8 }}>

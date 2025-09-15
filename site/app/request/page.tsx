@@ -91,7 +91,7 @@ export default function RequestPage() {
           const checkAuth = async () => {
             try {
               const { data: { user } } = await client.auth.getUser();
-              console.log('[RequestPage] Current user:', user ? { id: user.id, email: user.email, provider: (user as any)?.app_metadata?.provider } : 'null');
+              
               
               if (!user) {
                 try {
@@ -103,7 +103,7 @@ export default function RequestPage() {
               }
               const { data: { user: userAfter } } = await client.auth.getUser();
               const isRealUser = !!userAfter && (userAfter as any)?.app_metadata?.provider !== 'anon';
-              console.log('[RequestPage] Is real user:', isRealUser, 'Provider:', (userAfter as any)?.app_metadata?.provider);
+              
               setIsAuthenticated(isRealUser);
             } catch (error) {
               console.error('Auth check error:', error);

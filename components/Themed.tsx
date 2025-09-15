@@ -3,7 +3,7 @@
  * https://docs.expo.io/guides/color-schemes/
  */
 
-import { Text as DefaultText, View as DefaultView } from 'react-native';
+import { Text as DefaultText, View as DefaultView, StyleSheet } from 'react-native';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from './useColorScheme';
@@ -33,8 +33,18 @@ export function useThemeColor(
 export function Text(props: TextProps) {
   const { style, lightColor, darkColor, ...otherProps } = props;
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
-
-  return <DefaultText style={[{ color, fontFamily: 'Inter_400Regular' }, style]} {...otherProps} />;
+  const flattened = StyleSheet.flatten(style) as any;
+  const requestedWeight: string | number | undefined = flattened?.fontWeight;
+  let fontFamily = 'Poppins_400Regular';
+  const numericWeight = typeof requestedWeight === 'string' && /\d+/.test(requestedWeight)
+    ? parseInt(requestedWeight, 10)
+    : (typeof requestedWeight === 'number' ? requestedWeight : undefined);
+  if (requestedWeight === 'bold' || (numericWeight !== undefined && numericWeight >= 700)) {
+    fontFamily = 'Poppins_700Bold';
+  } else if (numericWeight !== undefined && numericWeight >= 600) {
+    fontFamily = 'Poppins_600SemiBold';
+  }
+  return <DefaultText style={[{ color, fontFamily }, style]} {...otherProps} />;
 }
 
 export function View(props: ViewProps) {

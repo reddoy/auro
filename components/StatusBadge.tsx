@@ -58,8 +58,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '600',
-    // Keep body font family consistent
-    fontFamily: 'Inter_600SemiBold',
   },
 });
 

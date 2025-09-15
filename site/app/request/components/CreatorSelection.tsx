@@ -44,7 +44,7 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
       }
 
       try {
-        console.log('Fetching creators...');
+        
         setError('');
         const { data, error } = await supabase
           .from('profiles')
@@ -52,12 +52,12 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
           .eq('is_reviewer', true)
           .order('rating_average', { ascending: false, nullsFirst: false });
 
-        console.log('Query result:', { data, error });
+        
         
         if (error) throw error;
         
-        console.log('Found creators:', data?.length || 0);
-        console.log('Creator data with avatars:', data?.map((c: Creator) => ({ 
+        
+        
           id: c.id, 
           username: c.username, 
           avatar_url: c.avatar_url,
@@ -88,7 +88,7 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
     );
   });
 
-  console.log('Creators:', creators.length, 'Filtered:', filteredCreators.length, 'Search:', searchTerm);
+  
 
   const handleCreatorSelect = (creator: Creator) => {
     onSelect(creator.id, creator.username);

@@ -190,7 +190,7 @@ export async function submitRequestReview(params: {
   requestId: string;
   review: {
     ratings: { overall: number; attractiveness?: number; wardrobe?: number; room?: number; outfits?: number; roomTour?: number; socials?: number; [key: string]: any };
-    feedback: { strengths?: string[]; improvements?: string[]; generalFeedback?: string; photoNotes?: Record<string, string> };
+    feedback: { strengths?: string[]; improvements?: string[]; generalFeedback?: string; sectionNotes?: { outfits?: string; room?: string; socials?: string }; photoNotes?: Record<string, string> };
   };
   videoUrl?: string | null;
   imageUrl?: string | null;

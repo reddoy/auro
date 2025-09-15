@@ -1,5 +1,6 @@
 import React from 'react';
-import { Modal, Pressable, StyleSheet, View, Text, FlatList, Dimensions } from 'react-native';
+import { Modal, Pressable, StyleSheet, View, FlatList, Dimensions, Platform } from 'react-native';
+import { Text } from '@/components/Themed';
 import { Image } from 'expo-image';
 
 type Props = {
@@ -15,18 +16,40 @@ export default function ImageGalleryModal({ visible, uris, initialIndex = 0, onC
 
   React.useEffect(() => {
     if (visible) {
+      setIndex(initialIndex);
+      // Scroll after mount; getItemLayout prevents measurement issues
       setTimeout(() => {
-        listRef.current?.scrollToIndex({ index: initialIndex, animated: false });
+        try { listRef.current?.scrollToIndex({ index: initialIndex, animated: false }); } catch {}
       }, 0);
     }
   }, [visible, initialIndex]);
 
   const { width, height } = Dimensions.get('window');
 
+  const getItemLayout = (_: any, i: number) => ({ length: width, offset: width * i, index: i });
+
+  const onScrollToIndexFailed = (info: { index: number; averageItemLength: number; distance: number }) => {
+    // Fallback: scroll to approximate offset, then retry
+    try {
+      listRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: false });
+      setTimeout(() => listRef.current?.scrollToIndex({ index: info.index, animated: false }), 50);
+    } catch {}
+  };
+
+  const goTo = (i: number) => {
+    if (!uris?.length) return;
+    const clamped = Math.max(0, Math.min(uris.length - 1, i));
+    setIndex(clamped);
+    try { listRef.current?.scrollToIndex({ index: clamped, animated: true }); } catch {}
+  };
+
+  const goPrev = () => goTo(index - 1);
+  const goNext = () => goTo(index + 1);
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close gallery" />
+        <Pressable style={[StyleSheet.absoluteFill, { zIndex: 0 }]} onPress={onClose} accessibilityLabel="Close gallery" />
         <FlatList
           ref={listRef}
           data={uris}
@@ -34,6 +57,9 @@ export default function ImageGalleryModal({ visible, uris, initialIndex = 0, onC
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
+          initialScrollIndex={initialIndex}
+          getItemLayout={getItemLayout}
+          onScrollToIndexFailed={onScrollToIndexFailed}
           onMomentumScrollEnd={(e) => {
             const i = Math.round(e.nativeEvent.contentOffset.x / width);
             setIndex(i);
@@ -48,12 +74,25 @@ export default function ImageGalleryModal({ visible, uris, initialIndex = 0, onC
             />
           )}
         />
+        {/* Counter (top-left) */}
         <View style={styles.counter}><Text style={styles.counterText}>{index + 1}/{uris.length}</Text></View>
-        <View style={styles.footer}>
-          <Pressable onPress={onClose} style={styles.closeButton} accessibilityLabel="Close gallery">
-            <Text style={styles.closeButtonText}>Close</Text>
-          </Pressable>
-        </View>
+
+        {/* Close button (top-right) */}
+        <Pressable onPress={onClose} style={styles.closeButton} accessibilityLabel="Close gallery">
+          <Text style={styles.closeButtonText}>×</Text>
+        </Pressable>
+
+        {/* Arrows for web (and optionally native) */}
+        {(Platform.OS === 'web' && uris.length > 1) ? (
+          <View style={styles.arrowsWrap} pointerEvents="box-none">
+            <Pressable onPress={goPrev} style={[styles.arrowButton, { left: 12 }]} accessibilityLabel="Previous image">
+              <Text style={styles.arrowText}>‹</Text>
+            </Pressable>
+            <Pressable onPress={goNext} style={[styles.arrowButton, { right: 12 }]} accessibilityLabel="Next image">
+              <Text style={styles.arrowText}>›</Text>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
     </Modal>
   );
@@ -61,11 +100,13 @@ export default function ImageGalleryModal({ visible, uris, initialIndex = 0, onC
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)' },
-  counter: { position: 'absolute', bottom: 32, alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
+  counter: { position: 'absolute', top: 16, left: 16, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, zIndex: 3 },
   counterText: { color: '#fff', fontWeight: '700' },
-  footer: { position: 'absolute', left: 0, right: 0, bottom: 24, alignItems: 'center' },
-  closeButton: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)' },
-  closeButtonText: { color: '#fff', fontWeight: '700' },
+  closeButton: { position: 'absolute', top: 8, right: 12, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', zIndex: 3 },
+  closeButtonText: { color: '#fff', fontWeight: '900', fontSize: 20, lineHeight: 20 },
+  arrowsWrap: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 },
+  arrowButton: { position: 'absolute', width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center' },
+  arrowText: { color: '#fff', fontSize: 28, fontWeight: '900', lineHeight: 28 },
 });
 
 

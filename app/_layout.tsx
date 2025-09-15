@@ -2,7 +2,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
-import { Poppins_700Bold } from '@expo-google-fonts/poppins';
+import { Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import { Stack, useRootNavigationState, useRouter, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -37,6 +37,8 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     Inter_400Regular,
     Inter_600SemiBold,
+    Poppins_400Regular,
+    Poppins_600SemiBold,
     Poppins_700Bold,
     ...FontAwesome.font,
   });
@@ -106,7 +108,7 @@ function RootLayoutNav() {
   useEffect(() => {
     try {
       if (typeof pathname === 'string') {
-        console.log(`[NAV] ${pathname}`);
+        
       }
     } catch {}
   }, [pathname]);

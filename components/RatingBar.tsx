@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Pressable, Animated, Easing, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
+import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 
 type Props = {
@@ -13,27 +14,19 @@ type Props = {
 	onToggleTag?: (t: string) => void;
 };
 
-export default function RatingBar({ value, onChange, label = 'Overall', subRatings = [], onChangeSub, tags = [], selectedTags = [], onToggleTag }: Props) {
-	const pulse = React.useRef(new Animated.Value(0)).current;
+const STAR_SIZE = 36;
 
-	React.useEffect(() => {
-		Animated.sequence([
-			Animated.timing(pulse, { toValue: 1, duration: 140, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-			Animated.timing(pulse, { toValue: 0, duration: 140, easing: Easing.in(Easing.quad), useNativeDriver: true }),
-		]).start();
-	}, [value]);
+export default function RatingBar({ value, onChange, label = 'Overall', subRatings = [], onChangeSub, tags = [], selectedTags = [], onToggleTag }: Props) {
 
 	return (
 		<View>
-			<Text style={styles.heading}>{label}</Text>
+			{label ? <Text style={styles.heading}>{label}</Text> : null}
 			<View style={styles.starsRow}>
 				{[1,2,3,4,5].map(n => {
-					const isActive = n <= value;
+					const active = n <= value;
 					return (
 						<Pressable key={n} onPress={() => onChange(n)} style={styles.starWrap} accessibilityLabel={`${label} ${n} stars`}>
-							<Animated.Text style={[styles.star, isActive ? styles.starActive : styles.starInactive, { transform: [{ scale: Animated.add(1, Animated.multiply(pulse, isActive ? 0.06 : 0)) }] }]}>
-								{isActive ? '★' : '☆'}
-							</Animated.Text>
+							<Text style={[styles.star, active ? styles.starActive : styles.starInactive]}>{active ? '★' : '☆'}</Text>
 						</Pressable>
 					);
 				})}
@@ -73,13 +66,14 @@ export default function RatingBar({ value, onChange, label = 'Overall', subRatin
 	);
 }
 
+
 const styles = StyleSheet.create({
-	heading: { color: Colors.brand.textPrimary, fontSize: 16, fontWeight: '700', marginBottom: 6 },
-	subHeading: { color: Colors.brand.textSecondary, fontSize: 14, fontWeight: '600', marginBottom: 4 },
-	starsRow: { flexDirection: 'row', gap: 8, paddingVertical: 8 },
-	starWrap: { padding: 2 },
-	star: { fontSize: 28 },
-	starActive: { color: Colors.brand.status.completed },
+	heading: { color: Colors.brand.textPrimary, fontSize: 16, fontWeight: '800', marginBottom: 6, letterSpacing: 0.2, textAlign: 'center' },
+	subHeading: { color: Colors.brand.textSecondary, fontSize: 14, fontWeight: '700', marginBottom: 4 },
+	starsRow: { flexDirection: 'row', gap: 6, paddingVertical: 10, alignItems: 'center', justifyContent: 'flex-start', alignSelf: 'stretch', backgroundColor: Colors.brand.cardBackground },
+	starWrap: { padding: 2, width: STAR_SIZE, height: STAR_SIZE, alignItems: 'center', justifyContent: 'center' },
+	star: { fontSize: STAR_SIZE, lineHeight: STAR_SIZE },
+	starActive: { color: Colors.brand.accentOrange },
 	starInactive: { color: Colors.brand.textSecondary },
 	subRatingsWrap: { gap: 12, marginTop: 8 },
 	subRatingBlock: { gap: 6 },
@@ -91,8 +85,8 @@ const styles = StyleSheet.create({
 	tagsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
 	tag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
 	tagActive: { backgroundColor: Colors.brand.accentMagenta },
-	tagInactive: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: Colors.brand.border },
-	tagText: { fontSize: 12, fontWeight: '700' },
+	tagInactive: { backgroundColor: Colors.brand.cardBackgroundLight, borderWidth: 1, borderColor: Colors.brand.border },
+	tagText: { fontSize: 12, fontWeight: '800' },
 	tagTextActive: { color: Colors.brand.textOnGradient },
 	tagTextInactive: { color: Colors.brand.textSecondary },
 });
