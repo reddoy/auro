@@ -1,24 +1,68 @@
 import React, { useRef, useState } from 'react';
-import { View, Pressable, Image as RNImage, FlatList, Platform } from 'react-native';
+import { View, Pressable, Image as RNImage, FlatList, Platform, Alert } from 'react-native';
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import { Video } from 'expo-av';
+import { Video, Audio } from 'expo-av';
 
 type Props = {
   photos?: string[];
   onRecorded: (uri: string) => void;
   variant?: 'inline' | 'overlay';
   circleSize?: number;
+  value?: string | null;
 };
 
-export default function MediaRecorder({ photos = [], onRecorded, variant = 'inline', circleSize = 140 }: Props) {
+export default function MediaRecorder({ photos = [], onRecorded, variant = 'inline', circleSize = 140, value = null }: Props) {
   const cameraRef = useRef<CameraView | null>(null);
   const [type, setType] = useState<CameraType>('front');
   const [recording, setRecording] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [videoUri, setVideoUri] = useState<string | null>(null);
+  const videoRef = useRef<Video | null>(null);
   const [activeIdx, setActiveIdx] = useState(0);
   const [permission, requestPermission] = useCameraPermissions();
+  const [isCameraReady, setIsCameraReady] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const startRecording = async () => {
+    if (!cameraRef.current) return;
+    // Ensure microphone permission for video with audio (iOS will silently fail otherwise)
+    try {
+      const mic = await Audio.getPermissionsAsync();
+      if (!mic.granted) {
+        const ask = await Audio.requestPermissionsAsync();
+        if (!ask.granted) {
+          Alert.alert('Microphone Access Needed', 'Please allow microphone access to record video with sound.');
+          return;
+        }
+      }
+    } catch {}
+    if (!isCameraReady) {
+      // Pace: give it a brief moment if it just mounted
+      let waited = 0; const step = 100; const max = 2500;
+      while (!isCameraReady && waited < max) {
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise(r => setTimeout(r, step));
+        waited += step;
+      }
+      if (!isCameraReady) {
+        Alert.alert('Camera is still initializing', 'Please wait a second and try again.');
+        return;
+      }
+    }
+    setStarting(true);
+    setRecording(true);
+    try {
+      const v: any = await cameraRef.current.recordAsync({ maxDuration: 180 } as any);
+      setVideoUri(v?.uri || null);
+    } catch (e: any) {
+      Alert.alert('Recording error', e?.message || 'Unable to start recording.');
+    } finally {
+      setRecording(false);
+      setStarting(false);
+    }
+  };
 
   if (Platform.OS === 'web') {
     return (
@@ -31,81 +75,96 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
 
   if (variant === 'overlay') {
     return (
-      <View style={{ width: circleSize, height: circleSize, borderRadius: circleSize / 2, overflow: 'hidden', backgroundColor: 'transparent' }}>
-        {!permission?.granted ? (
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.brand.cardBackground }}>
-            <Pressable onPress={requestPermission} style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: Colors.brand.status.accepted }}>
-              <Text style={{ color: '#fff', fontWeight: '700' }}>Enable Camera</Text>
-            </Pressable>
-          </View>
-        ) : videoUri ? (
-          <Video
-            style={{ width: '100%', height: '100%' }}
-            source={{ uri: videoUri || undefined }}
-            resizeMode={"cover" as any}
-            shouldPlay={false}
-            isMuted={false}
-            useNativeControls={false}
-          />
-        ) : (
-          <CameraView ref={r => (cameraRef.current = r)} style={{ width: '100%', height: '100%' }} facing={type as any} />
-        )}
-        {/* Controls */}
-        <View style={{ position: 'absolute', bottom: 8, left: 8, right: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+      <View style={{ alignItems: 'center' }}>
+        {/* Circular camera surface */}
+        <View style={{ width: circleSize, height: circleSize, borderRadius: circleSize / 2, overflow: 'hidden', backgroundColor: 'transparent' }}>
+          {!permission?.granted ? (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.brand.cardBackground }}>
+              <Pressable onPress={requestPermission} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: Colors.brand.status.accepted }}>
+                <Text style={{ color: '#fff', fontWeight: '700' }}>Enable Camera</Text>
+              </Pressable>
+            </View>
+          ) : videoUri ? (
+            <>
+              <Video
+                ref={r => (videoRef.current = r)}
+                style={{ width: '100%', height: '100%' }}
+                source={{ uri: videoUri || undefined }}
+                resizeMode={"cover" as any}
+                shouldPlay={false}
+                isMuted={false}
+                isLooping
+                useNativeControls={false}
+              />
+              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+                <Pressable
+                  onPress={async () => {
+                    try {
+                      if (isPlaying) { await videoRef.current?.pauseAsync(); setIsPlaying(false); }
+                      else { await videoRef.current?.playAsync(); setIsPlaying(true); }
+                    } catch {}
+                  }}
+                  accessibilityLabel={isPlaying ? 'Pause playback' : 'Play playback'}
+                  style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '900' }}>{isPlaying ? '❚❚' : '▶'}</Text>
+                </Pressable>
+              </View>
+            </>
+          ) : (
+            <CameraView
+              ref={r => (cameraRef.current = r)}
+              style={{ width: '100%', height: '100%' }}
+              facing={type as any}
+              mode={"video" as any}
+              onCameraReady={() => setIsCameraReady(true)}
+              onError={() => setIsCameraReady(false)}
+            />
+          )}
+        </View>
+
+        {/* Controls below the circle for better reachability */}
+        <View style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center' }}>
           {!recording && !videoUri && (
             <Pressable
-              onPress={async () => {
-                if (!cameraRef.current) return;
-                setRecording(true);
-                try {
-                  await cameraRef.current.startRecording({
-                    maxDuration: 180,
-                    onRecordingFinished: (v: any) => { setVideoUri(v?.uri || null); setRecording(false); },
-                    onRecordingError: () => { setRecording(false); },
-                  });
-                } catch {
-                  setRecording(false);
-                }
-              }}
+              onPress={startRecording}
               accessibilityLabel="Start recording"
-              style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: '#ff3b30', borderWidth: 2, borderColor: '#fff' }}
+              disabled={!isCameraReady || starting}
+              style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isCameraReady && !starting ? '#ff3b30' : 'rgba(255,59,48,0.4)', borderWidth: 3, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' }}
             />
           )}
           {recording && (
             <Pressable
               onPress={async () => { if (!cameraRef.current) return; try { await cameraRef.current.stopRecording(); } catch {} }}
               accessibilityLabel="Stop recording"
-              style={{ paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8, backgroundColor: '#fff' }}
+              style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, backgroundColor: '#fff', marginHorizontal: 2 }}
             >
               <Text style={{ color: Colors.brand.textPrimary, fontWeight: '700' }}>Stop</Text>
             </Pressable>
           )}
+          {!videoUri && (
+            <Pressable onPress={() => setType(prev => (prev === 'front' ? 'back' : 'front'))} accessibilityLabel="Flip camera" style={{ marginLeft: 12, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.4)' }}>
+              <Text style={{ color: '#fff', fontWeight: '700' }}>Flip</Text>
+            </Pressable>
+          )}
           {videoUri && (
-            <View style={{ flexDirection: 'row', gap: 8, marginLeft: 'auto' }}>
-              <Pressable onPress={() => { onRecorded(videoUri); }} accessibilityLabel="Use this video" style={{ paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8, backgroundColor: Colors.brand.status.completed }}>
+            <View style={{ flexDirection: 'row', gap: 10, marginLeft: 12 }}>
+              <Pressable onPress={() => { onRecorded(videoUri); }} accessibilityLabel="Use this video" style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: Colors.brand.status.completed }}>
                 <Text style={{ color: '#fff', fontWeight: '700' }}>Use</Text>
               </Pressable>
-              <Pressable onPress={() => setVideoUri(null)} accessibilityLabel="Re-record" style={{ paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8, backgroundColor: Colors.brand.cardBackground }}>
+              <Pressable onPress={() => setVideoUri(null)} accessibilityLabel="Re-record" style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: Colors.brand.cardBackground }}>
                 <Text style={{ color: Colors.brand.textPrimary, fontWeight: '700' }}>Re-record</Text>
               </Pressable>
             </View>
           )}
         </View>
-        {/* Flip */}
-        {!videoUri && (
-          <View style={{ position: 'absolute', top: 8, right: 8 }}>
-            <Pressable onPress={() => setType(prev => (prev === 'front' ? 'back' : 'front'))} accessibilityLabel="Flip camera">
-              <Text style={{ color: '#fff', fontWeight: '700' }}>Flip</Text>
-            </Pressable>
-          </View>
-        )}
       </View>
     );
   }
 
   return (
     <View style={{ gap: 12 }}>
-      {!videoUri ? (
+      {!(videoUri || value) ? (
         <View style={{ borderRadius: 16, overflow: 'hidden' }}>
           {!permission?.granted ? (
             <View style={{ padding: 12, alignItems: 'center' }}>
@@ -115,7 +174,14 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
               </Pressable>
             </View>
           ) : (
-            <CameraView ref={r => (cameraRef.current = r)} style={{ aspectRatio: 9/16 }} facing={type as any} />
+            <CameraView
+              ref={r => (cameraRef.current = r)}
+              style={{ aspectRatio: 9/16 }}
+              facing={type as any}
+              mode={"video" as any}
+              onCameraReady={() => setIsCameraReady(true)}
+              onError={() => setIsCameraReady(false)}
+            />
           )}
           <View style={{ position: 'absolute', bottom: 8, left: 0, right: 0 }}>
             <FlatList
@@ -138,7 +204,7 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
       ) : (
         <Video
           style={{ aspectRatio: 9/16, borderRadius: 16 }}
-          source={{ uri: videoUri || undefined }}
+          source={{ uri: (videoUri || value) || undefined }}
           useNativeControls
           resizeMode={"contain" as any}
           shouldPlay={false}
@@ -146,7 +212,7 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
         />
       )}
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16 }}>
-        {!recording && !videoUri && <Pressable onPress={async () => { if (!cameraRef.current) return; setRecording(true); try { await cameraRef.current.startRecording({ maxDuration: 180, onRecordingFinished: (v: any) => { setVideoUri(v?.uri || null); setRecording(false); }, onRecordingError: () => { setRecording(false); } }); } catch { setRecording(false); } }}><Text>Record</Text></Pressable>}
+        {!recording && !videoUri && <Pressable disabled={!isCameraReady || starting} onPress={startRecording}><Text>Record</Text></Pressable>}
         {recording && <Pressable onPress={async () => { if (!cameraRef.current) return; try { await cameraRef.current.stopRecording(); } catch {} }}><Text>Stop</Text></Pressable>}
         {videoUri && <Pressable onPress={() => { onRecorded(videoUri); }}><Text>Use Video</Text></Pressable>}
         {videoUri && <Pressable onPress={() => setVideoUri(null)}><Text>Re-record</Text></Pressable>}

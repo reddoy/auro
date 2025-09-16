@@ -477,7 +477,15 @@ export default function ReviewerRequestScreen() {
               </RNView>
             )}
             <RNView style={{ height: 10 }} />
-            <MediaRecorder photos={request.photos || []} onRecorded={setVideoUri} />
+            <MediaRecorder
+              photos={request.photos || []}
+              value={videoUri}
+              onRecorded={(uri) => {
+                setVideoUri(uri);
+                setRecordingModeOpen(false);
+                Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
+              }}
+            />
             <RNView style={{ height: 12 }} />
 
             <TouchableOpacity
@@ -500,13 +508,14 @@ export default function ReviewerRequestScreen() {
             contentFit="cover"
           />
           {/* Pager of cards: title cards then individual photos */}
-          <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ alignItems: 'center' }}>
+          <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ alignItems: 'center', paddingTop: insets.top + 180 }}>
             {/* Card 1: Person summary (center vertically) */}
             <RNView style={{ width: Dimensions.get('window').width, padding: 16, justifyContent: 'center' }}>
               <RNView style={[styles.overlayCard, { alignSelf: 'center', maxWidth: 640 }] }>
                 <Text style={styles.overlayTitle}>{reviewee?.displayName || 'User'}</Text>
                 {parsedNotes?.message ? (<Text style={styles.overlayText}>{parsedNotes?.message}</Text>) : null}
                 {signedSelfie ? (<Image source={{ uri: signedSelfie }} style={{ width: '100%', aspectRatio: 1, borderRadius: 12, marginTop: 12 }} contentFit="cover" />) : null}
+                
               </RNView>
             </RNView>
 
@@ -563,12 +572,20 @@ export default function ReviewerRequestScreen() {
           </ScrollView>
 
           {/* Circular selfie recorder centered at top-middle; ensure above content and clickable */}
-          <RNView style={{ position: 'absolute', top: 24, left: 0, right: 0, alignItems: 'center', zIndex: 10, elevation: 10 }} pointerEvents="box-none">
-            <MediaRecorder onRecorded={(uri) => { setVideoUri(uri); }} variant="overlay" circleSize={160} />
+          <RNView style={{ position: 'absolute', top: insets.top + 12, left: 0, right: 0, alignItems: 'center', zIndex: 10, elevation: 10 }}>
+            <MediaRecorder
+              onRecorded={(uri) => {
+                setVideoUri(uri);
+                setRecordingModeOpen(false);
+                Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
+              }}
+              variant="overlay"
+              circleSize={160}
+            />
           </RNView>
 
           {/* Close */}
-          <RNView style={{ position: 'absolute', top: 48, right: 16, flexDirection: 'row', gap: 8, zIndex: 11, elevation: 11 }}>
+          <RNView style={{ position: 'absolute', top: insets.top + 16, right: 16, flexDirection: 'row', gap: 8, zIndex: 11, elevation: 11 }}>
             <TouchableOpacity onPress={() => setRecordingModeOpen(false)} style={[styles.actionButton, styles.denyButton, { paddingHorizontal: 14, paddingVertical: 8 }]}>
               <Text style={[styles.actionButtonText, styles.denyButtonText]}>Close</Text>
             </TouchableOpacity>
