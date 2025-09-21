@@ -12,6 +12,7 @@ export default function FoundingReviewerApplyPage() {
   const [step, setStep] = useState<number>(1);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [marketingConsent, setMarketingConsent] = useState<boolean>(false);
@@ -20,7 +21,8 @@ export default function FoundingReviewerApplyPage() {
   const [bio, setBio] = useState('');
   const [focusAreas, setFocusAreas] = useState('');
   const [rate, setRate] = useState<string>('');
-  const [socials, setSocials] = useState<SocialAccount[]>([]);
+  const [instagramHandle, setInstagramHandle] = useState('');
+  const [tiktokHandle, setTiktokHandle] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
@@ -37,6 +39,24 @@ export default function FoundingReviewerApplyPage() {
       try { (sub as any)?.data?.subscription?.unsubscribe?.(); } catch {}
     };
   }, []);
+
+  const passwordStrength = useMemo(() => {
+    const val = password || '';
+    let score = 0;
+    if (val.length >= 8) score += 1;
+    if (/[A-Z]/.test(val)) score += 1;
+    if (/[a-z]/.test(val)) score += 1;
+    if (/\d/.test(val)) score += 1;
+    if (/[^A-Za-z0-9]/.test(val)) score += 1;
+    const labels = ['Very Weak','Weak','Moderate','Strong','Very Strong'];
+    return { score, label: labels[Math.max(0, Math.min(4, score - 1))] };
+  }, [password]);
+
+  const isPasswordValid = useMemo(() => {
+    return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[^A-Za-z0-9]/.test(password);
+  }, [password]);
+
+  const passwordsMatch = useMemo(() => password && passwordConfirm && password === passwordConfirm, [password, passwordConfirm]);
 
   const handleAvatarChange = async (f: File | null) => {
     if (!f) {
@@ -76,7 +96,7 @@ export default function FoundingReviewerApplyPage() {
     return { url: signJson?.signedUrl || '', path };
   };
 
-  const handleSignUpOrNext = async () => {
+  const handleNext = async () => {
     setError('');
     if (step === 1) {
       // Information screen → go to form
@@ -85,10 +105,9 @@ export default function FoundingReviewerApplyPage() {
     }
     if (step === 2) {
       // Account step: create account
-      if (!email || !password || !fullName) {
-        setError('Please fill name, email and password');
-        return;
-      }
+      if (!email || !password || !fullName) { setError('Please fill name, email and password'); return; }
+      if (!isPasswordValid) { setError('Password must be at least 8 chars with uppercase, lowercase, number, and symbol'); return; }
+      if (!passwordsMatch) { setError('Passwords do not match'); return; }
       try {
         setLoading(true);
         const { data, error } = await supabase.auth.signUp({
@@ -116,30 +135,10 @@ export default function FoundingReviewerApplyPage() {
     }
     if (step === 3) {
       // Profile details step
-      if (!rate) {
-        setError('Please set a rate per review');
-        return;
-      }
+      if (!rate || isNaN(Number(rate)) || Number(rate) <= 0) { setError('Please enter a valid rate'); return; }
       try {
         setLoading(true);
-        const avatar = await uploadAvatarViaSignedUrl();
-        // Send application to server
-        const resp = await fetch('/api/reviewers/apply', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            bio,
-            focusAreas,
-            hourlyRate: Number(rate),
-            avatarUrl: avatar?.url || null,
-            avatarPath: avatar?.path || null,
-            socials,
-            phone,
-            marketingConsent,
-          })
-        });
-        const json = await resp.json();
-        if (!resp.ok) throw new Error(json?.error || 'Failed to submit');
+        // proceed to Socials/Bio step next
         setStep(4);
       } catch (e: any) {
         setError(e?.message || 'Failed to save application');
@@ -148,32 +147,69 @@ export default function FoundingReviewerApplyPage() {
       }
       return;
     }
-  };
+    if (step === 4) {
+      try {
+        setLoading(true);
+        const avatar = await uploadAvatarViaSignedUrl();
+        const { data: s } = await supabase.auth.getSession();
+        const token = (s as any)?.session?.access_token as string | undefined;
+        const socialArray: SocialAccount[] = [];
+        const clean = (h: string) => (h || '').trim().replace(/^@+/, '');
+        if (instagramHandle.trim()) socialArray.push({ provider: 'instagram', username: clean(instagramHandle) });
+        if (tiktokHandle.trim()) socialArray.push({ provider: 'tiktok', username: clean(tiktokHandle) });
 
-  const connectSocial = async (provider: 'tiktok' | 'instagram') => {
-    try {
-      setLoading(true);
-      const { data: u } = await supabase.auth.getUser();
-      const userId = u?.user?.id;
-      if (!userId) throw new Error('Please sign up first');
-      // For now, we simulate linking by calling callback directly with params
-      const url = `/api/social/connect/callback/${provider}?user_id=${encodeURIComponent(userId)}&username=${encodeURIComponent(provider)}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Failed to link');
-      setSocials((prev) => {
-        const next = prev.filter((s) => s.provider !== provider);
-        next.push({ provider, username: provider });
-        return next;
-      });
-    } catch (e: any) {
-      setError(e?.message || 'Failed to connect');
-    } finally {
-      setLoading(false);
+        const resp = await fetch('/api/reviewers/apply', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({
+            bio,
+            focusAreas,
+            hourlyRate: Number(rate),
+            avatarUrl: avatar?.url || null,
+            avatarPath: avatar?.path || null,
+            socials: socialArray,
+            instagramHandle: instagramHandle || null,
+            tiktokHandle: tiktokHandle || null,
+            phone,
+            marketingConsent,
+          })
+        });
+        const json = await resp.json();
+        if (!resp.ok) throw new Error(json?.error || 'Failed to submit');
+        setStep(5);
+      } catch (e: any) {
+        setError(e?.message || 'Failed to submit application');
+      } finally {
+        setLoading(false);
+      }
+      return;
     }
   };
 
+  // Stepper UI helper
+  const Stepper = () => (
+    <ol className="stepper" style={{ display: 'flex', gap: 12, margin: '0 0 16px 0', padding: 0, listStyle: 'none', justifyContent: 'center', flexWrap: 'wrap' }}>
+      {['Intro','Account','Profile','Socials & Bio','Done'].map((label, idx) => {
+        const s = idx + 1;
+        const active = step === s;
+        const completed = step > s;
+        return (
+          <li key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 28, height: 28, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: completed ? '#10b981' : active ? '#6366f1' : '#e5e7eb', color: completed || active ? '#fff' : '#111827', fontWeight: 600 }}>
+              {completed ? '✓' : s}
+            </span>
+            <span style={{ color: active ? '#111827' : '#6b7280', fontWeight: active ? 600 : 400 }}>{label}</span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+
   return (
     <div className="apply-page">
+      <div style={{ marginBottom: 16 }}>
+        <Stepper />
+      </div>
       {step === 1 && (
         <section className="hero">
           <div className="container">
@@ -211,7 +247,15 @@ export default function FoundingReviewerApplyPage() {
             </div>
             <div className="form-field">
               <label>Password</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" />
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 chars, upper, lower, number, symbol" />
+              <div style={{ marginTop: 6, fontSize: 12, color: isPasswordValid ? '#10b981' : '#ef4444' }}>Strength: {passwordStrength.label}</div>
+            </div>
+            <div className="form-field">
+              <label>Confirm password</label>
+              <input type="password" value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} placeholder="Re-enter password" />
+              {!passwordsMatch && passwordConfirm.length > 0 && (
+                <div style={{ marginTop: 6, fontSize: 12, color: '#ef4444' }}>Passwords do not match</div>
+              )}
             </div>
             <div className="form-field">
               <label>Phone number</label>
@@ -225,7 +269,7 @@ export default function FoundingReviewerApplyPage() {
           </div>
           <div className="step-actions">
             <button className="btn-secondary" onClick={() => setStep(1)}>Back</button>
-            <button className="btn-primary" disabled={loading} onClick={handleSignUpOrNext}>{loading ? 'Please wait...' : 'Continue'}</button>
+            <button className="btn-primary" disabled={loading} onClick={handleNext}>{loading ? 'Please wait...' : 'Continue'}</button>
           </div>
         </div>
       )}
@@ -250,6 +294,27 @@ export default function FoundingReviewerApplyPage() {
               <label>Rate per review (USD)</label>
               <input type="number" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="e.g. 25" />
             </div>
+          </div>
+          <div className="step-actions">
+            <button className="btn-secondary" onClick={() => setStep(2)}>Back</button>
+            <button className="btn-primary" disabled={loading} onClick={handleNext}>{loading ? 'Saving...' : 'Continue'}</button>
+          </div>
+        </div>
+      )}
+
+      {step === 4 && (
+        <div className="card" style={{ maxWidth: 880, margin: '0 auto' }}>
+          <h2>Socials and bio</h2>
+          {error && <div className="error-message">{error}</div>}
+          <div className="form-grid">
+            <div className="form-field">
+              <label>Instagram handle</label>
+              <input value={instagramHandle} onChange={(e) => setInstagramHandle(e.target.value)} placeholder="@username" />
+            </div>
+            <div className="form-field">
+              <label>TikTok handle</label>
+              <input value={tiktokHandle} onChange={(e) => setTiktokHandle(e.target.value)} placeholder="@username" />
+            </div>
             <div className="form-field" style={{ gridColumn: '1 / -1' }}>
               <label>Bio</label>
               <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Why you give reviews; what you focus on" rows={4} />
@@ -258,27 +323,15 @@ export default function FoundingReviewerApplyPage() {
               <label>Focus areas</label>
               <input value={focusAreas} onChange={(e) => setFocusAreas(e.target.value)} placeholder="e.g., wardrobe, room setup, selfies, dating profile" />
             </div>
-            <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-              <label>Connect socials</label>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <button type="button" className="btn-secondary" onClick={() => connectSocial('tiktok')}>Connect TikTok</button>
-                <button type="button" className="btn-secondary" onClick={() => connectSocial('instagram')}>Connect Instagram</button>
-              </div>
-              {socials.length > 0 && (
-                <div style={{ marginTop: 8, color: '#666' }}>
-                  Linked: {socials.map(s => s.provider).join(', ')}
-                </div>
-              )}
-            </div>
           </div>
           <div className="step-actions">
-            <button className="btn-secondary" onClick={() => setStep(2)}>Back</button>
-            <button className="btn-primary" disabled={loading} onClick={handleSignUpOrNext}>{loading ? 'Saving...' : 'Submit Application'}</button>
+            <button className="btn-secondary" onClick={() => setStep(3)}>Back</button>
+            <button className="btn-primary" disabled={loading} onClick={handleNext}>{loading ? 'Submitting...' : 'Submit Application'}</button>
           </div>
         </div>
       )}
 
-      {step === 4 && (
+      {step === 5 && (
         <div className="card" style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
           <h2>Thanks — you’re on the list!</h2>
           <p>We sent a verification email to confirm your account. Stay tuned for the app launch — we’ll reach out with next steps.</p>

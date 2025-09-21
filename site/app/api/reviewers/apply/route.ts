@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { bio, focusAreas, hourlyRate, avatarUrl, avatarPath, socials, phone, marketingConsent } = body || {};
+    const { bio, focusAreas, hourlyRate, avatarUrl, avatarPath, socials, instagramHandle, tiktokHandle, phone, marketingConsent } = body || {};
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -56,6 +56,14 @@ export async function POST(req: Request) {
         } catch {}
       }
     }
+
+    // Also persist handles into profiles.links json for convenience
+    const linksUpdate: any = { id: userId };
+    linksUpdate.links = {
+      instagram: instagramHandle || null,
+      tiktok: tiktokHandle || null,
+    };
+    try { await admin.from('profiles').upsert(linksUpdate, { onConflict: 'id' }); } catch {}
 
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   } catch (e: any) {
