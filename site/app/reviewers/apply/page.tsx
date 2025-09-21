@@ -186,28 +186,25 @@ export default function FoundingReviewerApplyPage() {
     }
   };
 
-  // Stepper UI helper
+  // Stepper UI helper (match request flow styles)
   const Stepper = () => (
-    <ol className="stepper" style={{ display: 'flex', gap: 12, margin: '0 0 16px 0', padding: 0, listStyle: 'none', justifyContent: 'center', flexWrap: 'wrap' }}>
+    <div className="progress-bar">
       {['Intro','Account','Profile','Socials & Bio','Done'].map((label, idx) => {
         const s = idx + 1;
-        const active = step === s;
-        const completed = step > s;
+        const stateClass = step === s ? 'current' : (step > s ? 'active' : '');
         return (
-          <li key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 28, height: 28, borderRadius: 999, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: completed ? '#10b981' : active ? '#6366f1' : '#e5e7eb', color: completed || active ? '#fff' : '#111827', fontWeight: 600 }}>
-              {completed ? '✓' : s}
-            </span>
-            <span style={{ color: active ? '#111827' : '#6b7280', fontWeight: active ? 600 : 400 }}>{label}</span>
-          </li>
+          <div key={label} className={`progress-step ${stateClass}`}>
+            <div className="step-number">{step > s ? '✓' : s}</div>
+            <div className="step-title">{label}</div>
+          </div>
         );
       })}
-    </ol>
+    </div>
   );
 
   return (
-    <div className="apply-page">
-      <div style={{ marginBottom: 16 }}>
+    <div className="apply-page request-page">
+      <div className="container" style={{ marginBottom: 16 }}>
         <Stepper />
       </div>
       {step === 1 && (
@@ -232,11 +229,14 @@ export default function FoundingReviewerApplyPage() {
       )}
 
       {step === 2 && (
-        <div className="card" style={{ maxWidth: 720, margin: '0 auto' }}>
-          <h2>Create your account</h2>
-          <p>Sign up with email and set a password. We’ll send a verification email.</p>
+        <div className="container">
+          <div className="request-content">
+            <div className="step-header">
+              <h2>Create your account</h2>
+              <p>Sign up with email and set a password. We’ll send a verification email.</p>
+            </div>
           {error && <div className="error-message">{error}</div>}
-          <div className="form-grid">
+          <div className="form-fields">
             <div className="form-field">
               <label>Full name</label>
               <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Doe" />
@@ -271,14 +271,18 @@ export default function FoundingReviewerApplyPage() {
             <button className="btn-secondary" onClick={() => setStep(1)}>Back</button>
             <button className="btn-primary" disabled={loading} onClick={handleNext}>{loading ? 'Please wait...' : 'Continue'}</button>
           </div>
+          </div>
         </div>
       )}
 
       {step === 3 && (
-        <div className="card" style={{ maxWidth: 880, margin: '0 auto' }}>
-          <h2>Set up your reviewer profile</h2>
+        <div className="container">
+          <div className="request-content">
+          <div className="step-header">
+            <h2>Set up your reviewer profile</h2>
+          </div>
           {error && <div className="error-message">{error}</div>}
-          <div className="form-grid">
+          <div className="form-fields">
             <div className="form-field">
               <label>Profile photo</label>
               {avatarPreview ? (
@@ -299,14 +303,18 @@ export default function FoundingReviewerApplyPage() {
             <button className="btn-secondary" onClick={() => setStep(2)}>Back</button>
             <button className="btn-primary" disabled={loading} onClick={handleNext}>{loading ? 'Saving...' : 'Continue'}</button>
           </div>
+          </div>
         </div>
       )}
 
       {step === 4 && (
-        <div className="card" style={{ maxWidth: 880, margin: '0 auto' }}>
-          <h2>Socials and bio</h2>
+        <div className="container">
+          <div className="request-content">
+          <div className="step-header">
+            <h2>Socials and bio</h2>
+          </div>
           {error && <div className="error-message">{error}</div>}
-          <div className="form-grid">
+          <div className="form-fields">
             <div className="form-field">
               <label>Instagram handle</label>
               <input value={instagramHandle} onChange={(e) => setInstagramHandle(e.target.value)} placeholder="@username" />
@@ -328,16 +336,19 @@ export default function FoundingReviewerApplyPage() {
             <button className="btn-secondary" onClick={() => setStep(3)}>Back</button>
             <button className="btn-primary" disabled={loading} onClick={handleNext}>{loading ? 'Submitting...' : 'Submit Application'}</button>
           </div>
+          </div>
         </div>
       )}
 
       {step === 5 && (
-        <div className="card" style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
-          <h2>Thanks — you’re on the list!</h2>
-          <p>We sent a verification email to confirm your account. Stay tuned for the app launch — we’ll reach out with next steps.</p>
-          <p>If you don’t see the email, check your spam folder.</p>
-          <div style={{ marginTop: 16 }}>
-            <a href="/" className="btn-primary">Back to Home</a>
+        <div className="container">
+          <div className="success-card">
+            <div className="success-icon">🎉</div>
+            <h3>Thanks — you’re on the list!</h3>
+            <p>We sent a verification email to confirm your account. Stay tuned for the app launch — we’ll reach out with next steps.</p>
+            <div style={{ marginTop: 16 }}>
+              <a href="/" className="btn-primary">Back to Home</a>
+            </div>
           </div>
         </div>
       )}
