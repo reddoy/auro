@@ -18,6 +18,37 @@ export async function POST(req: Request) {
           const requestId = metadata.request_id;
           const uploadSessionId = metadata.upload_session_id;
           const customerEmail = (session.customer_details as any)?.email || (session as any)?.customer_email || '';
+          const stripeAccountId = (event as any).account as string | undefined; // present for Connect events
+          // Retrieve PaymentIntent to compute Stripe fee and net (via balance transaction)
+          let stripeFeeCents: number | undefined = undefined;
+          let netAmountCents: number | undefined = undefined;
+          let amountCents: number | undefined = undefined;
+          try {
+            const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : (session.payment_intent as any)?.id;
+            if (paymentIntentId) {
+              const pi = stripeAccountId
+                ? await stripe.paymentIntents.retrieve(paymentIntentId, { stripeAccount: stripeAccountId })
+                : await stripe.paymentIntents.retrieve(paymentIntentId);
+              amountCents = typeof pi.amount === 'number' ? pi.amount : undefined;
+              const chargeId = (Array.isArray(pi.charges?.data) && pi.charges.data[0]?.id) ? pi.charges.data[0].id : undefined;
+              if (chargeId) {
+                const charge = stripeAccountId
+                  ? await stripe.charges.retrieve(chargeId, { stripeAccount: stripeAccountId })
+                  : await stripe.charges.retrieve(chargeId);
+                const balTxId = (charge as any).balance_transaction as string | undefined;
+                if (balTxId) {
+                  const balTx = stripeAccountId
+                    ? await stripe.balanceTransactions.retrieve(balTxId, { stripeAccount: stripeAccountId })
+                    : await stripe.balanceTransactions.retrieve(balTxId);
+                  // balance transaction amounts are in the smallest currency unit
+                  stripeFeeCents = typeof balTx.fee === 'number' ? balTx.fee : undefined;
+                  netAmountCents = typeof balTx.net === 'number' ? balTx.net : undefined;
+                }
+              }
+            }
+          } catch (feeErr) {
+            console.error('fee calc error', feeErr);
+          }
           if (requestId) {
             const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
             const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -26,7 +57,15 @@ export async function POST(req: Request) {
               const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : (session.payment_intent as any)?.id;
               await admin
                 .from('requests')
-                .update({ status: 'paid', payment_status: 'paid', stripe_session_id: session.id, stripe_payment_intent_id: paymentIntentId || null })
+                .update({
+                  status: 'paid',
+                  payment_status: 'paid',
+                  stripe_session_id: session.id,
+                  stripe_payment_intent_id: paymentIntentId || null,
+                  stripe_fee_cents: typeof stripeFeeCents === 'number' ? stripeFeeCents : null,
+                  net_amount_cents: typeof netAmountCents === 'number' ? netAmountCents : null,
+                  amount_cents: typeof amountCents === 'number' ? amountCents : undefined,
+                })
                 .eq('id', requestId);
 
               // Backfill customer email and ensure profile exists for the user

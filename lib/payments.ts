@@ -64,6 +64,7 @@ export async function openPaymentSheet(params: CreatePaymentSheetParams): Promis
     const accessToken = sessionData?.session?.access_token || '';
     const supabaseAnonKey =
       process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
+      process.env.SUPABASE_ANON_KEY ||
       (Constants.expoConfig?.extra as any)?.supabaseAnonKey ||
       (Constants.manifest2 as any)?.extra?.supabaseAnonKey ||
       '';
@@ -103,6 +104,125 @@ export async function openPaymentSheet(params: CreatePaymentSheetParams): Promis
     return { completed: true };
   } catch (e: any) {
     return { completed: false, errorMessage: e?.message || 'Payment failed' };
+  }
+}
+
+export async function createStripeExpressLoginLink(reviewerId: string): Promise<string | null> {
+  try {
+    // Build auth headers for Supabase Edge Functions (401 without Authorization)
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token || '';
+    const supabaseAnonKey =
+      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
+      process.env.SUPABASE_ANON_KEY ||
+      (Constants.expoConfig?.extra as any)?.supabaseAnonKey ||
+      (Constants.manifest2 as any)?.extra?.supabaseAnonKey ||
+      '';
+    const fnHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (supabaseAnonKey) fnHeaders['apikey'] = supabaseAnonKey;
+    if (accessToken || supabaseAnonKey) fnHeaders['Authorization'] = `Bearer ${accessToken || supabaseAnonKey}`;
+
+    // 1) Explicit function URL override
+    const explicit = process.env.EXPO_PUBLIC_SUPABASE_FN_LOGIN_URL;
+    if (explicit) {
+      const resp = await fetch(explicit, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
+      if (resp.ok) { const json = await resp.json(); return json?.url || null; }
+    }
+
+    // 2) Derive from Supabase project ref
+    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || (Constants.expoConfig?.extra as any)?.supabaseUrl || (Constants.manifest2 as any)?.extra?.supabaseUrl || '';
+    if (supabaseUrl) {
+      const projectRef = (supabaseUrl.match(/^https?:\/\/([a-z0-9-]+)\.supabase\.co/i) || [])[1];
+      if (projectRef) {
+        // Use actual function name deployed in supabase/functions
+        const base = `https://${projectRef}.functions.supabase.co`;
+        const primary = `${base}/connect-express-login`;
+        let resp = await fetch(primary, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
+        if (resp.ok) { const json = await resp.json(); return json?.url || null; }
+        // Fallback: legacy/custom slug
+        const fallback = `${base}/bright-worker`;
+        try {
+          resp = await fetch(fallback, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
+          if (resp.ok) { const json = await resp.json(); return json?.url || null; }
+        } catch {}
+      }
+    }
+
+    // 2b) Hardcoded project fallback (user provided fixed URLs)
+    try {
+      const hardcoded = 'https://zxazjbduiistnfstnwka.supabase.co/functions/v1/connect-express-login';
+      const resp = await fetch(hardcoded, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
+      if (resp.ok) { const json = await resp.json(); return json?.url || null; }
+    } catch {}
+
+    // 3) Fallback to site API route if configured
+    const siteUrl = process.env.EXPO_PUBLIC_SITE_URL || (Constants.expoConfig?.extra as any)?.siteUrl || (Constants.manifest2 as any)?.extra?.siteUrl || '';
+    if (!siteUrl) return null;
+    const resp = await fetch(`${siteUrl}/api/stripe/express-login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reviewerId, returnUrl: siteUrl }) });
+    if (!resp.ok) return null;
+    const json = await resp.json();
+    return json?.url || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function createStripeExpressOnboardingLink(reviewerId: string): Promise<string | null> {
+  try {
+    // Build auth headers for Supabase Edge Functions (401 without Authorization)
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token || '';
+    const supabaseAnonKey =
+      process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
+      (Constants.expoConfig?.extra as any)?.supabaseAnonKey ||
+      (Constants.manifest2 as any)?.extra?.supabaseAnonKey ||
+      '';
+    const fnHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (supabaseAnonKey) fnHeaders['apikey'] = supabaseAnonKey;
+    if (accessToken || supabaseAnonKey) fnHeaders['Authorization'] = `Bearer ${accessToken || supabaseAnonKey}`;
+
+    // 1) Explicit function URL override
+    const explicit = process.env.EXPO_PUBLIC_SUPABASE_FN_ONBOARDING_URL;
+    if (explicit) {
+      const resp = await fetch(explicit, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
+      if (resp.ok) { const json = await resp.json(); return json?.url || null; }
+    }
+
+    // 2) Derive from Supabase project ref
+    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || (Constants.expoConfig?.extra as any)?.supabaseUrl || (Constants.manifest2 as any)?.extra?.supabaseUrl || '';
+    if (supabaseUrl) {
+      const projectRef = (supabaseUrl.match(/^https?:\/\/([a-z0-9-]+)\.supabase\.co/i) || [])[1];
+      if (projectRef) {
+        // Prefer your current slug first
+        const base = `https://${projectRef}.functions.supabase.co`;
+        const preferred = `${base}/super-task`;
+        let resp = await fetch(preferred, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
+        if (resp.ok) { const json = await resp.json(); return json?.url || null; }
+        // Fallback to repo default if present
+        const fallback = `${base}/connect-express-onboarding`;
+        try {
+          resp = await fetch(fallback, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
+          if (resp.ok) { const json = await resp.json(); return json?.url || null; }
+        } catch {}
+      }
+    }
+
+    // 2b) Hardcoded project fallback (user provided fixed URLs)
+    try {
+      const hardcoded = 'https://zxazjbduiistnfstnwka.supabase.co/functions/v1/connect-express-onboarding';
+      const resp = await fetch(hardcoded, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
+      if (resp.ok) { const json = await resp.json(); return json?.url || null; }
+    } catch {}
+
+    // 3) Fallback to site API route if configured
+    const siteUrl = process.env.EXPO_PUBLIC_SITE_URL || (Constants.expoConfig?.extra as any)?.siteUrl || (Constants.manifest2 as any)?.extra?.siteUrl || '';
+    if (!siteUrl) return null;
+    const resp = await fetch(`${siteUrl}/api/stripe/express-onboarding`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reviewerId, returnUrl: siteUrl }) });
+    if (!resp.ok) return null;
+    const json = await resp.json();
+    return json?.url || null;
+  } catch {
+    return null;
   }
 }
 

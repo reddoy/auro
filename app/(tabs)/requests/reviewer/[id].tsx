@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View as RNView, ActivityIndicator, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Dimensions, Platform } from 'react-native';
+import { StyleSheet, View as RNView, ActivityIndicator, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Dimensions, Platform, Linking } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,6 +17,7 @@ import { signRequestMediaUrls, getSignedRequestMediaUrl } from '@/lib/uploads';
 import RatingBar from '@/components/RatingBar';
 import MediaRecorder from '@/components/MediaRecorder';
 import { uploadRequestMedia } from '@/lib/uploads';
+import { createStripeExpressLoginLink } from '@/lib/payments';
 import * as Sharing from 'expo-sharing';
 
 // Removed unused URL helper functions since we're not showing social links in this screen
@@ -46,6 +47,13 @@ export default function ReviewerRequestScreen() {
   const [recordingModeOpen, setRecordingModeOpen] = useState(false);
   const [galleryUris, setGalleryUris] = useState<string[]>([]);
   const [galleryIndex, setGalleryIndex] = useState(0);
+  // Earnings UI
+  const amountCents = (request as any)?.amount_cents as number | undefined;
+  const auroFeeCents = (request as any)?.application_fee_cents as number | undefined;
+  const stripeFeeCents = (request as any)?.stripe_fee_cents as number | undefined;
+  const netAmountCents = (request as any)?.net_amount_cents as number | undefined;
+  const auroFeeBps = (request as any)?.auro_fee_bps as number | undefined;
+  const [expressUrl, setExpressUrl] = useState<string | null>(null);
 
   // Section ratings
   const [outfitsRating, setOutfitsRating] = useState(0);
@@ -86,6 +94,9 @@ export default function ReviewerRequestScreen() {
       return null;
     }
   }, [request?.notes]);
+
+  const hasConsent = React.useMemo(() => typeof parsedNotes?.consent?.shareOnSocial === 'boolean', [parsedNotes]);
+  const shareConsent = React.useMemo(() => !!parsedNotes?.consent?.shareOnSocial, [parsedNotes]);
 
   useEffect(() => {
     const run = async () => {
@@ -138,6 +149,13 @@ export default function ReviewerRequestScreen() {
           })();
           setSignedSelfie(selfieUrl ? await getSignedRequestMediaUrl(selfieUrl) : null);
         } catch {}
+        // Prepare Stripe Express Portal link for reviewers
+        try {
+          if (req?.influencerId) {
+            const url = await createStripeExpressLoginLink(req.influencerId);
+            setExpressUrl(url);
+          }
+        } catch {}
       } catch (error) {
         console.error('Error loading request:', error);
       } finally {
@@ -149,14 +167,13 @@ export default function ReviewerRequestScreen() {
 
   const handleAccept = async () => {
     if (!request?.id) return;
+    if (request.status !== 'paid') {
+      Alert.alert('Payment required', 'You can accept only after payment is completed.');
+      return;
+    }
     setActionLoading(true);
     try {
-      // Accept: if already paid, move directly to in_progress; otherwise mark accepted
-      if (request.status === 'paid') {
-        await updateRequestStatus(request.id, 'in_progress');
-      } else {
-        await acceptRequest(request.id);
-      }
+      await updateRequestStatus(request.id, 'in_progress');
       Alert.alert('Request Accepted', 'You can now submit your review for this request.');
       const refreshed = await getRequestById(request.id);
       setRequest(refreshed);
@@ -169,6 +186,10 @@ export default function ReviewerRequestScreen() {
 
   const handleDeny = async () => {
     if (!request?.id) return;
+    if (request.status !== 'paid') {
+      Alert.alert('Payment required', 'You can deny only after payment is completed.');
+      return;
+    }
     Alert.alert(
       'Deny Request',
       'Are you sure you want to deny this request? The payment will be refunded.',
@@ -223,16 +244,9 @@ export default function ReviewerRequestScreen() {
       });
       setRequest(updated);
       Alert.alert('Success', 'Review submitted successfully.');
-      // If consented, prompt share sheet
-      if ((updated as any)?.consent_social && (uploadedVideoUrl || uploadedImageUrl)) {
-        try {
-          const uri = uploadedVideoUrl || uploadedImageUrl!;
-          if (await Sharing.isAvailableAsync()) {
-            await Sharing.shareAsync(uri);
-          }
-        } catch {}
-      }
-      router.back();
+      // Navigate to submission success screen with optional local media uri (if any)
+      const localMedia = videoUri || imageUri || '';
+      router.replace({ pathname: '/(tabs)/requests/reviewer/submitted' as any, params: localMedia ? { uri: localMedia } : {} as any });
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to submit review');
     } finally {
@@ -272,12 +286,49 @@ export default function ReviewerRequestScreen() {
               <Text style={{ color: Colors.brand.textSecondary, fontSize: 12, textAlign: 'center' }}>
                 You have 30 days to complete this review. After 30 days, the requester is refunded.
               </Text>
+            ) : (request.status === 'pending' || request.status === 'accepted') ? (
+              <Text style={{ color: Colors.brand.textSecondary, fontSize: 12, textAlign: 'center' }}>
+                Waiting for the requester to finish payment. They have 30 days to finish payment.
+              </Text>
             ) : null}
           </RNView>
+        {hasConsent ? (
+          <RNView style={[styles.consentPill, { borderColor: shareConsent ? Colors.brand.status.completed : Colors.brand.status.rejected }]}>
+            <Text style={[styles.consentPillText, { color: shareConsent ? Colors.brand.status.completed : Colors.brand.status.rejected }]}>
+              {`Consent to share on socials? ${shareConsent ? 'Yes' : 'No'}`}
+            </Text>
+          </RNView>
+        ) : null}
           <Text style={styles.requestDate}>
             Requested on {new Date(request.createdAt).toLocaleDateString()}
           </Text>
         </View>
+
+        {/* Earnings summary for reviewer */}
+        {(amountCents || netAmountCents) && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Earnings</Text>
+            {typeof amountCents === 'number' && (
+              <Text style={styles.value}>Price: ${(amountCents / 100).toFixed(2)}</Text>
+            )}
+            {typeof auroFeeCents === 'number' && (
+              <Text style={styles.value}>Auro fee{typeof auroFeeBps === 'number' ? ` (${(auroFeeBps/100).toFixed(2)}%)` : ''}: -${(auroFeeCents / 100).toFixed(2)}</Text>
+            )}
+            {typeof stripeFeeCents === 'number' && (
+              <Text style={styles.value}>Stripe fee: -${(stripeFeeCents / 100).toFixed(2)}</Text>
+            )}
+            {typeof netAmountCents === 'number' && (
+              <Text style={[styles.value, { fontWeight: '900' }]}>You receive (net): ${(netAmountCents / 100).toFixed(2)}</Text>
+            )}
+            {!!expressUrl && (
+              <TouchableOpacity style={[styles.actionButton, styles.primaryButton, { marginTop: 10 }]} onPress={() => {
+                try { Linking.openURL(expressUrl!); } catch {}
+              }}>
+                <Text style={styles.actionButtonText}>Open Stripe Dashboard</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
         {parsedNotes?.message && (
           <View style={styles.section}>
@@ -401,7 +452,7 @@ export default function ReviewerRequestScreen() {
           </View>
         )}
 
-        {(request.status === 'pending' || request.status === 'paid') && (
+        {request.status === 'paid' && (
           <View style={styles.actionsSection}>
             <TouchableOpacity
               style={[styles.actionButton, styles.acceptButton]}
@@ -667,4 +718,6 @@ const styles = StyleSheet.create({
   overlayPhotoCard: { backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: Colors.brand.border, opacity: 0.96 },
   overlayTitle: { fontSize: 20, fontWeight: '900', color: Colors.brand.textPrimary, marginBottom: 8 },
   overlayText: { fontSize: 15, color: Colors.brand.textPrimary, lineHeight: 21 },
+  consentPill: { alignSelf: 'center', borderWidth: 1, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 24, backgroundColor: Colors.brand.cardBackground, marginTop: 8 },
+  consentPillText: { fontSize: 12, fontWeight: '700' },
 });

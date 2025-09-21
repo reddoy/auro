@@ -40,7 +40,14 @@ alter table if exists public.requests
   add column if not exists deliver_by timestamptz,
   add column if not exists stripe_session_id text,
   add column if not exists stripe_payment_intent_id text,
-  add column if not exists stripe_connect_account_id text;
+  add column if not exists stripe_connect_account_id text,
+  -- Monetary columns (all amounts in integer cents)
+  add column if not exists amount_cents integer,
+  add column if not exists application_fee_cents integer,
+  add column if not exists stripe_fee_cents integer,
+  add column if not exists net_amount_cents integer,
+  -- Store the auro platform cut applied (basis points)
+  add column if not exists auro_fee_bps integer;
 
 -- 3) Helpful indexes for schedulers/queries
 create index if not exists idx_creators_slug on public.creators(slug);

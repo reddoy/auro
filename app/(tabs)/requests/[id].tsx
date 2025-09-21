@@ -5,7 +5,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import { getRequestById, submitRequestReview, updateRequestStatus, getProfileById, getUserProfile } from '@/lib/api';
+import { getRequestById, submitRequestReview, updateRequestStatus, getProfileById, getUserProfile, acceptRequest, denyRequest } from '@/lib/api';
 import { getSignedAvatarUrl } from '@/lib/profile';
 import StatusBadge from '@/components/StatusBadge';
 import LightboxImage from '@/components/LightboxImage';
@@ -48,13 +48,7 @@ export default function ReviewerSubmitScreen() {
         } catch {}
         const req = await getRequestById(String(id));
         setRequest(req);
-        // Mark as in_progress once reviewer opens a PAID request
-        try {
-          if (req?.status === 'paid') {
-            const updated = await updateRequestStatus(String(id), 'in_progress');
-            setRequest(updated);
-          }
-        } catch {}
+        // Do not auto-advance to in_progress; reviewer must explicitly accept after payment
 
         // Load reviewee profile and sign avatar if needed
         if (req?.userId) {
@@ -83,18 +77,14 @@ export default function ReviewerSubmitScreen() {
 
   const onAccept = async () => {
     if (!id || !request) return;
+    if (request.status !== 'paid') {
+      Alert.alert('Payment required', 'You can accept only after payment is completed.');
+      return;
+    }
     try {
-      let next: string | null = null;
-      if (request.status === 'pending') next = 'accepted';
-      else if (request.status === 'paid') next = 'in_progress';
-      if (!next) return;
-      const updated = await updateRequestStatus(String(id), next);
+      const updated = await acceptRequest(String(id));
       setRequest(updated);
-      if (updated.status === 'in_progress') {
-        show('Accepted. You can start the review.');
-      } else {
-        show('Accepted. Awaiting payment.');
-      }
+      show('Accepted. You can start the review.');
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to accept request');
     }
@@ -102,8 +92,12 @@ export default function ReviewerSubmitScreen() {
 
   const onDeny = async () => {
     if (!id || !request) return;
+    if (request.status !== 'paid') {
+      Alert.alert('Payment required', 'You can deny only after payment is completed.');
+      return;
+    }
     try {
-      const updated = await updateRequestStatus(String(id), 'rejected');
+      const updated = await denyRequest(String(id));
       setRequest(updated);
       show('Declined the request.');
       router.back();
@@ -157,18 +151,14 @@ export default function ReviewerSubmitScreen() {
               </Text>
             ) : null}
           </RNView>
-          {canModerate && (request.status === 'pending' || request.status === 'accepted' || request.status === 'paid') && (
+          {canModerate && request.status === 'paid' && (
             <RNView style={{ flexDirection: 'row', gap: 8 }}>
-              {request.status === 'pending' || request.status === 'paid' ? (
-                <TouchableOpacity onPress={onAccept} style={{ backgroundColor: Colors.brand.status.completed, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 }}>
-                  <Text style={{ color: '#fff', fontWeight: '700' }}>Accept</Text>
-                </TouchableOpacity>
-              ) : null}
-              {(request.status === 'pending' || request.status === 'accepted') ? (
-                <TouchableOpacity onPress={onDeny} style={{ backgroundColor: Colors.brand.status.rejected, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 }}>
-                  <Text style={{ color: '#fff', fontWeight: '700' }}>Deny</Text>
-                </TouchableOpacity>
-              ) : null}
+              <TouchableOpacity onPress={onAccept} style={{ backgroundColor: Colors.brand.status.completed, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 }}>
+                <Text style={{ color: '#fff', fontWeight: '700' }}>Accept</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={onDeny} style={{ backgroundColor: Colors.brand.status.rejected, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 }}>
+                <Text style={{ color: '#fff', fontWeight: '700' }}>Deny</Text>
+              </TouchableOpacity>
             </RNView>
           )}
         </RNView>
@@ -282,7 +272,7 @@ export default function ReviewerSubmitScreen() {
       ) : (
         <View style={{ backgroundColor: Colors.brand.cardBackground, borderRadius: 12, padding: 12 }}>
           <Text style={{ color: Colors.brand.textSecondary }}>
-            {request?.status === 'pending' ? 'Awaiting your acceptance to proceed.' : request?.status === 'accepted' ? 'Awaiting payment from the user.' : 'This request is not ready for review yet.'}
+            {request?.status === 'pending' ? 'Payment pending. Reviewer actions are disabled until payment is complete.' : request?.status === 'accepted' ? 'Payment pending. Actions will unlock after payment.' : 'This request is not ready for review yet.'}
           </Text>
         </View>
       )}

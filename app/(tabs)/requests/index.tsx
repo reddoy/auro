@@ -9,7 +9,6 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { getReviewerById, getRequestsByUser, getUserProfile, getRequestsByReviewer, getProfileById, archiveRequest, unarchiveRequest } from '@/lib/api';
 import { getSignedAvatarUrl } from '@/lib/profile';
-import { openPaymentSheet } from '@/lib/payments';
 import type { DbReviewerSummary, DbRequestSummary } from '@/types';
 import StatusBadge from '@/components/StatusBadge';
 import { useToast } from '@/components/Toast';
@@ -197,32 +196,7 @@ export default function RequestsScreen() {
     router.push('/(tabs)/requests/new');
   };
 
-  const handlePayNow = async (request: DbRequestSummary) => {
-    const reviewer = revMap[request.influencerId];
-    const amount = reviewer?.pricePerReview != null ? reviewer.pricePerReview : 50;
-    try {
-      const res = await openPaymentSheet({ amountCents: Math.round(amount * 100), currency: 'usd', requestId: request.id });
-      if (!res.completed) {
-        if (res.errorMessage) Alert.alert('Payment failed', res.errorMessage);
-        return;
-      }
-      // Rely on webhook to update DB; refresh UI shortly after
-      show('Payment successful. Updating shortly...');
-      setTimeout(() => {
-        (async () => {
-          try {
-            const p = await getUserProfile();
-            if (p?.id) {
-              const refreshed = await getRequestsByUser(p.id);
-              setRequests(refreshed);
-            }
-          } catch {}
-        })();
-      }, 1500);
-    } catch (e: any) {
-      Alert.alert('Payment error', e?.message || 'Please try again.');
-    }
-  };
+  // Payment is handled on web only. In-app pay is disabled.
 
   const renderReceivedItem = ({ item }: { item: DbRequestSummary }) => {
     const reviewer = revMap[item.influencerId];
@@ -269,19 +243,13 @@ export default function RequestsScreen() {
           </View>
         )}
         {/* Photo previews removed per request */}
-        {item.status === 'accepted' ? (
-          <TouchableOpacity
-            style={styles.payNowButton}
-            onPress={() => handlePayNow(item)}
-          >
-            <ExpoLinearGradient
-              colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 12 }}
-            />
-            <Text style={styles.payNowText}>Pay now</Text>
-          </TouchableOpacity>
+        {(item.status === 'accepted' || item.status === 'pending') ? (
+          <RNView style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackgroundLight, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: Colors.brand.border }}>
+            <Text style={{ color: Colors.brand.textSecondary, fontWeight: '700' }}>Payment pending</Text>
+            <Text style={{ color: Colors.brand.textSecondary, marginTop: 4 }}>
+              {isReviewer ? 'Waiting for the requester to finish payment. They have 30 days to finish payment.' : 'Please check your email regarding payment. You have 30 days to complete payment.'}
+            </Text>
+          </RNView>
         ) : null}
 
         {item.status === 'completed' && (
@@ -773,19 +741,7 @@ const styles = StyleSheet.create({
     color: Colors.brand.textSecondary,
     fontWeight: '600',
   },
-  payNowButton: {
-    marginTop: 14,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    overflow: 'hidden',
-    backgroundColor: 'transparent',
-  },
-  payNowText: {
-    color: Colors.brand.textOnGradient,
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  
 });
 
 

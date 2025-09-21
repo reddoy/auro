@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import React from 'react';
+import { Poppins } from 'next/font/google';
 import '../styles.css';
 
 export const metadata: Metadata = {
@@ -14,12 +15,13 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const poppins = Poppins({ subsets: ['latin'], weight: ['400', '600', '700'] });
   return (
     <html lang="en">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
       </head>
-      <body>
+      <body className={poppins.className}>
         <header className="nav">
           <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <a href="/" className="brand" aria-label="Auro Home">

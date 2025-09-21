@@ -1,4 +1,5 @@
-import * as FileSystem from 'expo-file-system';
+// Use legacy API for readAsStringAsync on SDK 54+
+import { readAsStringAsync } from 'expo-file-system/legacy';
 import Constants from 'expo-constants';
 import { supabase } from './supabase';
 
@@ -52,9 +53,9 @@ export async function uploadRequestMedia(
   const path = `${user.id}/requests/${Date.now()}_${safeCategory}.${ext}`;
 
   try { opts.onProgress?.(10); } catch {}
-  const base64 = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.Base64 });
+  const base64 = await readAsStringAsync(fileUri, { encoding: 'base64' as any });
   try { opts.onProgress?.(60); } catch {}
-  const fileBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  const fileBytes = base64ToUint8Array(base64);
   const contentType = buildContentTypeFromExt(ext);
 
   const { error: uploadError } = await supabase
@@ -73,6 +74,34 @@ export async function uploadRequestMedia(
   return { publicUrl, path };
 }
 
+
+function base64ToUint8Array(b64: string): Uint8Array {
+  const atobGlobal: any = (globalThis as any).atob;
+  const binary = typeof atobGlobal === 'function' ? atobGlobal(b64) : polyfillAtob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function polyfillAtob(input: string): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+  let str = String(input).replace(/\s+/g, '');
+  let output = '';
+  let i = 0;
+  while (i < str.length) {
+    const enc1 = chars.indexOf(str.charAt(i++));
+    const enc2 = chars.indexOf(str.charAt(i++));
+    const enc3 = chars.indexOf(str.charAt(i++));
+    const enc4 = chars.indexOf(str.charAt(i++));
+    const chr1 = (enc1 << 2) | (enc2 >> 4);
+    const chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+    const chr3 = ((enc3 & 3) << 6) | enc4;
+    output += String.fromCharCode(chr1);
+    if (enc3 !== 64 && enc3 !== -1) output += String.fromCharCode(chr2);
+    if (enc4 !== 64 && enc4 !== -1) output += String.fromCharCode(chr3);
+  }
+  return output;
+}
 
 // Helpers to display media reliably by re-signing short-lived URLs to fresh signed URLs
 function extractBucketAndPath(maybeUrlOrPath: string): { bucket: string; path: string } | null {

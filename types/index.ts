@@ -104,11 +104,21 @@ export interface DbRequestSummary {
       sectionNotes?: { outfits?: string; room?: string; socials?: string };
       photoNotes?: Record<string, string>;
     };
+    media?: {
+      videoUrl?: string | null;
+      imageUrl?: string | null;
+    };
     createdAt?: string;
   } | null;
   // New fields mirrored from DB
   consent_social?: boolean;
   archived_at?: string | null;
+  // Amounts (all in cents)
+  amount_cents?: number | null;
+  application_fee_cents?: number | null;
+  stripe_fee_cents?: number | null;
+  net_amount_cents?: number | null;
+  auro_fee_bps?: number | null;
 }
 
 export interface DbUserProfile {

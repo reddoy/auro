@@ -13,6 +13,11 @@ function mapRequestRow(row: any): DbRequestSummary {
     review: row.review ?? null,
     consent_social: row.consent_social ?? (row.notes?.consent?.shareOnSocial ?? undefined),
     archived_at: row.archived_at ?? (row.archived_by_influencer ? (row.created_at || new Date().toISOString()) : null),
+    amount_cents: row.amount_cents ?? null,
+    application_fee_cents: row.application_fee_cents ?? null,
+    stripe_fee_cents: row.stripe_fee_cents ?? null,
+    net_amount_cents: row.net_amount_cents ?? null,
+    auro_fee_bps: row.auro_fee_bps ?? null,
   } as DbRequestSummary;
 }
 
@@ -42,7 +47,7 @@ export async function getInfluencerById(id: string): Promise<DbInfluencerSummary
 export async function getRequestsByUser(userId: string): Promise<DbRequestSummary[]> {
   const { data, error } = await supabase
     .from('requests')
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -52,7 +57,7 @@ export async function getRequestsByUser(userId: string): Promise<DbRequestSummar
 export async function getRequestById(id: string): Promise<DbRequestSummary | null> {
   const { data, error } = await supabase
     .from('requests')
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps')
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;
@@ -79,7 +84,7 @@ export async function createRequest(params: {
         status: 'pending',
       },
     ])
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps')
     .single();
   if (error) throw error;
   return mapRequestRow(data);
@@ -113,6 +118,32 @@ export async function getUserProfile(): Promise<DbUserProfile | null> {
     bio: null,
     avatarUrl: null,
   } as DbUserProfile;
+}
+
+// Ensure a profile row exists for the current user. Safe to call after login.
+export async function ensureProfileForCurrentUser(): Promise<void> {
+  const { data: sessionData } = await supabase.auth.getUser();
+  const user = sessionData.user;
+  if (!user) return;
+  try {
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (existing) return;
+  } catch {}
+  const payload: any = {
+    id: user.id,
+    full_name: user.user_metadata?.name || null,
+    username: user.user_metadata?.user_name || (user.email ? String(user.email).split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').slice(0, 24) : null),
+    avatar_url: user.user_metadata?.avatar_url || null,
+  };
+  try {
+    await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
+  } catch (e) {
+    // Swallow errors here to avoid blocking login; RLS or schema issues can be handled server-side
+  }
 }
 
 // New: list reviewers from profiles where is_reviewer = true
@@ -163,7 +194,7 @@ export async function getReviewerById(id: string): Promise<DbReviewerSummary | n
 export async function getRequestsByReviewer(reviewerId: string): Promise<DbRequestSummary[]> {
   const { data, error } = await supabase
     .from('requests')
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps')
     .eq('influencer_id', reviewerId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -176,7 +207,7 @@ export async function updateRequestStatus(requestId: string, status: string): Pr
     .from('requests')
     .update({ status })
     .eq('id', requestId)
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps')
     .maybeSingle();
   if (error) throw error;
   if (data) return mapRequestRow(data);
@@ -195,12 +226,13 @@ export async function submitRequestReview(params: {
   videoUrl?: string | null;
   imageUrl?: string | null;
 }): Promise<DbRequestSummary> {
-  const { requestId, review } = params;
+  const { requestId, review, videoUrl, imageUrl } = params;
+  const withMedia = { ...review, media: { videoUrl: videoUrl ?? null, imageUrl: imageUrl ?? null } } as any;
   const { data, error } = await supabase
     .from('requests')
-    .update({ review, status: 'completed' })
+    .update({ review: withMedia, status: 'completed' })
     .eq('id', requestId)
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps')
     .maybeSingle();
   if (error) throw error;
   if (data) return mapRequestRow(data);
@@ -211,11 +243,20 @@ export async function submitRequestReview(params: {
 
 // Reviewer decisions
 export async function acceptRequest(id: string): Promise<DbRequestSummary> {
-  // For now just set accepted; webhook/payment may later move to paid
-  return updateRequestStatus(id, 'accepted');
+  const current = await getRequestById(id);
+  if (!current) throw new Error('Request not found');
+  if (current.status !== 'paid') {
+    throw new Error('Cannot accept until payment is completed');
+  }
+  return updateRequestStatus(id, 'in_progress');
 }
 
 export async function denyRequest(id: string): Promise<DbRequestSummary> {
+  const current = await getRequestById(id);
+  if (!current) throw new Error('Request not found');
+  if (current.status !== 'paid') {
+    throw new Error('Cannot deny until payment is completed');
+  }
   return updateRequestStatus(id, 'rejected');
 }
 

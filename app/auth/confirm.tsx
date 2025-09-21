@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -9,6 +9,13 @@ import { supabase } from '@/lib/supabase';
 export default function ConfirmEmailScreen() {
   const { email } = useLocalSearchParams<{ email?: string }>();
   const [sending, setSending] = useState(false);
+  const [cooldownSec, setCooldownSec] = useState(0);
+
+  useEffect(() => {
+    if (cooldownSec <= 0) return;
+    const t = setInterval(() => setCooldownSec((s) => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(t);
+  }, [cooldownSec]);
 
   const handleResend = async () => {
     if (!email || typeof email !== 'string') {
@@ -21,7 +28,15 @@ export default function ConfirmEmailScreen() {
       if (error) throw error;
       Alert.alert('Sent', 'We’ve re-sent the confirmation email.');
     } catch (e: any) {
-      Alert.alert('Could not resend', e?.message || 'Please try again.');
+      const msg = String(e?.message || '');
+      const secMatch = msg.match(/after\s+(\d+)\s*seconds?/i);
+      const wait = Number(secMatch?.[1]) || 60;
+      if (/security\s*purposes|too\s*many|rate/i.test(msg)) {
+        setCooldownSec(wait);
+        Alert.alert('Please wait', `You can request another email in ${wait} seconds.`);
+      } else {
+        Alert.alert('Could not resend', msg || 'Please try again.');
+      }
     } finally {
       setSending(false);
     }
@@ -56,11 +71,11 @@ export default function ConfirmEmailScreen() {
             <Text style={styles.primaryBtnText}>Back to Sign In</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.secondaryBtn, sending && { opacity: 0.7 }]} disabled={sending} onPress={handleResend}>
+          <TouchableOpacity style={[styles.secondaryBtn, (sending || cooldownSec > 0) && { opacity: 0.7 }]} disabled={sending || cooldownSec > 0} onPress={handleResend}>
             {sending ? (
               <ActivityIndicator color={Colors.brand.textOnGradient} />
             ) : (
-              <Text style={styles.secondaryBtnText}>Resend verification email</Text>
+              <Text style={styles.secondaryBtnText}>{cooldownSec > 0 ? `Resend in ${cooldownSec}s` : 'Resend verification email'}</Text>
             )}
           </TouchableOpacity>
         </View>

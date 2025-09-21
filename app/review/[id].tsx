@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, View as RNView, ActivityIndicator } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, View as RNView, ActivityIndicator, Linking, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 
@@ -15,6 +15,7 @@ import PhotoCarousel from '@/components/PhotoCarousel';
 import StatusBadge from '@/components/StatusBadge';
 import Avatar from '@/components/Avatar';
 import { getSignedAvatarUrl } from '@/lib/profile';
+import * as Sharing from 'expo-sharing';
 
 export default function ReviewDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -34,10 +35,10 @@ export default function ReviewDetailScreen() {
     const s = request?.status as string | undefined;
     if (!s) return null;
     if (s === 'pending') {
-      return { labelOverride: 'Pending acceptance', text: 'Awaiting reviewer approval — if declined or no response in 30 days, you will be refunded.' };
+      return { labelOverride: 'Pending', text: 'Please check your email regarding payment. You have 30 days to complete payment.' };
     }
     if (s === 'accepted') {
-      return { labelOverride: undefined, text: 'Accepted means the reviewer agreed to your request. Complete payment to proceed—after payment, they have 30 days to submit your review.' };
+      return { labelOverride: undefined, text: 'Please check your email regarding payment. You have 30 days to complete payment.' };
     }
     if (s === 'paid') {
       return { labelOverride: 'Pending acceptance', text: 'Awaiting reviewer approval — if declined or no response in 30 days, you will be refunded.' };
@@ -147,6 +148,45 @@ export default function ReviewDetailScreen() {
     return 'Needs Work';
   };
 
+  const mediaVideoUrl = review?.media?.videoUrl as string | undefined;
+  const mediaImageUrl = review?.media?.imageUrl as string | undefined;
+
+  const openTikTok = async () => {
+    try {
+      const uri = mediaVideoUrl || mediaImageUrl;
+      if (uri && (await Sharing.isAvailableAsync())) {
+        await Sharing.shareAsync(uri);
+        return;
+      }
+    } catch {}
+    try {
+      const tiktokUrl = Platform.select({ ios: 'musically://camera', android: 'snssdk1128://openRecord' });
+      if (tiktokUrl && (await Linking.canOpenURL(tiktokUrl))) {
+        await Linking.openURL(tiktokUrl);
+        return;
+      }
+    } catch {}
+    Linking.openURL('https://www.tiktok.com/upload');
+  };
+
+  const openInstagramReels = async () => {
+    try {
+      const uri = mediaVideoUrl || mediaImageUrl;
+      if (uri && (await Sharing.isAvailableAsync())) {
+        await Sharing.shareAsync(uri);
+        return;
+      }
+    } catch {}
+    try {
+      const igUrl = Platform.select({ ios: 'instagram://camera', android: 'instagram://camera' });
+      if (igUrl && (await Linking.canOpenURL(igUrl))) {
+        await Linking.openURL(igUrl);
+        return;
+      }
+    } catch {}
+    Linking.openURL('https://www.instagram.com');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }}>
@@ -238,6 +278,32 @@ export default function ReviewDetailScreen() {
           <Text style={styles.feedbackTitle}>💬 General Feedback</Text>
           <Text style={styles.generalFeedback}>{review?.feedback?.generalFeedback}</Text>
         </View>
+
+        {(review?.feedback?.sectionNotes?.outfits || review?.feedback?.sectionNotes?.room || review?.feedback?.sectionNotes?.socials) ? (
+          <View style={styles.feedbackCard}>
+            <Text style={styles.feedbackTitle}>📋 Section Notes</Text>
+            {review?.feedback?.sectionNotes?.outfits ? (
+              <>
+                <Text style={[styles.feedbackTitle, { fontSize: 14 }]}>Outfits</Text>
+                <Text style={styles.generalFeedback}>{review?.feedback?.sectionNotes?.outfits}</Text>
+              </>
+            ) : null}
+            {review?.feedback?.sectionNotes?.room ? (
+              <>
+                <RNView style={{ height: 8 }} />
+                <Text style={[styles.feedbackTitle, { fontSize: 14 }]}>Room</Text>
+                <Text style={styles.generalFeedback}>{review?.feedback?.sectionNotes?.room}</Text>
+              </>
+            ) : null}
+            {review?.feedback?.sectionNotes?.socials ? (
+              <>
+                <RNView style={{ height: 8 }} />
+                <Text style={[styles.feedbackTitle, { fontSize: 14 }]}>Socials</Text>
+                <Text style={styles.generalFeedback}>{review?.feedback?.sectionNotes?.socials}</Text>
+              </>
+            ) : null}
+          </View>
+        ) : null}
       </View>)}
 
         {!!parsedNotes?.message && (
@@ -274,6 +340,13 @@ export default function ReviewDetailScreen() {
           </View>
         ) : null}
 
+        {mediaVideoUrl ? (
+          <View style={styles.mediaSection}>
+            <Text style={styles.sectionTitle}>Reviewer Video</Text>
+            <Text style={styles.videoHint}>Tap a button below to share your video to TikTok or Instagram.</Text>
+          </View>
+        ) : null}
+
         {parsedNotes?.media?.datingProfile ? (
           <View style={styles.mediaSection}>
             <Text style={styles.sectionTitle}>Dating Profile</Text>
@@ -283,6 +356,17 @@ export default function ReviewDetailScreen() {
         ) : null}
 
         <View style={styles.actionsSection}>
+        {request?.status === 'completed' && (mediaVideoUrl || mediaImageUrl) ? (
+          <>
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#000' }]} onPress={openTikTok}>
+              <Text style={styles.actionButtonText}>Post to TikTok</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#E1306C' }]} onPress={openInstagramReels}>
+              <Text style={styles.actionButtonText}>Post to Instagram Reels</Text>
+            </TouchableOpacity>
+            <RNView style={{ height: 8 }} />
+          </>
+        ) : null}
         <TouchableOpacity 
           style={styles.actionButton}
           onPress={() => router.push('/(tabs)/requests/new')}

@@ -52,7 +52,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
   const title = `${creator.displayName} – Auro Creator`;
   const description = `Request a review from ${creator.displayName} on Auro.`;
-  const url = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/creators/${creator.slug}`;
+  const url = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com'}/creators/${creator.slug}`;
   return {
     title,
     description,

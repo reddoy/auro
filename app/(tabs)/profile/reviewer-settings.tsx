@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform } from 'react-native';
+import { Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, Linking } from 'react-native';
 
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { getCurrentProfile, updateProfile } from '@/lib/profile';
 import type { Profile } from '@/types';
+import { createStripeExpressLoginLink, createStripeExpressOnboardingLink } from '@/lib/payments';
 
 export default function ReviewerSettingsScreen() {
   const [loading, setLoading] = useState(true);
@@ -13,6 +14,8 @@ export default function ReviewerSettingsScreen() {
   const [isReviewer, setIsReviewer] = useState(false);
   const [hourlyRate, setHourlyRate] = useState<string>('');
   const hourlyRateRef = useRef<any>(null);
+  const [stripePortalUrl, setStripePortalUrl] = useState<string | null>(null);
+  const [payoutsLoading, setPayoutsLoading] = useState(false);
 
   useEffect(() => {
     const run = async () => {
@@ -22,7 +25,10 @@ export default function ReviewerSettingsScreen() {
         if (p) {
           setIsReviewer(!!p.is_reviewer);
           setHourlyRate(p.hourly_rate != null ? String(p.hourly_rate) : '');
-          
+          try {
+            const link = await createStripeExpressLoginLink(p.id);
+            setStripePortalUrl(link);
+          } catch {}
         }
       } catch (e: any) {
         Alert.alert('Error', e?.message || 'Failed to load settings');
@@ -65,8 +71,61 @@ export default function ReviewerSettingsScreen() {
         <Text style={styles.hint}>Set your price per review. This appears on your request page.</Text>
 
         <LabeledInput label="Price per Review (optional)" value={hourlyRate} onChangeText={setHourlyRate} keyboardType="numeric" placeholder="e.g. 25" inputRef={hourlyRateRef} returnKeyType="done" blurOnSubmit />
+        {!!hourlyRate && !isNaN(Number(hourlyRate)) && (
+          <View style={{ marginTop: 8, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: Colors.brand.border, backgroundColor: Colors.brand.cardBackground }}>
+            {(() => {
+              const price = Math.max(0, Number(hourlyRate) || 0);
+              const auroFee = price * 0.15; // founders 15%
+              const stripeFee = Math.max(0, price * 0.029 + 0.3); // estimate
+              const net = Math.max(0, price - auroFee - stripeFee);
+              return (
+                <>
+                  <Text style={{ color: Colors.brand.textSecondary }}>Your price: ${price.toFixed(2)}</Text>
+                  <Text style={{ color: Colors.brand.textSecondary }}>Auro fee (15% founders): -${auroFee.toFixed(2)}</Text>
+                  <Text style={{ color: Colors.brand.textSecondary }}>Stripe est. fee (2.9% + $0.30): -${stripeFee.toFixed(2)}</Text>
+                  <Text style={{ color: Colors.brand.textPrimary, fontWeight: '900', marginTop: 4 }}>Estimated take-home: ${net.toFixed(2)}</Text>
+                </>
+              );
+            })()}
+          </View>
+        )}
+      </View>
 
-        
+      {/* Payouts section */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Payouts</Text>
+        <Text style={styles.hint}>Get paid via Stripe. Use the button below to set up or open your Stripe dashboard.</Text>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <TouchableOpacity
+            style={[styles.saveButton, { flex: 1, opacity: payoutsLoading ? 0.7 : 1 }]}
+            disabled={payoutsLoading}
+            onPress={async () => {
+              try {
+                setPayoutsLoading(true);
+                if (stripePortalUrl) {
+                  console.log('[stripe-login] Opening', stripePortalUrl);
+                  Linking.openURL(stripePortalUrl);
+                  return;
+                }
+                const reviewerId = profile?.id || '';
+                const url = await createStripeExpressOnboardingLink(reviewerId);
+                console.log('[stripe-onboarding] reviewerId:', reviewerId, 'url:', url);
+                if (url) {
+                  Linking.openURL(url);
+                } else {
+                  Alert.alert('Stripe', 'Setup link not available. Check env EXPO_PUBLIC_SUPABASE_URL and function URL envs.');
+                }
+              } catch (e: any) {
+                console.log('[stripe-onboarding] error', e?.message || e);
+                Alert.alert('Stripe', e?.message || 'Failed to open Stripe');
+              } finally {
+                setPayoutsLoading(false);
+              }
+            }}
+          >
+            <Text style={styles.saveButtonText}>{payoutsLoading ? 'Loading…' : (stripePortalUrl ? 'Open Stripe Dashboard' : 'Set up Stripe Payouts')}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.saveBar}>

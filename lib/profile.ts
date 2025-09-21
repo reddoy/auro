@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import Constants from 'expo-constants';
 import type { Profile, UserReview, ReviewerPackage } from '@/types';
 
@@ -102,6 +102,38 @@ export async function updateProfile(partial: Partial<Profile>): Promise<Profile>
   return data as Profile;
 }
 
+function decodeBase64ToBytes(base64: string): Uint8Array {
+  // Strip potential data URL prefix
+  const b64 = (base64 || '').split(',').pop() || '';
+  if (typeof (globalThis as any).atob === 'function') {
+    const binary = (globalThis as any).atob(b64);
+    const len = binary.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+  let str = b64.replace(/[^A-Za-z0-9+/=]/g, '');
+  let outputLength = str.length * 0.75;
+  if (str.endsWith('==')) outputLength -= 2;
+  else if (str.endsWith('=')) outputLength -= 1;
+  const bytes = new Uint8Array(outputLength | 0);
+  let p = 0;
+  for (let i = 0; i < str.length; ) {
+    const enc1 = chars.indexOf(str.charAt(i++));
+    const enc2 = chars.indexOf(str.charAt(i++));
+    const enc3 = chars.indexOf(str.charAt(i++));
+    const enc4 = chars.indexOf(str.charAt(i++));
+    const chr1 = (enc1 << 2) | (enc2 >> 4);
+    const chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+    const chr3 = ((enc3 & 3) << 6) | enc4;
+    bytes[p++] = chr1;
+    if (enc3 !== 64) bytes[p++] = chr2;
+    if (enc4 !== 64) bytes[p++] = chr3;
+  }
+  return bytes;
+}
+
 export async function uploadAvatar(fileUri: string): Promise<{ publicUrl: string; path: string }> {
   const AVATAR_BUCKET =
     process.env.EXPO_PUBLIC_SUPABASE_AVATAR_BUCKET ||
@@ -114,9 +146,10 @@ export async function uploadAvatar(fileUri: string): Promise<{ publicUrl: string
   const ext = getFileExtensionFromUri(fileUri) || 'jpg';
   const path = `${user.id}/${Date.now()}.${ext}`;
 
-  // Read file as base64 and upload raw bytes to avoid 0-byte blobs on iOS
-  const base64 = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.Base64 });
-  const fileBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  // Read file as base64 and upload raw bytes (robust across platforms)
+  const encoding: any = (FileSystem as any).EncodingType?.Base64 || 'base64';
+  const base64 = await FileSystem.readAsStringAsync(fileUri, { encoding } as any);
+  const fileBytes = decodeBase64ToBytes(base64);
   const contentType = buildContentTypeFromExt(ext);
 
   const { error: uploadError } = await supabase

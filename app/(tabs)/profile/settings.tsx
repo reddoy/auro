@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import AvatarUploader from '@/components/AvatarUploader';
+import SocialConnect from '@/components/SocialConnect';
 import { getCurrentProfile, updateProfile, getSignedAvatarUrl } from '@/lib/profile';
 import type { Profile } from '@/types';
 
@@ -193,6 +194,8 @@ export default function ProfileSettingsScreen() {
         <LabeledInput label="X (Twitter)" value={x} onChangeText={setX} placeholder="@username or https://x.com/username" autoCapitalize="none" inputRef={xRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => youtubeRef.current?.focus()} />
         <LabeledInput label="YouTube" value={youtube} onChangeText={setYoutube} placeholder="@username or channel URL" autoCapitalize="none" inputRef={youtubeRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => onlyfansRef.current?.focus()} />
         <LabeledInput label="OnlyFans" value={onlyfans} onChangeText={setOnlyfans} placeholder="@username or profile URL" autoCapitalize="none" inputRef={onlyfansRef} returnKeyType="done" blurOnSubmit />
+        <View style={{ height: 8 }} />
+        <SocialConnect />
       </View>
 
       <View style={styles.card}>

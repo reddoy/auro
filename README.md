@@ -59,8 +59,8 @@ We moved purchase and request creation to the web to avoid Apple IAP:
 Configure these env variables (set in CI, local `.env`, or platform env):
 
 ```
-CREATOR_WEB_BASE=https://creators.auro.<TLD>
-APP_UNIVERSAL_LINK_HOST=app.auro.<TLD>
+NEXT_PUBLIC_SITE_URL=https://www.appauro.com
+APP_UNIVERSAL_LINK_HOST=app.appauro.com
 EXPO_PUBLIC_DEEP_LINK_SCHEME=auro
 WEB_CHECKOUT_ENABLED=true
 STRIPE_SECRET_KEY=sk_live_...
@@ -80,7 +80,7 @@ ios.associatedDomains = [
 ```
 
 Stripe Dashboard:
-- Add a webhook endpoint pointing to `https://creators.auro.<TLD>/api/stripe/webhook` with events: `checkout.session.completed`, `charge.refunded`, `charge.refund.updated`.
+- Add a webhook endpoint pointing to `https://www.appauro.com/api/stripe/webhook` with events: `checkout.session.completed`, `charge.refunded`, `charge.refund.updated`.
 
 
 1. **Install dependencies**

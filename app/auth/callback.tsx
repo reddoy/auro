@@ -6,7 +6,7 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 
 export default function AuthCallback() {
-  const { code, error_description, error } = useLocalSearchParams();
+  const { code, error_description, error, linked } = useLocalSearchParams();
   const [status, setStatus] = useState<'loading'|'success'|'error'>('loading');
   const [message, setMessage] = useState('');
 
@@ -15,6 +15,12 @@ export default function AuthCallback() {
       if (error || error_description) {
         setStatus('error');
         setMessage(String(error_description || error));
+        return;
+      }
+      if (linked === '1') {
+        setStatus('success');
+        setMessage('Linked!');
+        setTimeout(() => router.replace('/(tabs)/profile'), 300);
         return;
       }
       if (typeof code === 'string') {

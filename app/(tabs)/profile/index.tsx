@@ -8,20 +8,31 @@ import { Text, View } from '@/components/Themed';
 import { supabase } from '@/lib/supabase';
 import Colors from '@/constants/Colors';
 import AvatarUploader from '@/components/AvatarUploader';
+import SocialConnect from '@/components/SocialConnect';
 import { getCurrentProfile, updateProfile, getSignedAvatarUrl } from '@/lib/profile';
 import type { Profile } from '@/types';
+import { createStripeExpressLoginLink, createStripeExpressOnboardingLink } from '@/lib/payments';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
+  const [stripePortalUrl, setStripePortalUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const run = async () => {
       try {
         const p = await getCurrentProfile();
         setProfile(p);
+        if (p?.id && p?.is_reviewer) {
+          try {
+            const link = await createStripeExpressLoginLink(p.id);
+            setStripePortalUrl(link);
+          } catch {}
+        } else {
+          setStripePortalUrl(null);
+        }
       } finally {
       }
     };
@@ -47,6 +58,23 @@ export default function ProfileScreen() {
     run();
     return () => { cancelled = true; };
   }, [profile?.avatar_url]);
+
+  // Debug: expose the current access token and user id when the profile tab loads
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        const userId = session?.user?.id;
+        console.log('[profile] auth session', { userId, hasToken: !!token });
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          (window as any).__auroSession = { token, userId };
+        }
+      } catch (e) {
+        console.log('[profile] getSession error', e);
+      }
+    })();
+  }, []);
 
   
 
@@ -169,6 +197,11 @@ export default function ProfileScreen() {
             </View>
 
             <View style={styles.bioSection}>
+              <Text style={styles.sectionTitle}>Social Accounts</Text>
+              <SocialConnect />
+            </View>
+
+            <View style={styles.bioSection}>
               <Text style={styles.sectionTitle}>Reviewer Settings</Text>
               <Text style={{ color: Colors.brand.textSecondary }}>Control your reviewer status and price per review.</Text>
               <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.brand.cardBackground }}>
@@ -216,6 +249,41 @@ export default function ProfileScreen() {
                       </TouchableOpacity>
                     </View>
                   </View>
+                  <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
+                    <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Payouts</Text>
+                    <View style={styles.priceCard}>
+                      <Text style={styles.priceText}>{stripePortalUrl ? 'Stripe connected' : 'Not connected'}</Text>
+                      <TouchableOpacity
+                        onPress={async () => {
+                          try {
+                            if (stripePortalUrl) {
+                              console.log('[stripe-login] Opening', stripePortalUrl);
+                              Linking.openURL(stripePortalUrl);
+                              return;
+                            }
+                            const reviewerId = profile?.id || '';
+                            const url = await createStripeExpressOnboardingLink(reviewerId);
+                            console.log('[stripe-onboarding] reviewerId:', reviewerId, 'url:', url);
+                            if (url) Linking.openURL(url);
+                            else Alert.alert('Stripe', 'Setup link not available. Check env EXPO_PUBLIC_SUPABASE_URL and function URL envs.');
+                          } catch (e: any) {
+                            console.log('[stripe-onboarding] error', e?.message || e);
+                            Alert.alert('Stripe', e?.message || 'Failed to open Stripe');
+                          }
+                        }}
+                        accessibilityLabel={stripePortalUrl ? 'Open Stripe Dashboard' : 'Set up Stripe payouts'}
+                        style={styles.editRateButton}
+                      >
+                        <ExpoLinearGradient
+                          colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                          style={styles.editRateGradient}
+                        />
+                        <Text style={styles.editRateText}>{stripePortalUrl ? 'Open' : 'Set up'}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
                 </>
               ) : (
                 <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
@@ -228,6 +296,8 @@ export default function ProfileScreen() {
                 </View>
               )}
             </View>
+
+            {/* Removed separate payouts banner; consolidated into Reviewer Settings card above */}
 
             {profile?.bio && (
               <View style={styles.bioSection}>

@@ -1,13 +1,14 @@
 import React, { useRef, useState } from 'react';
 import { Platform, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image, KeyboardAvoidingView, useWindowDimensions } from 'react-native';
-import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text, View } from '@/components/Themed';
+import { useLocalSearchParams, router } from 'expo-router';
 import Colors from '@/constants/Colors';
+import { ensureProfileForCurrentUser } from '@/lib/api';
 
 // Password requirement component
 function PasswordRequirement({ met, text }: { met: boolean; text: string }) {
@@ -24,6 +25,13 @@ function PasswordRequirement({ met, text }: { met: boolean; text: string }) {
 }
 
 export default function AuthScreen() {
+  const { linked } = useLocalSearchParams<{ linked?: string }>();
+  React.useEffect(() => {
+    if (linked === '1') {
+      // If we were deep-linked back after social linking, just pop to profile
+      setTimeout(() => router.replace('/(tabs)/profile'), 300);
+    }
+  }, [linked]);
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,6 +43,12 @@ export default function AuthScreen() {
   const isCompact = screenHeight <= 900; // Ensure iPhone 15 (852pt) is compact
   const isUltraCompact = screenHeight <= 780;
   const [signupStep, setSignupStep] = useState(0);
+  const [cooldownSec, setCooldownSec] = useState(0);
+  React.useEffect(() => {
+    if (cooldownSec <= 0) return;
+    const t = setInterval(() => setCooldownSec((s) => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(t);
+  }, [cooldownSec]);
 
   const nameRef = useRef<any>(null);
   const ageRef = useRef<any>(null);
@@ -93,6 +107,7 @@ export default function AuthScreen() {
           throw error;
         }
 
+        try { await ensureProfileForCurrentUser(); } catch {}
         // Proceed directly to app after successful login (email-only auth)
         router.replace('/(tabs)/requests');
       } else {
@@ -106,7 +121,7 @@ export default function AuthScreen() {
           default: 'auro://auth/callback',
         });
 
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -115,10 +130,19 @@ export default function AuthScreen() {
           },
         });
         if (error) throw error;
+        try { await ensureProfileForCurrentUser(); } catch {}
         router.replace({ pathname: '/auth/confirm', params: { email } });
       }
     } catch (err: any) {
-      Alert.alert('Auth error', err.message || 'Something went wrong');
+      const msg = String(err?.message || '');
+      const secMatch = msg.match(/after\s+(\d+)\s*seconds?/i);
+      if (/security\s*purposes|too\s*many|rate/i.test(msg)) {
+        const wait = Number(secMatch?.[1]) || 60;
+        setCooldownSec(wait);
+        Alert.alert('Please wait', `For security purposes, please try again in ${wait} seconds.`);
+        return;
+      }
+      Alert.alert('Auth error', msg || 'Something went wrong');
     }
   };
 
@@ -330,6 +354,7 @@ export default function AuthScreen() {
 
         <TouchableOpacity
           style={[styles.submitButton, isCompact && styles.submitButtonCompact]}
+          disabled={!isLogin && cooldownSec > 0}
           onPress={isLogin ? handleSubmit : (signupStep === 0 ? handleNextSignupStep : handleSubmit)}
         >
           <ExpoLinearGradient
@@ -339,7 +364,7 @@ export default function AuthScreen() {
             style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 28 }}
           />
           <Text style={styles.submitButtonText}>
-            {isLogin ? 'Login' : signupStep === 0 ? 'Next' : 'Create Account'}
+            {isLogin ? 'Login' : signupStep === 0 ? 'Next' : (cooldownSec > 0 ? `Create Account (${cooldownSec}s)` : 'Create Account')}
           </Text>
         </TouchableOpacity>
 

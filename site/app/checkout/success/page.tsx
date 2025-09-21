@@ -46,7 +46,27 @@ export default function CheckoutSuccessPage() {
     <div style={{ padding: 24 }}>
       <h1>Success</h1>
       <p>{message}</p>
-      <div style={{ marginTop: 16 }}>
+
+      <div style={{ marginTop: 24 }}>
+        <h2 style={{ marginBottom: 8 }}>Download our app to see your review</h2>
+        <p style={{ marginBottom: 12 }}>Install the app to track progress and get notified when your review is ready.</p>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <button
+            onClick={() => window.open('https://apps.apple.com/app/auro', '_blank')}
+            className="btn-primary"
+          >
+            Download for iOS
+          </button>
+          <button
+            onClick={() => window.open('https://play.google.com/store/apps/details?id=com.auro', '_blank')}
+            className="btn-primary"
+          >
+            Download for Android
+          </button>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 24 }}>
         <p>
           For updates via email, verify your address{email ? ` (${email})` : ''}.
         </p>
