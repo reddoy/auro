@@ -26,9 +26,9 @@ export async function POST(req: Request) {
     if (!secret) return new Response(JSON.stringify({ error: 'Missing STRIPE_SECRET_KEY' }), { status: 500 });
     const stripe = new Stripe(secret);
 
-    const link = await stripe.accounts.createLoginLink(connectAccountId, {
-      redirect_url: returnUrl || process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com',
-    });
+    // Stripe Node v18 AccountCreateLoginLinkParams does not support redirect_url.
+    // Use default login link without params; handle redirects on client if needed.
+    const link = await stripe.accounts.createLoginLink(connectAccountId);
     return new Response(JSON.stringify({ url: link.url }), { status: 200 });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e?.message || 'Failed to create login link' }), { status: 400 });
