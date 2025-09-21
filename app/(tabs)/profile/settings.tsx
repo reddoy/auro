@@ -67,7 +67,7 @@ export default function ProfileSettingsScreen() {
           // Resolve avatar to a displayable URL if it's a storage path
           let initialAvatar: string | null = p.avatar_url || null;
           if (initialAvatar && !/^https?:\/\//i.test(initialAvatar)) {
-            try { initialAvatar = (await getSignedAvatarUrl(initialAvatar, 3600)) || initialAvatar; } catch {}
+            try { initialAvatar = (await getSignedAvatarUrl(initialAvatar, 60 * 60 * 24 * 30)) || initialAvatar; } catch {}
           }
           setAvatarUrl(initialAvatar);
 
@@ -100,7 +100,7 @@ export default function ProfileSettingsScreen() {
   const handleUploaded = async ({ publicUrl, path }: { publicUrl: string; path: string }) => {
     try {
       // Prefer storing the storage path in DB; use signed URL for immediate display
-      const displayUrl = publicUrl || (await getSignedAvatarUrl(path, 3600)) || path;
+      const displayUrl = publicUrl || (await getSignedAvatarUrl(path, 60 * 60 * 24 * 30)) || path;
       setAvatarUrl(displayUrl);
       const updated = await updateProfile({ avatar_url: path });
       setProfile(updated);

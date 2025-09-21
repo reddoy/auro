@@ -20,7 +20,7 @@ export default function HomePage() {
         <div className="container">
           <div className="hero__inner">
             <div className="hero__copy">
-              <h1>ARE YOU CHOPPED?</h1>
+              <h1>Are You Chopped?</h1>
               <p className="sub">
                 Level up your attractiveness, style, and room setup with honest feedback from popular influencers. 
                 Get personalized ratings and actionable advice to improve your dating life.

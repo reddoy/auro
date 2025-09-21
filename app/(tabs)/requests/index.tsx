@@ -53,7 +53,7 @@ export default function RequestsScreen() {
                 const raw = (usr.avatarUrl || '').trim().replace(/^@+/, '');
                 let uri = raw;
                 if (raw) {
-                  try { uri = (await getSignedAvatarUrl(raw, 3600)) || raw; } catch {}
+                  try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
                 }
                 return [usr.id, uri] as const;
               })
@@ -81,7 +81,7 @@ export default function RequestsScreen() {
                 const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
                 let uri = raw;
                 if (raw) {
-                  try { uri = (await getSignedAvatarUrl(raw, 3600)) || raw; } catch {}
+                  try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
                 }
                 return [r.id, uri] as const;
               })
@@ -130,7 +130,7 @@ export default function RequestsScreen() {
                 const raw = (usr.avatarUrl || '').trim().replace(/^@+/, '');
                 let uri = raw;
                 if (raw) {
-                  try { uri = (await getSignedAvatarUrl(raw, 3600)) || raw; } catch {}
+                  try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
                 }
                 return [usr.id, uri] as const;
               })
@@ -156,7 +156,7 @@ export default function RequestsScreen() {
                 const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
                 let uri = raw;
                 if (raw) {
-                  try { uri = (await getSignedAvatarUrl(raw, 3600)) || raw; } catch {}
+                  try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
                 }
                 return [r.id, uri] as const;
               })

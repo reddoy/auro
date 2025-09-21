@@ -3,6 +3,9 @@ import React from 'react';
 import { Poppins } from 'next/font/google';
 import '../styles.css';
 
+// Fonts must be initialized at module scope
+const poppins = Poppins({ subsets: ['latin'], weight: ['400', '600', '700'] });
+
 export const metadata: Metadata = {
   title: 'Auro - Are You Chopped?',
   description: 'Level up your attractiveness, style, and room setup with honest feedback from popular influencers. Get personalized ratings and actionable advice to improve your dating life.',
@@ -15,7 +18,6 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const poppins = Poppins({ subsets: ['latin'], weight: ['400', '600', '700'] });
   return (
     <html lang="en">
       <head>

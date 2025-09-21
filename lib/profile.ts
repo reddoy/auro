@@ -200,8 +200,10 @@ export async function getSignedAvatarUrl(pathOrUrl: string, expiresInSeconds: nu
     (Constants.manifest2 as any)?.extra?.supabaseAvatarBucket ||
     'avatars';
   if (!pathOrUrl) return null;
+  // Normalize and sanitize accidental leading characters (e.g., '@')
+  const cleaned = (pathOrUrl || '').trim().replace(/^@+/, '');
   let bucket = AVATAR_BUCKET;
-  let objectPath = pathOrUrl;
+  let objectPath = cleaned;
 
   // If it looks like a full Supabase storage URL, extract bucket and object path and re-sign
   try {
@@ -214,7 +216,7 @@ export async function getSignedAvatarUrl(pathOrUrl: string, expiresInSeconds: nu
         objectPath = decodeURIComponent(withStorage[2]);
       } else {
         // Not a Supabase storage URL → return as-is
-        return pathOrUrl;
+        return cleaned;
       }
     } else if (pathOrUrl.startsWith('avatars/')) {
       // Some rows may store "avatars/..." including bucket prefix

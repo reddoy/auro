@@ -44,7 +44,6 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
       }
 
       try {
-        
         setError('');
         const { data, error } = await supabase
           .from('profiles')
@@ -52,18 +51,22 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
           .eq('is_reviewer', true)
           .order('rating_average', { ascending: false, nullsFirst: false });
 
-        
-        
         if (error) throw error;
-        
-        
-        
-          id: c.id, 
-          username: c.username, 
+
+        // Normalize data to ensure required fields exist
+        const normalized: Creator[] = (data || []).map((c: any) => ({
+          id: c.id,
+          username: c.username,
           avatar_url: c.avatar_url,
-          full_name: c.full_name 
-        })));
-        setCreators(data || []);
+          full_name: c.full_name,
+          skills: c.skills || [],
+          hourly_rate: c.hourly_rate ?? undefined,
+          rating_average: c.rating_average ?? undefined,
+          bio: c.bio ?? undefined,
+          links: c.links ?? undefined,
+        }));
+
+        setCreators(normalized);
       } catch (error: any) {
         console.error('Error fetching creators:', error);
         setError(error.message || 'Failed to fetch reviewers');

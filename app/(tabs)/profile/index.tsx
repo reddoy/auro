@@ -43,7 +43,8 @@ export default function ProfileScreen() {
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
-      const src = profile?.avatar_url || null;
+      const raw = (profile?.avatar_url || '').trim().replace(/^@+/, '');
+      const src = raw || null;
       if (!src) {
         if (!cancelled) setAvatarUri(undefined);
         return;
@@ -52,7 +53,8 @@ export default function ProfileScreen() {
         if (!cancelled) setAvatarUri(src);
         return;
       }
-      const signed = await getSignedAvatarUrl(src, 3600);
+      // Use a long-lived signed URL to avoid frequent expirations in UI (30 days)
+      const signed = await getSignedAvatarUrl(src, 60 * 60 * 24 * 30);
       if (!cancelled) setAvatarUri(signed || undefined);
     };
     run();
