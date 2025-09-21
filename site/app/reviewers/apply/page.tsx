@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 
 type SocialAccount = {
@@ -26,6 +26,7 @@ export default function FoundingReviewerApplyPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const isAuthed = useMemo(() => {
     return false;
@@ -104,8 +105,14 @@ export default function FoundingReviewerApplyPage() {
       return;
     }
     if (step === 2) {
-      // Account step: create account
-      if (!email || !password || !fullName) { setError('Please fill name, email and password'); return; }
+      // Account basics step
+      if (!fullName || !email) { setError('Please enter your name and email'); return; }
+      setStep(3);
+      return;
+    }
+    if (step === 3) {
+      // Password creation and account sign-up
+      if (!password || !passwordConfirm) { setError('Please create and confirm your password'); return; }
       if (!isPasswordValid) { setError('Password must be at least 8 chars with uppercase, lowercase, number, and symbol'); return; }
       if (!passwordsMatch) { setError('Passwords do not match'); return; }
       try {
@@ -113,7 +120,7 @@ export default function FoundingReviewerApplyPage() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: fullName, phone } }
+          options: { data: { full_name: fullName } }
         });
         if (error) throw error;
         if (data?.user) {
@@ -124,7 +131,7 @@ export default function FoundingReviewerApplyPage() {
               body: JSON.stringify({ userId: data.user.id, email, fullName })
             });
           } catch {}
-          setStep(3);
+          setStep(4);
         }
       } catch (e: any) {
         setError(e?.message || 'Sign up failed');
@@ -133,21 +140,18 @@ export default function FoundingReviewerApplyPage() {
       }
       return;
     }
-    if (step === 3) {
+    if (step === 4) {
       // Profile details step
       if (!rate || isNaN(Number(rate)) || Number(rate) <= 0) { setError('Please enter a valid rate'); return; }
-      try {
-        setLoading(true);
-        // proceed to Socials/Bio step next
-        setStep(4);
-      } catch (e: any) {
-        setError(e?.message || 'Failed to save application');
-      } finally {
-        setLoading(false);
-      }
+      setStep(5);
       return;
     }
-    if (step === 4) {
+    if (step === 5) {
+      // Socials step -> go to Bio & Focus
+      setStep(6);
+      return;
+    }
+    if (step === 6) {
       try {
         setLoading(true);
         const avatar = await uploadAvatarViaSignedUrl();
@@ -176,7 +180,7 @@ export default function FoundingReviewerApplyPage() {
         });
         const json = await resp.json();
         if (!resp.ok) throw new Error(json?.error || 'Failed to submit');
-        setStep(5);
+        setStep(7);
       } catch (e: any) {
         setError(e?.message || 'Failed to submit application');
       } finally {
@@ -189,7 +193,7 @@ export default function FoundingReviewerApplyPage() {
   // Stepper UI helper (match request flow styles)
   const Stepper = () => (
     <div className="progress-bar">
-      {['Intro','Account','Profile','Socials & Bio','Done'].map((label, idx) => {
+      {['Intro','Account','Password','Profile','Socials','Bio & Focus','Done'].map((label, idx) => {
         const s = idx + 1;
         const stateClass = step === s ? 'current' : (step > s ? 'active' : '');
         return (
@@ -232,45 +236,24 @@ export default function FoundingReviewerApplyPage() {
         <div className="container">
           <div className="request-content">
             <div className="step-header">
-              <h2>Create your account</h2>
-              <p>Sign up with email and set a password. We’ll send a verification email.</p>
+              <h2>Account</h2>
+              <p>Tell us who you are and how to reach you.</p>
             </div>
-          {error && <div className="error-message">{error}</div>}
-          <div className="form-fields">
-            <div className="form-field">
-              <label>Full name</label>
-              <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Doe" />
+            {error && <div className="error-message">{error}</div>}
+            <div className="form-fields">
+              <div className="form-field">
+                <label>Full name</label>
+                <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Doe" />
+              </div>
+              <div className="form-field">
+                <label>Email</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jane@example.com" />
+              </div>
             </div>
-            <div className="form-field">
-              <label>Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jane@example.com" />
+            <div className="step-actions">
+              <button className="btn-secondary" onClick={() => setStep(1)}>Back</button>
+              <button className="btn-primary" disabled={loading} onClick={handleNext}>{loading ? 'Please wait...' : 'Continue'}</button>
             </div>
-            <div className="form-field">
-              <label>Password</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 chars, upper, lower, number, symbol" />
-              <div style={{ marginTop: 6, fontSize: 12, color: isPasswordValid ? '#10b981' : '#ef4444' }}>Strength: {passwordStrength.label}</div>
-            </div>
-            <div className="form-field">
-              <label>Confirm password</label>
-              <input type="password" value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} placeholder="Re-enter password" />
-              {!passwordsMatch && passwordConfirm.length > 0 && (
-                <div style={{ marginTop: 6, fontSize: 12, color: '#ef4444' }}>Passwords do not match</div>
-              )}
-            </div>
-            <div className="form-field">
-              <label>Phone number</label>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 555 123 4567" />
-              <label className="checkbox-option" style={{ marginTop: 8 }}>
-                <input type="checkbox" checked={marketingConsent} onChange={(e) => setMarketingConsent(e.target.checked)} />
-                <span className="checkbox-custom"></span>
-                I agree to receive marketing messages by email and SMS
-              </label>
-            </div>
-          </div>
-          <div className="step-actions">
-            <button className="btn-secondary" onClick={() => setStep(1)}>Back</button>
-            <button className="btn-primary" disabled={loading} onClick={handleNext}>{loading ? 'Please wait...' : 'Continue'}</button>
-          </div>
           </div>
         </div>
       )}
@@ -278,31 +261,28 @@ export default function FoundingReviewerApplyPage() {
       {step === 3 && (
         <div className="container">
           <div className="request-content">
-          <div className="step-header">
-            <h2>Set up your reviewer profile</h2>
-          </div>
-          {error && <div className="error-message">{error}</div>}
-          <div className="form-fields">
-            <div className="form-field">
-              <label>Profile photo</label>
-              {avatarPreview ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <img src={avatarPreview} alt="Preview" style={{ width: 72, height: 72, borderRadius: 12, objectFit: 'cover' }} />
-                  <button className="btn-secondary" onClick={() => { setAvatarFile(null); setAvatarPreview(null); }}>Remove</button>
-                </div>
-              ) : (
-                <input type="file" accept="image/*" onChange={(e) => handleAvatarChange(e.target.files?.[0] || null)} />
-              )}
+            <div className="step-header">
+              <h2>Create a password</h2>
             </div>
-            <div className="form-field">
-              <label>Rate per review (USD)</label>
-              <input type="number" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="e.g. 25" />
+            {error && <div className="error-message">{error}</div>}
+            <div className="form-fields">
+              <div className="form-field">
+                <label>Password</label>
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 chars, upper, lower, number, symbol" />
+                <div style={{ marginTop: 6, fontSize: 12, color: isPasswordValid ? '#10b981' : '#ef4444' }}>Strength: {passwordStrength.label}</div>
+              </div>
+              <div className="form-field">
+                <label>Confirm password</label>
+                <input type="password" value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} placeholder="Re-enter password" />
+                {!passwordsMatch && passwordConfirm.length > 0 && (
+                  <div style={{ marginTop: 6, fontSize: 12, color: '#ef4444' }}>Passwords do not match</div>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="step-actions">
-            <button className="btn-secondary" onClick={() => setStep(2)}>Back</button>
-            <button className="btn-primary" disabled={loading} onClick={handleNext}>{loading ? 'Saving...' : 'Continue'}</button>
-          </div>
+            <div className="step-actions">
+              <button className="btn-secondary" onClick={() => setStep(2)}>Back</button>
+              <button className="btn-primary" disabled={loading} onClick={handleNext}>{loading ? 'Creating...' : 'Continue'}</button>
+            </div>
           </div>
         </div>
       )}
@@ -310,37 +290,99 @@ export default function FoundingReviewerApplyPage() {
       {step === 4 && (
         <div className="container">
           <div className="request-content">
-          <div className="step-header">
-            <h2>Socials and bio</h2>
-          </div>
-          {error && <div className="error-message">{error}</div>}
-          <div className="form-fields">
-            <div className="form-field">
-              <label>Instagram handle</label>
-              <input value={instagramHandle} onChange={(e) => setInstagramHandle(e.target.value)} placeholder="@username" />
+            <div className="step-header">
+              <h2>Set up your reviewer profile</h2>
             </div>
-            <div className="form-field">
-              <label>TikTok handle</label>
-              <input value={tiktokHandle} onChange={(e) => setTiktokHandle(e.target.value)} placeholder="@username" />
+            {error && <div className="error-message">{error}</div>}
+            <div className="form-fields">
+              <div className="form-field">
+                <label>Profile photo</label>
+                {avatarPreview ? (
+                  <div className="photo-item" style={{ width: 120, height: 120 }}>
+                    <img src={avatarPreview} alt="Preview" />
+                    <button type="button" className="remove-photo" onClick={() => { setAvatarFile(null); setAvatarPreview(null); }}>×</button>
+                  </div>
+                ) : (
+                  <div className="upload-placeholder" style={{ width: 160, height: 160 }} onClick={() => avatarInputRef.current?.click()}>
+                    <div className="upload-icon">🤳</div>
+                    <span>Add profile photo</span>
+                  </div>
+                )}
+                <input ref={avatarInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleAvatarChange(e.target.files?.[0] || null)} />
+              </div>
+              <div className="form-field">
+                <label>Rate per review (USD)</label>
+                <input type="number" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="e.g. 25" />
+              </div>
             </div>
-            <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-              <label>Bio</label>
-              <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Why you give reviews; what you focus on" rows={4} />
+            <div className="step-actions">
+              <button className="btn-secondary" onClick={() => setStep(3)}>Back</button>
+              <button className="btn-primary" disabled={loading} onClick={handleNext}>{loading ? 'Saving...' : 'Continue'}</button>
             </div>
-            <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-              <label>Focus areas</label>
-              <input value={focusAreas} onChange={(e) => setFocusAreas(e.target.value)} placeholder="e.g., wardrobe, room setup, selfies, dating profile" />
-            </div>
-          </div>
-          <div className="step-actions">
-            <button className="btn-secondary" onClick={() => setStep(3)}>Back</button>
-            <button className="btn-primary" disabled={loading} onClick={handleNext}>{loading ? 'Submitting...' : 'Submit Application'}</button>
-          </div>
           </div>
         </div>
       )}
 
       {step === 5 && (
+        <div className="container">
+          <div className="request-content">
+            <div className="step-header">
+              <h2>Socials</h2>
+            </div>
+            {error && <div className="error-message">{error}</div>}
+            <div className="form-fields">
+              <div className="form-field">
+                <label>Instagram handle</label>
+                <input value={instagramHandle} onChange={(e) => setInstagramHandle(e.target.value)} placeholder="@username" />
+              </div>
+              <div className="form-field">
+                <label>TikTok handle</label>
+                <input value={tiktokHandle} onChange={(e) => setTiktokHandle(e.target.value)} placeholder="@username" />
+              </div>
+              <div className="form-field">
+                <label>Phone number</label>
+                <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 555 123 4567" />
+                <label className="checkbox-option" style={{ marginTop: 8 }}>
+                  <input type="checkbox" checked={marketingConsent} onChange={(e) => setMarketingConsent(e.target.checked)} />
+                  <span className="checkbox-custom"></span>
+                  I agree to receive marketing messages by email and SMS
+                </label>
+              </div>
+            </div>
+            <div className="step-actions">
+              <button className="btn-secondary" onClick={() => setStep(4)}>Back</button>
+              <button className="btn-primary" disabled={loading} onClick={handleNext}>{loading ? 'Next...' : 'Continue'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {step === 6 && (
+        <div className="container">
+          <div className="request-content">
+            <div className="step-header">
+              <h2>Bio & Focus</h2>
+            </div>
+            {error && <div className="error-message">{error}</div>}
+            <div className="form-fields">
+              <div className="form-field">
+                <label>Bio</label>
+                <textarea value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Why you give reviews; what you focus on" rows={4} />
+              </div>
+              <div className="form-field">
+                <label>Focus areas</label>
+                <input value={focusAreas} onChange={(e) => setFocusAreas(e.target.value)} placeholder="e.g., wardrobe, room setup, selfies, dating profile" />
+              </div>
+            </div>
+            <div className="step-actions">
+              <button className="btn-secondary" onClick={() => setStep(5)}>Back</button>
+              <button className="btn-primary" disabled={loading} onClick={handleNext}>{loading ? 'Submitting...' : 'Submit Application'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {step === 7 && (
         <div className="container">
           <div className="success-card">
             <div className="success-icon">🎉</div>

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, TouchableOpacity, Alert, FlatList, Platform, Linking, Switch, View as RNView } from 'react-native';
+import { StyleSheet, TouchableOpacity, Alert, FlatList, Platform, Linking, Switch, View as RNView, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -8,10 +8,15 @@ import { Text, View } from '@/components/Themed';
 import { supabase } from '@/lib/supabase';
 import Colors from '@/constants/Colors';
 import AvatarUploader from '@/components/AvatarUploader';
-import SocialConnect from '@/components/SocialConnect';
 import { getCurrentProfile, updateProfile, getSignedAvatarUrl } from '@/lib/profile';
 import type { Profile } from '@/types';
 import { createStripeExpressLoginLink, createStripeExpressOnboardingLink } from '@/lib/payments';
+
+const socialIcons = {
+  instagram: require('../../../Instagram_icon-removebg-preview.png'),
+  tiktok: require('../../../tiktok-icon-free-png-removebg-preview.png'),
+  linktree: require('../../../linktreelogo.png'),
+};
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -197,10 +202,29 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            <View style={styles.bioSection}>
-              <Text style={styles.sectionTitle}>Social Accounts</Text>
-              <SocialConnect />
-            </View>
+            {!!profile?.links && (
+              <View style={styles.bioSection}>
+                <Text style={styles.sectionTitle}>Socials</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                  {(() => {
+                    const items: { label: string; url: string; key: 'instagram' | 'tiktok' | 'linktree' }[] = [];
+                    const l: any = profile?.links || {};
+                    const ig = (l.instagram || '').trim();
+                    const tt = (l.tiktok || '').trim();
+                    const lt = (l.linktree || '').trim();
+                    if (ig) items.push({ label: 'Instagram', url: `https://instagram.com/${ig.replace(/^@+/, '')}`, key: 'instagram' });
+                    if (tt) items.push({ label: 'TikTok', url: `https://www.tiktok.com/@${tt.replace(/^@+/, '')}`, key: 'tiktok' });
+                    if (lt) items.push({ label: 'Linktree', url: `https://linktr.ee/${lt.replace(/^@+/, '')}`, key: 'linktree' });
+                    return items.map((it, idx) => (
+                      <TouchableOpacity key={`${it.label}-${idx}`} onPress={() => Linking.openURL(it.url)} style={styles.socialLinkBtn}>
+                        <Image source={socialIcons[it.key]} style={styles.socialIcon} resizeMode="contain" />
+                        <Text style={styles.socialLinkText}>{it.label}</Text>
+                      </TouchableOpacity>
+                    ));
+                  })()}
+                </View>
+              </View>
+            )}
 
             <View style={styles.bioSection}>
               <Text style={styles.sectionTitle}>Reviewer Settings</Text>
@@ -413,6 +437,7 @@ const styles = StyleSheet.create({
   
   socialLinkBtn: { backgroundColor: Colors.brand.cardBackgroundLight, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, marginRight: 8, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
   socialLinkText: { color: Colors.brand.textPrimary, fontWeight: '600', fontSize: 14 },
+  socialIcon: { width: 18, height: 18, marginRight: 8 },
   
   // Legacy styles (keeping for backward compatibility)
   segmentContainer: { flexDirection: 'row', backgroundColor: Colors.brand.cardBackgroundLight, borderRadius: 10, margin: 16, overflow: 'hidden' },

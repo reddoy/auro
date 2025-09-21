@@ -6,7 +6,6 @@ import { supabase } from '@/lib/supabase';
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import AvatarUploader from '@/components/AvatarUploader';
-import SocialConnect from '@/components/SocialConnect';
 import { getCurrentProfile, updateProfile, getSignedAvatarUrl } from '@/lib/profile';
 import type { Profile } from '@/types';
 
@@ -22,9 +21,7 @@ export default function ProfileSettingsScreen() {
   const [skills, setSkills] = useState('');
   const [instagram, setInstagram] = useState('');
   const [tiktok, setTiktok] = useState('');
-  const [x, setX] = useState('');
-  const [youtube, setYoutube] = useState('');
-  const [onlyfans, setOnlyfans] = useState('');
+  const [linktree, setLinktree] = useState('');
   const [isReviewer, setIsReviewer] = useState(false);
   const [hourlyRate, setHourlyRate] = useState<string>('');
   
@@ -41,11 +38,30 @@ export default function ProfileSettingsScreen() {
   const skillsRef = useRef<any>(null);
   const instagramRef = useRef<any>(null);
   const tiktokRef = useRef<any>(null);
-  const xRef = useRef<any>(null);
-  const youtubeRef = useRef<any>(null);
-  const onlyfansRef = useRef<any>(null);
+  const linktreeRef = useRef<any>(null);
   const hourlyRateRef = useRef<any>(null);
   
+  // Normalize any user-entered social value to a handle-only string (no leading '@', no URL)
+  const normalizeHandle = (input: string): string => {
+    const raw = (input || '').trim();
+    if (!raw) return '';
+    let working = raw;
+    // If it's a URL, extract the last non-empty path segment
+    try {
+      const url = new URL(working);
+      const segments = (url.pathname || '')
+        .split('/')
+        .map(s => s.trim())
+        .filter(Boolean);
+      if (segments.length) {
+        working = segments[segments.length - 1];
+      }
+    } catch {}
+    // Remove leading '@' if present and strip query/hash remnants
+    working = working.replace(/^@+/, '').replace(/[#?].*$/, '');
+    return working;
+  };
+
 
   useEffect(() => {
     const run = async () => {
@@ -57,11 +73,9 @@ export default function ProfileSettingsScreen() {
           setUsername(p.username || '');
           setBio(p.bio || '');
           setSkills((p.skills || []).join(', '));
-          setInstagram((p.links as any)?.instagram || '');
-          setTiktok((p.links as any)?.tiktok || '');
-          setX((p.links as any)?.x || (p.links as any)?.twitter || '');
-          setYoutube((p.links as any)?.youtube || '');
-          setOnlyfans((p.links as any)?.onlyfans || '');
+          setInstagram(normalizeHandle((p.links as any)?.instagram || ''));
+          setTiktok(normalizeHandle((p.links as any)?.tiktok || ''));
+          setLinktree(normalizeHandle((p.links as any)?.linktree || ''));
           setIsReviewer(!!p.is_reviewer);
           setHourlyRate(p.hourly_rate != null ? String(p.hourly_rate) : '');
           // Resolve avatar to a displayable URL if it's a storage path
@@ -124,18 +138,17 @@ export default function ProfileSettingsScreen() {
   const handleSave = async () => {
     try {
       setSaving(true);
+      const links = {
+        instagram: normalizeHandle(instagram) || null,
+        tiktok: normalizeHandle(tiktok) || null,
+        linktree: normalizeHandle(linktree) || null,
+      } as any;
       const payload: Partial<Profile> = {
         full_name: fullName || null,
         username: username || null,
         bio: bio || null,
         skills: parsedSkills.length ? parsedSkills : [],
-        links: { 
-          instagram: instagram || null, 
-          tiktok: tiktok || null, 
-          x: x || null, 
-          youtube: youtube || null, 
-          onlyfans: onlyfans || null 
-        },
+        links,
         is_reviewer: isReviewer,
         hourly_rate: hourlyRate ? Number(hourlyRate) : null,
         preferences: { email_notifications: emailNotif, push_notifications: pushNotif },
@@ -189,13 +202,10 @@ export default function ProfileSettingsScreen() {
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Social Media</Text>
-        <LabeledInput label="Instagram" value={instagram} onChangeText={setInstagram} placeholder="@username or https://instagram.com/username" autoCapitalize="none" inputRef={instagramRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => tiktokRef.current?.focus()} />
-        <LabeledInput label="TikTok" value={tiktok} onChangeText={setTiktok} placeholder="@username or https://tiktok.com/@username" autoCapitalize="none" inputRef={tiktokRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => xRef.current?.focus()} />
-        <LabeledInput label="X (Twitter)" value={x} onChangeText={setX} placeholder="@username or https://x.com/username" autoCapitalize="none" inputRef={xRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => youtubeRef.current?.focus()} />
-        <LabeledInput label="YouTube" value={youtube} onChangeText={setYoutube} placeholder="@username or channel URL" autoCapitalize="none" inputRef={youtubeRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => onlyfansRef.current?.focus()} />
-        <LabeledInput label="OnlyFans" value={onlyfans} onChangeText={setOnlyfans} placeholder="@username or profile URL" autoCapitalize="none" inputRef={onlyfansRef} returnKeyType="done" blurOnSubmit />
-        <View style={{ height: 8 }} />
-        <SocialConnect />
+        <LabeledInput label="Instagram" value={instagram} onChangeText={setInstagram} placeholder="instagram handle (no @)" autoCapitalize="none" inputRef={instagramRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => tiktokRef.current?.focus()} />
+        <LabeledInput label="TikTok" value={tiktok} onChangeText={setTiktok} placeholder="tiktok handle (no @)" autoCapitalize="none" inputRef={tiktokRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => linktreeRef.current?.focus()} />
+        <LabeledInput label="Linktree" value={linktree} onChangeText={setLinktree} placeholder="linktree handle (no @)" autoCapitalize="none" inputRef={linktreeRef} returnKeyType="done" blurOnSubmit />
+        <Text style={styles.hint}>Enter handles only. We’ll build profile links automatically.</Text>
       </View>
 
       <View style={styles.card}>
