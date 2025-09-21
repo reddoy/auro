@@ -30,7 +30,11 @@ export async function POST(req: Request) {
                 ? await stripe.paymentIntents.retrieve(paymentIntentId, { stripeAccount: stripeAccountId })
                 : await stripe.paymentIntents.retrieve(paymentIntentId);
               amountCents = typeof pi.amount === 'number' ? pi.amount : undefined;
-              const chargeId = (Array.isArray(pi.charges?.data) && pi.charges.data[0]?.id) ? pi.charges.data[0].id : undefined;
+              // List charges by payment_intent instead of reading from pi.charges (more stable types)
+              const chargeList = stripeAccountId
+                ? await stripe.charges.list({ payment_intent: paymentIntentId, limit: 1 }, { stripeAccount: stripeAccountId })
+                : await stripe.charges.list({ payment_intent: paymentIntentId, limit: 1 });
+              const chargeId = chargeList.data[0]?.id;
               if (chargeId) {
                 const charge = stripeAccountId
                   ? await stripe.charges.retrieve(chargeId, { stripeAccount: stripeAccountId })
