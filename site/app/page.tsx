@@ -20,10 +20,10 @@ export default function HomePage() {
         <div className="container">
           <div className="hero__inner">
             <div className="hero__copy">
-              <h1>Are You Chopped?</h1>
+              <h1>Look Your Best with Simple Advice</h1>
               <p className="sub">
-                Level up your attractiveness, style, and room setup with honest feedback from popular influencers. 
-                Get personalized ratings and actionable advice to improve your dating life.
+                Real creators give you easy tips to look better. Send a few photos.
+                Get friendly advice on your clothes and your room. Feel more confident.
               </p>
               <div className="cta-buttons">
                 {!isIOSTraffic && (
@@ -145,20 +145,7 @@ export default function HomePage() {
               <div className="author">- David, 31</div>
             </div>
           </div>
-          <div className="stats">
-            <div className="stat">
-              <div className="stat-number">10,000+</div>
-              <div className="stat-label">Reviews Completed</div>
-            </div>
-            <div className="stat">
-              <div className="stat-number">95%</div>
-              <div className="stat-label">Satisfaction Rate</div>
-            </div>
-            <div className="stat">
-              <div className="stat-number">4.8</div>
-              <div className="stat-label">Average Rating</div>
-            </div>
-          </div>
+          {/* Stats section removed per request */}
         </div>
       </section>
 
@@ -173,6 +160,24 @@ export default function HomePage() {
               <button className="cta-secondary">Download for Android</button>
             </div>
             <p className="cta-note">Available on App Store and Google Play</p>
+          </div>
+        </div>
+      </section>
+
+      {/* About RJ Section */}
+      <section className="about">
+        <div className="container">
+          <h2 className="section-title">About RJ</h2>
+          <div className="about__content" style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <img src="/rj-headshot.jpg" alt="RJ headshot" style={{ width: 160, height: 160, objectFit: 'cover', borderRadius: 12 }} />
+            <div className="about__text" style={{ maxWidth: 720 }}>
+              <p>
+                Hey! I’m RJ. I started Auro because I know a lot of people want help looking and feeling their best. Growing up, it was kinda embarrassing to ask my girl friends for advice on style or how to be more attractive—outside of my mom and sister (love them lol).
+              </p>
+              <p>
+                I built Auro so fans can get real advice from creators who live and breathe this stuff—helping people look, feel, and present their best is literally what they do every day.
+              </p>
+            </div>
           </div>
         </div>
       </section>
