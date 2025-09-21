@@ -29,6 +29,7 @@ export default function HomePage() {
                 {!isIOSTraffic && (
                   <a href="/request" className="cta-primary">Request a Review</a>
                 )}
+                <a href="/reviewers/apply" className="cta-secondary" style={{ marginLeft: 12 }}>Become a Founding Reviewer</a>
                 <div className="cta-secondary-container">
                   <input type="email" placeholder="Enter your email" />
                   <button>Get Early Access</button>

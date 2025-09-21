@@ -34,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </a>
             <nav>
               <a className="ghost" href="/">Home</a>
+              <a className="ghost" href="/reviewers/apply">Become a Reviewer</a>
             </nav>
           </div>
         </header>
