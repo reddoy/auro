@@ -39,23 +39,22 @@ export default function ProfileScreen() {
     run();
   }, []);
 
-  // Generate a signed URL for private bucket avatars (or use existing absolute URL)
+  // Generate a signed URL for private bucket avatars (always attempt to re-sign even if https)
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
       const raw = (profile?.avatar_url || '').trim().replace(/^@+/, '');
-      const src = raw || null;
-      if (!src) {
+      if (!raw) {
         if (!cancelled) setAvatarUri(undefined);
         return;
       }
-      if (/^https?:\/\//i.test(src)) {
-        if (!cancelled) setAvatarUri(src);
-        return;
-      }
-      // Use a long-lived signed URL to avoid frequent expirations in UI (30 days)
-      const signed = await getSignedAvatarUrl(src, 60 * 60 * 24 * 30);
-      if (!cancelled) setAvatarUri(signed || undefined);
+      // Always try to re-sign (handles stored public/signed Supabase URLs and bucket paths)
+      let finalUri: string | undefined = raw;
+      try {
+        const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
+        if (signed) finalUri = signed;
+      } catch {}
+      if (!cancelled) setAvatarUri(finalUri || undefined);
     };
     run();
     return () => { cancelled = true; };

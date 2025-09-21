@@ -8,6 +8,7 @@ export default function RequestsStackLayout() {
       <Stack.Screen name="[id]" />
       <Stack.Screen name="new" />
       <Stack.Screen name="reviewer" />
+      <Stack.Screen name="reviewer/profile" />
     </Stack>
   );
 }

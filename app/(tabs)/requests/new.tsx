@@ -7,12 +7,14 @@ import { getReviewers } from '@/lib/api';
 import { getSignedAvatarUrl } from '@/lib/profile';
 import type { DbReviewerSummary } from '@/types';
 import Avatar from '@/components/Avatar';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function DiscoverReviewersScreen() {
   const [reviewers, setReviewers] = useState<DbReviewerSummary[]>([]);
   const [avatarMap, setAvatarMap] = useState<Record<string, string | undefined>>({});
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     const run = async () => {
@@ -23,8 +25,11 @@ export default function DiscoverReviewersScreen() {
           const pairs = await Promise.all(
             list.map(async (r) => {
               let uri = r.avatarUrl || '';
-              if (uri && !/^https?:\/\//i.test(uri)) {
-                try { uri = (await getSignedAvatarUrl(uri, 3600)) || ''; } catch {}
+              if (uri) {
+                try {
+                  const signed = await getSignedAvatarUrl(uri, 3600);
+                  if (signed) uri = signed;
+                } catch {}
               }
               return [r.id, uri] as const;
             })
@@ -47,29 +52,29 @@ export default function DiscoverReviewersScreen() {
     );
   }, [reviewers, search]);
 
+  const openReviewerProfile = (rev: DbReviewerSummary) => {
+    try { router.push({ pathname: '/(tabs)/requests/reviewer/profile', params: { id: rev.id } } as any); } catch {}
+  };
+
   const renderItem = ({ item }: { item: DbReviewerSummary }) => (
-    <TouchableOpacity
-      style={styles.row}
-      onPress={() => router.push(`/requests/reviewer/${item.id}` as any)}
-      accessibilityRole="button"
-      accessibilityLabel={`Open ${item.displayName || item.username}`}
-    >
+    <RNView style={styles.row}>
       <RNView style={styles.avatarWrap}>
         <Avatar uri={avatarMap[item.id] || item.avatarUrl || undefined} name={item.displayName} size={56} />
       </RNView>
       <View style={styles.rowInfo}>
-        <Text style={styles.rowName}>{item.displayName || item.username || 'Reviewer'}</Text>
+        <TouchableOpacity onPress={() => openReviewerProfile(item)} accessibilityRole="link" accessibilityLabel={`Open ${item.displayName || item.username} profile`}>
+          <Text style={styles.rowName}>{item.displayName || item.username || 'Reviewer'}</Text>
+        </TouchableOpacity>
         {!!item.skills?.length && (
           <Text style={styles.rowSkills} numberOfLines={1}>{item.skills.join(', ')}</Text>
         )}
       </View>
-      {/* Removed the price badge */}
-    </TouchableOpacity>
+    </RNView>
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}> 
+    <SafeAreaView style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + 20 }]}> 
         <Text style={styles.title}>Discover Reviewers</Text>
       </View>
       <RNView style={styles.searchWrap}>
@@ -86,28 +91,28 @@ export default function DiscoverReviewersScreen() {
         data={filtered}
         keyExtractor={(it) => it.id}
         renderItem={renderItem}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 24 }}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyText}>{loading ? 'Loading…' : 'No reviewers found'}</Text>
           </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
   header: { padding: 16, paddingTop: 20, backgroundColor: Colors.brand.cardBackground, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, marginBottom: 8 },
-  title: { fontSize: 22, fontWeight: '700', color: Colors.brand.textPrimary },
+  title: { fontSize: 28, fontWeight: '700', color: Colors.brand.textPrimary },
   searchWrap: { paddingHorizontal: 16, paddingVertical: 10 },
-  searchInput: { borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, color: Colors.brand.textPrimary, backgroundColor: Colors.brand.cardBackground },
-  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.brand.cardBackground, padding: 14, borderRadius: 14, marginHorizontal: 16, marginBottom: 12 },
+  searchInput: { borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: Colors.brand.textPrimary, backgroundColor: Colors.brand.cardBackground, fontSize: 16 },
+  row: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.brand.cardBackground, padding: 16, borderRadius: 14, marginHorizontal: 16, marginBottom: 12 },
   avatarWrap: { width: 56, height: 56, borderRadius: 28, overflow: 'hidden', marginRight: 12, backgroundColor: Colors.brand.avatarPlaceholder },
   rowInfo: { flex: 1 },
-  rowName: { fontSize: 16, fontWeight: '700', color: Colors.brand.textPrimary },
-  rowSkills: { fontSize: 12, color: Colors.brand.textSecondary, marginTop: 2 },
+  rowName: { fontSize: 20, fontWeight: '700', color: Colors.brand.textPrimary },
+  rowSkills: { fontSize: 14, color: Colors.brand.textSecondary, marginTop: 2 },
   rowPrice: { fontSize: 14, fontWeight: '700', color: Colors.brand.accentMagenta, marginLeft: 8 },
   empty: { alignItems: 'center', justifyContent: 'center', paddingTop: 40 },
   emptyText: { color: Colors.brand.textSecondary },

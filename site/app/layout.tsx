@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   title: 'Auro - Are You Chopped?',
   description: 'Level up your attractiveness, style, and room setup with honest feedback from popular influencers. Get personalized ratings and actionable advice to improve your dating life.',
   keywords: 'dating advice, style feedback, attractiveness rating, influencer reviews, wardrobe advice, room setup',
+  icons: {
+    icon: '/auro_aura_logo.png',
+  },
   openGraph: {
     title: 'Auro - Are You Chopped?',
     description: 'Level up your attractiveness, style, and room setup with honest feedback from popular influencers.',
