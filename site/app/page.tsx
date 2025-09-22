@@ -14,9 +14,9 @@ export default function HomePage() {
   }, []);
 
   return (
-    <>
+    <div className="snap-container">
       {/* Hero Section */}
-      <section className="hero">
+      <section className="hero snap-section">
         <div className="bg-glow"></div>
         <div className="container">
           <div className="hero__inner">
@@ -31,20 +31,17 @@ export default function HomePage() {
                 <a href="/reviewers/apply" className="cta-secondary cta-secondary--bright" style={{ marginLeft: 12 }}>Become a Founding Reviewer</a>
               </div>
             </div>
-            <div className="hero__phones">
-              <div className="phone phone--left">
-                <img src="/auro_aura_logo.png" alt="Auro app screenshot showing review request interface" />
-              </div>
-              <div className="phone phone--right">
-                <img src="/auro_aura_logo.png" alt="Auro app screenshot showing review feedback" />
-              </div>
+            <div className="hero__media">
+              <figure className="screenshot-16x9">
+                <img src="/auro_aura_logo.png" alt="Auro web app screenshot" />
+              </figure>
             </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="features">
+      <section className="features snap-section">
         <div className="container">
           <h2 className="section-title">Why Choose Auro?</h2>
           <div className="features-grid">
@@ -83,7 +80,7 @@ export default function HomePage() {
       </section>
 
       {/* How It Works Section */}
-      <section className="how-it-works">
+      <section className="how-it-works snap-section">
         <div className="container">
           <h2 className="section-title">How It Works</h2>
           <div className="steps">
@@ -121,7 +118,7 @@ export default function HomePage() {
 
       {/* Social Proof Section (hidden for now, keep layout for later) */}
       {SHOW_TESTIMONIALS && (
-        <section className="social-proof">
+        <section className="social-proof snap-section">
           <div className="container">
             <h2 className="section-title">What Our Users Say</h2>
             <div className="testimonials">
@@ -149,7 +146,7 @@ export default function HomePage() {
       {/* CTA section removed per request */}
 
       {/* About RJ Section */}
-      <section className="about">
+      <section className="about snap-section">
         <div className="container">
           <h2 className="section-title">Why I started Auro</h2>
           <div className="about__content" style={{ display: 'flex', gap: 24, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', textAlign: 'center' }}>
@@ -165,7 +162,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }
 
