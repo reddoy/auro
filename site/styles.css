@@ -103,11 +103,11 @@ body {
 .hero__copy h1 {
   font-family: "Poppins", sans-serif;
   font-weight: 700;
-  font-size: clamp(36px, 5.2vw, 56px);
+  font-size: clamp(34px, 5vw, 52px);
   letter-spacing: -0.02em;
-  margin: 0 0 16px;
-  line-height: 1.1;
-  max-width: 16ch;
+  margin: 0 0 12px;
+  line-height: 1.12;
+  max-width: 14ch;
 }
 .hero__copy .sub {
   color: var(--text-2);
@@ -117,11 +117,20 @@ body {
 /* bullets under hero copy */
 .hero__bullets {
   color: var(--text-2);
-  margin: 0 0 24px;
-  padding-left: 20px;
+  margin: 0 0 20px;
+  padding-left: 0;
+  list-style: none;
 }
-.hero__bullets li { 
-  margin: 6px 0; 
+.hero__bullets li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+.hero__bullets li::before {
+  content: '✓';
+  color: var(--grad-start);
+  font-weight: 700;
 }
 
 /* Hero CTA Buttons */
@@ -209,6 +218,11 @@ body {
     max-width: 280px;
     text-align: center;
   }
+  .cta-secondary {
+    width: 100%;
+    max-width: 280px;
+    text-align: center;
+  }
   
   .cta-secondary-container {
     flex-direction: column;
@@ -260,10 +274,9 @@ body {
 }
 
 @media (max-width: 568px) {
-  .hero__phones {
-    grid-template-columns: 1fr;
-    max-width: 280px;
-  }
+  .hero__phones { display: none; }
+  .hero { padding: 12px 0 28px; }
+  .hero__bullets { max-width: 30ch; margin: 0 auto 18px; text-align: left; }
 }
 
 .bg-glow {

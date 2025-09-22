@@ -38,7 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </nav>
           </div>
         </header>
-        <main style={{ padding: '24px 0' }}>{children}</main>
+        <main style={{ padding: 0 }}>{children}</main>
         <footer>
           <div className="container footer__inner">
             <div>© {new Date().getFullYear()} Cool Hand Studios LLC. All rights reserved.</div>
