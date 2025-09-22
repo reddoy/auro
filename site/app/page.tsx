@@ -44,6 +44,7 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
+      <div className="section-sep" aria-hidden="true"></div>
       <section className="features">
         <div className="container">
           <h2 className="section-title">Why Choose Auro?</h2>
@@ -83,6 +84,7 @@ export default function HomePage() {
       </section>
 
       {/* How It Works Section */}
+      <div className="section-sep" aria-hidden="true"></div>
       <section className="how-it-works">
         <div className="container">
           <h2 className="section-title">How It Works</h2>
@@ -120,6 +122,7 @@ export default function HomePage() {
       </section>
 
       {/* Social Proof Section (hidden for now, keep layout for later) */}
+      <div className="section-sep" aria-hidden="true"></div>
       {SHOW_TESTIMONIALS && (
         <section className="social-proof">
           <div className="container">
@@ -148,6 +151,7 @@ export default function HomePage() {
 
       {/* CTA section removed per request */}
 
+      <div className="section-sep" aria-hidden="true"></div>
       {/* About RJ Section */}
       <section className="about">
         <div className="container">

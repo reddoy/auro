@@ -41,7 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="container" style={{ padding: '24px 0' }}>{children}</main>
         <footer>
           <div className="container footer__inner">
-            <div>© {new Date().getFullYear()} Auro. All rights reserved.</div>
+            <div>© {new Date().getFullYear()} Cool Hand Studios LLC. All rights reserved.</div>
             <div className="footer__links">
               <a href="/">Home</a>
               <a href="/privacy">Privacy</a>

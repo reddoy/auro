@@ -303,13 +303,23 @@ footer { border-top: 1px solid var(--divider); }
   background: rgba(255, 255, 255, 0.02);
 }
 
-/* Smooth blending between sections */
+/* Decorative separator between sections for smoother transitions */
+.section-sep {
+  height: 24px;
+  background: linear-gradient(180deg,
+    rgba(0,0,0,0) 0%,
+    color-mix(in srgb, var(--grad-start) 12%, transparent) 40%,
+    color-mix(in srgb, var(--grad-end) 12%, transparent) 60%,
+    rgba(0,0,0,0) 100%
+  );
+  opacity: .5;
+}
+
+/* Subtle gradient separators between sections */
 .features,
 .how-it-works,
 .social-proof,
-.about {
-  position: relative;
-}
+.about { position: relative; }
 
 .features::before,
 .how-it-works::before,
@@ -317,11 +327,10 @@ footer { border-top: 1px solid var(--divider); }
 .about::before {
   content: '';
   position: absolute;
-  left: 0;
-  right: 0;
-  top: -32px;
-  height: 64px;
-  background: linear-gradient(to bottom, rgba(26,11,46,0), rgba(26,11,46,0.85));
+  left: 0; right: 0; top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--grad-start) 30%, transparent), color-mix(in srgb, var(--grad-end) 30%, transparent), transparent);
+  opacity: .6;
   pointer-events: none;
 }
 
@@ -331,11 +340,10 @@ footer { border-top: 1px solid var(--divider); }
 .about::after {
   content: '';
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -32px;
-  height: 64px;
-  background: linear-gradient(to top, rgba(26,11,46,0), rgba(26,11,46,0.85));
+  left: 0; right: 0; bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--grad-end) 30%, transparent), color-mix(in srgb, var(--grad-start) 30%, transparent), transparent);
+  opacity: .6;
   pointer-events: none;
 }
 
