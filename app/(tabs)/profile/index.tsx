@@ -205,7 +205,7 @@ export default function ProfileScreen() {
             {!!profile?.links && (
               <View style={styles.bioSection}>
                 <Text style={styles.sectionTitle}>Socials</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', backgroundColor: Colors.brand.cardBackground }}>
                   {(() => {
                     const items: { label: string; url: string; key: 'instagram' | 'tiktok' | 'linktree' }[] = [];
                     const l: any = profile?.links || {};
@@ -435,9 +435,9 @@ const styles = StyleSheet.create({
   skillChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: Colors.brand.cardBackgroundLight, marginRight: 8, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(255, 111, 0, 0.1)' },
   skillChipText: { color: Colors.brand.textPrimary, fontSize: 14, fontWeight: '500' },
   
-  socialLinkBtn: { backgroundColor: Colors.brand.cardBackgroundLight, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 16, marginRight: 8, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
-  socialLinkText: { color: Colors.brand.textPrimary, fontWeight: '600', fontSize: 14 },
-  socialIcon: { width: 18, height: 18, marginRight: 8 },
+  socialLinkBtn: { backgroundColor: 'rgba(32,21,50,1.00)', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 16, marginRight: 8, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.08)', flexDirection: 'row', alignItems: 'center' },
+  socialLinkText: { color: Colors.brand.textPrimary, fontWeight: '700', fontSize: 16 },
+  socialIcon: { width: 20, height: 20, marginRight: 10, borderRadius: 4 },
   
   // Legacy styles (keeping for backward compatibility)
   segmentContainer: { flexDirection: 'row', backgroundColor: Colors.brand.cardBackgroundLight, borderRadius: 10, margin: 16, overflow: 'hidden' },

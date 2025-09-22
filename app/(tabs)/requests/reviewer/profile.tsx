@@ -1,14 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, View as RNView, Linking } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, View as RNView, Linking, Image } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 
-import { Text, View } from '@/components/Themed';
+import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import Avatar from '@/components/Avatar';
-import { getReviewerById } from '@/lib/api';
+import { getReviewerById, getRequestsByReviewer } from '@/lib/api';
 import { getSignedAvatarUrl } from '@/lib/profile';
+import { getReviewsReceived } from '@/lib/profile';
 import type { DbReviewerSummary } from '@/types';
+
+const socialIcons = {
+  instagram: require('../../../../Instagram_icon-removebg-preview.png'),
+  tiktok: require('../../../../tiktok-icon-free-png-removebg-preview.png'),
+  linktree: require('../../../../linktreelogo.png'),
+};
 
 export default function ReviewerProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -16,6 +23,9 @@ export default function ReviewerProfileScreen() {
   const [reviewer, setReviewer] = useState<DbReviewerSummary | null>(null);
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [completedCount, setCompletedCount] = useState<number>(0);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [avgRating, setAvgRating] = useState<number | null>(null);
 
   useEffect(() => {
     const run = async () => {
@@ -28,6 +38,25 @@ export default function ReviewerProfileScreen() {
           try { uri = (await getSignedAvatarUrl(uri, 60 * 60 * 24 * 30)) || uri; } catch {}
         }
         setAvatarUri(uri || undefined);
+        // Load stats in parallel
+        try {
+          const [reqs, recvd] = await Promise.all([
+            getRequestsByReviewer(String(id)),
+            getReviewsReceived(String(id)),
+          ]);
+          const completed = (reqs || []).filter((rq: any) => rq.status === 'completed').length;
+          setCompletedCount(completed);
+          setReviews(recvd.items || []);
+          if (recvd.items && recvd.items.length) {
+            const nums = recvd.items
+              .map((it: any) => Number(it.rating) || 0)
+              .filter((n: number) => !isNaN(n) && n > 0);
+            if (nums.length) setAvgRating(Number((nums.reduce((a: number, b: number) => a + b, 0) / nums.length).toFixed(2)));
+            else setAvgRating(r?.rating ?? null);
+          } else {
+            setAvgRating(r?.rating ?? null);
+          }
+        } catch {}
       } finally {
         setLoading(false);
       }
@@ -45,7 +74,7 @@ export default function ReviewerProfileScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
-        <View style={styles.card}>
+        <RNView style={styles.card}>
           <RNView style={{ alignItems: 'center' }}>
             <Avatar uri={avatarUri} name={reviewer?.displayName} size={96} />
             <Text style={styles.name}>{reviewer?.displayName || 'Reviewer'}</Text>
@@ -54,25 +83,61 @@ export default function ReviewerProfileScreen() {
             )}
           </RNView>
 
+          {/* Stats */}
+          <RNView style={styles.statsRow}>
+            <RNView style={styles.statCard}>
+              <Text style={styles.statNumber}>{completedCount}</Text>
+              <Text style={styles.statLabel}>Completed</Text>
+            </RNView>
+            <RNView style={styles.statCard}>
+              <Text style={styles.statNumber}>{avgRating != null ? avgRating : '—'}</Text>
+              <Text style={styles.statLabel}>Avg Rating</Text>
+            </RNView>
+          </RNView>
+
           {/* Social links */}
           {!!reviewer?.links && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Social Links</Text>
+            <RNView style={styles.section}>
+              <Text style={styles.sectionTitle}>Socials</Text>
               <RNView style={{ gap: 10 }}>
-                {Object.entries(reviewer.links).map(([key, value]) => {
-                  if (!value) return null;
-                  const label = key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-                  return (
-                    <TouchableOpacity key={key} style={styles.linkRow} onPress={() => openLink(String(value))} accessibilityRole="link" accessibilityLabel={`Open ${label}`}>
-                      <Text style={styles.linkText}>{label}</Text>
-                      <Text style={styles.linkUrl} numberOfLines={1}>{String(value)}</Text>
+                {(() => {
+                  const l: any = reviewer.links || {};
+                  const ig = (l.instagram || '').trim().replace(/^@+/, '');
+                  const tt = (l.tiktok || '').trim().replace(/^@+/, '');
+                  const lt = (l.linktree || '').trim().replace(/^@+/, '');
+                  const items: { key: 'instagram' | 'tiktok' | 'linktree'; handle: string; url: string; text: string }[] = [];
+                  if (ig) items.push({ key: 'instagram', handle: ig, url: `https://instagram.com/${ig}`, text: `@${ig}` });
+                  if (tt) items.push({ key: 'tiktok', handle: tt, url: `https://www.tiktok.com/@${tt}`, text: `@${tt}` });
+                  if (lt) items.push({ key: 'linktree', handle: lt, url: `https://linktr.ee/${lt}`, text: `${lt}` });
+                  return items.map((it) => (
+                    <TouchableOpacity key={it.key} style={styles.socialBtn} onPress={() => openLink(it.url)} accessibilityRole="link" accessibilityLabel={`Open ${it.key} ${it.handle}`}>
+                      <Image source={socialIcons[it.key]} style={styles.socialIcon} resizeMode="contain" />
+                      <Text style={styles.socialText}>{it.text}</Text>
                     </TouchableOpacity>
-                  );
-                })}
+                  ));
+                })()}
               </RNView>
-            </View>
+            </RNView>
           )}
-        </View>
+        </RNView>
+
+        {/* Reviews from clients */}
+        <RNView style={[styles.card, { marginTop: 16 }]}> 
+          <Text style={styles.sectionTitle}>Client Reviews</Text>
+          {reviews.length ? (
+            <RNView>
+              {reviews.slice(0, 5).map((rv: any) => (
+                <RNView key={rv.id} style={styles.reviewItem}>
+                  <Text style={styles.reviewRating}>{typeof rv.rating === 'number' ? `${rv.rating.toFixed(1)}★` : '—'}</Text>
+                  {!!rv.comment && <Text style={styles.reviewComment}>{rv.comment}</Text>}
+                  <Text style={styles.reviewMeta}>{new Date(rv.created_at || Date.now()).toLocaleDateString()}</Text>
+                </RNView>
+              ))}
+            </RNView>
+          ) : (
+            <Text style={styles.emptyText}>No reviews yet.</Text>
+          )}
+        </RNView>
       </ScrollView>
     </SafeAreaView>
   );
@@ -85,9 +150,19 @@ const styles = StyleSheet.create({
   bio: { marginTop: 8, fontSize: 15, color: Colors.brand.textPrimary, textAlign: 'center', lineHeight: 21 },
   section: { marginTop: 16 },
   sectionTitle: { fontSize: 18, fontWeight: '900', color: Colors.brand.textPrimary, marginBottom: 10 },
-  linkRow: { backgroundColor: Colors.brand.cardBackground, borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 12, padding: 12 },
-  linkText: { fontSize: 16, fontWeight: '700', color: Colors.brand.textPrimary },
-  linkUrl: { fontSize: 12, color: Colors.brand.textSecondary, marginTop: 4 },
+  socialBtn: { backgroundColor: 'rgba(32,21,50,1.00)', borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center' },
+  socialIcon: { width: 20, height: 20, marginRight: 10, borderRadius: 4 },
+  socialText: { color: Colors.brand.textPrimary, fontWeight: '700', fontSize: 16 },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 },
+  statCard: { flex: 1, backgroundColor: Colors.brand.cardBackgroundLight, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', marginRight: 8 },
+  statNumber: { color: Colors.brand.textPrimary, fontWeight: '800', fontSize: 18 },
+  statLabel: { color: Colors.brand.textSecondary, fontWeight: '600', fontSize: 12 },
+  reviewItem: { backgroundColor: Colors.brand.cardBackgroundLight, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', marginBottom: 10 },
+  reviewRating: { color: Colors.brand.accentMagenta, fontWeight: '800', marginBottom: 4 },
+  reviewComment: { color: Colors.brand.textPrimary, marginBottom: 4 },
+  reviewMeta: { color: Colors.brand.textSecondary, fontSize: 12 },
+  emptyText: { color: Colors.brand.textSecondary },
+  
 });
 
 
