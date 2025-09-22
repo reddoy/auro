@@ -609,13 +609,18 @@ footer { border-top: 1px solid var(--divider); }
 /* Progress Bar */
 .progress-bar {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 8px;
   margin: 0 auto;
   max-width: 100%;
   overflow-x: auto;
-  padding: 10px 0;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  scroll-padding-left: 12px;
+  padding: 10px 12px;
 }
+
+.progress-bar::-webkit-scrollbar { display: none; }
 
 .progress-step {
   display: flex;
@@ -627,6 +632,7 @@ footer { border-top: 1px solid var(--divider); }
   transition: all 0.3s ease;
   padding: 8px;
   border-radius: 8px;
+  scroll-snap-align: start;
 }
 
 .progress-step:hover {
@@ -690,6 +696,12 @@ footer { border-top: 1px solid var(--divider); }
   .step-title {
     font-size: 10px;
     max-width: 60px;
+  }
+}
+
+@media (min-width: 769px) {
+  .progress-bar {
+    justify-content: center;
   }
 }
 
