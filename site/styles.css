@@ -268,7 +268,8 @@ body {
 
 .bg-glow {
   position: absolute;
-  inset: -10% -20% -30% -20%;
+  inset: 0;
+  transform: translate3d(0, -64px, 0);
   background: radial-gradient(60% 60% at 50% 20%, color-mix(in srgb, var(--grad-end) 20%, transparent), transparent 60%),
               radial-gradient(60% 60% at 70% 40%, color-mix(in srgb, var(--grad-start) 24%, transparent), transparent 60%);
   filter: blur(40px);
