@@ -95,7 +95,10 @@ export default function HomePage() {
       {/* How It Works Section */}
       <section className="how-it-works">
         <div className="container">
-          <h2 className="section-title">How It Works</h2>
+          {/* Title as its own snap slide */}
+          <div className="snap-slide" style={{ justifyContent: 'center' }}>
+            <h2 className="section-title" style={{ margin: 0 }}>How It Works</h2>
+          </div>
           <div className="steps">
             <div className="step snap-slide">
               <div className="step-number">1</div>

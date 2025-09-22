@@ -85,10 +85,11 @@ body {
 
 /* Snap slides (apply to individual slides/items, not whole sections) */
 .snap-slide {
-  min-height: 100svh;
+  height: 100svh;
   scroll-snap-align: start;
   display: flex;
   align-items: center;
+  overflow: hidden;
 }
 
 /* Hero */
