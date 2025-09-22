@@ -87,9 +87,17 @@ body {
 .snap-slide {
   height: 100svh;
   scroll-snap-align: start;
+  scroll-snap-stop: always;
   display: flex;
   align-items: center;
   overflow: hidden;
+}
+
+/* First slide that sits under sticky nav */
+.snap-slide--under-nav { height: calc(100svh - var(--nav-h)); }
+
+@media (max-width: 568px) {
+  .screenshot-9x16 { width: min(55vw, 280px); }
 }
 
 /* Hero */

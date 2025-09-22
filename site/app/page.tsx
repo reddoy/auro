@@ -32,7 +32,7 @@ export default function HomePage() {
               </div>
             </div>
             <div className="hero__media">
-              <figure className="screenshot-9x16">
+              <figure className="screenshot-9x16" style={{ maxHeight: '70vh' }}>
                 <img src="/auro_aura_logo.png" alt="Auro web app screenshot" />
               </figure>
             </div>
@@ -162,18 +162,20 @@ export default function HomePage() {
       {/* CTA section removed per request */}
 
       {/* About RJ Section */}
-      <section className="about snap-section">
+      <section className="about">
         <div className="container">
-          <h2 className="section-title">Why I started Auro</h2>
-          <div className="about__content" style={{ display: 'flex', gap: 24, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', textAlign: 'center' }}>
-            <img src="/rj-headshot.jpg" alt="RJ headshot" style={{ width: 160, height: 160, objectFit: 'cover', borderRadius: 12 }} />
-            <div className="about__text" style={{ maxWidth: 720, textAlign: 'center' }}>
-              <p>
-                Hey, I’m RJ 👋. I started Auro because a lot of us want honest feedback on how we look, dress, and carry ourselves—but it’s not always easy to ask for it. Growing up, I’d get tips here and there from my mom and sister (shoutout to them 😅), but I wanted a way to get real, straightforward advice from people who actually live this stuff every day.
-              </p>
-              <p>
-                That’s what Auro is about: connecting fans with creators who know style, confidence, and presentation inside and out. Whether it’s polishing your look, leveling up your vibe, or just seeing yourself through a fresh lens—Auro makes it easy to get advice that actually helps you feel and look your best.
-              </p>
+          <div className="snap-slide" style={{ flexDirection: 'column', justifyContent: 'center' }}>
+            <h2 className="section-title" style={{ marginTop: 0 }}>Why I started Auro</h2>
+            <div className="about__content" style={{ display: 'flex', gap: 24, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', textAlign: 'center' }}>
+              <img src="/rj-headshot.jpg" alt="RJ headshot" style={{ width: 160, height: 160, objectFit: 'cover', borderRadius: 12 }} />
+              <div className="about__text" style={{ maxWidth: 720, textAlign: 'center' }}>
+                <p>
+                  Hey, I’m RJ 👋. I started Auro because a lot of us want honest feedback on how we look, dress, and carry ourselves—but it’s not always easy to ask for it. Growing up, I’d get tips here and there from my mom and sister (shoutout to them 😅), but I wanted a way to get real, straightforward advice from people who actually live this stuff every day.
+                </p>
+                <p>
+                  That’s what Auro is about: connecting fans with creators who know style, confidence, and presentation inside and out. Whether it’s polishing your look, leveling up your vibe, or just seeing yourself through a fresh lens—Auro makes it easy to get advice that actually helps you feel and look your best.
+                </p>
+              </div>
             </div>
           </div>
         </div>
