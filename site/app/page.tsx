@@ -21,7 +21,7 @@ export default function HomePage() {
           <div className="hero__inner">
             <div className="hero__copy">
               <h1>Your Glow-Up, Made Easy.</h1>
-              <p className="sub">Get advice from real creators.</p>
+              <p className="sub">Upload your photos. Get honest feedback from real creators. Feel your best.</p>
               <div className="cta-buttons">
                 {!isIOSTraffic && (
                   <a href="/request" className="cta-primary">Request a Review</a>
