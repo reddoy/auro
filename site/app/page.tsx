@@ -20,22 +20,14 @@ export default function HomePage() {
         <div className="container">
           <div className="hero__inner">
             <div className="hero__copy">
-              <h1>Look Your Best with Simple Advice</h1>
-              <p className="sub">
-                Real creators give you easy tips to look better. Send a few photos.
-                Get friendly advice on your clothes and your room. Feel more confident.
-              </p>
+              <h1>Your Glow-Up, Made Easy.</h1>
+              <p className="sub">Get advice from real creators.</p>
               <div className="cta-buttons">
                 {!isIOSTraffic && (
                   <a href="/request" className="cta-primary">Request a Review</a>
                 )}
                 <a href="/reviewers/apply" className="cta-secondary" style={{ marginLeft: 12 }}>Become a Founding Reviewer</a>
-                <div className="cta-secondary-container">
-                  <input type="email" placeholder="Enter your email" />
-                  <button>Get Early Access</button>
-                </div>
               </div>
-              <p className="legal">Join thousands of men already improving themselves with Auro</p>
             </div>
             <div className="hero__phones">
               <div className="phone phone--left">
