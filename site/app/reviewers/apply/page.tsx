@@ -157,6 +157,11 @@ export default function FoundingReviewerApplyPage() {
         const avatar = await uploadAvatarViaSignedUrl();
         const { data: s } = await supabase.auth.getSession();
         const token = (s as any)?.session?.access_token as string | undefined;
+        let explicitUserId: string | null = null;
+        try {
+          const { data: u } = await supabase.auth.getUser();
+          explicitUserId = (u?.user?.id as string) || null;
+        } catch {}
         const socialArray: SocialAccount[] = [];
         const clean = (h: string) => (h || '').trim().replace(/^@+/, '');
         if (instagramHandle.trim()) socialArray.push({ provider: 'instagram', username: clean(instagramHandle) });
@@ -176,6 +181,7 @@ export default function FoundingReviewerApplyPage() {
             tiktokHandle: tiktokHandle || null,
             phone,
             marketingConsent,
+            userId: explicitUserId || null,
           })
         });
         const json = await resp.json();

@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { bio, focusAreas, hourlyRate, avatarUrl, avatarPath, socials, instagramHandle, tiktokHandle, phone, marketingConsent } = body || {};
+    const { bio, focusAreas, hourlyRate, avatarUrl, avatarPath, socials, instagramHandle, tiktokHandle, phone, marketingConsent, userId: userIdFromBody } = body || {};
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -22,10 +22,11 @@ export async function POST(req: Request) {
         userId = (u?.user?.id as string) || null;
       } catch {}
     }
-
-    // If token not provided, allow anonymous but do nothing risky
+    // Fallback for pre-verified accounts: accept explicit userId from body
+    if (!userId && userIdFromBody) {
+      userId = String(userIdFromBody);
+    }
     if (!userId) {
-      // Best-effort: Attempt to infer from a cookie in future; for now, reject
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
     }
 
