@@ -143,28 +143,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Call to Action Section */}
-      <section className="cta-section">
-        <div className="container">
-          <div className="cta-content">
-            <h2>Ready to Level Up Your Game?</h2>
-            <p>Join thousands of men who have already improved their attractiveness and confidence with Auro.</p>
-            <div className="cta-buttons">
-              <button className="cta-primary">Download for iOS</button>
-              <button className="cta-secondary">Download for Android</button>
-            </div>
-            <p className="cta-note">Available on App Store and Google Play</p>
-          </div>
-        </div>
-      </section>
+      {/* CTA section removed per request */}
 
       {/* About RJ Section */}
       <section className="about">
         <div className="container">
-          <h2 className="section-title">About RJ</h2>
-          <div className="about__content" style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <h2 className="section-title">Why I started Auro</h2>
+          <div className="about__content" style={{ display: 'flex', gap: 24, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', textAlign: 'center' }}>
             <img src="/rj-headshot.jpg" alt="RJ headshot" style={{ width: 160, height: 160, objectFit: 'cover', borderRadius: 12 }} />
-            <div className="about__text" style={{ maxWidth: 720 }}>
+            <div className="about__text" style={{ maxWidth: 720, textAlign: 'center' }}>
               <p>
                 Hey! I’m RJ. I started Auro because I know a lot of people want help looking and feeling their best. Growing up, it was kinda embarrassing to ask my girl friends for advice on style or how to be more attractive—outside of my mom and sister (love them lol).
               </p>
