@@ -156,10 +156,10 @@ export default function HomePage() {
             <img src="/rj-headshot.jpg" alt="RJ headshot" style={{ width: 160, height: 160, objectFit: 'cover', borderRadius: 12 }} />
             <div className="about__text" style={{ maxWidth: 720, textAlign: 'center' }}>
               <p>
-                Hey! I’m RJ. I started Auro because I know a lot of people want help looking and feeling their best. Growing up, it was kinda embarrassing to ask my girl friends for advice on style or how to be more attractive—outside of my mom and sister (love them lol).
+                Hey, I’m RJ 👋. I started Auro because a lot of us want honest feedback on how we look, dress, and carry ourselves—but it’s not always easy to ask for it. Growing up, I’d get tips here and there from my mom and sister (shoutout to them 😅), but I wanted a way to get real, straightforward advice from people who actually live this stuff every day.
               </p>
               <p>
-                I built Auro so fans can get real advice from creators who live and breathe this stuff—helping people look, feel, and present their best is literally what they do every day.
+                That’s what Auro is about: connecting fans with creators who know style, confidence, and presentation inside and out. Whether it’s polishing your look, leveling up your vibe, or just seeing yourself through a fresh lens—Auro makes it easy to get advice that actually helps you feel and look your best.
               </p>
             </div>
           </div>
