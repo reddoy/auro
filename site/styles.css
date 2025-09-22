@@ -79,7 +79,7 @@ body {
 /* Hero */
 .hero {
   position: relative;
-  padding: 64px 0 48px;
+  padding: 24px 0 48px;
   overflow: hidden;
 }
 .hero__inner { 
@@ -91,7 +91,7 @@ body {
 
 @media (max-width: 900px) { 
   .hero {
-    padding: 32px 0 24px;
+    padding: 16px 0 24px;
   }
   .hero__inner { 
     grid-template-columns: 1fr; 
@@ -269,7 +269,7 @@ body {
 .bg-glow {
   position: absolute;
   inset: 0;
-  transform: translate3d(0, -64px, 0);
+  transform: translate3d(0, -24px, 0);
   background: radial-gradient(60% 60% at 50% 20%, color-mix(in srgb, var(--grad-end) 20%, transparent), transparent 60%),
               radial-gradient(60% 60% at 70% 40%, color-mix(in srgb, var(--grad-start) 24%, transparent), transparent 60%);
   filter: blur(40px);
@@ -304,17 +304,7 @@ footer { border-top: 1px solid var(--divider); }
   background: rgba(255, 255, 255, 0.02);
 }
 
-/* Decorative separator between sections for smoother transitions */
-.section-sep {
-  height: 24px;
-  background: linear-gradient(180deg,
-    rgba(0,0,0,0) 0%,
-    color-mix(in srgb, var(--grad-start) 12%, transparent) 40%,
-    color-mix(in srgb, var(--grad-end) 12%, transparent) 60%,
-    rgba(0,0,0,0) 100%
-  );
-  opacity: .5;
-}
+/* removed section separator */
 
 /* Subtle gradient separators between sections */
 .features,
