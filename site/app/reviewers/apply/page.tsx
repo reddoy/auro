@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { useRouter } from 'next/navigation';
 
 type SocialAccount = {
   provider: 'tiktok' | 'instagram';
@@ -27,6 +28,7 @@ export default function FoundingReviewerApplyPage() {
   const [error, setError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   const isAuthed = useMemo(() => {
     return false;
@@ -131,6 +133,11 @@ export default function FoundingReviewerApplyPage() {
               body: JSON.stringify({ userId: data.user.id, email, fullName })
             });
           } catch {}
+          try {
+            localStorage.setItem('auro_signup_user_id', data.user.id);
+            localStorage.setItem('auro_signup_email', email);
+            localStorage.setItem('auro_signup_full_name', fullName);
+          } catch {}
           setStep(4);
         }
       } catch (e: any) {
@@ -162,6 +169,10 @@ export default function FoundingReviewerApplyPage() {
           const { data: u } = await supabase.auth.getUser();
           explicitUserId = (u?.user?.id as string) || null;
         } catch {}
+        if (!explicitUserId) {
+          try { explicitUserId = localStorage.getItem('auro_signup_user_id'); } catch {}
+        }
+
         const socialArray: SocialAccount[] = [];
         const clean = (h: string) => (h || '').trim().replace(/^@+/, '');
         if (instagramHandle.trim()) socialArray.push({ provider: 'instagram', username: clean(instagramHandle) });
@@ -186,6 +197,7 @@ export default function FoundingReviewerApplyPage() {
         });
         const json = await resp.json();
         if (!resp.ok) throw new Error(json?.error || 'Failed to submit');
+        try { router.replace('/reviewers/thanks'); } catch {}
         setStep(7);
       } catch (e: any) {
         setError(e?.message || 'Failed to submit application');

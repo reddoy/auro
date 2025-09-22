@@ -35,7 +35,9 @@ export async function POST(req: Request) {
     if (typeof bio === 'string') updates.bio = bio;
     if (typeof focusAreas === 'string') updates.skills = focusAreas.split(',').map((s: string) => s.trim()).filter(Boolean);
     if (!isNaN(Number(hourlyRate))) updates.hourly_rate = Number(hourlyRate);
-    if (avatarUrl) updates.avatar_url = avatarUrl;
+    // Prefer storage path (server-readable) if available over signed URL
+    if (avatarPath) updates.avatar_url = avatarPath;
+    else if (avatarUrl) updates.avatar_url = avatarUrl;
     updates.is_reviewer = true;
     // Optionally store contact/marketing consent in preferences JSON
     updates.preferences = { marketing_consent: !!marketingConsent, phone: phone || null };
