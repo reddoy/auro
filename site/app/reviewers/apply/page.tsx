@@ -202,8 +202,22 @@ export default function FoundingReviewerApplyPage() {
       {['Intro','Account','Password','Profile','Socials','Bio & Focus','Done'].map((label, idx) => {
         const s = idx + 1;
         const stateClass = step === s ? 'current' : (step > s ? 'active' : '');
+        const isClickable = s < step; // allow navigating back to completed steps
+        const handleClick = () => {
+          if (isClickable) setStep(s);
+        };
         return (
-          <div key={label} className={`progress-step ${stateClass}`}>
+          <div
+            key={label}
+            className={`progress-step ${stateClass}`}
+            onClick={handleClick}
+            role={isClickable ? 'button' : undefined}
+            style={isClickable ? { cursor: 'pointer' } : undefined}
+            aria-disabled={!isClickable}
+            aria-current={step === s ? 'step' : undefined}
+            tabIndex={isClickable ? 0 : -1}
+            onKeyDown={(e) => { if (isClickable && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setStep(s); } }}
+          >
             <div className="step-number">{step > s ? '✓' : s}</div>
             <div className="step-title">{label}</div>
           </div>
