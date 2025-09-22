@@ -14,9 +14,9 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="snap-container">
+    <div>
       {/* Hero Section */}
-      <section className="hero snap-section">
+      <section className="hero">
         <div className="bg-glow"></div>
         <div className="container">
           <div className="hero__inner">
@@ -32,7 +32,7 @@ export default function HomePage() {
               </div>
             </div>
             <div className="hero__media">
-              <figure className="screenshot-16x9">
+              <figure className="screenshot-9x16">
                 <img src="/auro_aura_logo.png" alt="Auro web app screenshot" />
               </figure>
             </div>
@@ -41,71 +41,84 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section className="features snap-section">
+      <section className="features">
         <div className="container">
           <h2 className="section-title">Why Choose Auro?</h2>
+          {/* Each feature becomes a full-screen snap slide */}
           <div className="features-grid">
-            <div className="feature-card">
+            <div className="snap-slide">
+              <div className="feature-card">
               <div className="feature-icon">⭐</div>
               <h3>Honest Ratings</h3>
               <p>Get unbiased feedback on your attractiveness, style, and room setup from real female influencers.</p>
+              </div>
             </div>
-            <div className="feature-card">
+            <div className="snap-slide">
+              <div className="feature-card">
               <div className="feature-icon">👗</div>
               <h3>Style Advice</h3>
               <p>Receive personalized wardrobe recommendations and styling tips to enhance your overall look.</p>
+              </div>
             </div>
-            <div className="feature-card">
+            <div className="snap-slide">
+              <div className="feature-card">
               <div className="feature-icon">🏠</div>
               <h3>Room Setup</h3>
               <p>Transform your living space with expert advice on decor, lighting, and arrangement.</p>
+              </div>
             </div>
-            <div className="feature-card">
+            <div className="snap-slide">
+              <div className="feature-card">
               <div className="feature-icon">📱</div>
               <h3>Easy to Use</h3>
               <p>Simple mobile app interface makes requesting and receiving reviews effortless.</p>
+              </div>
             </div>
-            <div className="feature-card">
+            <div className="snap-slide">
+              <div className="feature-card">
               <div className="feature-icon">🔒</div>
               <h3>Secure & Private</h3>
               <p>Your photos and personal information are kept completely confidential and secure.</p>
+              </div>
             </div>
-            <div className="feature-card">
+            <div className="snap-slide">
+              <div className="feature-card">
               <div className="feature-icon">💬</div>
               <h3>Detailed Feedback</h3>
               <p>Get comprehensive reviews with specific suggestions for improvement in every area.</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* How It Works Section */}
-      <section className="how-it-works snap-section">
+      <section className="how-it-works">
         <div className="container">
           <h2 className="section-title">How It Works</h2>
           <div className="steps">
-            <div className="step">
+            <div className="step snap-slide">
               <div className="step-number">1</div>
               <div className="step-content">
                 <h3>Upload Photos</h3>
                 <p>Take or upload photos of yourself, your outfits, and your room setup through our mobile app.</p>
               </div>
             </div>
-            <div className="step">
+            <div className="step snap-slide">
               <div className="step-number">2</div>
               <div className="step-content">
                 <h3>Choose Your Reviewer</h3>
                 <p>Select from our network of verified female influencers based on their specialty and style.</p>
               </div>
             </div>
-            <div className="step">
+            <div className="step snap-slide">
               <div className="step-number">3</div>
               <div className="step-content">
                 <h3>Get Your Review</h3>
                 <p>Receive detailed feedback with ratings out of 10 and specific improvement suggestions.</p>
               </div>
             </div>
-            <div className="step">
+            <div className="step snap-slide">
               <div className="step-number">4</div>
               <div className="step-content">
                 <h3>Level Up</h3>
@@ -118,7 +131,7 @@ export default function HomePage() {
 
       {/* Social Proof Section (hidden for now, keep layout for later) */}
       {SHOW_TESTIMONIALS && (
-        <section className="social-proof snap-section">
+        <section className="social-proof">
           <div className="container">
             <h2 className="section-title">What Our Users Say</h2>
             <div className="testimonials">

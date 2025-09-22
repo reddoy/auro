@@ -83,13 +83,8 @@ body {
 }
 .ghost:hover { border-color: var(--divider); background: rgba(255,255,255,0.02); }
 
-/* Scroll-snap container for landing page */
-.snap-container {
-  scroll-snap-type: y mandatory;
-  scroll-padding-top: var(--nav-h);
-}
-
-.snap-section {
+/* Snap slides (apply to individual slides/items, not whole sections) */
+.snap-slide {
   min-height: 100svh;
   scroll-snap-align: start;
   display: flex;
@@ -312,17 +307,17 @@ body {
   pointer-events: none;
 }
 
-/* Hero media: single 16:9 screenshot */
+/* Hero media: single vertical 9:16 screenshot */
 .hero__media { 
   display: flex; 
   align-items: center; 
   justify-content: center; 
 }
 
-.screenshot-16x9 {
-  width: min(62vw, 820px);
+.screenshot-9x16 {
+  width: min(40vw, 420px);
   max-width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 9 / 16;
   border-radius: 20px;
   background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
   border: 1px solid var(--border);
@@ -330,11 +325,15 @@ body {
   overflow: hidden;
 }
 
-.screenshot-16x9 img {
+.screenshot-9x16 img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+@media (max-width: 900px) {
+  .screenshot-9x16 { width: min(70vw, 360px); }
 }
 
 /* Showcase */
@@ -359,7 +358,7 @@ footer { border-top: 1px solid var(--divider); }
 
 /* Features Section */
 .features {
-  padding: 80px 0;
+  padding: 0;
   background: rgba(255, 255, 255, 0.02);
 }
 
@@ -397,11 +396,7 @@ footer { border-top: 1px solid var(--divider); }
   pointer-events: none;
 }
 
-@media (max-width: 768px) {
-  .features {
-    padding: 48px 0;
-  }
-}
+/* no extra padding on mobile; slides handle spacing */
 
 .section-title {
   text-align: center;
@@ -411,11 +406,9 @@ footer { border-top: 1px solid var(--divider); }
   color: var(--text);
 }
 
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 24px;
-}
+/* Turn features into vertical snap slides */
+.features-grid { display: block; }
+.features-grid .snap-slide { justify-content: center; padding: 24px 0; }
 
 @media (max-width: 768px) {
   .features-grid {
@@ -459,7 +452,7 @@ footer { border-top: 1px solid var(--divider); }
 
 /* How It Works Section */
 .how-it-works {
-  padding: 80px 0;
+  padding: 0;
 }
 
 @media (max-width: 768px) {
@@ -468,10 +461,7 @@ footer { border-top: 1px solid var(--divider); }
   }
 }
 
-.steps {
-  max-width: 800px;
-  margin: 0 auto;
-}
+.steps { max-width: 800px; margin: 0 auto; }
 
 .step {
   display: flex;
@@ -480,6 +470,15 @@ footer { border-top: 1px solid var(--divider); }
   margin-bottom: 48px;
   position: relative;
 }
+
+/* When a step is a snap slide, center it and remove connectors */
+.step.snap-slide {
+  min-height: 100svh;
+  margin: 0;
+  align-items: center;
+  justify-content: center;
+}
+.step.snap-slide:after { display: none; }
 
 .step:not(:last-child):after {
   content: '';
