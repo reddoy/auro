@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 export default function HomePage() {
   const [isIOSTraffic, setIsIOSTraffic] = useState(false);
+  const SHOW_TESTIMONIALS = false; // Toggle on when ready to show
 
   useEffect(() => {
     // Check URL for iOS app flag
@@ -118,30 +119,32 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Social Proof Section */}
-      <section className="social-proof">
-        <div className="container">
-          <h2 className="section-title">What Our Users Say</h2>
-          <div className="testimonials">
-            <div className="testimonial">
-              <div className="rating">⭐⭐⭐⭐⭐</div>
-              <p>"Got amazing feedback on my style and room setup. Finally understand what women actually find attractive!"</p>
-              <div className="author">- Mike, 28</div>
+      {/* Social Proof Section (hidden for now, keep layout for later) */}
+      {SHOW_TESTIMONIALS && (
+        <section className="social-proof">
+          <div className="container">
+            <h2 className="section-title">What Our Users Say</h2>
+            <div className="testimonials">
+              <div className="testimonial">
+                <div className="rating">⭐⭐⭐⭐⭐</div>
+                <p>"Got amazing feedback on my style and room setup. Finally understand what women actually find attractive!"</p>
+                <div className="author">- Mike, 28</div>
+              </div>
+              <div className="testimonial">
+                <div className="rating">⭐⭐⭐⭐⭐</div>
+                <p>"The wardrobe advice was spot on. Matched with 3x more women after following the suggestions."</p>
+                <div className="author">- Jake, 25</div>
+              </div>
+              <div className="testimonial">
+                <div className="rating">⭐⭐⭐⭐⭐</div>
+                <p>"Honest, detailed feedback that actually helped. Worth every penny for the confidence boost alone."</p>
+                <div className="author">- David, 31</div>
+              </div>
             </div>
-            <div className="testimonial">
-              <div className="rating">⭐⭐⭐⭐⭐</div>
-              <p>"The wardrobe advice was spot on. Matched with 3x more women after following the suggestions."</p>
-              <div className="author">- Jake, 25</div>
-            </div>
-            <div className="testimonial">
-              <div className="rating">⭐⭐⭐⭐⭐</div>
-              <p>"Honest, detailed feedback that actually helped. Worth every penny for the confidence boost alone."</p>
-              <div className="author">- David, 31</div>
-            </div>
+            {/* Stats section removed per request */}
           </div>
-          {/* Stats section removed per request */}
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* CTA section removed per request */}
 

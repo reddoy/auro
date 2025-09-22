@@ -303,6 +303,42 @@ footer { border-top: 1px solid var(--divider); }
   background: rgba(255, 255, 255, 0.02);
 }
 
+/* Smooth blending between sections */
+.features,
+.how-it-works,
+.social-proof,
+.about {
+  position: relative;
+}
+
+.features::before,
+.how-it-works::before,
+.social-proof::before,
+.about::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -32px;
+  height: 64px;
+  background: linear-gradient(to bottom, rgba(26,11,46,0), rgba(26,11,46,0.85));
+  pointer-events: none;
+}
+
+.features::after,
+.how-it-works::after,
+.social-proof::after,
+.about::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -32px;
+  height: 64px;
+  background: linear-gradient(to top, rgba(26,11,46,0), rgba(26,11,46,0.85));
+  pointer-events: none;
+}
+
 @media (max-width: 768px) {
   .features {
     padding: 48px 0;
