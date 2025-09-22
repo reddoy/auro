@@ -49,10 +49,21 @@ body {
   position: sticky;
   top: 0;
   background: rgba(20, 10, 38, 0.98);
-  border-bottom: 1px solid var(--divider);
+  border-bottom: 0;
   box-shadow: 0 8px 24px -18px var(--shadow);
   backdrop-filter: saturate(140%) blur(4px);
   z-index: 50;
+}
+
+.nav::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--grad-start), var(--grad-end));
+  pointer-events: none;
 }
 .brand img { display: block; }
 .ghost {
@@ -569,6 +580,17 @@ footer { border-top: 1px solid var(--divider); }
   background: transparent;
   color: var(--text);
   border: 1px solid var(--border);
+}
+
+/* brighter variant so it is visible on dark bg */
+.cta-secondary--bright {
+  border-color: color-mix(in srgb, var(--grad-start) 55%, transparent);
+  color: #fff;
+  box-shadow: 0 8px 24px -12px rgba(255, 111, 0, 0.35);
+}
+.cta-secondary--bright:hover {
+  background: rgba(255, 111, 0, 0.08);
+  border-color: color-mix(in srgb, var(--grad-end) 55%, transparent);
 }
 
 .cta-primary:hover, .cta-secondary:hover {

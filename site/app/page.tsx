@@ -27,10 +27,7 @@ export default function HomePage() {
                 <li>Feel your best.</li>
               </ul>
               <div className="cta-buttons">
-                {!isIOSTraffic && (
-                  <a href="/request" className="cta-primary">Request a Review</a>
-                )}
-                <a href="/reviewers/apply" className="cta-secondary" style={{ marginLeft: 12 }}>Become a Founding Reviewer</a>
+                <a href="/reviewers/apply" className="cta-secondary cta-secondary--bright" style={{ marginLeft: 12 }}>Become a Founding Reviewer</a>
               </div>
             </div>
             <div className="hero__phones">
