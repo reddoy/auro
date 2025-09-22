@@ -48,8 +48,11 @@ body {
   padding: 18px 0;
   position: sticky;
   top: 0;
-  background: linear-gradient(to bottom, rgba(26,11,46,0.9), rgba(26,11,46,0.6) 60%, rgba(26,11,46,0));
-  backdrop-filter: saturate(140%) blur(6px);
+  background: rgba(20, 10, 38, 0.98);
+  border-bottom: 1px solid var(--divider);
+  box-shadow: 0 8px 24px -18px var(--shadow);
+  backdrop-filter: saturate(140%) blur(4px);
+  z-index: 50;
 }
 .brand img { display: block; }
 .ghost {
@@ -89,14 +92,25 @@ body {
 .hero__copy h1 {
   font-family: "Poppins", sans-serif;
   font-weight: 700;
-  font-size: clamp(32px, 5vw, 52px);
+  font-size: clamp(36px, 5.2vw, 56px);
   letter-spacing: -0.02em;
-  margin: 0 0 12px;
+  margin: 0 0 16px;
+  line-height: 1.1;
+  max-width: 16ch;
 }
 .hero__copy .sub {
   color: var(--text-2);
   font-size: 18px;
   margin: 0 0 24px;
+}
+/* bullets under hero copy */
+.hero__bullets {
+  color: var(--text-2);
+  margin: 0 0 24px;
+  padding-left: 20px;
+}
+.hero__bullets li { 
+  margin: 6px 0; 
 }
 
 /* Hero CTA Buttons */
