@@ -101,30 +101,13 @@ export default function HomePage() {
               <p>
                 Reviewers on Auro help fans level up with practical advice that actually moves the needle. If that sounds like you, I’d love for you to be part of the founding group.
               </p>
-              <div className="cta-buttons" style={{ marginTop: 16, justifyContent: 'center' }}>
-                <a href="/reviewers/apply" className="cta-primary">Apply to be a Reviewer</a>
-              </div>
+              {/* Removed extra CTA per request */}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Sticky bottom ribbon CTA */}
-      {showRibbon && (
-        <div className="bottom-ribbon" role="region" aria-label="Become a reviewer">
-          <div className="container" style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontWeight: 600 }}>Founding Reviewer Applications</span>
-              <span style={{ color: 'var(--text-2)' }}>Now open</span>
-              <a className="ribbon-link" href="https://coolhandstudios.xyz" target="_blank" rel="noopener noreferrer">coolhandstudios.xyz</a>
-            </div>
-            <div className="cta-buttons" style={{ margin: 0, flexDirection: 'row', alignItems: 'center' }}>
-              <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
-            </div>
-            <button aria-label="Close" className="ribbon-close" onClick={() => setShowRibbon(false)}>×</button>
-          </div>
-        </div>
-      )}
+      {/* Sticky bottom ribbon removed per request */}
     </div>
   );
 }
