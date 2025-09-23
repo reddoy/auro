@@ -746,6 +746,23 @@ footer { border-top: 1px solid var(--divider); }
   }
 }
 
+/* Animated gradient for hero primary CTA */
+@keyframes heroCtaWave {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.hero .cta-primary {
+  /* Keep existing gradient but make it feel alive */
+  background-size: 200% 200%;
+  animation: heroCtaWave 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero .cta-primary { animation: none; }
+}
+
 /* Request Flow Styles */
 .request-page {
   min-height: 100vh;
