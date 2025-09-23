@@ -343,39 +343,25 @@ body {
 }
 
 /* Subtle bezel and speaker notch hint for realism when we swap real screenshot */
-.screenshot-9x16::before {
-  content: '';
-  position: absolute;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 30%;
-  height: 6px;
-  border-radius: 6px;
-  background: rgba(0,0,0,0.25);
-}
+/* Remove old speaker hint now that we use a full mockup */
+.screenshot-9x16::before { display: none; }
 
-.screenshot-9x16 {
-  width: clamp(220px, 28vw, 340px);
-  max-width: 100%;
-  aspect-ratio: 9 / 19.5; /* closer to iPhone 15 vertical aspect */
+/* New hero mockup image */
+.hero-phone {
+  width: clamp(260px, 34vw, 420px);
+  height: auto;
+  max-height: 70vh;
+  display: block;
   border-radius: 22px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
   border: 1px solid var(--border);
   box-shadow: 0 20px 60px -20px var(--shadow);
-  overflow: hidden;
-  position: relative;
 }
 
-.screenshot-9x16 img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-}
+/* not used anymore */
+.screenshot-9x16 img { display: none; }
 
 @media (max-width: 900px) {
-  .screenshot-9x16 { width: min(75vw, 300px); }
+  .hero-phone { width: min(80vw, 340px); max-height: 60vh; }
 }
 
 /* Showcase */

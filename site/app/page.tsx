@@ -23,10 +23,7 @@ export default function HomePage() {
             </div>
 
             <div className="hero__media">
-              <figure className="screenshot-9x16" style={{ maxHeight: '70vh' }}>
-                {/* Replace with iPhone screenshot later */}
-                <img src="/auro_aura_logo.png" alt="Auro app preview placeholder" />
-              </figure>
+              <img className="hero-phone" src="/iphone-mockup.png" alt="iPhone app mockup" />
             </div>
           </div>
         </div>
