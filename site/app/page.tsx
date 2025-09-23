@@ -13,16 +13,14 @@ export default function HomePage() {
         <div className="container">
           <div className="hero__inner">
             <div className="hero__copy">
-              <h1>Help guys look their best. Get paid for your taste.</h1>
-              <p className="sub">Join as a founding reviewer on Auro — record quick video reviews, give honest 1–10 ratings, and help fans improve their style, photos, and vibe.</p>
-              <ul className="hero__bullets">
-                <li>Set your own rate and schedule</li>
-                <li>Record short reviews in the app</li>
-                <li>Make real impact with practical advice</li>
-              </ul>
+              <h1>
+                Rate guys.<br />
+                Give advice.<br />
+                Get paid.
+              </h1>
+              <p className="sub">Share quick video reviews and help fans improve their style, photos, and vibe.</p>
               <div className="cta-buttons">
                 <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
-                <a href="#how-it-works" className="cta-secondary">See how it works</a>
               </div>
             </div>
 
@@ -39,34 +37,24 @@ export default function HomePage() {
       {/* How It Works */}
       <section id="how-it-works" className="how-it-works">
         <div className="container">
-          <h2 className="section-title">How Auro Works</h2>
+          <h2 className="section-title">How it works</h2>
           <div className="steps">
             <div className="step">
               <div className="step-number">1</div>
               <div className="step-content">
-                <h3>Fan picks a reviewer</h3>
-                <p>Fans choose you based on your style and specialty. You control your rate and turnaround.</p>
+                <h3>Set your own rate & schedule</h3>
               </div>
             </div>
             <div className="step">
               <div className="step-number">2</div>
               <div className="step-content">
-                <h3>They upload what you need</h3>
-                <p>Outfit photos, selfie, room tour, and social profiles like Hinge/Instagram — all in one place.</p>
+                <h3>Record short reviews right in the app</h3>
               </div>
             </div>
             <div className="step">
               <div className="step-number">3</div>
               <div className="step-content">
-                <h3>You review with ratings + video</h3>
-                <p>Give 1–10 ratings and record a quick video review with practical recommendations.</p>
-              </div>
-            </div>
-            <div className="step">
-              <div className="step-number">4</div>
-              <div className="step-content">
-                <h3>They level up — you get paid</h3>
-                <p>Your feedback boosts confidence and results. You earn for your taste and expertise.</p>
+                <h3>Make a real impact with practical advice</h3>
               </div>
             </div>
           </div>
