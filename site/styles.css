@@ -55,7 +55,7 @@ body {
   min-height: var(--nav-h);
   position: sticky;
   top: 0;
-  background: rgba(20, 10, 38, 0.98);
+  background: #c634a0;
   border-bottom: 0;
   box-shadow: 0 8px 24px -18px var(--shadow);
   backdrop-filter: saturate(140%) blur(4px);
@@ -302,6 +302,9 @@ body {
   .hero__phones { display: none; }
   .hero { padding: 12px 0 28px; }
   .hero__bullets { max-width: 30ch; margin: 0 auto 18px; text-align: left; }
+  .hero__copy h1 { font-size: clamp(30px, 8vw, 40px); line-height: 1.1; }
+  .hero__copy .sub { font-size: 16px; }
+  .cta-buttons { gap: 12px; }
 }
 
 .bg-glow {
@@ -323,11 +326,24 @@ body {
   justify-content: center; 
 }
 
+/* Subtle bezel and speaker notch hint for realism when we swap real screenshot */
+.screenshot-9x16::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30%;
+  height: 6px;
+  border-radius: 6px;
+  background: rgba(0,0,0,0.25);
+}
+
 .screenshot-9x16 {
-  width: min(40vw, 420px);
+  width: min(32vw, 360px);
   max-width: 100%;
-  aspect-ratio: 9 / 16;
-  border-radius: 20px;
+  aspect-ratio: 9 / 19.5; /* closer to iPhone 15 vertical aspect */
+  border-radius: 22px;
   background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
   border: 1px solid var(--border);
   box-shadow: 0 20px 60px -20px var(--shadow);
@@ -342,7 +358,7 @@ body {
 }
 
 @media (max-width: 900px) {
-  .screenshot-9x16 { width: min(70vw, 360px); }
+  .screenshot-9x16 { width: min(80vw, 340px); }
 }
 
 /* Showcase */
