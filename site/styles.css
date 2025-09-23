@@ -2172,6 +2172,30 @@ footer { border-top: 1px solid var(--divider); }
   gap: 16px;
 }
 
+/* Ensure each landing section fills the viewport height (minus sticky nav) */
+.hero,
+.how-it-works,
+.features,
+.about {
+  min-height: calc(100svh - var(--nav-h));
+}
+
+/* Center section content vertically when there's extra space */
+.how-it-works,
+.features,
+.about {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .how-it-works,
+  .features,
+  .about {
+    padding: 32px 0;
+  }
+}
+
 /* Bottom ribbon CTA */
 .bottom-ribbon {
   position: fixed;
