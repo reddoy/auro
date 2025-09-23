@@ -55,11 +55,11 @@ body {
   min-height: var(--nav-h);
   position: sticky;
   top: 0;
+  /* Dark purple gradient that complements the background without pink */
   background: linear-gradient(
-    90deg,
-    color-mix(in srgb, #d2368f 88%, var(--bg)) 0%,
-    color-mix(in srgb, #d2368f 60%, var(--bg)) 48%,
-    color-mix(in srgb, var(--bg) 80%, #d2368f) 100%
+    180deg,
+    color-mix(in srgb, var(--bg) 85%, #000) 0%,
+    color-mix(in srgb, var(--card) 90%, #000) 100%
   );
   border-bottom: 0;
   box-shadow: 0 8px 24px -18px var(--shadow);
