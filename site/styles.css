@@ -2165,3 +2165,48 @@ footer { border-top: 1px solid var(--divider); }
 .visually-hidden { position: absolute !important; height: 1px; width: 1px; overflow: hidden; clip: rect(1px, 1px, 1px, 1px); white-space: nowrap; }
 
 
+/* Landing: grid layout for benefits */
+.features .features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+/* Bottom ribbon CTA */
+.bottom-ribbon {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -8px 24px -18px var(--shadow);
+  padding: 12px 0;
+  z-index: 60;
+}
+
+.ribbon-close {
+  appearance: none;
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .2s ease, border-color .2s ease, color .2s ease;
+}
+
+.ribbon-close:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--divider);
+}
+
+@media (max-width: 640px) {
+  .bottom-ribbon .cta-buttons {
+    margin-top: 8px;
+  }
+}
