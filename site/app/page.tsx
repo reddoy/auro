@@ -116,6 +116,7 @@ export default function HomePage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontWeight: 600 }}>Founding Reviewer Applications</span>
               <span style={{ color: 'var(--text-2)' }}>Now open</span>
+              <a className="ribbon-link" href="https://coolhandstudios.xyz" target="_blank" rel="noopener noreferrer">coolhandstudios.xyz</a>
             </div>
             <div className="cta-buttons" style={{ margin: 0, flexDirection: 'row', alignItems: 'center' }}>
               <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>

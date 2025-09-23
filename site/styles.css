@@ -2268,3 +2268,11 @@ footer { border-top: 1px solid var(--divider); }
     margin-top: 8px;
   }
 }
+
+.ribbon-link {
+  color: var(--text-2);
+  text-decoration: none;
+  border-left: 1px solid var(--border);
+  padding-left: 10px;
+}
+.ribbon-link:hover { color: var(--text); }
