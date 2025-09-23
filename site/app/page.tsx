@@ -17,13 +17,16 @@ export default function HomePage() {
               <h1 className="mobile-only">Rate guys.<br />Give advice.<br /><em>Get paid.</em></h1>
               <p className="sub desktop-only">Share quick video reviews and help fans improve their style, photos, and vibe.</p>
               <p className="sub mobile-only">Share quick video reviews and help fans level up their style.</p>
-              <div className="cta-buttons">
+              <div className="cta-buttons desktop-only">
                 <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
               </div>
             </div>
 
             <div className="hero__media">
               <img className="hero-phone" src="/iphone-mockup.png" alt="iPhone app mockup" />
+            </div>
+            <div className="cta-buttons mobile-only" style={{ marginTop: 8 }}>
+              <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
             </div>
           </div>
         </div>

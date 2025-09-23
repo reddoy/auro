@@ -322,7 +322,7 @@ body {
   .hero__copy h1 { font-size: clamp(28px, 7.2vw, 36px); line-height: 1.15; max-width: none; }
   .hero__copy .sub { font-size: 15px; max-width: 34ch; margin: 0 auto; }
   .cta-buttons { gap: 10px; align-items: center; }
-  .hero .cta-primary { width: 100%; max-width: 240px; padding: 12px 18px; font-size: 15px; }
+  .hero .cta-primary { width: auto; padding: 10px 16px; font-size: 14px; white-space: nowrap; }
 }
 
 .bg-glow {
@@ -350,7 +350,7 @@ body {
 
 /* New hero mockup image */
 .hero-phone {
-  width: clamp(260px, 34vw, 420px);
+  width: clamp(260px, 34vw, 390px);
   height: auto;
   max-height: 70vh;
   display: block;
