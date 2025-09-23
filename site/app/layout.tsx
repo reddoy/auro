@@ -30,7 +30,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="nav">
           <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <a href="/" className="brand" aria-label="Auro Home">
-              <img src="/auro_aura_logo.png" alt="Auro" width={32} height={32} />
+              <img src="/auro_aura_logo_nobg.png" alt="Auro logo" width={40} height={40} />
+              <span className="brand__name">Auro</span>
             </a>
             <nav>
               <a className="ghost" href="/">Home</a>
