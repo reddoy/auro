@@ -350,7 +350,7 @@ body {
 
 /* New hero mockup image */
 .hero-phone {
-  width: clamp(260px, 34vw, 390px);
+  width: clamp(220px, 34vw, 270px);
   height: auto;
   max-height: 70vh;
   display: block;
@@ -363,7 +363,7 @@ body {
 .screenshot-9x16 img { display: none; }
 
 @media (max-width: 900px) {
-  .hero-phone { width: min(80vw, 340px); max-height: 60vh; }
+  .hero-phone { width: min(80vw, 270px); max-height: 60vh; }
 }
 
 /* Showcase */
@@ -755,8 +755,8 @@ footer { border-top: 1px solid var(--divider); }
 
 .hero .cta-primary {
   /* Keep existing gradient but make it feel alive */
-  background-size: 200% 200%;
-  animation: heroCtaWave 6s ease-in-out infinite;
+  background-size: 300% 300%;
+  animation: heroCtaWave 2s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
