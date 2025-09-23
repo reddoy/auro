@@ -13,8 +13,8 @@ export default function HomePage() {
         <div className="container">
           <div className="hero__inner">
             <div className="hero__copy">
-              <h1 className="desktop-only">Rate guys. Give advice. Get paid.</h1>
-              <h1 className="mobile-only">Rate guys.<br />Give advice.<br />Get paid.</h1>
+              <h1 className="desktop-only">Rate guys.<br />Give advice.<br /><em>Get paid.</em></h1>
+              <h1 className="mobile-only">Rate guys.<br />Give advice.<br /><em>Get paid.</em></h1>
               <p className="sub desktop-only">Share quick video reviews and help fans improve their style, photos, and vibe.</p>
               <p className="sub mobile-only">Share quick video reviews and help fans level up their style.</p>
               <div className="cta-buttons">
