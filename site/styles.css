@@ -2196,6 +2196,20 @@ footer { border-top: 1px solid var(--divider); }
   }
 }
 
+/* Responsive helpers for hero headings */
+.desktop-only { display: block; }
+.mobile-only { display: none; }
+
+@media (max-width: 900px) {
+  .desktop-only { display: none; }
+  .mobile-only { display: block; }
+}
+
+/* Allow full-width heading on desktop hero for strong impact */
+@media (min-width: 901px) {
+  .hero__copy h1 { max-width: none; }
+}
+
 /* Bottom ribbon CTA */
 .bottom-ribbon {
   position: fixed;
