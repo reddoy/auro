@@ -164,6 +164,33 @@ html, body {
   overflow-x: hidden;
   scroll-behavior: smooth;
 }
+
+/* Custom Orange Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 111, 0, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--grad-start), var(--grad-purple), var(--grad-end));
+  border-radius: 4px;
+  border: 1px solid rgba(255, 111, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--grad-end), var(--grad-purple), var(--grad-start));
+  border: 1px solid rgba(255, 111, 0, 0.4);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--grad-start) rgba(255, 111, 0, 0.1);
+}
 /* Enable scroll snapping only on pages that opt-in via body class */
 body.snap-y {
   scroll-snap-type: y mandatory;
