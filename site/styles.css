@@ -143,6 +143,17 @@
   51%, 100% { opacity: 0; }
 }
 
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -303,6 +314,28 @@ body {
   transition: all 0.3s ease;
   animation: gradientShift 3s ease infinite;
   display: inline-block;
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-nav::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(200, 53, 159, 0.3);
+  transition: width 0.6s, height 0.6s;
+  transform: translate(-50%, -50%);
+}
+
+.cta-nav:hover::before {
+  width: 300px;
+  height: 300px;
+  background: rgba(200, 53, 159, 0.2);
+  animation: ripple 0.6s linear;
 }
 
 .cta-nav:hover {
@@ -495,16 +528,21 @@ body {
 .cta-primary::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(200, 53, 159, 0.3);
+  transition: width 0.6s, height 0.6s;
+  transform: translate(-50%, -50%);
 }
 
 .cta-primary:hover::before {
-  left: 100%;
+  width: 300px;
+  height: 300px;
+  background: rgba(200, 53, 159, 0.2);
+  animation: ripple 0.6s linear;
 }
 
 .cta-primary:hover {
@@ -604,21 +642,24 @@ body {
   /* Mobile full-screen experience */
   .hero {
     min-height: 100vh;
-    padding: 20px 0;
+    padding: 0;
   }
 
   .hero__inner {
-    gap: 40px;
+    padding: 20px;
+    gap: 0;
   }
 
   .hero__copy h1 {
     font-size: clamp(32px, 10vw, 48px);
     line-height: 1.1;
+    margin-bottom: 24px;
   }
 
   .hero__copy .sub {
     font-size: 18px;
     max-width: 32ch;
+    margin-bottom: 32px;
   }
 
   /* Hide desktop features section on mobile */
@@ -633,7 +674,7 @@ body {
 
   .showcase-title {
     font-size: clamp(20px, 5vw, 28px);
-    margin-bottom: 30px;
+    max-width: 85vw;
   }
 
   .iphone-mockup {
@@ -2795,7 +2836,8 @@ footer {
   .showcase-title,
   .iphone-mockup,
   .scroll-indicator,
-  .scroll-arrow {
+  .scroll-arrow,
+  .iphone-showcase::after {
     animation: none;
   }
 
@@ -2933,35 +2975,51 @@ footer {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px 0;
+    padding: 0;
     position: relative;
   }
 
   .hero__inner {
     text-align: center;
     justify-content: center;
-    gap: 32px;
+    gap: 0;
+    padding: 20px;
+    width: 100%;
+    height: 100%;
   }
 
   .hero__copy {
     max-width: none;
     margin: 0 auto;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   .hero__copy h1 {
-    font-size: clamp(28px, 8vw, 42px);
-    margin-bottom: 16px;
+    font-size: clamp(32px, 8vw, 48px);
+    margin-bottom: 20px;
+    text-align: center;
+    width: 100%;
   }
 
   .hero__copy .sub {
-    font-size: 16px;
-    max-width: 28ch;
-    margin: 0 auto 24px;
+    font-size: 18px;
+    max-width: 32ch;
+    margin: 0 auto 32px;
+    text-align: center;
   }
 
   .cta-secondary-container {
-    max-width: 280px;
+    max-width: 320px;
     margin: 0 auto;
+  }
+
+  /* Hide desktop phones on mobile */
+  .hero__phones.desktop-only {
+    display: none;
   }
 }
 
@@ -3014,13 +3072,23 @@ footer {
   color: var(--text);
 }
 
+/* Mobile-only styles for scroll indicator */
+@media (max-width: 768px) {
+  .scroll-indicator {
+    position: fixed;
+    bottom: 20px;
+    z-index: 100;
+  }
+}
+
 /* iPhone Showcase Section */
 .iphone-showcase {
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
-  padding: 40px 0;
+  align-items: center;
+  padding: 20px 0;
   background: linear-gradient(180deg, transparent, rgba(255, 111, 0, 0.05), transparent);
   position: relative;
   overflow: hidden;
@@ -3039,35 +3107,30 @@ footer {
   animation: pulse 8s ease-in-out infinite;
 }
 
-.iphone-showcase::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--grad-start), var(--grad-end), transparent);
-  opacity: 0.6;
-}
-
 .showcase-content {
   text-align: center;
-  max-width: 400px;
+  max-width: 100%;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  gap: 40px;
 }
 
 .showcase-title {
   font-size: clamp(24px, 6vw, 32px);
   font-weight: 700;
   color: var(--text);
-  margin: 0 0 40px;
+  margin: 0;
   line-height: 1.3;
   background: linear-gradient(135deg, var(--text), var(--grad-start), var(--grad-end));
   background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  max-width: 90vw;
 }
 
 .iphone-mockup-container {
@@ -3075,6 +3138,7 @@ footer {
   display: flex;
   justify-content: center;
   align-items: center;
+  margin-top: 20px;
 }
 
 .iphone-mockup {
