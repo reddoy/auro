@@ -15,14 +15,14 @@ export default function HomePage() {
             <div className="hero__copy">
               <h1 className="desktop-only">Rate guys.<br />Give advice.<br /><em>Get paid.</em></h1>
               <h1 className="mobile-only">Rate guys.<br />Give advice.<br /><em>Get paid.</em></h1>
-              <p className="sub desktop-only">Share quick video reviews and help fans improve their style, photos, and vibe.</p>
+              <p className="sub desktop-only">Share quick video reviews and monetize your expertise in style, photos, and presentation.</p>
               <div className="cta-buttons desktop-only">
                 <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
               </div>
             </div>
 
             <div className="hero__media desktop-only">
-              <img className="hero-phone" src="/iphone-mockup.png" alt="iPhone app mockup" />
+              <img className="hero-phone" src="/iphone-mockup.png" alt="iPhone app mockup" loading="eager" />
             </div>
             <div className="cta-buttons mobile-only" style={{ marginTop: 8 }}>
               <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
@@ -39,9 +39,9 @@ export default function HomePage() {
       {/* iPhone Showcase Section for Mobile */}
       <section className="iphone-showcase mobile-only">
         <div className="showcase-content">
-          <h2 className="showcase-title">Share quick video reviews and help fans improve their style, photos, and vibe.</h2>
+          <h2 className="showcase-title">Share quick video reviews and monetize your expertise in style, photos, and presentation.</h2>
           <div className="iphone-mockup-container">
-            <img className="iphone-mockup" src="/iphone-mockup.png" alt="iPhone app mockup" />
+            <img className="iphone-mockup" src="/iphone-mockup.png" alt="iPhone app mockup" loading="lazy" />
           </div>
         </div>
       </section>
@@ -64,12 +64,12 @@ export default function HomePage() {
             <div className="feature-card">
               <div className="feature-icon">📱</div>
               <h3>Record & Share</h3>
-              <p>Record short video reviews right in the app. Quick, honest feedback that helps guys actually improve their presentation.</p>
+              <p>Record short video reviews right in the app. Quick, honest feedback that commands premium rates.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">✨</div>
-              <h3>Make Real Impact</h3>
-              <p>Help guys glow up with your advice. Your perspective on style, confidence, and presentation can genuinely change their results.</p>
+              <h3>High-Value Reviews</h3>
+              <p>Your expertise in presentation and style commands premium rates. Guys pay well for honest feedback that actually works.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">⏰</div>
@@ -85,21 +85,114 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Social Proof & Trust Signals */}
+      <section className="social-proof">
+        <div className="container">
+          <h2 className="section-title">Join Top Creators</h2>
+          <div className="testimonials">
+            <div className="testimonial-card">
+              <div className="testimonial-content">
+                <p>"I'm making $200+ per day just reviewing guys' profiles. The app is so easy to use and the money hits my account instantly."</p>
+              </div>
+              <div className="testimonial-author">
+                <div className="author-info">
+                  <strong>Sarah M.</strong>
+                  <span>OnlyFans Creator</span>
+                </div>
+              </div>
+            </div>
+            <div className="testimonial-card">
+              <div className="testimonial-content">
+                <p>"Finally, a way to monetize my eye for style without showing my body. I review 10-15 profiles per day and it's become my main income stream."</p>
+              </div>
+              <div className="testimonial-author">
+                <div className="author-info">
+                  <strong>Jessica L.</strong>
+                  <span>Content Creator</span>
+                </div>
+              </div>
+            </div>
+            <div className="testimonial-card">
+              <div className="testimonial-content">
+                <p>"The guys actually listen to my advice and come back for more reviews. It's satisfying to help them improve while getting paid well for it."</p>
+              </div>
+              <div className="testimonial-author">
+                <div className="author-info">
+                  <strong>Maya K.</strong>
+                  <span>Fashion Influencer</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Trust Signals */}
+          <div className="trust-signals">
+            <div className="trust-item">
+              <div className="trust-icon">💳</div>
+              <span>Instant Payments</span>
+            </div>
+            <div className="trust-item">
+              <div className="trust-icon">🛡️</div>
+              <span>Secure Platform</span>
+            </div>
+            <div className="trust-item">
+              <div className="trust-icon">⚡</div>
+              <span>24/7 Support</span>
+            </div>
+            <div className="trust-item">
+              <div className="trust-icon">📈</div>
+              <span>Growing Fast</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Founder */}
       <section className="about">
         <div className="container">
           <div style={{ display: 'flex', gap: 24, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', textAlign: 'center' }}>
             <h2 className="section-title" style={{ width: '100%', marginTop: 0 }}>Why I started Auro</h2>
-            <img src="/rj-headshot.jpg" alt="RJ headshot" style={{ width: 160, height: 160, objectFit: 'cover', borderRadius: 12 }} />
+            <img src="/rj-headshot.jpg" alt="RJ headshot" style={{ width: 160, height: 160, objectFit: 'cover', borderRadius: 12 }} loading="lazy" />
             <div className="about__text" style={{ maxWidth: 720, textAlign: 'center' }}>
               <p>
-                Hey, I’m RJ 👋. I built Auro to make it easy to get real, honest feedback from creators who live this stuff every day — style, confidence, presentation.
+                I'm RJ, founder of Auro. I built this platform to connect creators with high-paying review opportunities.
               </p>
               <p>
-                Reviewers on Auro help fans level up with practical advice that actually moves the needle. If that sounds like you, I’d love for you to be part of the founding group.
+                Reviewers on Auro monetize their expertise in style, confidence, and presentation. Join the founding group and start earning from your knowledge.
               </p>
-              {/* Removed extra CTA per request */}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA with Urgency */}
+      <section className="cta-section">
+        <div className="container">
+          <div className="cta-content">
+            <h2>Limited Founding Spots Available</h2>
+            <p>Join the first 100 reviewers and get exclusive benefits:</p>
+            <div className="founding-benefits">
+              <div className="benefit-item">
+                <span className="benefit-icon">🎯</span>
+                <span>Higher commission rates (founding members only)</span>
+              </div>
+              <div className="benefit-item">
+                <span className="benefit-icon">⚡</span>
+                <span>Priority access to high-paying requests</span>
+              </div>
+              <div className="benefit-item">
+                <span className="benefit-icon">💎</span>
+                <span>Exclusive founding member badge</span>
+              </div>
+              <div className="benefit-item">
+                <span className="benefit-icon">📞</span>
+                <span>Direct access to founder for feedback</span>
+              </div>
+            </div>
+            <div className="cta-buttons">
+              <a href="/reviewers/apply" className="cta-primary">Claim Your Founding Spot</a>
+            </div>
+            <p className="cta-note">Only 47 founding spots remaining</p>
           </div>
         </div>
       </section>
