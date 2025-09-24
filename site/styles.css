@@ -2134,25 +2134,46 @@ footer {
 
 /* Request Content */
 .request-content {
-  max-width: 800px;
+  max-width: 600px;
   margin: 0 auto;
   background: var(--card);
-  border-radius: 20px;
-  padding: 24px;
+  border-radius: 16px;
+  padding: 20px;
   border: 1px solid var(--border);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  flex: 1;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 140px);
-  overflow-y: auto;
+  max-height: fit-content;
+  overflow: visible;
 }
 
 @media (max-width: 768px) {
   .request-content {
-    padding: 16px;
+    padding: 14px;
     margin: 0 12px;
-    max-height: calc(100vh - 100px);
+    max-width: calc(100vw - 24px);
+  }
+  
+  .step-header {
+    margin-bottom: 12px;
+  }
+  
+  .step-header h2 {
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+  
+  .step-header p {
+    font-size: 12px;
+  }
+  
+  .form-fields {
+    gap: 8px;
+  }
+  
+  .step-actions {
+    margin-top: 12px;
+    padding-top: 10px;
   }
   
   .apply-page .hero {
@@ -2187,21 +2208,21 @@ footer {
 /* Step Header */
 .step-header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .step-header h2 {
-  font-size: clamp(20px, 3vw, 24px);
+  font-size: clamp(18px, 3vw, 22px);
   font-weight: 700;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   color: var(--text);
 }
 
 .step-header p {
   color: var(--text-2);
-  font-size: 14px;
-  line-height: 1.4;
-  max-width: 600px;
+  font-size: 13px;
+  line-height: 1.3;
+  max-width: 500px;
   margin: 0 auto;
 }
 
@@ -2210,8 +2231,8 @@ footer {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  margin-top: 20px;
-  padding-top: 16px;
+  margin-top: 16px;
+  padding-top: 12px;
   border-top: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -2224,23 +2245,29 @@ footer {
   .request-content {
     padding: 12px;
     margin: 0 8px;
-    max-height: calc(100vh - 80px);
+    max-width: calc(100vw - 16px);
   }
   
   .step-header {
-    margin-bottom: 16px;
+    margin-bottom: 10px;
   }
   
   .step-header h2 {
-    font-size: 18px;
+    font-size: 16px;
+    margin-bottom: 3px;
   }
   
   .step-header p {
-    font-size: 13px;
+    font-size: 11px;
   }
   
   .form-fields {
-    gap: 10px;
+    gap: 8px;
+  }
+  
+  .step-actions {
+    margin-top: 10px;
+    padding-top: 8px;
   }
   
   .apply-page .hero__copy h1 {
@@ -3039,9 +3066,7 @@ footer {
 .form-fields {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  flex: 1;
-  overflow-y: auto;
+  gap: 10px;
 }
 
 .form-field {
@@ -3051,8 +3076,9 @@ footer {
 
 .form-field label {
   color: var(--text-2);
-  font-size: 14px;
-  margin-bottom: 6px;
+  font-size: 13px;
+  margin-bottom: 4px;
+  font-weight: 500;
 }
 
 .form-field input {
@@ -3060,13 +3086,31 @@ footer {
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   outline: none;
   transition: border-color 0.2s ease;
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .form-field input:focus {
+  border-color: var(--grad-start);
+}
+
+.form-field textarea {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.2s ease;
+  font-size: 15px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-field textarea:focus {
   border-color: var(--grad-start);
 }
 
