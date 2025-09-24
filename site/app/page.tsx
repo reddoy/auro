@@ -83,6 +83,11 @@ export default function HomePage() {
               <h3>Private & Secure</h3>
               <p>All content stays private and secure. Safety and respect are our top priorities.</p>
             </div>
+            <div className="feature-card">
+              <div className="feature-icon">📱</div>
+              <h3>Social Media Content</h3>
+              <p>Post your reviews as social media content to diversify your feed. Only with reviewee consent for social sharing.</p>
+            </div>
           </div>
         </div>
       </section>

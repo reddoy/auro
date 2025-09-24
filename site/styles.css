@@ -3343,8 +3343,23 @@ footer {
 /* Landing: grid layout for benefits */
 .features .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  justify-items: center;
+}
+
+/* For 7 cards, show 3 per row on desktop with centered last row */
+@media (min-width: 900px) {
+  .features .features-grid {
+    grid-template-columns: repeat(3, 1fr);
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  
+  /* Center the last card when there are 7 total */
+  .features .features-grid .feature-card:nth-child(7) {
+    grid-column: 2;
+  }
 }
 
 /* Ensure each landing section fills the viewport height (minus sticky nav) */
