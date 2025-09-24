@@ -240,22 +240,22 @@ export default function FoundingReviewerApplyPage() {
 
   return (
     <div className="apply-page request-page">
-      <div className="container" style={{ marginBottom: 16 }}>
+      <div className="container" style={{ marginBottom: 8, flexShrink: 0 }}>
         <Stepper />
       </div>
       {step === 1 && (
-        <section className="hero">
+        <section className="hero" style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
           <div className="container">
             <div className="hero__inner">
               <div className="hero__copy">
                 <h1>Become a Founding Reviewer</h1>
                 <p className="sub">Join an exclusive group shaping the next big lifestyle feedback platform.</p>
-                <ul className="benefits" style={{ marginTop: 12 }}>
+                <ul className="benefits" style={{ marginTop: 8 }}>
                   <li>Earn more: first 100 creators keep 85% of every payment instead of 80%.</li>
-                  <li>Early access = more visibility and influence over the app’s features.</li>
+                  <li>Early access = more visibility and influence over the app's features.</li>
                   <li>Spots are limited — secure your spot today.</li>
                 </ul>
-                <div style={{ marginTop: 16 }}>
+                <div style={{ marginTop: 12 }}>
                   <button className="cta-primary" onClick={() => setStep(2)}>Apply Now</button>
                 </div>
               </div>
@@ -265,7 +265,7 @@ export default function FoundingReviewerApplyPage() {
       )}
 
       {step === 2 && (
-        <div className="container">
+        <div className="container" style={{ flex: 1, display: 'flex' }}>
           <div className="request-content">
             <div className="step-header">
               <h2>Account</h2>
@@ -291,7 +291,7 @@ export default function FoundingReviewerApplyPage() {
       )}
 
       {step === 3 && (
-        <div className="container">
+        <div className="container" style={{ flex: 1, display: 'flex' }}>
           <div className="request-content">
             <div className="step-header">
               <h2>Create a password</h2>
@@ -320,7 +320,7 @@ export default function FoundingReviewerApplyPage() {
       )}
 
       {step === 4 && (
-        <div className="container">
+        <div className="container" style={{ flex: 1, display: 'flex' }}>
           <div className="request-content">
             <div className="step-header">
               <h2>Set up your reviewer profile</h2>
@@ -356,7 +356,7 @@ export default function FoundingReviewerApplyPage() {
       )}
 
       {step === 5 && (
-        <div className="container">
+        <div className="container" style={{ flex: 1, display: 'flex' }}>
           <div className="request-content">
             <div className="step-header">
               <h2>Socials</h2>
@@ -390,7 +390,7 @@ export default function FoundingReviewerApplyPage() {
       )}
 
       {step === 6 && (
-        <div className="container">
+        <div className="container" style={{ flex: 1, display: 'flex' }}>
           <div className="request-content">
             <div className="step-header">
               <h2>Bio & Focus</h2>
@@ -415,7 +415,7 @@ export default function FoundingReviewerApplyPage() {
       )}
 
       {step === 7 && (
-        <div className="container">
+        <div className="container" style={{ flex: 1, display: 'flex' }}>
           <div className="success-card">
             <div className="success-icon">🎉</div>
             <h3>Thanks — you’re on the list!</h3>
