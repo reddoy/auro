@@ -435,20 +435,45 @@ body {
 
 /* Compact hero for apply page */
 .apply-page .hero {
-  padding: clamp(20px, 4vh, 60px) 0 40px;
+  padding: 20px 0;
   min-height: auto;
-  max-height: 60vh;
+  max-height: none;
+  overflow: visible;
 }
 
 .apply-page .hero__inner {
   grid-template-columns: 1fr !important;
   text-align: center !important;
   justify-items: center !important;
+  gap: 20px !important;
+  padding: 20px 0;
 }
 
 .apply-page .hero__copy {
   max-width: 600px;
   margin: 0 auto;
+  padding: 0 20px;
+}
+
+.apply-page .hero__copy h1 {
+  font-size: clamp(28px, 5vw, 42px) !important;
+  margin-bottom: 16px !important;
+  line-height: 1.2 !important;
+}
+
+.apply-page .hero__copy .sub {
+  font-size: 16px !important;
+  margin-bottom: 20px !important;
+  line-height: 1.4 !important;
+}
+
+.apply-page .benefits {
+  font-size: 14px !important;
+  margin-bottom: 20px !important;
+}
+
+.apply-page .benefits li {
+  margin: 6px 0 !important;
 }
 
 .apply-page .cta-primary {
@@ -456,6 +481,18 @@ body {
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
+  padding: 14px 28px !important;
+  font-size: 16px !important;
+}
+
+.apply-page .apply-counter {
+  background: rgba(255, 111, 0, 0.1);
+  border: 1px solid rgba(255, 111, 0, 0.3);
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--grad-start);
 }
 
 .hero__inner {
@@ -1977,9 +2014,10 @@ footer {
 .request-page {
   min-height: 100vh;
   background: var(--bg);
-  padding: 10px 0 20px;
+  padding: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .request-header {
@@ -2106,7 +2144,7 @@ footer {
   flex: 1;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 120px);
+  max-height: calc(100vh - 140px);
   overflow-y: auto;
 }
 
@@ -2114,26 +2152,35 @@ footer {
   .request-content {
     padding: 16px;
     margin: 0 12px;
-    max-height: calc(100vh - 80px);
+    max-height: calc(100vh - 100px);
   }
   
   .apply-page .hero {
-    padding: 16px 0 24px;
-    max-height: 50vh;
+    padding: 16px 0;
+    max-height: none;
+  }
+  
+  .apply-page .hero__copy {
+    padding: 0 16px;
   }
   
   .apply-page .hero__copy h1 {
-    font-size: clamp(24px, 6vw, 32px);
-    margin-bottom: 12px;
+    font-size: clamp(24px, 6vw, 32px) !important;
+    margin-bottom: 12px !important;
   }
   
   .apply-page .hero__copy .sub {
-    font-size: 16px;
-    margin-bottom: 16px;
+    font-size: 15px !important;
+    margin-bottom: 16px !important;
   }
   
   .apply-page .benefits {
-    font-size: 14px;
+    font-size: 13px !important;
+  }
+  
+  .apply-page .apply-counter {
+    font-size: 13px;
+    padding: 10px 16px;
   }
 }
 
@@ -2177,7 +2224,7 @@ footer {
   .request-content {
     padding: 12px;
     margin: 0 8px;
-    max-height: calc(100vh - 60px);
+    max-height: calc(100vh - 80px);
   }
   
   .step-header {
@@ -2194,6 +2241,23 @@ footer {
   
   .form-fields {
     gap: 10px;
+  }
+  
+  .apply-page .hero__copy h1 {
+    font-size: clamp(20px, 7vw, 28px) !important;
+  }
+  
+  .apply-page .hero__copy .sub {
+    font-size: 14px !important;
+  }
+  
+  .apply-page .benefits {
+    font-size: 12px !important;
+  }
+  
+  .apply-page .apply-counter {
+    font-size: 12px;
+    padding: 8px 12px;
   }
 }
 

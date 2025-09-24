@@ -59,34 +59,29 @@ export default function HomePage() {
               <p>Charge whatever you want per review. You control your pricing and can adjust based on demand and your time.</p>
             </div>
             <div className="feature-card">
-              <div className="feature-icon">🎯</div>
-              <h3>Choose Your Requests</h3>
-              <p>Accept or decline any review request. Review selfies, outfits, rooms, Instagram profiles, Hinge profiles — whatever you're comfortable with.</p>
+              <div className="feature-icon">📱</div>
+              <h3>Post Your Link</h3>
+              <p>Share your reviewer profile link across all your social media platforms. Guys sign up through your link to request reviews.</p>
             </div>
             <div className="feature-card">
-              <div className="feature-icon">📱</div>
-              <h3>Record & Share</h3>
+              <div className="feature-icon">🎯</div>
+              <h3>Accept or Deny Requests</h3>
+              <p>You have complete control over which requests to accept. Review selfies, outfits, profiles — whatever you're comfortable with.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">🎥</div>
+              <h3>Submit Video Review</h3>
               <p>Record short video reviews right in the app. Quick, honest feedback that commands premium rates.</p>
             </div>
             <div className="feature-card">
-              <div className="feature-icon">✨</div>
-              <h3>High-Value Reviews</h3>
-              <p>Your expertise in presentation and style commands premium rates. Guys pay well for honest feedback that actually works.</p>
+              <div className="feature-icon">📸</div>
+              <h3>Share to Social Media</h3>
+              <p>Post reviews directly to Instagram Reels and TikTok straight from the app — only with reviewee consent for social sharing.</p>
             </div>
             <div className="feature-card">
-              <div className="feature-icon">⏰</div>
-              <h3>Your Schedule</h3>
-              <p>Review when it works for you. No commitments, no pressure — just flexible income on your terms.</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">🔒</div>
-              <h3>Private & Secure</h3>
-              <p>All content stays private and secure. Safety and respect are our top priorities.</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">📱</div>
-              <h3>Social Media Content</h3>
-              <p>Post your reviews as social media content to diversify your feed. Only with reviewee consent for social sharing.</p>
+              <div className="feature-icon">💳</div>
+              <h3>Get Paid via Stripe</h3>
+              <p>All payments and payouts are handled securely through Stripe. Your money hits your account instantly after each review.</p>
             </div>
           </div>
         </div>

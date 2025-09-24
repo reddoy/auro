@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useRouter } from 'next/navigation';
+import ReviewerCounter from '../../../components/ReviewerCounter';
 
 type SocialAccount = {
   provider: 'tiktok' | 'instagram';
@@ -244,14 +245,23 @@ export default function FoundingReviewerApplyPage() {
         <Stepper />
       </div>
       {step === 1 && (
-        <section className="hero" style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+        <section className="hero" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="container">
             <div className="hero__inner" style={{ gridTemplateColumns: '1fr', textAlign: 'center', justifyContent: 'center' }}>
               <div className="hero__copy">
                 <h1>Become a Founding Reviewer</h1>
                 <p className="sub">Join an exclusive group shaping the next big lifestyle feedback platform.</p>
+                
+                {/* Reviewer Counter */}
+                <div style={{ margin: '16px 0', display: 'flex', justifyContent: 'center' }}>
+                  <ReviewerCounter 
+                    maxReviewers={50}
+                    className="apply-counter"
+                  />
+                </div>
+                
                 <ul className="benefits" style={{ marginTop: 8 }}>
-                  <li>Earn more: first 100 creators keep 85% of every payment instead of 80%.</li>
+                  <li>Earn more: first 50 reviewers keep 85% of every payment instead of 80%.</li>
                   <li>Early access = more visibility and influence over the app's features.</li>
                   <li>Spots are limited — secure your spot today.</li>
                 </ul>
