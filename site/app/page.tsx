@@ -16,18 +16,31 @@ export default function HomePage() {
               <h1 className="desktop-only">Rate guys.<br />Give advice.<br /><em>Get paid.</em></h1>
               <h1 className="mobile-only">Rate guys.<br />Give advice.<br /><em>Get paid.</em></h1>
               <p className="sub desktop-only">Share quick video reviews and help fans improve their style, photos, and vibe.</p>
-              <p className="sub mobile-only">Share quick video reviews and help fans level up their style.</p>
+              <div className="scroll-indicator mobile-only">
+                <div className="scroll-arrow">↓</div>
+                <p className="scroll-text">see how it works below</p>
+              </div>
               <div className="cta-buttons desktop-only">
                 <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
               </div>
             </div>
 
-            <div className="hero__media">
+            <div className="hero__media desktop-only">
               <img className="hero-phone" src="/iphone-mockup.png" alt="iPhone app mockup" />
             </div>
             <div className="cta-buttons mobile-only" style={{ marginTop: 8 }}>
               <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* iPhone Showcase Section for Mobile */}
+      <section className="iphone-showcase mobile-only">
+        <div className="showcase-content">
+          <h2 className="showcase-title">Share quick video reviews and help fans improve their style, photos, and vibe.</h2>
+          <div className="iphone-mockup-container">
+            <img className="iphone-mockup" src="/iphone-mockup.png" alt="iPhone app mockup" />
           </div>
         </div>
       </section>

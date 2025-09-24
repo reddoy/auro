@@ -34,8 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="brand__name">Auro</span>
             </a>
             <nav>
-              <a className="ghost" href="/">Home</a>
-              <a className="ghost" href="/reviewers/apply">Become a Reviewer</a>
+              <a className="cta-nav" href="/reviewers/apply">Become a Reviewer</a>
             </nav>
           </div>
         </header>
