@@ -430,9 +430,7 @@ body {
   padding: clamp(40px, 8vh, 120px) 0 60px;
   overflow: hidden;
   min-height: calc(100svh - var(--nav-h));
-  background: radial-gradient(ellipse at top, rgba(255, 111, 0, 0.1) 0%, transparent 50%),
-              radial-gradient(ellipse at bottom, rgba(255, 45, 85, 0.08) 0%, transparent 50%),
-              linear-gradient(180deg, transparent 0%, rgba(15, 15, 35, 0.3) 100%);
+  background: transparent;
 }
 
 .hero__inner {
