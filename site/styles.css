@@ -431,7 +431,8 @@ body {
   overflow: hidden;
   min-height: calc(100svh - var(--nav-h));
   background: radial-gradient(ellipse at top, rgba(255, 111, 0, 0.1) 0%, transparent 50%),
-              radial-gradient(ellipse at bottom, rgba(255, 45, 85, 0.08) 0%, transparent 50%);
+              radial-gradient(ellipse at bottom, rgba(255, 45, 85, 0.08) 0%, transparent 50%),
+              linear-gradient(180deg, transparent 0%, rgba(15, 15, 35, 0.3) 100%);
 }
 
 .hero__inner {
@@ -3106,7 +3107,11 @@ footer {
   align-items: center;
   padding: 40px 0 0 0;
   margin: 0;
-  background: linear-gradient(180deg, transparent, rgba(255, 111, 0, 0.05), transparent);
+  background: linear-gradient(180deg, 
+    rgba(15, 15, 35, 0.8) 0%, 
+    rgba(15, 15, 35, 0.4) 20%, 
+    rgba(255, 111, 0, 0.05) 50%, 
+    transparent 100%);
   position: relative;
   overflow: hidden;
 }
@@ -3159,7 +3164,7 @@ footer {
 }
 
 .iphone-mockup {
-  width: min(70vw, 280px);
+  width: min(60vw, 240px);
   height: auto;
   border-radius: 24px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
