@@ -16,10 +16,6 @@ export default function HomePage() {
               <h1 className="desktop-only">Rate guys.<br />Give advice.<br /><em>Get paid.</em></h1>
               <h1 className="mobile-only">Rate guys.<br />Give advice.<br /><em>Get paid.</em></h1>
               <p className="sub desktop-only">Share quick video reviews and help fans improve their style, photos, and vibe.</p>
-              <div className="scroll-indicator mobile-only">
-                <div className="scroll-arrow">↓</div>
-                <p className="scroll-text">see how it works below</p>
-              </div>
               <div className="cta-buttons desktop-only">
                 <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
               </div>
@@ -32,6 +28,10 @@ export default function HomePage() {
               <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
             </div>
           </div>
+        </div>
+        <div className="scroll-indicator mobile-only">
+          <div className="scroll-arrow">↓</div>
+          <p className="scroll-text">see how it works below</p>
         </div>
       </section>
 
