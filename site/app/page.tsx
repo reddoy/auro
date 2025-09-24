@@ -30,8 +30,9 @@ export default function HomePage() {
           </div>
         </div>
         <div className="scroll-indicator mobile-only">
-          <div className="scroll-arrow">↓</div>
-          <p className="scroll-text">see how it works below</p>
+          <div className="scroll-arrow">→</div>
+          <p className="scroll-text">Scroll to see how it works</p>
+          <div className="scroll-arrow">←</div>
         </div>
       </section>
 
