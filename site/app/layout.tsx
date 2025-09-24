@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import React from 'react';
 import { Poppins } from 'next/font/google';
 import '../styles.css';
+import CountdownTimer from '../components/CountdownTimer';
+import ReviewerCounter from '../components/ReviewerCounter';
 
 // Fonts must be initialized at module scope
 const poppins = Poppins({ subsets: ['latin'], weight: ['400', '600', '700'] });
@@ -40,6 +42,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <img src="/auro_aura_logo_nobg.png" alt="Auro logo" width={40} height={40} />
               <span className="brand__name">Auro</span>
             </a>
+            
+            {/* Countdown and Counter */}
+            <div className="nav-stats" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <CountdownTimer 
+                targetDate={new Date('2024-10-15T21:00:00-08:00')} // Oct 15, 9 PM PST
+                className="nav-countdown"
+              />
+              <ReviewerCounter 
+                maxReviewers={50}
+                className="nav-counter"
+              />
+            </div>
+            
             <nav>
               <a className="cta-nav" href="/reviewers/apply">Become a Reviewer</a>
             </nav>

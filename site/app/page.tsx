@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import CountdownTimer from '../components/CountdownTimer';
+import ReviewerCounter from '../components/ReviewerCounter';
 
 export default function HomePage() {
   const [showRibbon, setShowRibbon] = useState(true);
@@ -165,12 +167,34 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Launch Countdown Section */}
+      <section className="launch-countdown">
+        <div className="container">
+          <div className="countdown-content">
+            <h2>App Launch Countdown</h2>
+            <p>Join before we launch on October 15th at 9 PM PST</p>
+            <div className="countdown-display">
+              <CountdownTimer 
+                targetDate={new Date('2024-10-15T21:00:00-08:00')}
+                className="main-countdown"
+              />
+            </div>
+            <div className="reviewer-progress">
+              <ReviewerCounter 
+                maxReviewers={50}
+                className="main-counter"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Final CTA with Urgency */}
       <section className="cta-section">
         <div className="container">
           <div className="cta-content">
             <h2>Limited Founding Spots Available</h2>
-            <p>Join the first 100 reviewers and get exclusive benefits:</p>
+            <p>Join the first 50 reviewers and get exclusive benefits:</p>
             <div className="founding-benefits">
               <div className="benefit-item">
                 <span className="benefit-icon">🎯</span>
@@ -192,7 +216,7 @@ export default function HomePage() {
             <div className="cta-buttons">
               <a href="/reviewers/apply" className="cta-primary">Claim Your Founding Spot</a>
             </div>
-            <p className="cta-note">Only 47 founding spots remaining</p>
+            <p className="cta-note">Limited founding spots - Join the exclusive group</p>
           </div>
         </div>
       </section>
