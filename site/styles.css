@@ -3159,17 +3159,17 @@ footer {
 }
 
 .iphone-mockup {
-  width: min(85vw, 320px);
+  width: min(70vw, 280px);
   height: auto;
   border-radius: 24px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
   border: 2px solid var(--border);
-  transition: transform 0.3s ease;
-}
-
-.iphone-mockup:hover {
-  transform: scale(1.02) translateY(-10px);
-  box-shadow: 0 25px 80px rgba(255, 111, 0, 0.3);
+  transition: none;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 /* Responsive helpers */
