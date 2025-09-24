@@ -3007,20 +3007,21 @@ footer {
   }
 
   .scroll-indicator {
-    padding: 20px 24px;
+    padding: 16px 20px;
     background: rgba(255, 111, 0, 0.08);
     border-radius: 12px;
     border: 1px solid rgba(255, 111, 0, 0.3);
     text-align: center;
-    width: 100%;
-    max-width: 350px;
-    margin: 40px auto 0;
+    width: auto;
+    max-width: 280px;
+    margin: 20px auto 60px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 16px;
+    gap: 12px;
     position: static;
     transform: none;
+    flex-direction: row;
   }
 
   .scroll-arrow {
@@ -3066,7 +3067,7 @@ footer {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 0;
+  padding: 40px 0 0 0;
   margin: 0;
   background: linear-gradient(180deg, transparent, rgba(255, 111, 0, 0.05), transparent);
   position: relative;
