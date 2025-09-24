@@ -19,17 +19,19 @@ export default function ReviewerCounter({ maxReviewers = 50, className = '' }: R
         setLoading(true);
         setError(null);
         
-        // Try to fetch from creators table
+        // Try to fetch from creators table, filtering for actual reviewers
         const { data, error } = await supabase
           .from('creators')
-          .select('id', { count: 'exact' });
+          .select('id', { count: 'exact' })
+          .eq('is_reviewer', true);
 
         if (error) {
           console.error('Error fetching reviewer count:', error);
           // If creators table doesn't exist or has issues, try profiles table
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('id', { count: 'exact' });
+            .select('id', { count: 'exact' })
+            .eq('is_reviewer', true);
           
           if (profileError) {
             console.error('Error fetching from profiles table:', profileError);
