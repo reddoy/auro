@@ -503,7 +503,7 @@ body {
   display: inline-block;
   position: relative;
   overflow: hidden;
-  animation: gradientShift 1s ease infinite;
+  animation: gradientShift 0.5s ease infinite;
 }
 
 .cta-primary::before {
@@ -2955,7 +2955,7 @@ footer {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: center;
     padding: 0;
     position: relative;
   }
@@ -2991,7 +2991,7 @@ footer {
   }
 
   .hero__copy h1 {
-    font-size: clamp(48px, 15vw, 72px);
+    font-size: clamp(44px, 11vw, 60px);
     margin-bottom: 32px;
     text-align: center;
     width: 100%;
@@ -3007,17 +3007,14 @@ footer {
   }
 
   .scroll-indicator {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 16px 24px;
+    padding: 20px 24px;
     background: rgba(255, 111, 0, 0.08);
     border-radius: 12px;
     border: 1px solid rgba(255, 111, 0, 0.3);
     text-align: center;
-    width: auto;
-    margin: 0;
+    width: 100%;
+    max-width: 300px;
+    margin: 40px auto 0;
   }
 
   .scroll-arrow {
