@@ -37,7 +37,8 @@
             <p class="legal">No spam. Unsubscribe anytime.</p>
           </div>
 
-          <div class="hero__phones">
+          <!-- Desktop phone mockups -->
+          <div class="hero__phones desktop-only">
             <div class="phone phone--left" data-aos="fade-up-right" data-aos-delay="300">
               <img src="../iphone-mockup.png" alt="Auro app interface showing review requests" />
             </div>
@@ -45,8 +46,30 @@
               <img src="../iphone-mockup.png" alt="Auro app interface showing expert feedback" />
             </div>
           </div>
+
+          <!-- Mobile scroll indicator -->
+          <div class="scroll-indicator mobile-only" data-aos="fade-in" data-aos-delay="1000" onclick="scrollToShowcase()">
+            <div class="scroll-arrow">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M7 10l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <p class="scroll-text">See how it works</p>
+          </div>
         </div>
         <div class="bg-glow" aria-hidden="true"></div>
+      </section>
+
+      <!-- Mobile iPhone showcase section -->
+      <section class="iphone-showcase mobile-only">
+        <div class="container">
+          <div class="showcase-content">
+            <h2 class="showcase-title">Share quick video reviews and help fans improve their style, photos, and vibe.</h2>
+            <div class="iphone-mockup-container">
+              <img src="../iphone-mockup.png" alt="Auro app interface" class="iphone-mockup" />
+            </div>
+          </div>
+        </div>
       </section>
 
       <section class="showcase" data-aos="fade-up">
@@ -151,6 +174,17 @@
           }
         });
       });
+
+      // Scroll to iPhone showcase section
+      function scrollToShowcase() {
+        const showcaseSection = document.querySelector('.iphone-showcase');
+        if (showcaseSection) {
+          showcaseSection.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      }
     </script>
   </body>
   <!-- TODO: Replace placeholder images with real iPhone screenshots of the Auro app UI. -->
