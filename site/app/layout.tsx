@@ -43,20 +43,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="brand__name">Auro</span>
             </a>
             
-            {/* Countdown and Counter */}
-            <div className="nav-stats" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            {/* Countdown Timer */}
+            <div className="nav-countdown-section">
+              <span className="countdown-label">Till App Launch:</span>
               <CountdownTimer 
                 targetDate={new Date('2025-10-15T21:00:00-08:00')} // Oct 15, 2025, 9 PM PST
                 className="nav-countdown"
               />
+            </div>
+            
+            <nav className="nav-cta-section">
+              <a className="cta-nav" href="/reviewers/apply">Become a Founding Reviewer</a>
               <ReviewerCounter 
                 maxReviewers={50}
                 className="nav-counter"
               />
-            </div>
-            
-            <nav>
-              <a className="cta-nav" href="/reviewers/apply">Become a Reviewer</a>
             </nav>
           </div>
         </header>
