@@ -46,7 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {/* Countdown and Counter */}
             <div className="nav-stats" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
               <CountdownTimer 
-                targetDate={new Date('2024-10-15T21:00:00-08:00')} // Oct 15, 9 PM PST
+                targetDate={new Date('2025-10-15T21:00:00-08:00')} // Oct 15, 2025, 9 PM PST
                 className="nav-countdown"
               />
               <ReviewerCounter 

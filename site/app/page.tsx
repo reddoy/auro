@@ -175,7 +175,7 @@ export default function HomePage() {
             <p>Join before we launch on October 15th at 9 PM PST</p>
             <div className="countdown-display">
               <CountdownTimer 
-                targetDate={new Date('2024-10-15T21:00:00-08:00')}
+                targetDate={new Date('2025-10-15T21:00:00-08:00')}
                 className="main-countdown"
               />
             </div>
