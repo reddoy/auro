@@ -246,7 +246,7 @@ export default function FoundingReviewerApplyPage() {
       {step === 1 && (
         <section className="hero" style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
           <div className="container">
-            <div className="hero__inner">
+            <div className="hero__inner" style={{ gridTemplateColumns: '1fr', textAlign: 'center', justifyContent: 'center' }}>
               <div className="hero__copy">
                 <h1>Become a Founding Reviewer</h1>
                 <p className="sub">Join an exclusive group shaping the next big lifestyle feedback platform.</p>
@@ -256,7 +256,19 @@ export default function FoundingReviewerApplyPage() {
                   <li>Spots are limited — secure your spot today.</li>
                 </ul>
                 <div style={{ marginTop: 12 }}>
-                  <button className="cta-primary" onClick={() => setStep(2)}>Apply Now</button>
+                  <button 
+                    className="cta-primary" 
+                    onClick={() => setStep(2)}
+                    style={{ 
+                      display: 'block',
+                      visibility: 'visible',
+                      opacity: 1,
+                      zIndex: 10,
+                      position: 'relative'
+                    }}
+                  >
+                    Apply Now
+                  </button>
                 </div>
               </div>
             </div>
