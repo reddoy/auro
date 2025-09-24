@@ -3014,21 +3014,25 @@ footer {
     text-align: center;
     width: auto;
     max-width: 280px;
-    margin: 20px auto 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    margin: 24px auto 0;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     gap: 12px;
     position: static;
     transform: none;
-    flex-direction: row;
+    flex-direction: row !important;
   }
 
   .scroll-arrow {
-    font-size: 24px;
+    font-size: 20px;
     color: var(--grad-start);
     animation: fadeInOut 2s ease-in-out infinite;
     flex-shrink: 0;
+    display: inline-block !important;
+    margin: 0 !important;
+    width: auto !important;
+    height: auto !important;
   }
 
   .scroll-arrow:first-child {
@@ -3043,9 +3047,10 @@ footer {
     color: var(--text-2);
     font-size: 16px;
     font-weight: 500;
-    margin: 0;
+    margin: 0 !important;
     white-space: nowrap;
     flex-shrink: 0;
+    display: inline-block !important;
   }
 
   .cta-secondary-container {
