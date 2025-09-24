@@ -694,13 +694,20 @@ body {
 
   .footer__inner {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     text-align: center;
   }
 
   .footer__links {
-    flex-direction: column;
+    flex-direction: row;
     gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .footer__links a {
+    font-size: 14px;
+    padding: 4px 8px;
   }
 }
 
