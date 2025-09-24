@@ -693,21 +693,29 @@ body {
   }
 
   .footer__inner {
-    flex-direction: column;
-    gap: 12px;
+    flex-direction: row;
+    gap: 8px;
     text-align: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .footer__inner > div:first-child {
+    font-size: 12px;
+    flex-shrink: 0;
   }
 
   .footer__links {
     flex-direction: row;
-    gap: 16px;
+    gap: 12px;
     flex-wrap: wrap;
     justify-content: center;
   }
 
   .footer__links a {
-    font-size: 14px;
-    padding: 4px 8px;
+    font-size: 12px;
+    padding: 2px 6px;
   }
 }
 
