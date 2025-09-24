@@ -46,57 +46,40 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* How It Works */}
-      <section id="how-it-works" className="how-it-works">
+      {/* How It Works & Benefits */}
+      <section id="how-it-works" className="features">
         <div className="container">
-          <h2 className="section-title">How it works</h2>
-          <div className="steps">
-            <div className="step">
-              <div className="step-number">1</div>
-              <div className="step-content">
-                <h3>Set your own rate & schedule</h3>
-              </div>
-            </div>
-            <div className="step">
-              <div className="step-number">2</div>
-              <div className="step-content">
-                <h3>Record short reviews right in the app</h3>
-              </div>
-            </div>
-            <div className="step">
-              <div className="step-number">3</div>
-              <div className="step-content">
-                <h3>Make a real impact with practical advice</h3>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Reviewer Benefits */}
-      <section className="features">
-        <div className="container">
-          <h2 className="section-title">Why Review on Auro</h2>
+          <h2 className="section-title">How Reviewing Works</h2>
           <div className="features-grid">
             <div className="feature-card">
-              <div className="feature-icon">💸</div>
-              <h3>Monetize Your Taste</h3>
-              <p>Turn your eye for style and presentation into income with flexible reviews.</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">⏱️</div>
-              <h3>Flexible & Fast</h3>
-              <p>Short video reviews on your schedule — all in one app.</p>
+              <div className="feature-icon">💰</div>
+              <h3>Set Your Own Rate</h3>
+              <p>Charge whatever you want per review. You control your pricing and can adjust based on demand and your time.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">🎯</div>
-              <h3>Real Impact</h3>
-              <p>Help fans improve their photos, rooms, and profiles to get better results.</p>
+              <h3>Choose Your Requests</h3>
+              <p>Accept or decline any review request. Review selfies, outfits, rooms, Instagram profiles, Hinge profiles — whatever you're comfortable with.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">📱</div>
+              <h3>Record & Share</h3>
+              <p>Record short video reviews right in the app. Quick, honest feedback that helps guys actually improve their presentation.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">✨</div>
+              <h3>Make Real Impact</h3>
+              <p>Help guys glow up with your advice. Your perspective on style, confidence, and presentation can genuinely change their results.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">⏰</div>
+              <h3>Your Schedule</h3>
+              <p>Review when it works for you. No commitments, no pressure — just flexible income on your terms.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">🔒</div>
               <h3>Private & Secure</h3>
-              <p>Content is kept private and secure — safety and respect first.</p>
+              <p>All content stays private and secure. Safety and respect are our top priorities.</p>
             </div>
           </div>
         </div>
