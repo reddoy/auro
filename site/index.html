@@ -14,11 +14,11 @@
   </head>
   <body>
     <header class="container nav">
-      <a class="brand" href="#">
+      <a class="brand" href="/" onclick="scrollToTop()">
         <img src="../auro_font_logo.png" alt="Auro logo" height="38" />
       </a>
       <nav>
-        <a class="ghost" href="/" id="open-app">Open the App</a>
+        <a class="cta-nav" href="/reviewers/apply">Become a Reviewer</a>
       </nav>
     </header>
 
@@ -100,7 +100,8 @@
       <div class="container footer__inner">
         <span>© <span id="year"></span> Auro</span>
         <nav class="footer__links">
-          <a href="/" id="footer-open-app">Open the App</a>
+          <a href="/" onclick="scrollToTop()">Home</a>
+          <a href="/reviewers/apply">Become a Reviewer</a>
           <a href="mailto:hello@appauro.com">Contact</a>
         </nav>
       </div>
@@ -119,14 +120,14 @@
       // Prefill current year
       document.getElementById('year').textContent = new Date().getFullYear();
 
-      // Prefetch app link on hover
-      const openAppLinks = [document.getElementById('open-app'), document.getElementById('footer-open-app')];
-      openAppLinks.forEach(function (el) {
+      // Prefetch reviewer apply page on hover
+      const reviewerLinks = document.querySelectorAll('a[href="/reviewers/apply"]');
+      reviewerLinks.forEach(function (el) {
         if (!el) return;
         el.addEventListener('mouseenter', function () {
           var link = document.createElement('link');
           link.rel = 'prefetch';
-          link.href = '/';
+          link.href = '/reviewers/apply';
           document.head.appendChild(link);
         });
       });
@@ -174,6 +175,14 @@
           }
         });
       });
+
+      // Scroll to top of page
+      function scrollToTop() {
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+      }
 
       // Scroll to iPhone showcase section
       function scrollToShowcase() {
