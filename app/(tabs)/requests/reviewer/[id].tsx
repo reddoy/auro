@@ -31,12 +31,7 @@ export default function ReviewerRequestScreen() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [overall, setOverall] = useState(0);
-  const [tags, setTags] = useState<string[]>(['Great pose', 'Strong wardrobe', 'Good background', 'Try natural light', 'Mind clutter']);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [notes, setNotes] = useState('');
   const [videoUri, setVideoUri] = useState<string | null>(null);
-  const [imageUri, setImageUri] = useState<string | null>(null);
 
   const [signedPhotos, setSignedPhotos] = useState<string[]>([]); // fallback when categories aren't present
   const [signedOutfits, setSignedOutfits] = useState<string[]>([]);
@@ -55,35 +50,25 @@ export default function ReviewerRequestScreen() {
   const auroFeeBps = (request as any)?.auro_fee_bps as number | undefined;
   const [expressUrl, setExpressUrl] = useState<string | null>(null);
 
-  // Section ratings
-  const [outfitsRating, setOutfitsRating] = useState(0);
-  const [roomTourRating, setRoomTourRating] = useState(0);
-  const [socialsRating, setSocialsRating] = useState(0);
+  // Video review is now the only option - no individual section ratings needed
+  const canSubmit = !!videoUri;
 
-  // Section notes
-  const [outfitsNotes, setOutfitsNotes] = useState('');
-  const [roomNotes, setRoomNotes] = useState('');
-  const [socialsNotes, setSocialsNotes] = useState('');
-
-  // Submission can proceed only when all three sections are rated
-  const canSubmit = outfitsRating > 0 && roomTourRating > 0 && socialsRating > 0;
-
-  // Compute overall automatically from section ratings
-  useEffect(() => {
-    if (!canSubmit) {
-      setOverall(0);
-      return;
-    }
-    const sum = outfitsRating + roomTourRating + socialsRating;
-    const avg = sum / 3;
-    setOverall(Math.round(avg));
-  }, [outfitsRating, roomTourRating, socialsRating]);
-
-  // Per-photo notes
+  // Per-photo notes and ratings for video review
   const [photoNotes, setPhotoNotes] = useState<Record<string, string>>({});
+  const [photoRatings, setPhotoRatings] = useState<Record<string, number>>({});
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [noteUri, setNoteUri] = useState<string | null>(null);
   const [noteText, setNoteText] = useState('');
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+
+  // Get all photos in order for the video review
+  const allPhotos = React.useMemo(() => {
+    const photos: Array<{uri: string, category: string, index: number}> = [];
+    signedOutfits.forEach((uri, i) => photos.push({uri, category: 'Outfits', index: i}));
+    signedRoom.forEach((uri, i) => photos.push({uri, category: 'Room Tour', index: i}));
+    signedSocials.forEach((uri, i) => photos.push({uri, category: 'Socials', index: i}));
+    return photos;
+  }, [signedOutfits, signedRoom, signedSocials]);
 
   // Move useMemo to the top level, always called
   const parsedNotes = React.useMemo(() => {
@@ -218,35 +203,29 @@ export default function ReviewerRequestScreen() {
   const handleSubmitReview = async () => {
     if (!request?.id) return;
     if (!canSubmit) {
-      Alert.alert('Missing ratings', 'Please rate Outfits, Room, and Socials.');
+      Alert.alert('Video Required', 'Please record a video review before submitting.');
       return;
     }
     setSubmitting(true);
     try {
       let uploadedVideoUrl: string | undefined;
-      let uploadedImageUrl: string | undefined;
       if (videoUri) {
         const res = await uploadRequestMedia(videoUri, { category: 'other' });
         uploadedVideoUrl = res.publicUrl;
       }
-      if (imageUri) {
-        const res = await uploadRequestMedia(imageUri, { category: 'other' });
-        uploadedImageUrl = res.publicUrl;
-      }
       const updated = await submitRequestReview({
         requestId: request.id,
         review: {
-          ratings: { overall, wardrobe: outfitsRating || undefined, room: roomTourRating || undefined, socials: socialsRating || undefined },
-          feedback: { strengths: selectedTags, improvements: [], generalFeedback: notes, sectionNotes: { outfits: outfitsNotes, room: roomNotes, socials: socialsNotes }, photoNotes } as any,
+          ratings: { overall: 5 }, // Default overall rating since we're only doing video reviews
+          feedback: { strengths: [], improvements: [], generalFeedback: 'Video review completed', sectionNotes: {}, photoNotes } as any,
         },
         videoUrl: uploadedVideoUrl || null,
-        imageUrl: uploadedImageUrl || null,
+        imageUrl: null,
       });
       setRequest(updated);
       Alert.alert('Success', 'Review submitted successfully.');
-      // Navigate to submission success screen with optional local media uri (if any)
-      const localMedia = videoUri || imageUri || '';
-      router.replace({ pathname: '/(tabs)/requests/reviewer/submitted' as any, params: localMedia ? { uri: localMedia } : {} as any });
+      // Navigate to submission success screen with video uri
+      router.replace({ pathname: '/(tabs)/requests/reviewer/submitted' as any, params: videoUri ? { uri: videoUri } : {} as any });
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to submit review');
     } finally {
@@ -352,30 +331,7 @@ export default function ReviewerRequestScreen() {
             <PhotoCarousel 
               uris={signedOutfits}
               onPressItem={(i) => { setGalleryUris(signedOutfits); setGalleryIndex(i); setGalleryOpen(true); }}
-              onLongPressItem={request.status === 'in_progress' ? (i) => { setNoteUri(signedOutfits[i]); setNoteText(photoNotes[signedOutfits[i]] || ''); setNoteModalOpen(true); } : undefined}
             />
-            {request.status === 'in_progress' && (
-              <>
-                <RNView style={{ height: 8 }} />
-                <RatingBar value={outfitsRating} onChange={setOutfitsRating} label="Rate Outfits" />
-                <View style={styles.cardBlock}>
-                  <Text style={styles.sectionHint}>What to consider:</Text>
-                  <View style={styles.guideList}>
-                    <Text style={styles.guideItem}>• Fit, coordination, and color harmony</Text>
-                    <Text style={styles.guideItem}>• Personal style and occasion-appropriateness</Text>
-                    <Text style={styles.guideItem}>• One thing they do well and one actionable improvement</Text>
-                  </View>
-                </View>
-                <TextInput
-                  value={outfitsNotes}
-                  onChangeText={setOutfitsNotes}
-                  placeholder="Notes for outfits (strengths, suggestions, next steps)"
-                  placeholderTextColor={Colors.brand.textSecondary}
-                  style={[styles.sectionNoteInput, styles.cardInput, { fontFamily: 'Poppins_400Regular' }]}
-                  multiline
-                />
-              </>
-            )}
           </View>
         )}
 
@@ -385,30 +341,7 @@ export default function ReviewerRequestScreen() {
             <PhotoCarousel 
               uris={signedRoom}
               onPressItem={(i) => { setGalleryUris(signedRoom); setGalleryIndex(i); setGalleryOpen(true); }}
-              onLongPressItem={request.status === 'in_progress' ? (i) => { setNoteUri(signedRoom[i]); setNoteText(photoNotes[signedRoom[i]] || ''); setNoteModalOpen(true); } : undefined}
             />
-            {request.status === 'in_progress' && (
-              <>
-                <RNView style={{ height: 8 }} />
-                <RatingBar value={roomTourRating} onChange={setRoomTourRating} label="Rate Room Tour" />
-                <View style={styles.cardBlock}>
-                  <Text style={styles.sectionHint}>What to consider:</Text>
-                  <View style={styles.guideList}>
-                    <Text style={styles.guideItem}>• Lighting, declutter, and focal points</Text>
-                    <Text style={styles.guideItem}>• Cohesive theme and composition of decor</Text>
-                    <Text style={styles.guideItem}>• One quick win to level up presentation</Text>
-                  </View>
-                </View>
-                <TextInput
-                  value={roomNotes}
-                  onChangeText={setRoomNotes}
-                  placeholder="Notes for room tour (ambience, focal points, quick wins)"
-                  placeholderTextColor={Colors.brand.textSecondary}
-                  style={[styles.sectionNoteInput, styles.cardInput, { fontFamily: 'Poppins_400Regular' }]}
-                  multiline
-                />
-              </>
-            )}
           </View>
         )}
 
@@ -418,30 +351,7 @@ export default function ReviewerRequestScreen() {
             <PhotoCarousel 
               uris={signedSocials}
               onPressItem={(i) => { setGalleryUris(signedSocials); setGalleryIndex(i); setGalleryOpen(true); }}
-              onLongPressItem={request.status === 'in_progress' ? (i) => { setNoteUri(signedSocials[i]); setNoteText(photoNotes[signedSocials[i]] || ''); setNoteModalOpen(true); } : undefined}
             />
-            {request.status === 'in_progress' && (
-              <>
-                <RNView style={{ height: 8 }} />
-                <RatingBar value={socialsRating} onChange={setSocialsRating} label="Rate Socials" />
-                <View style={styles.cardBlock}>
-                  <Text style={styles.sectionHint}>What to consider:</Text>
-                  <View style={styles.guideList}>
-                    <Text style={styles.guideItem}>• First impression and clarity of profile</Text>
-                    <Text style={styles.guideItem}>• Photo curation and bio effectiveness</Text>
-                    <Text style={styles.guideItem}>• One specific change to improve engagement</Text>
-                  </View>
-                </View>
-                <TextInput
-                  value={socialsNotes}
-                  onChangeText={setSocialsNotes}
-                  placeholder="Notes for socials (first impression, curation, actionable change)"
-                  placeholderTextColor={Colors.brand.textSecondary}
-                  style={[styles.sectionNoteInput, styles.cardInput, { fontFamily: 'Poppins_400Regular' }]}
-                  multiline
-                />
-              </>
-            )}
           </View>
         )}
 
@@ -491,52 +401,20 @@ export default function ReviewerRequestScreen() {
 
         {request.status === 'in_progress' && (
           <View style={styles.section}>
-            <Text style={styles.label}>Review Summary</Text>
-
-            {/* Progress header */}
-            <View style={styles.progressRow}>
-              <View style={[styles.progressChip, outfitsRating > 0 && styles.progressChipDone]}>
-                <Text style={styles.progressChipText}>Outfits {outfitsRating > 0 ? `(${outfitsRating}/5)` : ''}</Text>
-              </View>
-              <View style={[styles.progressChip, roomTourRating > 0 && styles.progressChipDone]}>
-                <Text style={styles.progressChipText}>Room {roomTourRating > 0 ? `(${roomTourRating}/5)` : ''}</Text>
-              </View>
-              <View style={[styles.progressChip, socialsRating > 0 && styles.progressChipDone]}>
-                <Text style={styles.progressChipText}>Socials {socialsRating > 0 ? `(${socialsRating}/5)` : ''}</Text>
-              </View>
-            </View>
-
-            {/* Overall (auto) */}
-            <View style={styles.overallCapsule}>
-              <Text style={styles.overallTitle}>Overall (auto)</Text>
-              <RNView pointerEvents="none">
-                <RatingBar value={overall} onChange={() => {}} label="" />
-              </RNView>
-              {!canSubmit && (
-                <Text style={styles.sectionHint}>Rate Outfits, Room, and Socials to compute Overall.</Text>
-              )}
-            </View>
-
-            {/* Optional general tags and notes retained */}
-            <RNView style={{ height: 12 }} />
-            <Text style={styles.label}>Optional video review</Text>
+            <Text style={styles.label}>Video Review</Text>
+            <Text style={styles.sectionHint}>Record a video review while swiping through photos. You can rate and add notes to each photo during the recording.</Text>
             {Platform.OS !== 'web' && (
               <RNView style={{ flexDirection: 'row', gap: 10 }}>
                 <TouchableOpacity style={[styles.actionButton, styles.primaryButton, { flex: 1 }]} onPress={() => setRecordingModeOpen(true)}>
-                  <Text style={styles.actionButtonText}>Open Immersive Recorder</Text>
+                  <Text style={styles.actionButtonText}>Start Video Review</Text>
                 </TouchableOpacity>
               </RNView>
             )}
-            <RNView style={{ height: 10 }} />
-            <MediaRecorder
-              photos={request.photos || []}
-              value={videoUri}
-              onRecorded={(uri) => {
-                setVideoUri(uri);
-                setRecordingModeOpen(false);
-                Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
-              }}
-            />
+            {videoUri && (
+              <RNView style={{ marginTop: 12, padding: 12, backgroundColor: Colors.brand.cardBackground, borderRadius: 12, borderWidth: 1, borderColor: Colors.brand.status.completed }}>
+                <Text style={{ color: Colors.brand.status.completed, fontWeight: '700', textAlign: 'center' }}>✅ Video Review Complete</Text>
+              </RNView>
+            )}
             <RNView style={{ height: 12 }} />
 
             <TouchableOpacity
@@ -549,7 +427,7 @@ export default function ReviewerRequestScreen() {
           </View>
         )}
       </ScrollView>
-      {/* Immersive recording modal */}
+      {/* Immersive recording modal with rating and note controls */}
       <Modal visible={recordingModeOpen} animationType="slide" onRequestClose={() => setRecordingModeOpen(false)}>
         <RNView style={{ flex: 1, backgroundColor: 'transparent' }}>
           {/* Background image under everything */}
@@ -558,71 +436,78 @@ export default function ReviewerRequestScreen() {
             style={StyleSheet.absoluteFill}
             contentFit="cover"
           />
-          {/* Pager of cards: title cards then individual photos */}
-          <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ alignItems: 'center', paddingTop: insets.top + 180 }}>
-            {/* Card 1: Person summary (center vertically) */}
+          
+          {/* Photo carousel with rating and note controls */}
+          <ScrollView 
+            horizontal 
+            pagingEnabled 
+            showsHorizontalScrollIndicator={false} 
+            style={{ flex: 1 }} 
+            contentContainerStyle={{ alignItems: 'center', paddingTop: insets.top + 120 }}
+            onMomentumScrollEnd={(event) => {
+              const index = Math.round(event.nativeEvent.contentOffset.x / Dimensions.get('window').width);
+              setCurrentPhotoIndex(index);
+            }}
+          >
+            {/* Person summary card */}
             <RNView style={{ width: Dimensions.get('window').width, padding: 16, justifyContent: 'center' }}>
               <RNView style={[styles.overlayCard, { alignSelf: 'center', maxWidth: 640 }] }>
                 <Text style={styles.overlayTitle}>{reviewee?.displayName || 'User'}</Text>
                 {parsedNotes?.message ? (<Text style={styles.overlayText}>{parsedNotes?.message}</Text>) : null}
                 {signedSelfie ? (<Image source={{ uri: signedSelfie }} style={{ width: '100%', aspectRatio: 1, borderRadius: 12, marginTop: 12 }} contentFit="cover" />) : null}
-                
               </RNView>
             </RNView>
 
-            {/* Outfits: title card then each photo */}
-            {signedOutfits.length > 0 && (
-              <RNView style={{ width: Dimensions.get('window').width, padding: 16, justifyContent: 'center' }}>
-                <RNView style={[styles.overlayCard, { alignSelf: 'center', maxWidth: 640 }] }>
-                  <Text style={styles.overlayTitle}>Outfits</Text>
-                  <Text style={styles.overlayText}>Swipe to review each outfit photo.</Text>
-                </RNView>
-              </RNView>
-            )}
-            {signedOutfits.map((uri, i) => (
-              <RNView key={`outfit-${i}`} style={{ width: Dimensions.get('window').width, padding: 16, justifyContent: 'center' }}>
+            {/* Individual photos with rating and note controls */}
+            {allPhotos.map((photo, i) => (
+              <RNView key={`photo-${i}`} style={{ width: Dimensions.get('window').width, padding: 16, justifyContent: 'center' }}>
                 <RNView style={[styles.overlayPhotoCard, { alignSelf: 'center', maxWidth: 640 }] }>
-                  <Image source={{ uri }} style={{ width: '100%', aspectRatio: 3/4, borderRadius: 12 }} contentFit="cover" />
-                </RNView>
-              </RNView>
-            ))}
+                  <Text style={styles.overlayTitle}>{photo.category}</Text>
+                  <Image source={{ uri: photo.uri }} style={{ width: '100%', aspectRatio: 3/4, borderRadius: 12, marginTop: 8 }} contentFit="cover" />
+                  
+                  {/* Rating controls */}
+                  <RNView style={{ marginTop: 12, alignItems: 'center' }}>
+                    <Text style={[styles.overlayText, { marginBottom: 8 }]}>Rate this photo:</Text>
+                    <RNView style={{ flexDirection: 'row', gap: 8 }}>
+                      {[1, 2, 3, 4, 5].map((rating) => (
+                        <TouchableOpacity
+                          key={rating}
+                          onPress={() => setPhotoRatings(prev => ({ ...prev, [photo.uri]: rating }))}
+                          style={[
+                            styles.ratingButton,
+                            photoRatings[photo.uri] === rating && styles.ratingButtonSelected
+                          ]}
+                        >
+                          <Text style={[
+                            styles.ratingButtonText,
+                            photoRatings[photo.uri] === rating && styles.ratingButtonTextSelected
+                          ]}>
+                            {rating}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </RNView>
+                  </RNView>
 
-            {/* Room: title card then each photo */}
-            {signedRoom.length > 0 && (
-              <RNView style={{ width: Dimensions.get('window').width, padding: 16, justifyContent: 'center' }}>
-                <RNView style={[styles.overlayCard, { alignSelf: 'center', maxWidth: 640 }] }>
-                  <Text style={styles.overlayTitle}>Room Tour</Text>
-                  <Text style={styles.overlayText}>Swipe to review each room photo.</Text>
-                </RNView>
-              </RNView>
-            )}
-            {signedRoom.map((uri, i) => (
-              <RNView key={`room-${i}`} style={{ width: Dimensions.get('window').width, padding: 16, justifyContent: 'center' }}>
-                <RNView style={[styles.overlayPhotoCard, { alignSelf: 'center', maxWidth: 640 }] }>
-                  <Image source={{ uri }} style={{ width: '100%', aspectRatio: 3/4, borderRadius: 12 }} contentFit="cover" />
-                </RNView>
-              </RNView>
-            ))}
-
-            {/* Socials: title card then each screenshot */}
-            {signedSocials.length > 0 && (
-              <RNView style={{ width: Dimensions.get('window').width, padding: 16, justifyContent: 'center' }}>
-                <RNView style={[styles.overlayCard, { alignSelf: 'center', maxWidth: 640 }] }>
-                  <Text style={styles.overlayTitle}>Socials</Text>
-                  <Text style={styles.overlayText}>Swipe to review each profile screenshot.</Text>
-                </RNView>
-              </RNView>
-            )}
-            {signedSocials.map((uri, i) => (
-              <RNView key={`social-${i}`} style={{ width: Dimensions.get('window').width, padding: 16, justifyContent: 'center' }}>
-                <RNView style={[styles.overlayPhotoCard, { alignSelf: 'center', maxWidth: 640 }] }>
-                  <Image source={{ uri }} style={{ width: '100%', aspectRatio: 3/4, borderRadius: 12 }} contentFit="cover" />
+                  {/* Note button */}
+                  <TouchableOpacity
+                    onPress={() => {
+                      setNoteUri(photo.uri);
+                      setNoteText(photoNotes[photo.uri] || '');
+                      setNoteModalOpen(true);
+                    }}
+                    style={[styles.noteButton, photoNotes[photo.uri] && styles.noteButtonHasNote]}
+                  >
+                    <Text style={[styles.noteButtonText, photoNotes[photo.uri] && styles.noteButtonTextHasNote]}>
+                      {photoNotes[photo.uri] ? '📝 Edit Note' : '📝 Add Note'}
+                    </Text>
+                  </TouchableOpacity>
                 </RNView>
               </RNView>
             ))}
           </ScrollView>
 
-          {/* Circular selfie recorder centered at top-middle; ensure above content and clickable */}
+          {/* Circular selfie recorder centered at top-middle */}
           <RNView style={{ position: 'absolute', top: insets.top + 12, left: 0, right: 0, alignItems: 'center', zIndex: 10, elevation: 10 }}>
             <MediaRecorder
               onRecorded={(uri) => {
@@ -635,11 +520,18 @@ export default function ReviewerRequestScreen() {
             />
           </RNView>
 
-          {/* Close */}
+          {/* Close button */}
           <RNView style={{ position: 'absolute', top: insets.top + 16, right: 16, flexDirection: 'row', gap: 8, zIndex: 11, elevation: 11 }}>
             <TouchableOpacity onPress={() => setRecordingModeOpen(false)} style={[styles.actionButton, styles.denyButton, { paddingHorizontal: 14, paddingVertical: 8 }]}>
               <Text style={[styles.actionButtonText, styles.denyButtonText]}>Close</Text>
             </TouchableOpacity>
+          </RNView>
+
+          {/* Progress indicator */}
+          <RNView style={{ position: 'absolute', bottom: insets.bottom + 20, left: 0, right: 0, alignItems: 'center', zIndex: 10 }}>
+            <Text style={styles.progressText}>
+              {currentPhotoIndex + 1} of {allPhotos.length + 1} • Swipe to review photos
+            </Text>
           </RNView>
         </RNView>
       </Modal>
@@ -699,19 +591,6 @@ const styles = StyleSheet.create({
   modalCard: { width: '90%', backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 16 },
   noteInput: { minHeight: 100, borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 12, padding: 12, color: Colors.brand.textPrimary, marginBottom: 12 },
   sectionHint: { fontSize: 13, color: Colors.brand.textSecondary, marginTop: 2, fontWeight: '900' },
-  guideList: { marginTop: 6, gap: 6, padding: 8, borderRadius: 8, backgroundColor: Colors.brand.cardBackground },
-  guideItem: { fontSize: 13, color: Colors.brand.textPrimary, fontWeight: '600' },
-  sectionNoteInput: { minHeight: 72, borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 10, padding: 10, color: Colors.brand.textPrimary, marginTop: 8, backgroundColor: Colors.brand.cardBackground },
-  cardBlock: { marginTop: 8, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: Colors.brand.border, backgroundColor: Colors.brand.cardBackground },
-  cardInput: { backgroundColor: Colors.brand.cardBackgroundLight },
-
-  progressRow: { flexDirection: 'row', gap: 8, marginBottom: 8, justifyContent: 'center', backgroundColor: 'transparent' },
-  progressChip: { paddingVertical: 6, paddingHorizontal: 10, borderRadius: 999, backgroundColor: Colors.brand.cardBackground, borderWidth: 1, borderColor: Colors.brand.accentOrange },
-  progressChipDone: { backgroundColor: Colors.brand.accentOrange + '11', borderColor: Colors.brand.accentOrange },
-  progressChipText: { fontSize: 12, color: Colors.brand.textPrimary, fontWeight: '600' },
-
-  overallCapsule: { borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 12, padding: 12, backgroundColor: Colors.brand.cardBackground, marginBottom: 8 },
-  overallTitle: { fontSize: 14, fontWeight: '700', color: Colors.brand.textPrimary, marginBottom: 4 },
 
   disabledButton: { backgroundColor: Colors.brand.border },
   overlayCard: { backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: Colors.brand.border, opacity: 0.96 },
@@ -720,4 +599,60 @@ const styles = StyleSheet.create({
   overlayText: { fontSize: 15, color: Colors.brand.textPrimary, lineHeight: 21 },
   consentPill: { alignSelf: 'center', borderWidth: 1, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 24, backgroundColor: Colors.brand.cardBackground, marginTop: 8 },
   consentPillText: { fontSize: 12, fontWeight: '700' },
+  
+  // New styles for video review interface
+  ratingButton: { 
+    width: 40, 
+    height: 40, 
+    borderRadius: 20, 
+    backgroundColor: 'rgba(255,255,255,0.2)', 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)'
+  },
+  ratingButtonSelected: { 
+    backgroundColor: Colors.brand.accentOrange,
+    borderColor: Colors.brand.accentOrange
+  },
+  ratingButtonText: { 
+    color: '#fff', 
+    fontWeight: '700', 
+    fontSize: 16 
+  },
+  ratingButtonTextSelected: { 
+    color: '#fff' 
+  },
+  noteButton: { 
+    marginTop: 12, 
+    paddingVertical: 10, 
+    paddingHorizontal: 16, 
+    borderRadius: 20, 
+    backgroundColor: 'rgba(255,255,255,0.2)', 
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)'
+  },
+  noteButtonHasNote: { 
+    backgroundColor: Colors.brand.accentMagenta + '40',
+    borderColor: Colors.brand.accentMagenta
+  },
+  noteButtonText: { 
+    color: '#fff', 
+    fontWeight: '600', 
+    fontSize: 14 
+  },
+  noteButtonTextHasNote: { 
+    color: Colors.brand.accentMagenta 
+  },
+  progressText: { 
+    color: '#fff', 
+    fontSize: 14, 
+    fontWeight: '600',
+    textAlign: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20
+  },
 });
