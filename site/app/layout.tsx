@@ -4,6 +4,7 @@ import { Poppins } from 'next/font/google';
 import '../styles.css';
 import CountdownTimer from '../components/CountdownTimer';
 import ReviewerCounter from '../components/ReviewerCounter';
+import ConditionalNav from '../components/ConditionalNav';
 
 // Fonts must be initialized at module scope
 const poppins = Poppins({ subsets: ['latin'], weight: ['400', '600', '700'] });
@@ -53,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
             
             <nav className="nav-cta-section">
-              <a className="cta-nav" href="/reviewers/apply">Become a Founding Reviewer</a>
+              <ConditionalNav />
               <ReviewerCounter 
                 maxReviewers={50}
                 className="nav-counter"

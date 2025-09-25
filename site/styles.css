@@ -2132,6 +2132,31 @@ footer {
   }
 }
 
+/* Enhanced progress bar for apply page */
+.apply-page .progress-bar {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  padding: 12px 20px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.apply-page .progress-step {
+  transition: all 0.3s ease;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.apply-page .progress-step:hover {
+  background: rgba(255, 111, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.apply-page .progress-step.current {
+  background: rgba(255, 111, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(255, 111, 0, 0.2);
+}
+
 /* Request Content */
 .request-content {
   max-width: 600px;
@@ -2145,13 +2170,85 @@ footer {
   flex-direction: column;
   max-height: fit-content;
   overflow: visible;
+  width: 100%;
+}
+
+/* Apply page specific container improvements */
+.apply-page .container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: calc(100vh - var(--nav-h) - 120px);
+  padding: 20px;
+}
+
+/* Enhanced form styling for better UX */
+.apply-page .request-content {
+  animation: fadeInUp 0.6s ease-out;
+  transition: all 0.3s ease;
+}
+
+.apply-page .request-content:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+.apply-page .form-field input,
+.apply-page .form-field textarea {
+  transition: all 0.3s ease;
+  border: 2px solid var(--border);
+}
+
+.apply-page .form-field input:focus,
+.apply-page .form-field textarea:focus {
+  border-color: var(--grad-start);
+  box-shadow: 0 0 0 3px rgba(255, 111, 0, 0.1);
+  outline: none;
+}
+
+.apply-page .btn-primary {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.apply-page .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(255, 111, 0, 0.3);
+}
+
+.apply-page .btn-primary:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .apply-page .container {
+    padding: 16px;
+    min-height: calc(100vh - var(--nav-h) - 100px);
+  }
+  
+  .apply-page .request-content {
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .apply-page .container {
+    padding: 12px;
+    min-height: calc(100vh - var(--nav-h) - 80px);
+  }
+  
+  .apply-page .request-content {
+    margin-top: 16px;
+  }
 }
 
 @media (max-width: 768px) {
   .request-content {
     padding: 14px;
-    margin: 0 12px;
-    max-width: calc(100vw - 24px);
+    margin: 0 auto;
+    max-width: calc(100vw - 32px);
+    width: 100%;
   }
   
   .step-header {
@@ -2244,8 +2341,9 @@ footer {
   
   .request-content {
     padding: 12px;
-    margin: 0 8px;
-    max-width: calc(100vw - 16px);
+    margin: 0 auto;
+    max-width: calc(100vw - 24px);
+    width: 100%;
   }
   
   .step-header {
@@ -3373,6 +3471,30 @@ footer {
   margin-bottom: 16px;
 }
 
+/* Enhanced success card for apply page */
+.apply-page .success-card {
+  background: linear-gradient(135deg, var(--card) 0%, rgba(255, 111, 0, 0.05) 100%);
+  border: 1px solid rgba(255, 111, 0, 0.2);
+  box-shadow: 0 12px 40px rgba(255, 111, 0, 0.1);
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.apply-page .success-icon {
+  animation: bounce 1s ease-in-out;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
 .request-info {
   background: rgba(255, 111, 0, 0.05);
   border: 1px solid rgba(255, 111, 0, 0.2);
@@ -3892,7 +4014,7 @@ footer {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 40px 0 0 0;
+  padding: 20px 0;
   margin: 0;
   background: linear-gradient(180deg, 
     rgba(15, 15, 35, 0.8) 0%, 
@@ -3925,11 +4047,11 @@ footer {
   justify-content: center;
   align-items: center;
   height: 100%;
-  gap: 40px;
+  gap: 24px;
 }
 
 .showcase-title {
-  font-size: clamp(24px, 6vw, 32px);
+  font-size: clamp(20px, 5vw, 28px);
   font-weight: 700;
   color: var(--text);
   margin: 0;
@@ -3951,7 +4073,7 @@ footer {
 }
 
 .iphone-mockup {
-  width: min(60vw, 240px);
+  width: min(50vw, 200px);
   height: auto;
   border-radius: 24px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
