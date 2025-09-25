@@ -241,13 +241,13 @@ export default function FoundingReviewerApplyPage() {
 
   return (
     <div className="apply-page request-page">
-      <div className="container" style={{ marginBottom: 8, flexShrink: 0 }}>
+      <div className="container" style={{ marginBottom: 0, flexShrink: 0, paddingTop: 20, paddingBottom: 0 }}>
         <Stepper />
       </div>
       {step === 1 && (
-        <section className="hero" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <section className="hero" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 'auto', padding: '20px 0' }}>
           <div className="container">
-            <div className="hero__inner" style={{ gridTemplateColumns: '1fr', textAlign: 'center', justifyContent: 'center' }}>
+            <div className="hero__inner" style={{ gridTemplateColumns: '1fr', textAlign: 'center', justifyContent: 'center', padding: '20px 0' }}>
               <div className="hero__copy">
                 <h1>Become a Founding Reviewer</h1>
                 <p className="sub">Join an exclusive group shaping the next big lifestyle feedback platform.</p>

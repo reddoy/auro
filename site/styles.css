@@ -435,10 +435,11 @@ body {
 
 /* Compact hero for apply page */
 .apply-page .hero {
-  padding: 20px 0;
+  padding: 10px 0;
   min-height: auto;
   max-height: none;
   overflow: visible;
+  flex: 0 0 auto;
 }
 
 .apply-page .hero__inner {
@@ -457,13 +458,13 @@ body {
 
 .apply-page .hero__copy h1 {
   font-size: clamp(28px, 5vw, 42px) !important;
-  margin-bottom: 16px !important;
+  margin-bottom: 12px !important;
   line-height: 1.2 !important;
 }
 
 .apply-page .hero__copy .sub {
   font-size: 16px !important;
-  margin-bottom: 20px !important;
+  margin-bottom: 16px !important;
   line-height: 1.4 !important;
 }
 
@@ -2136,9 +2137,10 @@ footer {
 .apply-page .progress-bar {
   background: rgba(255, 255, 255, 0.02);
   border-radius: 12px;
-  padding: 12px 20px;
+  padding: 8px 16px;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
+  margin: 0;
 }
 
 .apply-page .progress-step {
@@ -2178,8 +2180,21 @@ footer {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  min-height: calc(100vh - var(--nav-h) - 120px);
+  min-height: auto;
   padding: 20px;
+}
+
+/* Compact layout for apply page */
+.apply-page {
+  min-height: calc(100vh - var(--nav-h));
+  display: flex;
+  flex-direction: column;
+}
+
+.apply-page .request-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Enhanced form styling for better UX */
@@ -2221,25 +2236,37 @@ footer {
   transform: translateY(0);
 }
 
+/* Reduce footer spacing for apply page */
+.apply-page + footer {
+  margin-top: 0;
+  padding: 20px 0;
+}
+
 @media (max-width: 768px) {
   .apply-page .container {
     padding: 16px;
-    min-height: calc(100vh - var(--nav-h) - 100px);
   }
   
   .apply-page .request-content {
     margin-top: 20px;
+  }
+  
+  .apply-page + footer {
+    padding: 16px 0;
   }
 }
 
 @media (max-width: 480px) {
   .apply-page .container {
     padding: 12px;
-    min-height: calc(100vh - var(--nav-h) - 80px);
   }
   
   .apply-page .request-content {
     margin-top: 16px;
+  }
+  
+  .apply-page + footer {
+    padding: 12px 0;
   }
 }
 

@@ -41,7 +41,7 @@ export default function HomePage() {
       {/* iPhone Showcase Section for Mobile */}
       <section className="iphone-showcase mobile-only">
         <div className="showcase-content">
-          <h2 className="showcase-title">Share quick video reviews and monetize your expertise in style, photos, and presentation.</h2>
+          <h2 className="showcase-title">Share quick video reviews and monetize your expertise in confidence, image, and aesthetic.</h2>
           <div className="iphone-mockup-container">
             <img className="iphone-mockup" src="/iphone-mockup.png" alt="iPhone app mockup" loading="lazy" />
           </div>
@@ -157,10 +157,16 @@ export default function HomePage() {
             <img src="/rj-headshot.jpg" alt="RJ headshot" style={{ width: 160, height: 160, objectFit: 'cover', borderRadius: 12 }} loading="lazy" />
             <div className="about__text" style={{ maxWidth: 720, textAlign: 'center' }}>
               <p>
-                I'm RJ, founder of Auro. I built this platform to connect creators with high-paying review opportunities.
+                I'm RJ, founder of Auro. This is where creators turn expertise into income.
               </p>
               <p>
-                Reviewers on Auro monetize their expertise in style, confidence, and presentation. Join the founding group and start earning from your knowledge.
+                On Auro, reviewers earn by sharing their insights on style, confidence, and aesthetic—helping others elevate their personal brand and make smarter choices.
+              </p>
+              <p>
+                We're building a community of trusted voices who shape trends and influence culture. As part of the founding group, you'll get exclusive early access, premium exposure, and the chance to establish yourself before the platform opens to everyone.
+              </p>
+              <p>
+                Join the founding group and start getting paid to share your expertise.
               </p>
             </div>
           </div>
