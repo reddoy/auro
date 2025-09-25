@@ -9,14 +9,13 @@ interface ReviewerCounterProps {
 }
 
 export default function ReviewerCounter({ maxReviewers = 50, className = '' }: ReviewerCounterProps) {
-  const [count, setCount] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [count, setCount] = useState<number>(0); // Start with 0 instead of null
+  const [loading, setLoading] = useState(false); // Don't show loading initially
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchReviewerCount = async () => {
       try {
-        setLoading(true);
         setError(null);
         
         // Try to fetch from creators table, filtering for actual reviewers
@@ -36,7 +35,7 @@ export default function ReviewerCounter({ maxReviewers = 50, className = '' }: R
           if (profileError) {
             console.error('Error fetching from profiles table:', profileError);
             setError('Database connection issue');
-            setCount(0);
+            // Keep current count instead of resetting to 0
           } else {
             setCount(profileData?.length || 0);
           }
@@ -46,9 +45,7 @@ export default function ReviewerCounter({ maxReviewers = 50, className = '' }: R
       } catch (err) {
         console.error('Error fetching reviewer count:', err);
         setError('Connection failed');
-        setCount(0);
-      } finally {
-        setLoading(false);
+        // Keep current count instead of resetting to 0
       }
     };
 
@@ -60,41 +57,8 @@ export default function ReviewerCounter({ maxReviewers = 50, className = '' }: R
     return () => clearInterval(interval);
   }, []);
 
-  if (loading) {
-    return (
-      <div className={`reviewer-counter ${className}`}>
-        <span className="counter-loading">Loading...</span>
-      </div>
-    );
-  }
 
-  if (error) {
-    // Show a mock count for now while debugging
-    const mockCount = 3; // You can change this to test different scenarios
-    const spotsLeft = Math.max(0, maxReviewers - mockCount);
-    const isNearFull = spotsLeft <= 10;
-    const isFull = spotsLeft === 0;
-
-    return (
-      <div className={`reviewer-counter ${className} ${isNearFull ? 'near-full' : ''} ${isFull ? 'full' : ''}`}>
-        <div className="counter-display">
-          <span className="counter-current">{mockCount}</span>
-          <span className="counter-separator">/</span>
-          <span className="counter-max">{maxReviewers}</span>
-        </div>
-        <div className="counter-message">
-          {isFull ? (
-            <span className="counter-full">Founding spots filled! 🎉</span>
-          ) : isNearFull ? (
-            <span className="counter-urgent">Only {spotsLeft} spots left! ⚡</span>
-          ) : (
-            <span className="counter-normal">Founding reviewers</span>
-          )}
-        </div>
-      </div>
-    );
-  }
-
+  // Always show the current count, even if there's an error
   const currentCount = count || 0;
   const spotsLeft = Math.max(0, maxReviewers - currentCount);
   const isNearFull = spotsLeft <= 10;

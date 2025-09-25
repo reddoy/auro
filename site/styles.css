@@ -1522,6 +1522,7 @@ footer {
   background-clip: text;
   text-shadow: 0 0 20px rgba(255, 111, 0, 0.3);
   position: relative;
+  transition: all 0.3s ease;
 }
 
 .counter-current::after {
@@ -2225,6 +2226,8 @@ footer {
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  min-width: 160px;
+  text-align: center;
 }
 
 .apply-page .btn-primary:hover {
@@ -2234,6 +2237,20 @@ footer {
 
 .apply-page .btn-primary:active {
   transform: translateY(0);
+}
+
+/* Step actions consistency */
+.apply-page .step-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.apply-page .step-actions .btn-secondary {
+  min-width: 80px;
+  text-align: center;
 }
 
 /* Reduce footer spacing for apply page */
@@ -2251,6 +2268,14 @@ footer {
     margin-top: 20px;
   }
   
+  .apply-page .btn-primary {
+    min-width: 140px;
+  }
+  
+  .apply-page .step-actions .btn-secondary {
+    min-width: 70px;
+  }
+  
   .apply-page + footer {
     padding: 16px 0;
   }
@@ -2263,6 +2288,14 @@ footer {
   
   .apply-page .request-content {
     margin-top: 16px;
+  }
+  
+  .apply-page .btn-primary {
+    min-width: 120px;
+  }
+  
+  .apply-page .step-actions .btn-secondary {
+    min-width: 60px;
   }
   
   .apply-page + footer {
