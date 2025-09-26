@@ -19,7 +19,7 @@ export default function ConditionalNav() {
         <span className="urgency-text">Limited Spots</span>
       </div>
       <a className="cta-nav" href="/reviewers/apply">
-        Join Founding 50
+        Join Founding 100
       </a>
     </div>
   );

@@ -8,7 +8,7 @@ interface ReviewerCounterProps {
   className?: string;
 }
 
-export default function ReviewerCounter({ maxReviewers = 50, className = '' }: ReviewerCounterProps) {
+export default function ReviewerCounter({ maxReviewers = 100, className = '' }: ReviewerCounterProps) {
   const [count, setCount] = useState<number>(0); // Start with 0 instead of null
   const [loading, setLoading] = useState(false); // Don't show loading initially
   const [error, setError] = useState<string | null>(null);

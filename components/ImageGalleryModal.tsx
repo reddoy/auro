@@ -1,8 +1,17 @@
 import React from 'react';
-import { Modal, Pressable, StyleSheet, View, FlatList, Dimensions, Platform } from 'react-native';
+import { Modal, Pressable, StyleSheet, View, FlatList, Dimensions, Platform, PanGestureHandler, PinchGestureHandler, State } from 'react-native';
 import { Text } from '@/components/Themed';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  useAnimatedGestureHandler, 
+  withSpring, 
+  runOnJS,
+  interpolate,
+  Extrapolate
+} from 'react-native-reanimated';
 
 type Props = {
   visible: boolean;
@@ -10,6 +19,89 @@ type Props = {
   initialIndex?: number;
   onClose: () => void;
 };
+
+type ZoomableImageProps = {
+  uri: string;
+  width: number;
+  height: number;
+};
+
+function ZoomableImage({ uri, width, height }: ZoomableImageProps) {
+  const scale = useSharedValue(1);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const savedScale = useSharedValue(1);
+  const savedTranslateX = useSharedValue(0);
+  const savedTranslateY = useSharedValue(0);
+
+  const pinchHandler = useAnimatedGestureHandler({
+    onStart: () => {
+      savedScale.value = scale.value;
+    },
+    onActive: (event) => {
+      scale.value = Math.max(0.5, Math.min(3, savedScale.value * event.scale));
+    },
+    onEnd: () => {
+      savedScale.value = scale.value;
+      if (scale.value < 1) {
+        scale.value = withSpring(1);
+        translateX.value = withSpring(0);
+        translateY.value = withSpring(0);
+        savedScale.value = 1;
+        savedTranslateX.value = 0;
+        savedTranslateY.value = 0;
+      }
+    },
+  });
+
+  const panHandler = useAnimatedGestureHandler({
+    onStart: () => {
+      savedTranslateX.value = translateX.value;
+      savedTranslateY.value = translateY.value;
+    },
+    onActive: (event) => {
+      if (scale.value > 1) {
+        const maxTranslateX = (width * (scale.value - 1)) / 2;
+        const maxTranslateY = (height * (scale.value - 1)) / 2;
+        
+        translateX.value = Math.max(-maxTranslateX, Math.min(maxTranslateX, savedTranslateX.value + event.translationX));
+        translateY.value = Math.max(-maxTranslateY, Math.min(maxTranslateY, savedTranslateY.value + event.translationY));
+      }
+    },
+    onEnd: () => {
+      savedTranslateX.value = translateX.value;
+      savedTranslateY.value = translateY.value;
+    },
+  });
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+        { scale: scale.value },
+      ],
+    };
+  });
+
+  return (
+    <PanGestureHandler onGestureEvent={panHandler} minPointers={1} maxPointers={1}>
+      <Animated.View style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>
+        <PinchGestureHandler onGestureEvent={pinchHandler}>
+          <Animated.View style={animatedStyle}>
+            <Image
+              source={{ uri }}
+              style={{ width, height, resizeMode: 'contain' }}
+              contentFit="contain"
+              cachePolicy="none"
+              transition={200}
+            />
+          </Animated.View>
+        </PinchGestureHandler>
+      </Animated.View>
+    </PanGestureHandler>
+  );
+}
 
 export default function ImageGalleryModal({ visible, uris, initialIndex = 0, onClose }: Props) {
   const listRef = React.useRef<FlatList<string>>(null);
@@ -67,17 +159,16 @@ export default function ImageGalleryModal({ visible, uris, initialIndex = 0, onC
             setIndex(i);
           }}
           renderItem={({ item }) => (
-            <Image
-              source={{ uri: item }}
-              style={{ width, height, resizeMode: 'contain' }}
-              contentFit="contain"
-              cachePolicy="none"
-              transition={200}
-            />
+            <ZoomableImage uri={item} width={width} height={height} />
           )}
         />
         {/* Counter (top-left) */}
         <View style={[styles.counter, { top: insets.top + 16 }]}><Text style={styles.counterText}>{index + 1}/{uris.length}</Text></View>
+        
+        {/* Zoom hint (bottom-center) */}
+        <View style={[styles.zoomHint, { bottom: insets.bottom + 20 }]}>
+          <Text style={styles.zoomHintText}>Pinch to zoom • Drag to pan</Text>
+        </View>
 
         {/* Close button (top-right) - positioned with safe area */}
         <Pressable onPress={onClose} style={[styles.closeButton, { top: insets.top + 16 }]} accessibilityLabel="Close gallery">
@@ -125,6 +216,21 @@ const styles = StyleSheet.create({
   arrowsWrap: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 },
   arrowButton: { position: 'absolute', width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center' },
   arrowText: { color: '#fff', fontSize: 28, fontWeight: '900', lineHeight: 28 },
+  zoomHint: { 
+    position: 'absolute', 
+    left: 0, 
+    right: 0, 
+    alignItems: 'center', 
+    zIndex: 3 
+  },
+  zoomHintText: { 
+    color: 'rgba(255,255,255,0.7)', 
+    fontSize: 12, 
+    backgroundColor: 'rgba(0,0,0,0.3)', 
+    paddingHorizontal: 12, 
+    paddingVertical: 6, 
+    borderRadius: 12 
+  },
 });
 
 

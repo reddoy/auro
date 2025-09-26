@@ -40,7 +40,7 @@ export default function HomePage() {
               {/* Founding Reviewer Counter */}
               <div className="hero-counter">
                 <ReviewerCounter 
-                  maxReviewers={50}
+                  maxReviewers={100}
                   className="hero-counter-display"
                 />
                 <p className="counter-note">Founding spots available before app launch</p>
@@ -54,7 +54,7 @@ export default function HomePage() {
                 </div>
                 <div className="trust-item">
                   <span className="trust-icon">🎯</span>
-                  <span className="trust-text">First 50 reviewers only</span>
+                  <span className="trust-text">First 100 reviewers only</span>
                 </div>
               </div>
               
@@ -219,7 +219,7 @@ export default function HomePage() {
           {/* CTA After Value Props */}
           <div className="social-proof-cta">
             <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
-            <p className="cta-note">Join the first 50 • Shape the platform • Launch October 15th</p>
+            <p className="cta-note">Join the first 100 • Shape the platform • Launch October 15th</p>
           </div>
         </div>
       </section>
@@ -262,7 +262,7 @@ export default function HomePage() {
             </div>
             <div className="reviewer-progress">
               <ReviewerCounter 
-                maxReviewers={50}
+                maxReviewers={100}
                 className="main-counter"
               />
             </div>
@@ -282,7 +282,7 @@ export default function HomePage() {
               <span className="urgency-label">FOUNDING MEMBERS ONLY</span>
             </div>
             <h2>Claim Your Exclusive Founding Spot</h2>
-            <p>Join the first 50 reviewers and lock in these exclusive benefits forever:</p>
+            <p>Join the first 100 reviewers and lock in these exclusive benefits forever:</p>
             
             <div className="founding-benefits">
               <div className="benefit-item featured">

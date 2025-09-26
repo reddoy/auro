@@ -54,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   />
                 </div>
                 <ReviewerCounter 
-                  maxReviewers={50}
+                  maxReviewers={100}
                   className="nav-counter"
                 />
               </div>

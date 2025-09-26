@@ -20,6 +20,7 @@ import { uploadRequestMedia } from '@/lib/uploads';
 import { createStripeExpressLoginLink } from '@/lib/payments';
 import * as Sharing from 'expo-sharing';
 import Spinner from '@/components/Spinner';
+import VideoReviewSection from '@/components/VideoReviewSection';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // Removed unused URL helper functions since we're not showing social links in this screen
@@ -63,6 +64,7 @@ export default function ReviewerRequestScreen() {
   const [noteText, setNoteText] = useState('');
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isVideoReviewMode, setIsVideoReviewMode] = useState(false);
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   
   // Get all photos in order for the video review
   const allPhotos = React.useMemo(() => {
@@ -71,6 +73,40 @@ export default function ReviewerRequestScreen() {
     signedRoom.forEach((uri, i) => photos.push({uri, category: 'Room Tour', index: i}));
     signedSocials.forEach((uri, i) => photos.push({uri, category: 'Socials', index: i}));
     return photos;
+  }, [signedOutfits, signedRoom, signedSocials]);
+
+  // Create sections for VideoReviewSection
+  const reviewSections = React.useMemo(() => {
+    const sections = [];
+    
+    if (signedOutfits.length > 0) {
+      sections.push({
+        title: 'Outfits',
+        subtitle: 'Rate and review their outfit choices',
+        photos: signedOutfits,
+        category: 'outfits'
+      });
+    }
+    
+    if (signedRoom.length > 0) {
+      sections.push({
+        title: 'Room Tour',
+        subtitle: 'Evaluate their living space and style',
+        photos: signedRoom,
+        category: 'room'
+      });
+    }
+    
+    if (signedSocials.length > 0) {
+      sections.push({
+        title: 'Socials',
+        subtitle: 'Review their social media presence',
+        photos: signedSocials,
+        category: 'socials'
+      });
+    }
+    
+    return sections;
   }, [signedOutfits, signedRoom, signedSocials]);
 
   // Move useMemo to the top level, always called
@@ -334,50 +370,20 @@ export default function ReviewerRequestScreen() {
           </View>
         )}
 
-        {signedOutfits.length > 0 && (
-          <View style={[styles.section, styles.mediaSection]}>
-            <Text style={styles.label}>Outfits</Text>
-            <PhotoCarousel 
-              uris={signedOutfits}
-              onPressItem={(i) => { 
+        {/* Video Review Section with section cards */}
+        {reviewSections.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.label}>Photo Review</Text>
+            <VideoReviewSection
+              sections={reviewSections}
+              onPhotoPress={(photos, index) => {
                 if (!isVideoReviewMode) {
-                  setGalleryUris(signedOutfits); 
-                  setGalleryIndex(i); 
-                  setGalleryOpen(true); 
+                  setGalleryUris(photos);
+                  setGalleryIndex(index);
+                  setGalleryOpen(true);
                 }
               }}
-            />
-          </View>
-        )}
-
-        {signedRoom.length > 0 && (
-          <View style={[styles.section, styles.mediaSection]}>
-            <Text style={styles.label}>Room Tour</Text>
-            <PhotoCarousel 
-              uris={signedRoom}
-              onPressItem={(i) => { 
-                if (!isVideoReviewMode) {
-                  setGalleryUris(signedRoom); 
-                  setGalleryIndex(i); 
-                  setGalleryOpen(true); 
-                }
-              }}
-            />
-          </View>
-        )}
-
-        {signedSocials.length > 0 && (
-          <View style={[styles.section, styles.mediaSection]}>
-            <Text style={styles.label}>Socials</Text>
-            <PhotoCarousel 
-              uris={signedSocials}
-              onPressItem={(i) => { 
-                if (!isVideoReviewMode) {
-                  setGalleryUris(signedSocials); 
-                  setGalleryIndex(i); 
-                  setGalleryOpen(true); 
-                }
-              }}
+              currentSectionIndex={currentSectionIndex}
             />
           </View>
         )}
@@ -499,10 +505,27 @@ export default function ReviewerRequestScreen() {
             </RNView>
 
             {/* Individual photos with rating and note controls */}
-            {allPhotos.map((photo, i) => (
-              <RNView key={`photo-${i}`} style={{ width: Dimensions.get('window').width, paddingHorizontal: 20, paddingVertical: 16, justifyContent: 'center' }}>
-                <RNView style={[styles.overlayPhotoCard, { alignSelf: 'center', maxWidth: 640, marginBottom: 8 }] }>
-                  <Text style={styles.overlayTitle}>{photo.category}</Text>
+            {allPhotos.map((photo, i) => {
+              // Check if this is the first photo of a new section
+              const isFirstOfSection = i === 0 || allPhotos[i-1].category !== photo.category;
+              const sectionIndex = reviewSections.findIndex(section => section.title === photo.category);
+              
+              return (
+                <RNView key={`photo-${i}`} style={{ width: Dimensions.get('window').width, paddingHorizontal: 20, paddingVertical: 16, justifyContent: 'center' }}>
+                  {/* Section title card for first photo of each section */}
+                  {isFirstOfSection && (
+                    <RNView style={{ marginBottom: 16 }}>
+                      <RNView style={[styles.overlayCard, { alignSelf: 'center', maxWidth: 640, backgroundColor: 'rgba(255,255,255,0.95)' }]}>
+                        <Text style={[styles.overlayTitle, { color: '#333', textAlign: 'center' }]}>{photo.category}</Text>
+                        <Text style={[styles.overlayText, { color: '#666', textAlign: 'center', marginTop: 4 }]}>
+                          {reviewSections[sectionIndex]?.subtitle || 'Review this section'}
+                        </Text>
+                      </RNView>
+                    </RNView>
+                  )}
+                  
+                  <RNView style={[styles.overlayPhotoCard, { alignSelf: 'center', maxWidth: 640, marginBottom: 8 }] }>
+                    <Text style={styles.overlayTitle}>Photo {i + 1} of {allPhotos.length}</Text>
                   <View
                     style={{ 
                       width: '100%', 
@@ -556,7 +579,8 @@ export default function ReviewerRequestScreen() {
                   )}
                 </RNView>
               </RNView>
-            ))}
+              );
+            })}
           </ScrollView>
 
           {/* Circular selfie recorder centered at top-middle */}

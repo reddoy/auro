@@ -255,13 +255,13 @@ export default function FoundingReviewerApplyPage() {
                 {/* Reviewer Counter */}
                 <div style={{ margin: '16px 0', display: 'flex', justifyContent: 'center' }}>
                   <ReviewerCounter 
-                    maxReviewers={50}
+                    maxReviewers={100}
                     className="apply-counter"
                   />
                 </div>
                 
                 <ul className="benefits" style={{ marginTop: 8 }}>
-                  <li>Earn more: first 50 reviewers keep 85% of every payment instead of 80%.</li>
+                  <li>Earn more: first 100 reviewers keep 85% of every payment instead of 80%.</li>
                   <li>Early access = more visibility and influence over the app's features.</li>
                   <li>Spots are limited — secure your spot today.</li>
                 </ul>
