@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { StyleSheet, View as RNView, ActivityIndicator, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Dimensions, Platform, Linking, Animated, PanResponder } from 'react-native';
+import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Dimensions, Platform, Linking, Animated } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -19,6 +19,7 @@ import MediaRecorder from '@/components/MediaRecorder';
 import { uploadRequestMedia } from '@/lib/uploads';
 import { createStripeExpressLoginLink } from '@/lib/payments';
 import * as Sharing from 'expo-sharing';
+import Spinner from '@/components/Spinner';
 
 // Removed unused URL helper functions since we're not showing social links in this screen
 
@@ -62,9 +63,8 @@ export default function ReviewerRequestScreen() {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isVideoReviewMode, setIsVideoReviewMode] = useState(false);
   
-  // Zoom functionality for photos in video review mode
-  const zoomAnimations = useRef<Record<string, Animated.Value>>({});
-  const panResponders = useRef<Record<string, any>>({});
+  // Simple zoom functionality for photos in video review mode
+  const [zoomedPhotoUri, setZoomedPhotoUri] = useState<string | null>(null);
 
   // Get all photos in order for the video review
   const allPhotos = React.useMemo(() => {
@@ -75,41 +75,17 @@ export default function ReviewerRequestScreen() {
     return photos;
   }, [signedOutfits, signedRoom, signedSocials]);
 
-  // Create zoom animation and pan responder for a photo
-  const createZoomForPhoto = (photoUri: string) => {
-    if (!zoomAnimations.current[photoUri]) {
-      zoomAnimations.current[photoUri] = new Animated.Value(1);
+  // Simple zoom handlers
+  const handlePhotoPress = (photoUri: string) => {
+    if (isVideoReviewMode) {
+      setZoomedPhotoUri(photoUri);
     }
-    
-    if (!panResponders.current[photoUri]) {
-      panResponders.current[photoUri] = PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderGrant: () => {
-          // Start zoom animation
-          Animated.spring(zoomAnimations.current[photoUri], {
-            toValue: 1.5,
-            useNativeDriver: true,
-            tension: 100,
-            friction: 8,
-          }).start();
-        },
-        onPanResponderRelease: () => {
-          // Snap back to original size
-          Animated.spring(zoomAnimations.current[photoUri], {
-            toValue: 1,
-            useNativeDriver: true,
-            tension: 100,
-            friction: 8,
-          }).start();
-        },
-      });
+  };
+
+  const handlePhotoRelease = () => {
+    if (isVideoReviewMode) {
+      setZoomedPhotoUri(null);
     }
-    
-    return {
-      animation: zoomAnimations.current[photoUri],
-      panResponder: panResponders.current[photoUri],
-    };
   };
 
   // Move useMemo to the top level, always called
@@ -278,7 +254,7 @@ export default function ReviewerRequestScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { alignItems: 'center', justifyContent: 'center' }]}>
-        <ActivityIndicator color={Colors.brand.accentMagenta} />
+        <Spinner size={40} color={Colors.brand.accentMagenta} />
       </View>
     );
   }
@@ -538,18 +514,20 @@ export default function ReviewerRequestScreen() {
               <RNView key={`photo-${i}`} style={{ width: Dimensions.get('window').width, padding: 16, justifyContent: 'center' }}>
                 <RNView style={[styles.overlayPhotoCard, { alignSelf: 'center', maxWidth: 640 }] }>
                   <Text style={styles.overlayTitle}>{photo.category}</Text>
-                  <Animated.View 
+                  <TouchableOpacity
+                    onPressIn={() => handlePhotoPress(photo.uri)}
+                    onPressOut={handlePhotoRelease}
+                    activeOpacity={0.8}
                     style={{ 
                       width: '100%', 
                       aspectRatio: 3/4, 
                       borderRadius: 12, 
                       marginTop: 8,
-                      transform: [{ scale: createZoomForPhoto(photo.uri).animation }]
+                      transform: [{ scale: zoomedPhotoUri === photo.uri ? 1.2 : 1 }]
                     }}
-                    {...createZoomForPhoto(photo.uri).panResponder.panHandlers}
                   >
                     <Image source={{ uri: photo.uri }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
-                  </Animated.View>
+                  </TouchableOpacity>
                   
                   {/* Rating controls */}
                   <RNView style={{ marginTop: 12, alignItems: 'center' }}>
@@ -602,6 +580,7 @@ export default function ReviewerRequestScreen() {
                 setVideoUri(uri);
                 setRecordingModeOpen(false);
                 setIsVideoReviewMode(false);
+                setZoomedPhotoUri(null);
                 Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
               }}
               variant="overlay"
@@ -614,6 +593,7 @@ export default function ReviewerRequestScreen() {
             <TouchableOpacity onPress={() => {
               setRecordingModeOpen(false);
               setIsVideoReviewMode(false);
+              setZoomedPhotoUri(null);
             }} style={[styles.actionButton, styles.denyButton, { paddingHorizontal: 14, paddingVertical: 8 }]}>
               <Text style={[styles.actionButtonText, styles.denyButtonText]}>Close</Text>
             </TouchableOpacity>

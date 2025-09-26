@@ -15,39 +15,48 @@ export default function HomePage() {
         <div className="container">
           <div className="hero__inner">
             <div className="hero__copy">
-              {/* Social Proof Badge */}
+              {/* Founding Badge */}
               <div className="hero-badge">
-                <span className="badge-icon">⭐</span>
-                <span className="badge-text">4.9/5 rating from 500+ active reviewers</span>
+                <span className="badge-icon">🚀</span>
+                <span className="badge-text">Exclusive Founding Reviewer Program</span>
               </div>
               
               {/* Main Headline */}
-              <h1 className="desktop-only">Turn Your Eye for Style Into<br /><em>$200+ Daily Income</em></h1>
-              <h1 className="mobile-only">Turn Your Eye for Style Into<br /><em>$200+ Daily Income</em></h1>
+              <h1 className="desktop-only">Rate guys.<br />Give advice.<br /><em>Get paid.</em></h1>
+              <h1 className="mobile-only">Rate guys.<br />Give advice.<br /><em>Get paid.</em></h1>
               
               {/* Subheadline */}
-              <p className="sub desktop-only">Join 500+ creators already earning by reviewing guys' profiles. Set your rates, work your schedule, get paid instantly.</p>
-              <p className="sub mobile-only">Join 500+ creators earning by reviewing profiles. Set your rates, work your schedule, get paid instantly.</p>
+              <p className="sub desktop-only">Share quick video reviews and monetize your expertise in style, photos, and presentation. Set your own rates and build your income stream.</p>
+              <p className="sub mobile-only">Share quick video reviews and monetize your expertise in style, photos, and presentation. Set your own rates and build your income stream.</p>
+              
+              {/* Founding Reviewer Counter */}
+              <div className="hero-counter">
+                <ReviewerCounter 
+                  maxReviewers={50}
+                  className="hero-counter-display"
+                />
+                <p className="counter-note">Founding spots available before app launch</p>
+              </div>
               
               {/* Trust Indicators */}
               <div className="hero-trust">
                 <div className="trust-item">
-                  <span className="trust-icon">💳</span>
-                  <span className="trust-text">Instant payments via Stripe</span>
+                  <span className="trust-icon">💰</span>
+                  <span className="trust-text">Set your own rates</span>
                 </div>
                 <div className="trust-item">
                   <span className="trust-icon">🛡️</span>
-                  <span className="trust-text">Secure & verified platform</span>
+                  <span className="trust-text">Secure platform</span>
                 </div>
                 <div className="trust-item">
                   <span className="trust-icon">⚡</span>
-                  <span className="trust-text">Start earning in minutes</span>
+                  <span className="trust-text">Launching October 15th</span>
                 </div>
               </div>
               
               {/* CTA Buttons */}
               <div className="cta-buttons desktop-only">
-                <a href="/reviewers/apply" className="cta-primary">Start Earning Today - Free to Join</a>
+                <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
                 <a href="#how-it-works" className="cta-secondary">See How It Works</a>
               </div>
             </div>
@@ -58,22 +67,22 @@ export default function HomePage() {
                 {/* Floating benefit callouts */}
                 <div className="benefit-callout callout-1">
                   <span className="callout-icon">💰</span>
-                  <span className="callout-text">$50-200 per review</span>
+                  <span className="callout-text">Set your own rates</span>
                 </div>
                 <div className="benefit-callout callout-2">
                   <span className="callout-icon">⏱️</span>
-                  <span className="callout-text">2-min video reviews</span>
+                  <span className="callout-text">Quick video reviews</span>
                 </div>
                 <div className="benefit-callout callout-3">
-                  <span className="callout-icon">📱</span>
-                  <span className="callout-text">Easy sharing</span>
+                  <span className="callout-icon">🚀</span>
+                  <span className="callout-text">Founding member perks</span>
                 </div>
               </div>
             </div>
             
             {/* Mobile CTA and scroll indicator */}
             <div className="cta-buttons mobile-only" style={{ marginTop: 24 }}>
-              <a href="/reviewers/apply" className="cta-primary">Start Earning Today - Free to Join</a>
+              <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
             </div>
             <div className="scroll-indicator mobile-only">
               <div className="scroll-arrow">↓</div>
@@ -106,9 +115,9 @@ export default function HomePage() {
               <div className="step-number">1</div>
               <div className="step-content">
                 <h3>Set Your Rate & Share Your Link</h3>
-                <p>Charge $50-200 per review and share your profile link across social media. Guys find you and request reviews automatically.</p>
+                <p>Set your own price per review and share your profile link across social media. Guys will find you and request reviews through your link.</p>
                 <div className="step-benefits">
-                  <span className="benefit-tag">💰 Earn $50-200 per review</span>
+                  <span className="benefit-tag">💰 You set your rates</span>
                   <span className="benefit-tag">📱 Easy link sharing</span>
                 </div>
               </div>
@@ -120,9 +129,9 @@ export default function HomePage() {
               <div className="step-number">2</div>
               <div className="step-content">
                 <h3>Review Profiles & Record Videos</h3>
-                <p>Accept requests you want to review and record quick 2-minute video feedback. You control your time and choose what to review.</p>
+                <p>Accept requests you want to review and record quick video feedback. You control your time and choose what to review.</p>
                 <div className="step-benefits">
-                  <span className="benefit-tag">⏱️ 2-minute reviews</span>
+                  <span className="benefit-tag">⏱️ Quick reviews</span>
                   <span className="benefit-tag">🎯 Full control</span>
                 </div>
               </div>
@@ -133,10 +142,10 @@ export default function HomePage() {
             <div className="process-step">
               <div className="step-number">3</div>
               <div className="step-content">
-                <h3>Get Paid Instantly</h3>
-                <p>Money hits your account instantly via Stripe after each review. Optional: Share reviews to social media to build your personal brand.</p>
+                <h3>Get Paid After Review</h3>
+                <p>Complete your review and get paid via Stripe. Optional: Share reviews to social media to build your personal brand and attract more clients.</p>
                 <div className="step-benefits">
-                  <span className="benefit-tag">💳 Instant payments</span>
+                  <span className="benefit-tag">💳 Secure payments</span>
                   <span className="benefit-tag">📸 Social sharing</span>
                 </div>
               </div>
@@ -147,8 +156,8 @@ export default function HomePage() {
           <div className="benefits-grid">
             <div className="benefit-card">
               <div className="benefit-icon">🚀</div>
-              <h4>Start Earning in Minutes</h4>
-              <p>Set up your profile and start receiving review requests within hours</p>
+              <h4>Founding Member Perks</h4>
+              <p>Join the first 50 reviewers and get exclusive benefits and early access</p>
             </div>
             <div className="benefit-card">
               <div className="benefit-icon">⏰</div>
@@ -158,7 +167,7 @@ export default function HomePage() {
             <div className="benefit-card">
               <div className="benefit-icon">🔒</div>
               <h4>100% Secure</h4>
-              <p>All payments processed securely through Stripe with instant payouts</p>
+              <p>All payments processed securely through Stripe</p>
             </div>
             <div className="benefit-card">
               <div className="benefit-icon">📈</div>
@@ -169,149 +178,73 @@ export default function HomePage() {
           
           {/* CTA After Features */}
           <div className="features-cta">
-            <a href="/reviewers/apply" className="cta-primary">Join 500+ Active Reviewers</a>
-            <p className="cta-note">Free to join • No commitment required • Start earning today</p>
+            <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
+            <p className="cta-note">Free to join • No commitment required • Launch October 15th</p>
           </div>
         </div>
       </section>
 
-      {/* Social Proof & Trust Signals */}
+      {/* Why Join Auro */}
       <section className="social-proof">
         <div className="container">
-          <h2 className="section-title">Join Top Creators Earning Big</h2>
-          <p className="section-subtitle">See what real creators are saying about their experience</p>
+          <h2 className="section-title">Why Join Auro?</h2>
+          <p className="section-subtitle">Be part of the platform that's changing how creators monetize their expertise</p>
           
-          {/* Trust Metrics Dashboard */}
-          <div className="trust-metrics">
-            <div className="metric-card">
-              <div className="metric-number">$50K+</div>
-              <div className="metric-label">Paid out this month</div>
+          {/* Value Props */}
+          <div className="value-props">
+            <div className="value-card">
+              <div className="value-icon">🎯</div>
+              <h3>Founding Member Benefits</h3>
+              <p>Join the first 50 reviewers and get exclusive perks, higher commission rates, and priority support from day one.</p>
             </div>
-            <div className="metric-card">
-              <div className="metric-number">500+</div>
-              <div className="metric-label">Active reviewers</div>
+            <div className="value-card">
+              <div className="value-icon">💰</div>
+              <h3>Set Your Own Rates</h3>
+              <p>You control your pricing. Charge what you think your expertise is worth - no platform taking a huge cut.</p>
             </div>
-            <div className="metric-card">
-              <div className="metric-number">4.9/5</div>
-              <div className="metric-label">Average rating</div>
-            </div>
-            <div className="metric-card">
-              <div className="metric-number">2min</div>
-              <div className="metric-label">Avg review time</div>
+            <div className="value-card">
+              <div className="value-icon">🚀</div>
+              <h3>Launch With Us</h3>
+              <p>Be part of the founding group that shapes the platform. Your feedback directly influences features and improvements.</p>
             </div>
           </div>
           
-          {/* Enhanced Testimonials */}
-          <div className="testimonials">
-            <div className="testimonial-card featured">
-              <div className="testimonial-header">
-                <div className="author-avatar">
-                  <div className="avatar-placeholder">SM</div>
-                </div>
-                <div className="author-info">
-                  <strong>Sarah M.</strong>
-                  <span>OnlyFans Creator • $2,400/month</span>
-                  <div className="verification-badge">
-                    <span className="checkmark">✓</span>
-                    <span>Verified Creator</span>
-                  </div>
-                </div>
-              </div>
-              <div className="testimonial-content">
-                <div className="rating">⭐⭐⭐⭐⭐</div>
-                <p>"I'm making $200+ per day just reviewing guys' profiles. The app is so easy to use and the money hits my account instantly. Best side income I've ever had!"</p>
-                <div className="earnings-proof">
-                  <span className="earnings-label">Last 30 days:</span>
-                  <span className="earnings-amount">$2,400 earned</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="testimonial-card">
-              <div className="testimonial-header">
-                <div className="author-avatar">
-                  <div className="avatar-placeholder">JL</div>
-                </div>
-                <div className="author-info">
-                  <strong>Jessica L.</strong>
-                  <span>Content Creator • $1,800/month</span>
-                  <div className="verification-badge">
-                    <span className="checkmark">✓</span>
-                    <span>Verified Creator</span>
-                  </div>
-                </div>
-              </div>
-              <div className="testimonial-content">
-                <div className="rating">⭐⭐⭐⭐⭐</div>
-                <p>"Finally, a way to monetize my eye for style without showing my body. I review 10-15 profiles per day and it's become my main income stream."</p>
-                <div className="earnings-proof">
-                  <span className="earnings-label">Last 30 days:</span>
-                  <span className="earnings-amount">$1,800 earned</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="testimonial-card">
-              <div className="testimonial-header">
-                <div className="author-avatar">
-                  <div className="avatar-placeholder">MK</div>
-                </div>
-                <div className="author-info">
-                  <strong>Maya K.</strong>
-                  <span>Fashion Influencer • $3,200/month</span>
-                  <div className="verification-badge">
-                    <span className="checkmark">✓</span>
-                    <span>Verified Creator</span>
-                  </div>
-                </div>
-              </div>
-              <div className="testimonial-content">
-                <div className="rating">⭐⭐⭐⭐⭐</div>
-                <p>"The guys actually listen to my advice and come back for more reviews. It's satisfying to help them improve while getting paid well for it."</p>
-                <div className="earnings-proof">
-                  <span className="earnings-label">Last 30 days:</span>
-                  <span className="earnings-amount">$3,200 earned</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Enhanced Trust Signals */}
+          {/* Trust Signals */}
           <div className="trust-signals">
             <div className="trust-item">
               <div className="trust-icon">💳</div>
               <div className="trust-content">
-                <strong>Instant Payments</strong>
-                <span>Via Stripe • Same day</span>
+                <strong>Secure Payments</strong>
+                <span>Via Stripe • After review completion</span>
               </div>
             </div>
             <div className="trust-item">
               <div className="trust-icon">🛡️</div>
               <div className="trust-content">
-                <strong>Bank-Level Security</strong>
+                <strong>Your Privacy Matters</strong>
                 <span>SSL encrypted • GDPR compliant</span>
               </div>
             </div>
             <div className="trust-item">
               <div className="trust-icon">⚡</div>
               <div className="trust-content">
-                <strong>24/7 Support</strong>
-                <span>Live chat • Email support</span>
+                <strong>Founding Support</strong>
+                <span>Direct founder access • Priority help</span>
               </div>
             </div>
             <div className="trust-item">
               <div className="trust-icon">📈</div>
               <div className="trust-content">
-                <strong>Growing Fast</strong>
-                <span>500+ new users this month</span>
+                <strong>Early Access</strong>
+                <span>Launch October 15th • Get in first</span>
               </div>
             </div>
           </div>
           
-          {/* CTA After Social Proof */}
+          {/* CTA After Value Props */}
           <div className="social-proof-cta">
-            <a href="/reviewers/apply" className="cta-primary">Join These Successful Creators</a>
-            <p className="cta-note">Start earning in your first hour • No experience required</p>
+            <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
+            <p className="cta-note">Join the first 50 • Shape the platform • Launch October 15th</p>
           </div>
         </div>
       </section>
@@ -414,7 +347,7 @@ export default function HomePage() {
             
             <div className="final-urgency">
               <p className="urgency-text">
-                <span className="highlight">Only 47 founding spots left</span> • 
+                <span className="highlight">Limited founding spots available</span> • 
                 Benefits end October 15th at 9 PM PST • 
                 <span className="highlight">No commitment required</span>
               </p>

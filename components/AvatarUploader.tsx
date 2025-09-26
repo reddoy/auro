@@ -1,11 +1,12 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 
 import Colors from '@/constants/Colors';
 import { Text } from '@/components/Themed';
 import { uploadAvatar, removeAvatar } from '@/lib/profile';
+import Spinner from '@/components/Spinner';
 
 type UploadResult = { publicUrl: string; path: string };
 
@@ -21,8 +22,19 @@ type Props = {
 export default function AvatarUploader(props: Props) {
   const { uri, onUploaded, onRemoved, size = 96, accessibilityLabel, previousPathOrUrl } = props;
   const [uploading, setUploading] = useState(false);
+  const [showAddPhoto, setShowAddPhoto] = useState(false);
 
   const radius = useMemo(() => size / 2, [size]);
+
+  // Show "Add Photo" only after a delay if no URI is provided
+  useEffect(() => {
+    if (!uri) {
+      const timer = setTimeout(() => setShowAddPhoto(true), 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowAddPhoto(false);
+    }
+  }, [uri]);
 
   const requestPermission = useCallback(async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -91,16 +103,27 @@ export default function AvatarUploader(props: Props) {
       onLongPress={handleLongPress}
       style={[styles.container, { width: size, height: size, borderRadius: radius }]}
     >
-      {uri ? (
-        <Image source={{ uri }} style={{ width: size, height: size, borderRadius: radius }} contentFit="cover" transition={200} />
-      ) : (
-        <View style={[styles.placeholder, { width: size, height: size, borderRadius: radius }]}>
+      <View style={[styles.avatarContainer, { width: size, height: size, borderRadius: radius }]}>
+        {uri ? (
+          <Image source={{ uri }} style={{ width: size, height: size, borderRadius: radius }} contentFit="cover" transition={200} />
+        ) : showAddPhoto ? (
           <Text style={styles.placeholderText}>Add Photo</Text>
-        </View>
-      )}
+        ) : (
+          <Spinner 
+            size={size * 0.4} 
+            color={Colors.brand.accentMagenta} 
+            borderColor={Colors.brand.border}
+          />
+        )}
+      </View>
+      
       {uploading && (
         <View style={[styles.overlay, { borderRadius: radius }]}> 
-          <ActivityIndicator color="#fff" />
+          <Spinner 
+            size={size * 0.3} 
+            color={Colors.brand.accentMagenta} 
+            borderColor={Colors.brand.border}
+          />
         </View>
       )}
     </Pressable>
@@ -109,8 +132,15 @@ export default function AvatarUploader(props: Props) {
 
 const styles = StyleSheet.create({
   container: { overflow: 'hidden' },
+  avatarContainer: { 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    backgroundColor: Colors.brand.background,
+    borderWidth: 2,
+    borderColor: Colors.brand.accentOrange,
+  },
   placeholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.brand.cardBackground },
-  placeholderText: { color: Colors.brand.textSecondary, fontSize: 12 },
+  placeholderText: { color: Colors.brand.textPrimary, fontSize: 12, fontWeight: '600' },
   overlay: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.35)' },
 });
 

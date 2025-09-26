@@ -1,15 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, TextInput, TouchableOpacity, View, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Switch, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
+import Spinner from '@/components/Spinner';
 import AvatarUploader from '@/components/AvatarUploader';
 import { getCurrentProfile, updateProfile, getSignedAvatarUrl } from '@/lib/profile';
 import type { Profile } from '@/types';
 
 export default function ProfileSettingsScreen() {
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -170,20 +173,30 @@ export default function ProfileSettingsScreen() {
   if (loading) {
     return (
       <View style={[styles.loadingContainer]}> 
-        <ActivityIndicator color={Colors.brand.accentMagenta} />
+        <Spinner size={40} color={Colors.brand.accentMagenta} />
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={{ paddingBottom: 120 }}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode={Platform.select({ ios: 'interactive', default: 'on-drag' })}
-        contentInsetAdjustmentBehavior="always"
-      >
+    <View style={styles.container}>
+      {/* Custom Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Text style={styles.backButtonText}>‹</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Settings</Text>
+        <View style={styles.headerSpacer} />
+      </View>
+      
+      <KeyboardAvoidingView style={styles.content} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={{ paddingBottom: 120 }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.select({ ios: 'interactive', default: 'on-drag' })}
+          contentInsetAdjustmentBehavior="always"
+        >
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Avatar</Text>
         <View style={{ alignItems: 'center', marginTop: 8 }}>
@@ -231,8 +244,9 @@ export default function ProfileSettingsScreen() {
           <Text style={styles.saveButtonText}>{saving ? 'Saving...' : 'Save'}</Text>
         </TouchableOpacity>
       </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -264,6 +278,40 @@ function LabeledSwitch(props: { label: string; value: boolean; onValueChange: (v
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    backgroundColor: Colors.brand.background,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.brand.border,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    backgroundColor: Colors.brand.cardBackground,
+  },
+  backButtonText: {
+    fontSize: 24,
+    color: Colors.brand.textPrimary,
+    fontWeight: '300',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+    fontFamily: 'Poppins_700Bold',
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  content: { flex: 1 },
+  scrollView: { flex: 1 },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.brand.background },
   card: { margin: 16, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, padding: 24, borderWidth: 1, borderColor: 'rgba(255, 111, 0, 0.1)', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 8 },
   sectionTitle: { fontSize: 24, fontWeight: 'bold', fontFamily: 'Poppins_700Bold', color: Colors.brand.textPrimary, marginBottom: 12 },

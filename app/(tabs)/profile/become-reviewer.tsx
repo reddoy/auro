@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, ActivityIndicator, Switch, KeyboardAvoidingView, Platform } from 'react-native';
+import { Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, Switch, KeyboardAvoidingView, Platform } from 'react-native';
 import { router } from 'expo-router';
 
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { getCurrentProfile, updateProfile } from '@/lib/profile';
+import Spinner from '@/components/Spinner';
 import type { Profile } from '@/types';
 
 export default function BecomeReviewerScreen() {
@@ -67,7 +68,7 @@ export default function BecomeReviewerScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator color={Colors.brand.accentMagenta} />
+        <Spinner size={40} color={Colors.brand.accentMagenta} />
       </View>
     );
   }

@@ -5,7 +5,6 @@ import {
   StyleSheet, 
   TouchableOpacity, 
   TextInput, 
-  ActivityIndicator, 
   View as RNView,
   Platform
 } from 'react-native';
@@ -13,6 +12,7 @@ import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
+import Spinner from '@/components/Spinner';
 
 export default function TwoFactorSetupScreen() {
   const [loading, setLoading] = useState(true);
@@ -65,7 +65,7 @@ export default function TwoFactorSetupScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color={Colors.brand.accentMagenta} />
+        <Spinner size={40} color={Colors.brand.accentMagenta} />
         <Text style={styles.loadingText}>Checking two-factor authentication status...</Text>
       </View>
     );

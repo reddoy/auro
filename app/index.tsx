@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 
 import { View } from '@/components/Themed';
 import { supabase } from '@/lib/supabase';
 import Colors from '@/constants/Colors';
+import Spinner from '@/components/Spinner';
 
 export default function IndexGate() {
   const [checking, setChecking] = useState(true);
@@ -29,7 +29,7 @@ export default function IndexGate() {
   if (checking) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.brand.background }}>
-        <ActivityIndicator size="large" color={Colors.brand.accentMagenta} />
+        <Spinner size={40} color={Colors.brand.accentMagenta} />
       </View>
     );
   }
