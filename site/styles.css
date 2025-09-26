@@ -493,6 +493,10 @@ body {
 }
 
 @media (max-width: 640px) {
+  :root {
+    --nav-h: 60px;
+  }
+  
   .nav {
     padding: 12px 0;
     min-height: 60px;
@@ -562,6 +566,10 @@ body {
 }
 
 @media (max-width: 480px) {
+  :root {
+    --nav-h: 60px;
+  }
+  
   .nav-content {
     gap: 8px;
   }
@@ -723,43 +731,69 @@ body {
 
 @media (max-width: 900px) {
   .hero {
-    padding: clamp(15px, 3vh, 40px) 0 clamp(15px, 3vh, 40px);
+    padding: clamp(20px, 3vh, 40px) 0 clamp(25px, 4vh, 50px);
     min-height: calc(100vh - var(--nav-h));
     max-height: calc(100vh - var(--nav-h));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
   .hero__inner {
     grid-template-columns: 1fr;
     gap: clamp(20px, 3vh, 40px);
     text-align: center;
     justify-items: center;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  /* Small desktop CTA buttons spacing */
+  .cta-buttons {
+    margin-bottom: clamp(20px, 3vh, 30px);
+    margin-top: clamp(16px, 2.5vh, 24px);
   }
 }
 
 /* Tablet and medium screens */
 @media (min-width: 641px) and (max-width: 1024px) {
   .hero {
-    padding: clamp(20px, 4vh, 60px) 0;
+    padding: clamp(20px, 4vh, 60px) 0 clamp(30px, 5vh, 70px);
     min-height: calc(100vh - var(--nav-h));
     max-height: calc(100vh - var(--nav-h));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
   
   .hero__inner {
     gap: clamp(30px, 4vh, 50px);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
   
   .hero__copy h1 {
     font-size: clamp(36px, 5.5vw, 56px);
-    margin-bottom: clamp(16px, 2.5vh, 24px);
+    margin-bottom: clamp(20px, 3vh, 28px);
   }
   
   .hero__copy .sub {
     font-size: clamp(18px, 2.8vw, 22px);
-    margin-bottom: clamp(24px, 3.5vh, 32px);
+    margin-bottom: clamp(28px, 4vh, 36px);
   }
   
   .hero-phone {
     width: min(60vw, 300px);
     max-height: min(55vh, 450px);
+  }
+  
+  /* Tablet CTA buttons spacing */
+  .cta-buttons {
+    margin-bottom: clamp(20px, 3vh, 30px);
+    margin-top: clamp(16px, 2.5vh, 24px);
   }
 }
 
@@ -1160,26 +1194,33 @@ body {
   .hero {
     min-height: calc(100vh - var(--nav-h));
     max-height: calc(100vh - var(--nav-h));
-    padding: clamp(10px, 2vh, 20px) 0;
+    padding: clamp(20px, 3vh, 30px) 0 clamp(30px, 4vh, 40px);
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   .hero__inner {
-    padding: clamp(10px, 2vh, 20px);
-    gap: clamp(15px, 2vh, 25px);
+    padding: clamp(15px, 2vh, 25px);
+    gap: clamp(20px, 2.5vh, 30px);
     min-height: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   .hero__copy h1 {
     font-size: clamp(28px, 8vw, 48px);
     line-height: 1.1;
-    margin-bottom: clamp(12px, 2vh, 20px);
+    margin-bottom: clamp(16px, 2.5vh, 24px);
   }
 
   .hero__copy .sub {
     font-size: clamp(14px, 3.5vw, 18px);
     max-width: 32ch;
-    margin-bottom: clamp(16px, 2.5vh, 24px);
+    margin-bottom: clamp(20px, 3vh, 28px);
   }
 
   /* Mobile hero badge */
@@ -1195,7 +1236,7 @@ body {
 
   /* Mobile hero counter */
   .hero-counter {
-    margin: clamp(12px, 2vh, 20px) 0;
+    margin: clamp(16px, 2.5vh, 24px) 0;
   }
 
   .counter-note {
@@ -1205,7 +1246,7 @@ body {
   /* Mobile trust indicators */
   .hero-trust {
     gap: clamp(12px, 2vw, 16px);
-    margin-bottom: clamp(16px, 2.5vh, 20px);
+    margin-bottom: clamp(20px, 3vh, 28px);
     justify-content: center;
   }
 
@@ -1376,11 +1417,16 @@ body {
     max-width: 34ch; 
     margin: 0 auto clamp(12px, 2vh, 20px); 
   }
-  .cta-buttons { gap: 8px; align-items: center; }
+  .cta-buttons { 
+    gap: 12px; 
+    align-items: center; 
+    margin-bottom: clamp(20px, 3vh, 30px);
+    margin-top: clamp(16px, 2.5vh, 24px);
+  }
   .hero .cta-primary { 
     width: auto; 
-    padding: clamp(8px, 1.5vh, 12px) clamp(12px, 3vw, 16px); 
-    font-size: clamp(12px, 2.8vw, 14px); 
+    padding: clamp(12px, 2vh, 16px) clamp(16px, 4vw, 24px); 
+    font-size: clamp(14px, 3vw, 16px); 
     white-space: nowrap; 
   }
 }
@@ -1388,24 +1434,46 @@ body {
 /* Extra small screens (phones in landscape, very small phones) */
 @media (max-width: 480px) {
   .hero {
-    padding: clamp(6px, 1vh, 12px) 0;
+    padding: clamp(20px, 3vh, 30px) 0 clamp(25px, 4vh, 35px);
     min-height: calc(100vh - var(--nav-h));
     max-height: calc(100vh - var(--nav-h));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
   
   .hero__inner {
-    padding: clamp(8px, 1.5vh, 16px);
-    gap: clamp(10px, 1.5vh, 20px);
+    padding: clamp(12px, 2vh, 20px);
+    gap: clamp(15px, 2vh, 25px);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
   
   .hero__copy h1 {
-    font-size: clamp(20px, 5vw, 32px);
-    margin-bottom: clamp(6px, 1vh, 12px);
+    font-size: clamp(24px, 6vw, 36px);
+    margin-bottom: clamp(12px, 2vh, 18px);
   }
   
   .hero__copy .sub {
     font-size: clamp(12px, 2.8vw, 14px);
-    margin-bottom: clamp(10px, 1.5vh, 16px);
+    margin-bottom: clamp(16px, 2.5vh, 22px);
+  }
+  
+  /* Extra small screen hero counter and trust */
+  .hero-counter {
+    margin: clamp(12px, 2vh, 18px) 0;
+  }
+  
+  .hero-trust {
+    margin-bottom: clamp(16px, 2.5vh, 22px);
+  }
+  
+  /* Extra small screen CTA buttons */
+  .cta-buttons {
+    margin-bottom: clamp(16px, 2.5vh, 24px);
+    margin-top: clamp(12px, 2vh, 18px);
   }
   
   .hero-badge {
