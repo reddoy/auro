@@ -49,16 +49,12 @@ export default function HomePage() {
               {/* Trust Indicators */}
               <div className="hero-trust">
                 <div className="trust-item">
-                  <span className="trust-icon">💰</span>
-                  <span className="trust-text">Set your own rates</span>
-                </div>
-                <div className="trust-item">
-                  <span className="trust-icon">🛡️</span>
-                  <span className="trust-text">Secure platform</span>
-                </div>
-                <div className="trust-item">
                   <span className="trust-icon">⚡</span>
                   <span className="trust-text">Launching October 15th</span>
+                </div>
+                <div className="trust-item">
+                  <span className="trust-icon">🎯</span>
+                  <span className="trust-text">First 50 reviewers only</span>
                 </div>
               </div>
               
@@ -163,19 +159,9 @@ export default function HomePage() {
           {/* Supporting Benefits Grid */}
           <div className="benefits-grid">
             <div className="benefit-card">
-              <div className="benefit-icon">🚀</div>
-              <h4>Founding Member Perks</h4>
-              <p>Join the first 50 reviewers and get exclusive benefits and early access</p>
-            </div>
-            <div className="benefit-card">
               <div className="benefit-icon">⏰</div>
               <h4>Work Your Schedule</h4>
               <p>Review profiles whenever you want - mornings, evenings, weekends</p>
-            </div>
-            <div className="benefit-card">
-              <div className="benefit-icon">🔒</div>
-              <h4>100% Secure</h4>
-              <p>All payments processed securely through Stripe</p>
             </div>
             <div className="benefit-card">
               <div className="benefit-icon">📈</div>
@@ -201,11 +187,6 @@ export default function HomePage() {
           {/* Value Props */}
           <div className="value-props">
             <div className="value-card">
-              <div className="value-icon">🎯</div>
-              <h3>Founding Member Benefits</h3>
-              <p>Join the first 50 reviewers and get exclusive perks, higher commission rates, and priority support from day one.</p>
-            </div>
-            <div className="value-card">
               <div className="value-icon">💰</div>
               <h3>Set Your Own Rates</h3>
               <p>You control your pricing. Charge what you think your expertise is worth - no platform taking a huge cut.</p>
@@ -227,24 +208,10 @@ export default function HomePage() {
               </div>
             </div>
             <div className="trust-item">
-              <div className="trust-icon">🛡️</div>
-              <div className="trust-content">
-                <strong>Your Privacy Matters</strong>
-                <span>SSL encrypted • GDPR compliant</span>
-              </div>
-            </div>
-            <div className="trust-item">
               <div className="trust-icon">⚡</div>
               <div className="trust-content">
                 <strong>Founding Support</strong>
                 <span>Direct founder access • Priority help</span>
-              </div>
-            </div>
-            <div className="trust-item">
-              <div className="trust-icon">📈</div>
-              <div className="trust-content">
-                <strong>Early Access</strong>
-                <span>Launch October 15th • Get in first</span>
               </div>
             </div>
           </div>
@@ -326,24 +293,10 @@ export default function HomePage() {
                 </div>
               </div>
               <div className="benefit-item featured">
-                <span className="benefit-icon">⚡</span>
-                <div className="benefit-content">
-                  <strong>Priority Access</strong>
-                  <span>First dibs on high-paying review requests</span>
-                </div>
-              </div>
-              <div className="benefit-item featured">
                 <span className="benefit-icon">💎</span>
                 <div className="benefit-content">
                   <strong>Founding Member Badge</strong>
                   <span>Exclusive status that commands higher rates</span>
-                </div>
-              </div>
-              <div className="benefit-item featured">
-                <span className="benefit-icon">📞</span>
-                <div className="benefit-content">
-                  <strong>Direct Founder Access</strong>
-                  <span>Personal support and feature requests</span>
                 </div>
               </div>
             </div>

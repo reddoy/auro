@@ -468,14 +468,14 @@ export default function ReviewerRequestScreen() {
         <RNView style={{ flex: 1, backgroundColor: 'transparent' }}>
           {/* Gradient background using logo colors */}
           <LinearGradient
-            colors={['#d83986', '#cb3597', '#0c0325', '#f06755', '#6c1e49', '#ea4b64', '#98344b', '#381034', '#e14072']}
-            locations={[0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1]}
+            colors={['#FF6F00', '#FF4F33', '#FF2D55', '#d83986', '#ea4b64', '#e14072', '#cb3597']}
+            locations={[0, 0.2, 0.4, 0.6, 0.75, 0.9, 1]}
             style={StyleSheet.absoluteFill}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           />
-          {/* Subtle overlay to reduce harshness */}
-          <RNView style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.15)' }]} />
+          {/* Increased opacity overlay for transparency */}
+          <RNView style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.6)' }]} />
           
           {/* Photo carousel with rating and note controls */}
           <ScrollView 
@@ -573,8 +573,8 @@ export default function ReviewerRequestScreen() {
             />
           </RNView>
 
-          {/* Close button */}
-          <RNView style={{ position: 'absolute', top: insets.top + 16, right: 16, flexDirection: 'row', gap: 8, zIndex: 11, elevation: 11 }}>
+          {/* Close button - positioned to the left of camera circle */}
+          <RNView style={{ position: 'absolute', top: insets.top + 12, left: 16, zIndex: 11, elevation: 11 }}>
             <TouchableOpacity onPress={() => {
               setRecordingModeOpen(false);
               setIsVideoReviewMode(false);
@@ -584,7 +584,7 @@ export default function ReviewerRequestScreen() {
           </RNView>
 
           {/* Progress indicator */}
-          <RNView style={{ position: 'absolute', bottom: insets.bottom + 20, left: 0, right: 0, alignItems: 'center', zIndex: 10 }}>
+          <RNView style={{ position: 'absolute', bottom: insets.bottom + 80, left: 0, right: 0, alignItems: 'center', zIndex: 10 }}>
             <Text style={styles.progressText}>
               {currentPhotoIndex + 1} of {allPhotos.length + 1} • Swipe to review photos
             </Text>
@@ -622,7 +622,7 @@ export default function ReviewerRequestScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
-  header: { alignItems: 'center', paddingVertical: 24, backgroundColor: Colors.brand.cardBackground, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, marginBottom: 12 },
+  header: { alignItems: 'center', paddingVertical: 24, backgroundColor: Colors.brand.cardBackground, borderTopLeftRadius: 20, borderTopRightRadius: 20, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, marginBottom: 12 },
   avatarWrap: { width: 84, height: 84, borderRadius: 42, overflow: 'hidden', backgroundColor: Colors.brand.avatarPlaceholder, marginBottom: 10 },
   name: { fontSize: 22, fontWeight: '700', color: Colors.brand.textPrimary },
   requestStatus: { fontSize: 14, color: Colors.brand.accentMagenta, marginTop: 4, fontWeight: '600' },
