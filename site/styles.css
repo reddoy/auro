@@ -328,6 +328,68 @@ body {
   box-shadow: 0 8px 25px rgba(255, 111, 0, 0.15);
 }
 
+/* Loading and Fade Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.cta-loading {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.countdown-loading {
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* Hero CTA Integrated - Similar to Nav CTA */
+.hero-cta-integrated {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 24px;
+}
+
+.cta-hero-integrated {
+  background: linear-gradient(135deg, var(--grad-start), var(--grad-mid), var(--grad-end));
+  background-size: 200% 200%;
+  color: white;
+  padding: 16px 20px;
+  border-radius: 16px;
+  text-decoration: none;
+  cursor: pointer;
+  border: 0;
+  box-shadow: 0 6px 25px rgba(255, 111, 0, 0.35);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+  min-width: 280px;
+  animation: gradientShift 3s ease-in-out infinite;
+}
+
+.cta-hero-integrated:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 35px rgba(255, 111, 0, 0.45);
+}
+
 /* Nav CTA Button - Match Hero CTA */
 /* Nav CTA Group */
 .nav-cta-group {
@@ -609,6 +671,17 @@ body {
   .cta-count-max {
     font-size: 11px;
   }
+
+  /* Hero CTA Mobile Styles */
+  .cta-hero-integrated {
+    padding: 12px 16px;
+    gap: 12px;
+    min-width: 240px;
+  }
+  
+  .hero-cta-integrated {
+    margin-top: 20px;
+  }
   
   .cta-main-text {
     font-size: 12px;
@@ -616,6 +689,13 @@ body {
   
   .cta-sub-text {
     font-size: 9px;
+  }
+
+  /* Hero CTA Extra Small Mobile */
+  .cta-hero-integrated {
+    padding: 10px 14px;
+    gap: 10px;
+    min-width: 200px;
   }
   
   .cta-nav {

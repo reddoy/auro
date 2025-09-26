@@ -15,6 +15,7 @@ export default function CountdownTimer({ targetDate, className = '' }: Countdown
     seconds: 0,
     isExpired: false
   });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
@@ -32,6 +33,9 @@ export default function CountdownTimer({ targetDate, className = '' }: Countdown
       } else {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true });
       }
+      
+      // Set loading to false after first calculation
+      setIsLoading(false);
     };
 
     calculateTimeLeft();
@@ -40,10 +44,18 @@ export default function CountdownTimer({ targetDate, className = '' }: Countdown
     return () => clearInterval(timer);
   }, [targetDate]);
 
+  if (isLoading) {
+    return (
+      <div className={`countdown-timer ${className}`}>
+        <span className="countdown-loading">Loading...</span>
+      </div>
+    );
+  }
+
   if (timeLeft.isExpired) {
     return (
       <div className={`countdown-timer ${className}`}>
-        <span className="countdown-expired">App Launched! 🚀</span>
+        <span className="countdown-expired fade-in">App Launched! 🚀</span>
       </div>
     );
   }
@@ -51,23 +63,23 @@ export default function CountdownTimer({ targetDate, className = '' }: Countdown
   return (
     <div className={`countdown-timer ${className}`}>
       <div className="countdown-item">
-        <span className="countdown-number">{timeLeft.days}</span>
-        <span className="countdown-label">Days</span>
+        <span className="countdown-number fade-in">{timeLeft.days}</span>
+        <span className="countdown-label fade-in">Days</span>
       </div>
-      <div className="countdown-separator">:</div>
+      <div className="countdown-separator fade-in">:</div>
       <div className="countdown-item">
-        <span className="countdown-number">{timeLeft.hours.toString().padStart(2, '0')}</span>
-        <span className="countdown-label">Hours</span>
+        <span className="countdown-number fade-in">{timeLeft.hours.toString().padStart(2, '0')}</span>
+        <span className="countdown-label fade-in">Hours</span>
       </div>
-      <div className="countdown-separator">:</div>
+      <div className="countdown-separator fade-in">:</div>
       <div className="countdown-item">
-        <span className="countdown-number">{timeLeft.minutes.toString().padStart(2, '0')}</span>
-        <span className="countdown-label">Min</span>
+        <span className="countdown-number fade-in">{timeLeft.minutes.toString().padStart(2, '0')}</span>
+        <span className="countdown-label fade-in">Min</span>
       </div>
-      <div className="countdown-separator">:</div>
+      <div className="countdown-separator fade-in">:</div>
       <div className="countdown-item">
-        <span className="countdown-number">{timeLeft.seconds.toString().padStart(2, '0')}</span>
-        <span className="countdown-label">Sec</span>
+        <span className="countdown-number fade-in">{timeLeft.seconds.toString().padStart(2, '0')}</span>
+        <span className="countdown-label fade-in">Sec</span>
       </div>
     </div>
   );

@@ -1,11 +1,62 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import CountdownTimer from '../components/CountdownTimer';
 import ReviewerCounter from '../components/ReviewerCounter';
+import { supabase } from '../lib/supabase';
 
 export default function HomePage() {
   const [showRibbon, setShowRibbon] = useState(true);
+  const [reviewerCount, setReviewerCount] = useState<number>(0);
+  const [isLoadingCount, setIsLoadingCount] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchReviewerCount = async () => {
+      try {
+        // Try to fetch from creators table, filtering for actual reviewers
+        const { data, error } = await supabase
+          .from('creators')
+          .select('id', { count: 'exact' })
+          .eq('is_reviewer', true);
+
+        if (error) {
+          // If creators table doesn't exist or has issues, try profiles table
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('id', { count: 'exact' })
+            .eq('is_reviewer', true);
+          
+          if (!profileError) {
+            setReviewerCount(profileData?.length || 0);
+          }
+        } else {
+          setReviewerCount(data?.length || 0);
+        }
+      } catch (err) {
+        console.error('Error fetching reviewer count:', err);
+      } finally {
+        setIsLoadingCount(false);
+      }
+    };
+
+    fetchReviewerCount();
+    
+    // Refresh count every 30 seconds
+    const interval = setInterval(fetchReviewerCount, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Calculate dynamic text based on count
+  const spotsLeft = Math.max(0, 100 - reviewerCount);
+  const isNearFull = spotsLeft <= 10;
+  const isFull = spotsLeft === 0;
+  
+  const getSubText = () => {
+    if (isFull) return 'Spots Filled! 🎉';
+    if (isNearFull) return `Only ${spotsLeft} left! ⚡`;
+    return 'Join exclusive founding group';
+  };
 
   return (
     <div>
@@ -37,15 +88,6 @@ export default function HomePage() {
               <p className="sub desktop-only">Share quick video reviews and monetize your expertise in style, photos, and presentation. Set your own rates and build your income stream.</p>
               <p className="sub mobile-only">Share quick video reviews and monetize your expertise in style, photos, and presentation. Set your own rates and build your income stream.</p>
               
-              {/* Founding Reviewer Counter */}
-              <div className="hero-counter">
-                <ReviewerCounter 
-                  maxReviewers={100}
-                  className="hero-counter-display"
-                />
-                <p className="counter-note">Founding spots available before app launch</p>
-              </div>
-              
               {/* Trust Indicators */}
               <div className="hero-trust">
                 <div className="trust-item">
@@ -58,10 +100,29 @@ export default function HomePage() {
                 </div>
               </div>
               
-              {/* CTA Buttons */}
-              <div className="cta-buttons desktop-only">
-                <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
-                <a href="#how-it-works" className="cta-secondary">See How It Works</a>
+              {/* Integrated CTA with Counter */}
+              <div className="hero-cta-integrated desktop-only">
+                <a className="cta-hero-integrated" href="/reviewers/apply">
+                  <div className="cta-count-section">
+                    {isLoadingCount ? (
+                      <span className="cta-loading">Loading...</span>
+                    ) : (
+                      <>
+                        <span className="cta-count-number fade-in">{reviewerCount}</span>
+                        <span className="cta-count-separator fade-in">/</span>
+                        <span className="cta-count-max fade-in">100</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="cta-text-section">
+                    <span className="cta-main-text">Become Founding Reviewer</span>
+                    {isLoadingCount ? (
+                      <span className="cta-loading">Loading...</span>
+                    ) : (
+                      <span className="cta-sub-text fade-in">{getSubText()}</span>
+                    )}
+                  </div>
+                </a>
               </div>
             </div>
 
@@ -85,8 +146,28 @@ export default function HomePage() {
             </div>
             
             {/* Mobile CTA and scroll indicator */}
-            <div className="cta-buttons mobile-only" style={{ marginTop: 24 }}>
-              <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
+            <div className="hero-cta-integrated mobile-only" style={{ marginTop: 24 }}>
+              <a className="cta-hero-integrated" href="/reviewers/apply">
+                <div className="cta-count-section">
+                  {isLoadingCount ? (
+                    <span className="cta-loading">Loading...</span>
+                  ) : (
+                    <>
+                      <span className="cta-count-number fade-in">{reviewerCount}</span>
+                      <span className="cta-count-separator fade-in">/</span>
+                      <span className="cta-count-max fade-in">100</span>
+                    </>
+                  )}
+                </div>
+                <div className="cta-text-section">
+                  <span className="cta-main-text">Become Founding Reviewer</span>
+                  {isLoadingCount ? (
+                    <span className="cta-loading">Loading...</span>
+                  ) : (
+                    <span className="cta-sub-text fade-in">{getSubText()}</span>
+                  )}
+                </div>
+              </a>
             </div>
             <div className="scroll-indicator mobile-only">
               <div className="scroll-arrow">↓</div>
