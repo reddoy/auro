@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View as RNView, ActivityIndicator, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Dimensions, Platform, Linking } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { StyleSheet, View as RNView, ActivityIndicator, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Dimensions, Platform, Linking, Animated, PanResponder } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -60,6 +60,11 @@ export default function ReviewerRequestScreen() {
   const [noteUri, setNoteUri] = useState<string | null>(null);
   const [noteText, setNoteText] = useState('');
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [isVideoReviewMode, setIsVideoReviewMode] = useState(false);
+  
+  // Zoom functionality for photos in video review mode
+  const zoomAnimations = useRef<Record<string, Animated.Value>>({});
+  const panResponders = useRef<Record<string, any>>({});
 
   // Get all photos in order for the video review
   const allPhotos = React.useMemo(() => {
@@ -69,6 +74,43 @@ export default function ReviewerRequestScreen() {
     signedSocials.forEach((uri, i) => photos.push({uri, category: 'Socials', index: i}));
     return photos;
   }, [signedOutfits, signedRoom, signedSocials]);
+
+  // Create zoom animation and pan responder for a photo
+  const createZoomForPhoto = (photoUri: string) => {
+    if (!zoomAnimations.current[photoUri]) {
+      zoomAnimations.current[photoUri] = new Animated.Value(1);
+    }
+    
+    if (!panResponders.current[photoUri]) {
+      panResponders.current[photoUri] = PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: () => {
+          // Start zoom animation
+          Animated.spring(zoomAnimations.current[photoUri], {
+            toValue: 1.5,
+            useNativeDriver: true,
+            tension: 100,
+            friction: 8,
+          }).start();
+        },
+        onPanResponderRelease: () => {
+          // Snap back to original size
+          Animated.spring(zoomAnimations.current[photoUri], {
+            toValue: 1,
+            useNativeDriver: true,
+            tension: 100,
+            friction: 8,
+          }).start();
+        },
+      });
+    }
+    
+    return {
+      animation: zoomAnimations.current[photoUri],
+      panResponder: panResponders.current[photoUri],
+    };
+  };
 
   // Move useMemo to the top level, always called
   const parsedNotes = React.useMemo(() => {
@@ -319,7 +361,13 @@ export default function ReviewerRequestScreen() {
         {signedSelfie && (
           <View style={[styles.section, styles.mediaSection]}>
             <Text style={styles.label}>Selfie</Text>
-            <TouchableOpacity onPress={() => { setGalleryUris([signedSelfie]); setGalleryIndex(0); setGalleryOpen(true); }}>
+            <TouchableOpacity onPress={() => { 
+              if (!isVideoReviewMode) {
+                setGalleryUris([signedSelfie]); 
+                setGalleryIndex(0); 
+                setGalleryOpen(true); 
+              }
+            }}>
               <Image source={{ uri: signedSelfie }} style={styles.selfie} contentFit="cover" cachePolicy="none" />
             </TouchableOpacity>
           </View>
@@ -330,7 +378,13 @@ export default function ReviewerRequestScreen() {
             <Text style={styles.label}>Outfits</Text>
             <PhotoCarousel 
               uris={signedOutfits}
-              onPressItem={(i) => { setGalleryUris(signedOutfits); setGalleryIndex(i); setGalleryOpen(true); }}
+              onPressItem={(i) => { 
+                if (!isVideoReviewMode) {
+                  setGalleryUris(signedOutfits); 
+                  setGalleryIndex(i); 
+                  setGalleryOpen(true); 
+                }
+              }}
             />
           </View>
         )}
@@ -340,7 +394,13 @@ export default function ReviewerRequestScreen() {
             <Text style={styles.label}>Room Tour</Text>
             <PhotoCarousel 
               uris={signedRoom}
-              onPressItem={(i) => { setGalleryUris(signedRoom); setGalleryIndex(i); setGalleryOpen(true); }}
+              onPressItem={(i) => { 
+                if (!isVideoReviewMode) {
+                  setGalleryUris(signedRoom); 
+                  setGalleryIndex(i); 
+                  setGalleryOpen(true); 
+                }
+              }}
             />
           </View>
         )}
@@ -350,7 +410,13 @@ export default function ReviewerRequestScreen() {
             <Text style={styles.label}>Socials</Text>
             <PhotoCarousel 
               uris={signedSocials}
-              onPressItem={(i) => { setGalleryUris(signedSocials); setGalleryIndex(i); setGalleryOpen(true); }}
+              onPressItem={(i) => { 
+                if (!isVideoReviewMode) {
+                  setGalleryUris(signedSocials); 
+                  setGalleryIndex(i); 
+                  setGalleryOpen(true); 
+                }
+              }}
             />
           </View>
         )}
@@ -358,7 +424,13 @@ export default function ReviewerRequestScreen() {
         {signedPhotos.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.label}>Photos</Text>
-            <PhotoCarousel uris={signedPhotos} onPressItem={(i) => { setGalleryUris(signedPhotos); setGalleryIndex(i); setGalleryOpen(true); }} />
+            <PhotoCarousel uris={signedPhotos} onPressItem={(i) => { 
+              if (!isVideoReviewMode) {
+                setGalleryUris(signedPhotos); 
+                setGalleryIndex(i); 
+                setGalleryOpen(true); 
+              }
+            }} />
           </View>
         )}
 
@@ -405,7 +477,10 @@ export default function ReviewerRequestScreen() {
             <Text style={styles.sectionHint}>Record a video review while swiping through photos. You can rate and add notes to each photo during the recording.</Text>
             {Platform.OS !== 'web' && (
               <RNView style={{ flexDirection: 'row', gap: 10 }}>
-                <TouchableOpacity style={[styles.actionButton, styles.primaryButton, { flex: 1 }]} onPress={() => setRecordingModeOpen(true)}>
+                <TouchableOpacity style={[styles.actionButton, styles.primaryButton, { flex: 1 }]} onPress={() => {
+                  setIsVideoReviewMode(true);
+                  setRecordingModeOpen(true);
+                }}>
                   <Text style={styles.actionButtonText}>Start Video Review</Text>
                 </TouchableOpacity>
               </RNView>
@@ -463,7 +538,18 @@ export default function ReviewerRequestScreen() {
               <RNView key={`photo-${i}`} style={{ width: Dimensions.get('window').width, padding: 16, justifyContent: 'center' }}>
                 <RNView style={[styles.overlayPhotoCard, { alignSelf: 'center', maxWidth: 640 }] }>
                   <Text style={styles.overlayTitle}>{photo.category}</Text>
-                  <Image source={{ uri: photo.uri }} style={{ width: '100%', aspectRatio: 3/4, borderRadius: 12, marginTop: 8 }} contentFit="cover" />
+                  <Animated.View 
+                    style={{ 
+                      width: '100%', 
+                      aspectRatio: 3/4, 
+                      borderRadius: 12, 
+                      marginTop: 8,
+                      transform: [{ scale: createZoomForPhoto(photo.uri).animation }]
+                    }}
+                    {...createZoomForPhoto(photo.uri).panResponder.panHandlers}
+                  >
+                    <Image source={{ uri: photo.uri }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
+                  </Animated.View>
                   
                   {/* Rating controls */}
                   <RNView style={{ marginTop: 12, alignItems: 'center' }}>
@@ -489,19 +575,21 @@ export default function ReviewerRequestScreen() {
                     </RNView>
                   </RNView>
 
-                  {/* Note button */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      setNoteUri(photo.uri);
-                      setNoteText(photoNotes[photo.uri] || '');
-                      setNoteModalOpen(true);
-                    }}
-                    style={[styles.noteButton, photoNotes[photo.uri] && styles.noteButtonHasNote]}
-                  >
-                    <Text style={[styles.noteButtonText, photoNotes[photo.uri] && styles.noteButtonTextHasNote]}>
-                      {photoNotes[photo.uri] ? '📝 Edit Note' : '📝 Add Note'}
-                    </Text>
-                  </TouchableOpacity>
+                  {/* Note button - only show when not in video review mode */}
+                  {!isVideoReviewMode && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setNoteUri(photo.uri);
+                        setNoteText(photoNotes[photo.uri] || '');
+                        setNoteModalOpen(true);
+                      }}
+                      style={[styles.noteButton, photoNotes[photo.uri] && styles.noteButtonHasNote]}
+                    >
+                      <Text style={[styles.noteButtonText, photoNotes[photo.uri] && styles.noteButtonTextHasNote]}>
+                        {photoNotes[photo.uri] ? '📝 Edit Note' : '📝 Add Note'}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </RNView>
               </RNView>
             ))}
@@ -513,6 +601,7 @@ export default function ReviewerRequestScreen() {
               onRecorded={(uri) => {
                 setVideoUri(uri);
                 setRecordingModeOpen(false);
+                setIsVideoReviewMode(false);
                 Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
               }}
               variant="overlay"
@@ -522,7 +611,10 @@ export default function ReviewerRequestScreen() {
 
           {/* Close button */}
           <RNView style={{ position: 'absolute', top: insets.top + 16, right: 16, flexDirection: 'row', gap: 8, zIndex: 11, elevation: 11 }}>
-            <TouchableOpacity onPress={() => setRecordingModeOpen(false)} style={[styles.actionButton, styles.denyButton, { paddingHorizontal: 14, paddingVertical: 8 }]}>
+            <TouchableOpacity onPress={() => {
+              setRecordingModeOpen(false);
+              setIsVideoReviewMode(false);
+            }} style={[styles.actionButton, styles.denyButton, { paddingHorizontal: 14, paddingVertical: 8 }]}>
               <Text style={[styles.actionButtonText, styles.denyButtonText]}>Close</Text>
             </TouchableOpacity>
           </RNView>
