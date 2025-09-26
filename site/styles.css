@@ -375,10 +375,10 @@ body {
   background: linear-gradient(135deg, var(--grad-start), var(--grad-mid), var(--grad-end));
   background-size: 200% 200%;
   color: white;
-  padding: 12px 20px;
+  padding: 16px 32px;
   border-radius: 12px;
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 18px;
   text-decoration: none;
   cursor: pointer;
   border: 0;
@@ -452,8 +452,8 @@ body {
   }
 
   .cta-nav {
-    padding: 8px 12px;
-    font-size: 12px;
+    padding: 12px 20px;
+    font-size: 16px;
     border-radius: 8px;
   }
 }
@@ -481,8 +481,8 @@ body {
   }
 
   .cta-nav {
-    padding: 8px 10px;
-    font-size: 11px;
+    padding: 10px 16px;
+    font-size: 14px;
     border-radius: 6px;
   }
 }
@@ -2538,9 +2538,9 @@ footer {
 }
 
 .nav-countdown-section .countdown-label {
-  font-size: 11px;
+  font-size: 16px;
   color: var(--text-2);
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -2553,7 +2553,7 @@ footer {
 }
 
 .nav .countdown-number {
-  font-size: 18px;
+  font-size: 28px;
 }
 
 .nav .countdown-label {
@@ -2561,8 +2561,8 @@ footer {
 }
 
 .nav .countdown-separator {
-  font-size: 16px;
-  margin: 0 2px;
+  font-size: 24px;
+  margin: 0 4px;
 }
 
 .nav-cta-section {
@@ -2578,17 +2578,17 @@ footer {
 }
 
 .nav .counter-current {
-  font-size: 18px;
+  font-size: 28px;
 }
 
 .nav .counter-separator,
 .nav .counter-max {
-  font-size: 14px;
+  font-size: 22px;
 }
 
 .nav .counter-message {
-  font-size: 9px;
-  max-width: 80px;
+  font-size: 14px;
+  max-width: 120px;
 }
 
 /* Mobile responsive */
@@ -2606,7 +2606,7 @@ footer {
   }
   
   .nav .countdown-number {
-    font-size: 16px;
+    font-size: 24px;
   }
   
   .nav .countdown-label {
@@ -2614,8 +2614,8 @@ footer {
   }
   
   .nav .countdown-separator {
-    font-size: 14px;
-    margin: 0 1px;
+    font-size: 20px;
+    margin: 0 2px;
   }
   
   .nav-cta-section {
@@ -2629,17 +2629,17 @@ footer {
   }
   
   .nav .counter-current {
-    font-size: 16px;
+    font-size: 24px;
   }
   
   .nav .counter-separator,
   .nav .counter-max {
-    font-size: 12px;
+    font-size: 18px;
   }
   
   .nav .counter-message {
-    font-size: 8px;
-    max-width: 70px;
+    font-size: 12px;
+    max-width: 100px;
   }
 }
 
@@ -2663,17 +2663,17 @@ footer {
   }
   
   .nav .counter-current {
-    font-size: 14px;
+    font-size: 20px;
   }
   
   .nav .counter-separator,
   .nav .counter-max {
-    font-size: 11px;
+    font-size: 16px;
   }
   
   .nav .counter-message {
-    font-size: 7px;
-    max-width: 60px;
+    font-size: 10px;
+    max-width: 80px;
   }
 }
 
