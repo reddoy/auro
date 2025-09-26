@@ -542,6 +542,31 @@ body {
   text-underline-offset: 4px;
 }
 
+/* Individual phrase styling */
+.hero__copy h1 .phrase-1 {
+  background: linear-gradient(135deg, var(--text) 0%, var(--accent-blue) 50%, #6BB6FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero__copy h1 .phrase-2 {
+  background: linear-gradient(135deg, var(--text) 0%, var(--accent-purple) 50%, #B794F6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero__copy h1 .phrase-3 {
+  background: linear-gradient(135deg, var(--grad-start) 0%, var(--grad-mid) 50%, var(--grad-end) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 900;
+  text-shadow: 0 0 30px rgba(255, 111, 0, 0.3);
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
 /* Responsive underline for mobile */
 @media (max-width: 640px) {
   .hero__copy h1 em {

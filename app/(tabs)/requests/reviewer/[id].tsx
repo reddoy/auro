@@ -20,6 +20,7 @@ import { uploadRequestMedia } from '@/lib/uploads';
 import { createStripeExpressLoginLink } from '@/lib/payments';
 import * as Sharing from 'expo-sharing';
 import Spinner from '@/components/Spinner';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Removed unused URL helper functions since we're not showing social links in this screen
 
@@ -63,9 +64,6 @@ export default function ReviewerRequestScreen() {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isVideoReviewMode, setIsVideoReviewMode] = useState(false);
   
-  // Simple zoom functionality for photos in video review mode
-  const [zoomedPhotoUri, setZoomedPhotoUri] = useState<string | null>(null);
-
   // Get all photos in order for the video review
   const allPhotos = React.useMemo(() => {
     const photos: Array<{uri: string, category: string, index: number}> = [];
@@ -74,19 +72,6 @@ export default function ReviewerRequestScreen() {
     signedSocials.forEach((uri, i) => photos.push({uri, category: 'Socials', index: i}));
     return photos;
   }, [signedOutfits, signedRoom, signedSocials]);
-
-  // Simple zoom handlers
-  const handlePhotoPress = (photoUri: string) => {
-    if (isVideoReviewMode) {
-      setZoomedPhotoUri(photoUri);
-    }
-  };
-
-  const handlePhotoRelease = () => {
-    if (isVideoReviewMode) {
-      setZoomedPhotoUri(null);
-    }
-  };
 
   // Move useMemo to the top level, always called
   const parsedNotes = React.useMemo(() => {
@@ -481,12 +466,16 @@ export default function ReviewerRequestScreen() {
       {/* Immersive recording modal with rating and note controls */}
       <Modal visible={recordingModeOpen} animationType="slide" onRequestClose={() => setRecordingModeOpen(false)}>
         <RNView style={{ flex: 1, backgroundColor: 'transparent' }}>
-          {/* Background image under everything */}
-          <Image
-            source={require('../../../../auro_video_bg.png')}
+          {/* Gradient background using logo colors */}
+          <LinearGradient
+            colors={['#d83986', '#cb3597', '#0c0325', '#f06755', '#6c1e49', '#ea4b64', '#98344b', '#381034', '#e14072']}
+            locations={[0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1]}
             style={StyleSheet.absoluteFill}
-            contentFit="cover"
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
           />
+          {/* Subtle overlay to reduce harshness */}
+          <RNView style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.15)' }]} />
           
           {/* Photo carousel with rating and note controls */}
           <ScrollView 
@@ -494,15 +483,15 @@ export default function ReviewerRequestScreen() {
             pagingEnabled 
             showsHorizontalScrollIndicator={false} 
             style={{ flex: 1 }} 
-            contentContainerStyle={{ alignItems: 'center', paddingTop: insets.top + 120 }}
+            contentContainerStyle={{ alignItems: 'center', paddingTop: insets.top + 140 }}
             onMomentumScrollEnd={(event) => {
               const index = Math.round(event.nativeEvent.contentOffset.x / Dimensions.get('window').width);
               setCurrentPhotoIndex(index);
             }}
           >
             {/* Person summary card */}
-            <RNView style={{ width: Dimensions.get('window').width, padding: 16, justifyContent: 'center' }}>
-              <RNView style={[styles.overlayCard, { alignSelf: 'center', maxWidth: 640 }] }>
+            <RNView style={{ width: Dimensions.get('window').width, paddingHorizontal: 20, paddingVertical: 16, justifyContent: 'center' }}>
+              <RNView style={[styles.overlayCard, { alignSelf: 'center', maxWidth: 640, marginBottom: 8 }] }>
                 <Text style={styles.overlayTitle}>{reviewee?.displayName || 'User'}</Text>
                 {parsedNotes?.message ? (<Text style={styles.overlayText}>{parsedNotes?.message}</Text>) : null}
                 {signedSelfie ? (<Image source={{ uri: signedSelfie }} style={{ width: '100%', aspectRatio: 1, borderRadius: 12, marginTop: 12 }} contentFit="cover" />) : null}
@@ -511,28 +500,25 @@ export default function ReviewerRequestScreen() {
 
             {/* Individual photos with rating and note controls */}
             {allPhotos.map((photo, i) => (
-              <RNView key={`photo-${i}`} style={{ width: Dimensions.get('window').width, padding: 16, justifyContent: 'center' }}>
-                <RNView style={[styles.overlayPhotoCard, { alignSelf: 'center', maxWidth: 640 }] }>
+              <RNView key={`photo-${i}`} style={{ width: Dimensions.get('window').width, paddingHorizontal: 20, paddingVertical: 16, justifyContent: 'center' }}>
+                <RNView style={[styles.overlayPhotoCard, { alignSelf: 'center', maxWidth: 640, marginBottom: 8 }] }>
                   <Text style={styles.overlayTitle}>{photo.category}</Text>
-                  <TouchableOpacity
-                    onPressIn={() => handlePhotoPress(photo.uri)}
-                    onPressOut={handlePhotoRelease}
-                    activeOpacity={0.8}
+                  <View
                     style={{ 
                       width: '100%', 
                       aspectRatio: 3/4, 
                       borderRadius: 12, 
                       marginTop: 8,
-                      transform: [{ scale: zoomedPhotoUri === photo.uri ? 1.2 : 1 }]
+                      overflow: 'hidden'
                     }}
                   >
                     <Image source={{ uri: photo.uri }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
-                  </TouchableOpacity>
+                  </View>
                   
                   {/* Rating controls */}
-                  <RNView style={{ marginTop: 12, alignItems: 'center' }}>
-                    <Text style={[styles.overlayText, { marginBottom: 8 }]}>Rate this photo:</Text>
-                    <RNView style={{ flexDirection: 'row', gap: 8 }}>
+                  <RNView style={{ marginTop: 16, alignItems: 'center' }}>
+                    <Text style={[styles.overlayText, { marginBottom: 12 }]}>Rate this photo:</Text>
+                    <RNView style={{ flexDirection: 'row', gap: 12, justifyContent: 'center' }}>
                       {[1, 2, 3, 4, 5].map((rating) => (
                         <TouchableOpacity
                           key={rating}
@@ -561,7 +547,7 @@ export default function ReviewerRequestScreen() {
                         setNoteText(photoNotes[photo.uri] || '');
                         setNoteModalOpen(true);
                       }}
-                      style={[styles.noteButton, photoNotes[photo.uri] && styles.noteButtonHasNote]}
+                      style={[styles.noteButton, photoNotes[photo.uri] && styles.noteButtonHasNote, { marginTop: 16 }]}
                     >
                       <Text style={[styles.noteButtonText, photoNotes[photo.uri] && styles.noteButtonTextHasNote]}>
                         {photoNotes[photo.uri] ? '📝 Edit Note' : '📝 Add Note'}
@@ -580,7 +566,6 @@ export default function ReviewerRequestScreen() {
                 setVideoUri(uri);
                 setRecordingModeOpen(false);
                 setIsVideoReviewMode(false);
-                setZoomedPhotoUri(null);
                 Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
               }}
               variant="overlay"
@@ -593,7 +578,6 @@ export default function ReviewerRequestScreen() {
             <TouchableOpacity onPress={() => {
               setRecordingModeOpen(false);
               setIsVideoReviewMode(false);
-              setZoomedPhotoUri(null);
             }} style={[styles.actionButton, styles.denyButton, { paddingHorizontal: 14, paddingVertical: 8 }]}>
               <Text style={[styles.actionButtonText, styles.denyButtonText]}>Close</Text>
             </TouchableOpacity>
@@ -665,8 +649,8 @@ const styles = StyleSheet.create({
   sectionHint: { fontSize: 13, color: Colors.brand.textSecondary, marginTop: 2, fontWeight: '900' },
 
   disabledButton: { backgroundColor: Colors.brand.border },
-  overlayCard: { backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: Colors.brand.border, opacity: 0.96 },
-  overlayPhotoCard: { backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: Colors.brand.border, opacity: 0.96 },
+  overlayCard: { backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: Colors.brand.border, opacity: 0.95 },
+  overlayPhotoCard: { backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: Colors.brand.border, opacity: 0.95 },
   overlayTitle: { fontSize: 20, fontWeight: '900', color: Colors.brand.textPrimary, marginBottom: 8 },
   overlayText: { fontSize: 15, color: Colors.brand.textPrimary, lineHeight: 21 },
   consentPill: { alignSelf: 'center', borderWidth: 1, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 24, backgroundColor: Colors.brand.cardBackground, marginTop: 8 },
@@ -696,9 +680,8 @@ const styles = StyleSheet.create({
     color: '#fff' 
   },
   noteButton: { 
-    marginTop: 12, 
-    paddingVertical: 10, 
-    paddingHorizontal: 16, 
+    paddingVertical: 12, 
+    paddingHorizontal: 20, 
     borderRadius: 20, 
     backgroundColor: 'rgba(255,255,255,0.2)', 
     alignItems: 'center',

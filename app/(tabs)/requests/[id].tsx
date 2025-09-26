@@ -284,7 +284,7 @@ export default function ReviewerSubmitScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
   title: { color: Colors.brand.textPrimary, fontWeight: '700', fontSize: 20, marginBottom: 12 },
-  headerBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.brand.cardBackground, borderRadius: 12, padding: 12, marginBottom: 12 },
+  headerBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.brand.cardBackground, borderRadius: 12, padding: 12, marginBottom: 12, overflow: 'hidden' },
   avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: Colors.brand.cardBackgroundSecondary },
   avatarWrapper: { width: 48, height: 48, borderRadius: 24, overflow: 'hidden', backgroundColor: 'rgba(199,191,217,0.25)' },
   avatarOverlay: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },

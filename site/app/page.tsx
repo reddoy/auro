@@ -22,8 +22,16 @@ export default function HomePage() {
               </div>
               
               {/* Main Headline */}
-              <h1 className="desktop-only">Rate guys.<br />Give advice.<br /><em>Get paid.</em></h1>
-              <h1 className="mobile-only">Rate guys.<br />Give advice.<br /><em>Get paid.</em></h1>
+              <h1 className="desktop-only">
+                <span className="phrase-1">Rate guys.</span><br />
+                <span className="phrase-2">Give advice.</span><br />
+                <span className="phrase-3">Get paid.</span>
+              </h1>
+              <h1 className="mobile-only">
+                <span className="phrase-1">Rate guys.</span><br />
+                <span className="phrase-2">Give advice.</span><br />
+                <span className="phrase-3">Get paid.</span>
+              </h1>
               
               {/* Subheadline */}
               <p className="sub desktop-only">Share quick video reviews and monetize your expertise in style, photos, and presentation. Set your own rates and build your income stream.</p>
