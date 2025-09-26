@@ -2,6 +2,7 @@ import React from 'react';
 import { Modal, Pressable, StyleSheet, View, FlatList, Dimensions, Platform } from 'react-native';
 import { Text } from '@/components/Themed';
 import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Props = {
   visible: boolean;
@@ -13,6 +14,7 @@ type Props = {
 export default function ImageGalleryModal({ visible, uris, initialIndex = 0, onClose }: Props) {
   const listRef = React.useRef<FlatList<string>>(null);
   const [index, setIndex] = React.useState(initialIndex);
+  const insets = useSafeAreaInsets();
 
   React.useEffect(() => {
     if (visible) {
@@ -75,10 +77,10 @@ export default function ImageGalleryModal({ visible, uris, initialIndex = 0, onC
           )}
         />
         {/* Counter (top-left) */}
-        <View style={styles.counter}><Text style={styles.counterText}>{index + 1}/{uris.length}</Text></View>
+        <View style={[styles.counter, { top: insets.top + 16 }]}><Text style={styles.counterText}>{index + 1}/{uris.length}</Text></View>
 
-        {/* Close button (top-right) */}
-        <Pressable onPress={onClose} style={styles.closeButton} accessibilityLabel="Close gallery">
+        {/* Close button (top-right) - positioned with safe area */}
+        <Pressable onPress={onClose} style={[styles.closeButton, { top: insets.top + 16 }]} accessibilityLabel="Close gallery">
           <Text style={styles.closeButtonText}>×</Text>
         </Pressable>
 
@@ -100,10 +102,26 @@ export default function ImageGalleryModal({ visible, uris, initialIndex = 0, onC
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)' },
-  counter: { position: 'absolute', top: 16, left: 16, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, zIndex: 3 },
+  counter: { position: 'absolute', left: 16, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, zIndex: 3 },
   counterText: { color: '#fff', fontWeight: '700' },
-  closeButton: { position: 'absolute', top: 8, right: 12, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', zIndex: 3 },
-  closeButtonText: { color: '#fff', fontWeight: '900', fontSize: 20, lineHeight: 20 },
+  closeButton: { 
+    position: 'absolute', 
+    right: 16, 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22, 
+    backgroundColor: 'rgba(0,0,0,0.7)', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    zIndex: 3,
+    // Add subtle shadow for better visibility
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  closeButtonText: { color: '#fff', fontWeight: '900', fontSize: 24, lineHeight: 24 },
   arrowsWrap: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 },
   arrowButton: { position: 'absolute', width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center' },
   arrowText: { color: '#fff', fontSize: 28, fontWeight: '900', lineHeight: 28 },

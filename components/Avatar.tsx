@@ -40,7 +40,7 @@ export default function Avatar({ uri, name, size = 48 }: AvatarProps) {
           style={{ width: '100%', height: '100%' }}
           contentFit="cover"
           transition={200}
-          cachePolicy="none"
+          cachePolicy="memory-disk"
           onError={(e) => { try { console.warn('Avatar load failed for URI:', uri); } catch {} setFailed(true); }}
         />
       ) : (
