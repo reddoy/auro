@@ -38,28 +38,31 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${poppins.className} snap-y`}>
         <header className="nav">
-          <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <a href="/" className="brand" aria-label="Auro Home">
-              <img src="/auro_aura_logo_nobg.png" alt="Auro logo" width={40} height={40} />
-              <span className="brand__name">Auro</span>
-            </a>
-            
-            {/* Countdown Timer */}
-            <div className="nav-countdown-section">
-              <span className="countdown-label">Till App Launch:</span>
-              <CountdownTimer 
-                targetDate={new Date('2025-10-15T21:00:00-08:00')} // Oct 15, 2025, 9 PM PST
-                className="nav-countdown"
-              />
+          <div className="container">
+            <div className="nav-content">
+              <a href="/" className="brand" aria-label="Auro Home">
+                <img src="/auro_aura_logo_nobg.png" alt="Auro logo" width={40} height={40} />
+                <span className="brand__name">Auro</span>
+              </a>
+              
+              <div className="nav-center">
+                <div className="nav-countdown-section">
+                  <span className="countdown-label">Launch:</span>
+                  <CountdownTimer 
+                    targetDate={new Date('2025-10-15T21:00:00-08:00')} // Oct 15, 2025, 9 PM PST
+                    className="nav-countdown"
+                  />
+                </div>
+                <ReviewerCounter 
+                  maxReviewers={50}
+                  className="nav-counter"
+                />
+              </div>
+              
+              <nav className="nav-cta-section">
+                <ConditionalNav />
+              </nav>
             </div>
-            
-            <nav className="nav-cta-section">
-              <ConditionalNav />
-              <ReviewerCounter 
-                maxReviewers={50}
-                className="nav-counter"
-              />
-            </nav>
           </div>
         </header>
         <main style={{ padding: 0 }}>{children}</main>

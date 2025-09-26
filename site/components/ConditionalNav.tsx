@@ -13,8 +13,14 @@ export default function ConditionalNav() {
   }
   
   return (
-    <a className="cta-nav" href="/reviewers/apply">
-      Become a Founding Reviewer
-    </a>
+    <div className="nav-cta-group">
+      <div className="nav-urgency-badge">
+        <span className="urgency-icon">⚡</span>
+        <span className="urgency-text">Limited Spots</span>
+      </div>
+      <a className="cta-nav" href="/reviewers/apply">
+        Join Founding 50
+      </a>
+    </div>
   );
 }

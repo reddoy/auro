@@ -89,10 +89,10 @@
 
 @keyframes glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(255, 111, 0, 0.3);
+    text-shadow: 0 0 20px rgba(255, 111, 0, 0.4), 0 0 40px rgba(255, 79, 51, 0.3), 0 0 60px rgba(255, 45, 85, 0.2);
   }
   50% {
-    box-shadow: 0 0 30px rgba(255, 111, 0, 0.6);
+    text-shadow: 0 0 30px rgba(255, 111, 0, 0.6), 0 0 60px rgba(255, 79, 51, 0.5), 0 0 90px rgba(255, 45, 85, 0.4);
   }
 }
 
@@ -241,11 +241,23 @@ body {
 }
 
 .nav .container {
+  width: 100%;
+}
+
+.nav-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
   gap: 16px;
+}
+
+.nav-center {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex: 1;
+  justify-content: center;
 }
 
 .nav.scrolled {
@@ -317,6 +329,48 @@ body {
 }
 
 /* Nav CTA Button - Match Hero CTA */
+/* Nav CTA Group */
+.nav-cta-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.nav-cta-group:hover {
+  transform: translateY(-1px);
+}
+
+.nav-urgency-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 111, 0, 0.1);
+  border: 1px solid rgba(255, 111, 0, 0.3);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 10px;
+  color: var(--grad-start);
+  font-weight: 600;
+  animation: pulse 2s infinite;
+  transition: all 0.3s ease;
+}
+
+.nav-urgency-badge:hover {
+  background: rgba(255, 111, 0, 0.2);
+  border-color: rgba(255, 111, 0, 0.5);
+  transform: scale(1.05);
+}
+
+.nav-urgency-badge .urgency-icon {
+  font-size: 8px;
+}
+
+.nav-urgency-badge .urgency-text {
+  white-space: nowrap;
+}
+
 .cta-nav {
   background: linear-gradient(135deg, var(--grad-start), var(--grad-mid), var(--grad-end));
   background-size: 200% 200%;
@@ -368,8 +422,12 @@ body {
     min-height: 60px;
   }
 
-  .nav .container {
+  .nav-content {
     gap: 12px;
+  }
+
+  .nav-center {
+    gap: 16px;
   }
 
   .brand {
@@ -384,6 +442,15 @@ body {
     height: 32px;
   }
 
+  .nav-cta-group {
+    gap: 2px;
+  }
+
+  .nav-urgency-badge {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+
   .cta-nav {
     padding: 8px 12px;
     font-size: 12px;
@@ -392,12 +459,25 @@ body {
 }
 
 @media (max-width: 480px) {
-  .nav .container {
+  .nav-content {
     gap: 8px;
+  }
+
+  .nav-center {
+    gap: 12px;
   }
 
   .brand__name {
     display: none; /* Hide text on very small screens, show only logo */
+  }
+
+  .nav-urgency-badge {
+    font-size: 8px;
+    padding: 1px 3px;
+  }
+
+  .nav-urgency-badge .urgency-text {
+    display: none; /* Hide text on very small screens */
   }
 
   .cta-nav {
@@ -544,14 +624,14 @@ body {
 
 /* Individual phrase styling */
 .hero__copy h1 .phrase-1 {
-  background: linear-gradient(135deg, var(--text) 0%, var(--accent-blue) 50%, #6BB6FF 100%);
+  background: linear-gradient(135deg, #ea4b64 0%, #f06755 50%, #f06755 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .hero__copy h1 .phrase-2 {
-  background: linear-gradient(135deg, var(--text) 0%, var(--accent-purple) 50%, #B794F6 100%);
+  background: linear-gradient(135deg, #d83986 0%, #cb3597 50%, #cb3597 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -563,7 +643,7 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   font-weight: 900;
-  text-shadow: 0 0 30px rgba(255, 111, 0, 0.3);
+  text-shadow: 0 0 20px rgba(255, 111, 0, 0.4), 0 0 40px rgba(255, 79, 51, 0.3), 0 0 60px rgba(255, 45, 85, 0.2);
   animation: glow 2s ease-in-out infinite alternate;
 }
 
@@ -2566,6 +2646,10 @@ footer {
 @media (max-width: 480px) {
   .nav-countdown-section {
     display: none; /* Hide countdown section on very small screens */
+  }
+  
+  .nav-center {
+    justify-content: flex-end;
   }
   
   .nav-cta-section {
