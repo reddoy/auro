@@ -2767,7 +2767,24 @@ footer {
 .nav-countdown-section {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+}
+
+.app-logos {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.app-logo {
+  width: 24px;
+  height: 24px;
+  opacity: 0.9;
+  transition: opacity 0.3s ease;
+}
+
+.app-logo:hover {
+  opacity: 1;
 }
 
 .nav-countdown-section .countdown-label {
@@ -2826,6 +2843,19 @@ footer {
 
 /* Mobile responsive */
 @media (max-width: 768px) {
+  .nav-countdown-section {
+    gap: 8px;
+  }
+  
+  .app-logos {
+    gap: 4px;
+  }
+  
+  .app-logo {
+    width: 20px;
+    height: 20px;
+  }
+  
   .nav-countdown-section .countdown-label {
     font-size: 9px;
   }
@@ -2879,6 +2909,15 @@ footer {
 @media (max-width: 480px) {
   .nav-countdown-section {
     display: none; /* Hide countdown section on very small screens */
+  }
+  
+  .app-logos {
+    gap: 3px;
+  }
+  
+  .app-logo {
+    width: 18px;
+    height: 18px;
   }
   
   .nav-center {

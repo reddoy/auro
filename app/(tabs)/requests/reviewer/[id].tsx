@@ -68,6 +68,16 @@ export default function ReviewerRequestScreen() {
   const [isVideoReviewMode, setIsVideoReviewMode] = useState(false);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   
+  // Move useMemo to the top level, always called
+  const parsedNotes = React.useMemo(() => {
+    try {
+      if (!request?.notes) return null;
+      return typeof request.notes === 'string' ? JSON.parse(request.notes) : request.notes;
+    } catch {
+      return null;
+    }
+  }, [request?.notes]);
+  
   // Create combined slides array: profile + section cards + photos
   const allSlides = React.useMemo(() => {
     const slides: Array<{type: 'profile' | 'section' | 'photo', data: any, index: number}> = [];
@@ -168,16 +178,6 @@ export default function ReviewerRequestScreen() {
     
     return sections;
   }, [signedOutfits, signedRoom, signedSocials]);
-
-  // Move useMemo to the top level, always called
-  const parsedNotes = React.useMemo(() => {
-    try {
-      if (!request?.notes) return null;
-      return typeof request.notes === 'string' ? JSON.parse(request.notes) : request.notes;
-    } catch {
-      return null;
-    }
-  }, [request?.notes]);
 
   const hasConsent = React.useMemo(() => typeof parsedNotes?.consent?.shareOnSocial === 'boolean', [parsedNotes]);
   const shareConsent = React.useMemo(() => !!parsedNotes?.consent?.shareOnSocial, [parsedNotes]);
@@ -555,90 +555,83 @@ export default function ReviewerRequestScreen() {
               setCurrentPhotoIndex(index);
             }}
           >
-            {/* Person summary card */}
-            <RNView style={{ width: Dimensions.get('window').width, paddingHorizontal: 20, paddingVertical: 16, justifyContent: 'center' }}>
-              <RNView style={[styles.overlayCard, { alignSelf: 'center', maxWidth: 640, marginBottom: 8 }] }>
-                <Text style={styles.overlayTitle}>{reviewee?.displayName || 'User'}</Text>
-                {parsedNotes?.message ? (<Text style={styles.overlayText}>{parsedNotes?.message}</Text>) : null}
-                {signedSelfie ? (<Image source={{ uri: signedSelfie }} style={{ width: '100%', aspectRatio: 1, borderRadius: 12, marginTop: 12 }} contentFit="cover" />) : null}
-              </RNView>
-            </RNView>
-
-            {/* Individual photos with rating and note controls */}
-            {allPhotos.map((photo, i) => {
-              // Check if this is the first photo of a new section
-              const isFirstOfSection = i === 0 || allPhotos[i-1].category !== photo.category;
-              const sectionIndex = reviewSections.findIndex(section => section.title === photo.category);
-              
-              return (
-                <RNView key={`photo-${i}`} style={{ width: Dimensions.get('window').width, paddingHorizontal: 20, paddingVertical: 16, justifyContent: 'center' }}>
-                  {/* Upcoming section card - only show if this is the first photo of a section and not the very first photo */}
-                  {isFirstOfSection && i > 0 && (
-                    <UpcomingSectionCard
-                      title={photo.category}
-                      subtitle={reviewSections[sectionIndex]?.subtitle}
-                      isVisible={true}
-                      style={{ marginBottom: 16 }}
-                    />
-                  )}
-                  
-                  <RNView style={[styles.overlayPhotoCard, { alignSelf: 'center', maxWidth: 640, marginBottom: 8 }] }>
-                    <Text style={styles.overlayTitle}>{photo.category} - Photo {i + 1}</Text>
-                  <View
-                    style={{ 
-                      width: '100%', 
-                      aspectRatio: 3/4, 
-                      borderRadius: 12, 
-                      marginTop: 8,
-                      overflow: 'hidden'
-                    }}
-                  >
-                    <Image source={{ uri: photo.uri }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
-                  </View>
-                  
-                  {/* Rating controls */}
-                  <RNView style={{ marginTop: 16, alignItems: 'center' }}>
-                    <Text style={[styles.overlayText, { marginBottom: 12 }]}>Rate this photo:</Text>
-                    <RNView style={{ flexDirection: 'row', gap: 12, justifyContent: 'center' }}>
-                      {[1, 2, 3, 4, 5].map((rating) => (
-                        <TouchableOpacity
-                          key={rating}
-                          onPress={() => setPhotoRatings(prev => ({ ...prev, [photo.uri]: rating }))}
-                          style={[
-                            styles.ratingButton,
-                            photoRatings[photo.uri] === rating && styles.ratingButtonSelected
-                          ]}
-                        >
-                          <Text style={[
-                            styles.ratingButtonText,
-                            photoRatings[photo.uri] === rating && styles.ratingButtonTextSelected
-                          ]}>
-                            {rating}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </RNView>
+            {/* All slides: profile, section cards, and photos */}
+            {allSlides.map((slide, i) => (
+              <RNView key={`slide-${i}`} style={{ width: Dimensions.get('window').width, paddingHorizontal: 20, paddingVertical: 16, justifyContent: 'center' }}>
+                {slide.type === 'profile' && (
+                  <RNView style={[styles.overlayCard, { alignSelf: 'center', maxWidth: 640, marginBottom: 8 }] }>
+                    <Text style={styles.overlayTitle}>{slide.data.name}</Text>
+                    {slide.data.message ? (<Text style={styles.overlayText}>{slide.data.message}</Text>) : null}
+                    {slide.data.selfie ? (<Image source={{ uri: slide.data.selfie }} style={{ width: '100%', aspectRatio: 1, borderRadius: 12, marginTop: 12 }} contentFit="cover" />) : null}
                   </RNView>
-
-                  {/* Note button - only show when not in video review mode */}
-                  {!isVideoReviewMode && (
-                    <TouchableOpacity
-                      onPress={() => {
-                        setNoteUri(photo.uri);
-                        setNoteText(photoNotes[photo.uri] || '');
-                        setNoteModalOpen(true);
+                )}
+                
+                {slide.type === 'section' && (
+                  <SectionSlideCard
+                    title={slide.data.title}
+                    subtitle={slide.data.subtitle}
+                    revieweeName={reviewee?.displayName || 'User'}
+                  />
+                )}
+                
+                {slide.type === 'photo' && (
+                  <RNView style={[styles.overlayPhotoCard, { alignSelf: 'center', maxWidth: 640, marginBottom: 8 }] }>
+                    <Text style={styles.overlayTitle}>{slide.data.category} - Photo {slide.data.photoIndex + 1}</Text>
+                    <View
+                      style={{ 
+                        width: '100%', 
+                        aspectRatio: 3/4, 
+                        borderRadius: 12, 
+                        marginTop: 8,
+                        overflow: 'hidden'
                       }}
-                      style={[styles.noteButton, photoNotes[photo.uri] && styles.noteButtonHasNote, { marginTop: 16 }]}
                     >
-                      <Text style={[styles.noteButtonText, photoNotes[photo.uri] && styles.noteButtonTextHasNote]}>
-                        {photoNotes[photo.uri] ? '📝 Edit Note' : '📝 Add Note'}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </RNView>
+                      <Image source={{ uri: slide.data.uri }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
+                    </View>
+                    
+                    {/* Rating controls */}
+                    <RNView style={{ marginTop: 16, alignItems: 'center' }}>
+                      <Text style={[styles.overlayText, { marginBottom: 12 }]}>Rate this photo:</Text>
+                      <RNView style={{ flexDirection: 'row', gap: 12, justifyContent: 'center' }}>
+                        {[1, 2, 3, 4, 5].map((rating) => (
+                          <TouchableOpacity
+                            key={rating}
+                            onPress={() => setPhotoRatings(prev => ({ ...prev, [slide.data.uri]: rating }))}
+                            style={[
+                              styles.ratingButton,
+                              photoRatings[slide.data.uri] === rating && styles.ratingButtonSelected
+                            ]}
+                          >
+                            <Text style={[
+                              styles.ratingButtonText,
+                              photoRatings[slide.data.uri] === rating && styles.ratingButtonTextSelected
+                            ]}>
+                              {rating}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </RNView>
+                    </RNView>
+
+                    {/* Note button - only show when not in video review mode */}
+                    {!isVideoReviewMode && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setNoteUri(slide.data.uri);
+                          setNoteText(photoNotes[slide.data.uri] || '');
+                          setNoteModalOpen(true);
+                        }}
+                        style={[styles.noteButton, photoNotes[slide.data.uri] && styles.noteButtonHasNote, { marginTop: 16 }]}
+                      >
+                        <Text style={[styles.noteButtonText, photoNotes[slide.data.uri] && styles.noteButtonTextHasNote]}>
+                          {photoNotes[slide.data.uri] ? '📝 Edit Note' : '📝 Add Note'}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </RNView>
+                )}
               </RNView>
-              );
-            })}
+            ))}
           </ScrollView>
 
           {/* Circular selfie recorder centered at top-middle */}
@@ -668,7 +661,7 @@ export default function ReviewerRequestScreen() {
           {/* Pagination dots */}
           <RNView style={{ position: 'absolute', bottom: insets.bottom + 80, left: 0, right: 0, alignItems: 'center', zIndex: 10 }}>
             <PaginationDots
-              totalItems={allPhotos.length + 1}
+              totalItems={allSlides.length}
               currentIndex={currentPhotoIndex}
             />
           </RNView>
