@@ -2538,7 +2538,7 @@ footer {
 }
 
 .nav-countdown-section .countdown-label {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-2);
   font-weight: 500;
   white-space: nowrap;
@@ -2594,7 +2594,7 @@ footer {
 /* Mobile responsive */
 @media (max-width: 768px) {
   .nav-countdown-section .countdown-label {
-    font-size: 10px;
+    font-size: 9px;
   }
   
   .nav .countdown-timer {
@@ -2610,7 +2610,7 @@ footer {
   }
   
   .nav .countdown-label {
-    font-size: 8px;
+    font-size: 7px;
   }
   
   .nav .countdown-separator {

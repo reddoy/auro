@@ -77,7 +77,7 @@ export default function ReviewerCounter({ maxReviewers = 100, className = '' }: 
         ) : isNearFull ? (
           <span className="counter-urgent">Only {spotsLeft} spots left! ⚡</span>
         ) : (
-          <span className="counter-normal">Founding reviewers</span>
+          <span className="counter-normal">Exclusive founding spots</span>
         )}
       </div>
     </div>

@@ -47,7 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               
               <div className="nav-center">
                 <div className="nav-countdown-section">
-                  <span className="countdown-label">Launch:</span>
+                  <span className="countdown-label">Founding Spots End In:</span>
                   <CountdownTimer 
                     targetDate={new Date('2025-10-15T21:00:00-08:00')} // Oct 15, 2025, 9 PM PST
                     className="nav-countdown"

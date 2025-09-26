@@ -16,10 +16,10 @@ export default function ConditionalNav() {
     <div className="nav-cta-group">
       <div className="nav-urgency-badge">
         <span className="urgency-icon">⚡</span>
-        <span className="urgency-text">Limited Spots</span>
+        <span className="urgency-text">Exclusive Perks</span>
       </div>
       <a className="cta-nav" href="/reviewers/apply">
-        Join Founding 100
+        Become Founding Reviewer
       </a>
     </div>
   );
