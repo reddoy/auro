@@ -371,6 +371,82 @@ body {
   white-space: nowrap;
 }
 
+/* Modern Integrated CTA Button */
+.cta-nav-integrated {
+  background: linear-gradient(135deg, var(--grad-start), var(--grad-mid), var(--grad-end));
+  background-size: 200% 200%;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 12px;
+  text-decoration: none;
+  cursor: pointer;
+  border: 0;
+  box-shadow: 0 4px 20px rgba(255, 111, 0, 0.3);
+  transition: all 0.3s ease;
+  animation: gradientShift 3s ease infinite;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+  min-width: 200px;
+}
+
+.cta-nav-integrated:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 30px rgba(255, 111, 0, 0.4);
+}
+
+.cta-count-section {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 6px 10px;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.cta-count-number {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+}
+
+.cta-count-separator {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.cta-count-max {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.cta-text-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.cta-main-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  line-height: 1.2;
+}
+
+.cta-sub-text {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.2;
+}
+
+/* Legacy CTA for backward compatibility */
 .cta-nav {
   background: linear-gradient(135deg, var(--grad-start), var(--grad-mid), var(--grad-end));
   background-size: 200% 200%;
@@ -451,6 +527,33 @@ body {
     padding: 1px 4px;
   }
 
+  .cta-nav-integrated {
+    padding: 10px 14px;
+    gap: 10px;
+    min-width: 180px;
+  }
+  
+  .cta-count-section {
+    padding: 5px 8px;
+  }
+  
+  .cta-count-number {
+    font-size: 16px;
+  }
+  
+  .cta-count-separator,
+  .cta-count-max {
+    font-size: 12px;
+  }
+  
+  .cta-main-text {
+    font-size: 13px;
+  }
+  
+  .cta-sub-text {
+    font-size: 10px;
+  }
+  
   .cta-nav {
     padding: 12px 20px;
     font-size: 16px;
@@ -480,6 +583,33 @@ body {
     display: none; /* Hide text on very small screens */
   }
 
+  .cta-nav-integrated {
+    padding: 8px 12px;
+    gap: 8px;
+    min-width: 160px;
+  }
+  
+  .cta-count-section {
+    padding: 4px 6px;
+  }
+  
+  .cta-count-number {
+    font-size: 14px;
+  }
+  
+  .cta-count-separator,
+  .cta-count-max {
+    font-size: 11px;
+  }
+  
+  .cta-main-text {
+    font-size: 12px;
+  }
+  
+  .cta-sub-text {
+    font-size: 9px;
+  }
+  
   .cta-nav {
     padding: 10px 16px;
     font-size: 14px;
@@ -2709,7 +2839,7 @@ footer {
   }
   
   .nav .countdown-number {
-    font-size: 24px;
+    font-size: 18px;
   }
   
   .nav .countdown-label {
@@ -2717,7 +2847,7 @@ footer {
   }
   
   .nav .countdown-separator {
-    font-size: 20px;
+    font-size: 16px;
     margin: 0 2px;
   }
   
@@ -2732,17 +2862,17 @@ footer {
   }
   
   .nav .counter-current {
-    font-size: 24px;
+    font-size: 18px;
   }
   
   .nav .counter-separator,
   .nav .counter-max {
-    font-size: 18px;
+    font-size: 14px;
   }
   
   .nav .counter-message {
-    font-size: 12px;
-    max-width: 100px;
+    font-size: 10px;
+    max-width: 90px;
   }
 }
 
@@ -2766,17 +2896,17 @@ footer {
   }
   
   .nav .counter-current {
-    font-size: 20px;
+    font-size: 16px;
   }
   
   .nav .counter-separator,
   .nav .counter-max {
-    font-size: 16px;
+    font-size: 12px;
   }
   
   .nav .counter-message {
-    font-size: 10px;
-    max-width: 80px;
+    font-size: 9px;
+    max-width: 70px;
   }
 }
 

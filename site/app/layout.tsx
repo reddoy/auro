@@ -53,10 +53,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     className="nav-countdown"
                   />
                 </div>
-                <ReviewerCounter 
-                  maxReviewers={100}
-                  className="nav-counter"
-                />
               </div>
               
               <nav className="nav-cta-section">

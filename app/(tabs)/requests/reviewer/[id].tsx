@@ -22,7 +22,7 @@ import * as Sharing from 'expo-sharing';
 import Spinner from '@/components/Spinner';
 import VideoReviewSection from '@/components/VideoReviewSection';
 import PaginationDots from '@/components/PaginationDots';
-import UpcomingSectionCard from '@/components/UpcomingSectionCard';
+import SectionSlideCard from '@/components/SectionSlideCard';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // Removed unused URL helper functions since we're not showing social links in this screen
@@ -68,14 +68,72 @@ export default function ReviewerRequestScreen() {
   const [isVideoReviewMode, setIsVideoReviewMode] = useState(false);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   
-  // Get all photos in order for the video review
-  const allPhotos = React.useMemo(() => {
-    const photos: Array<{uri: string, category: string, index: number}> = [];
-    signedOutfits.forEach((uri, i) => photos.push({uri, category: 'Outfits', index: i}));
-    signedRoom.forEach((uri, i) => photos.push({uri, category: 'Room Tour', index: i}));
-    signedSocials.forEach((uri, i) => photos.push({uri, category: 'Socials', index: i}));
-    return photos;
-  }, [signedOutfits, signedRoom, signedSocials]);
+  // Create combined slides array: profile + section cards + photos
+  const allSlides = React.useMemo(() => {
+    const slides: Array<{type: 'profile' | 'section' | 'photo', data: any, index: number}> = [];
+    let slideIndex = 0;
+    
+    // Add profile slide
+    slides.push({
+      type: 'profile',
+      data: { name: reviewee?.displayName || 'User', message: parsedNotes?.message, selfie: signedSelfie },
+      index: slideIndex++
+    });
+    
+    // Add sections with their photos
+    if (signedOutfits.length > 0) {
+      // Section card
+      slides.push({
+        type: 'section',
+        data: { title: 'Outfits', subtitle: "These are {name}'s best outfits" },
+        index: slideIndex++
+      });
+      // Outfit photos
+      signedOutfits.forEach((uri, i) => {
+        slides.push({
+          type: 'photo',
+          data: { uri, category: 'Outfits', photoIndex: i, totalPhotos: signedOutfits.length },
+          index: slideIndex++
+        });
+      });
+    }
+    
+    if (signedRoom.length > 0) {
+      // Section card
+      slides.push({
+        type: 'section',
+        data: { title: 'Room Tour', subtitle: "Here are some pictures of {name}'s room" },
+        index: slideIndex++
+      });
+      // Room photos
+      signedRoom.forEach((uri, i) => {
+        slides.push({
+          type: 'photo',
+          data: { uri, category: 'Room Tour', photoIndex: i, totalPhotos: signedRoom.length },
+          index: slideIndex++
+        });
+      });
+    }
+    
+    if (signedSocials.length > 0) {
+      // Section card
+      slides.push({
+        type: 'section',
+        data: { title: 'Socials', subtitle: "Here are {name}'s social media highlights" },
+        index: slideIndex++
+      });
+      // Social photos
+      signedSocials.forEach((uri, i) => {
+        slides.push({
+          type: 'photo',
+          data: { uri, category: 'Socials', photoIndex: i, totalPhotos: signedSocials.length },
+          index: slideIndex++
+        });
+      });
+    }
+    
+    return slides;
+  }, [signedOutfits, signedRoom, signedSocials, signedSelfie, reviewee?.displayName, parsedNotes?.message]);
 
   // Create sections for VideoReviewSection
   const reviewSections = React.useMemo(() => {
