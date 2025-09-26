@@ -21,6 +21,8 @@ import { createStripeExpressLoginLink } from '@/lib/payments';
 import * as Sharing from 'expo-sharing';
 import Spinner from '@/components/Spinner';
 import VideoReviewSection from '@/components/VideoReviewSection';
+import PaginationDots from '@/components/PaginationDots';
+import UpcomingSectionCard from '@/components/UpcomingSectionCard';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // Removed unused URL helper functions since we're not showing social links in this screen
@@ -512,20 +514,18 @@ export default function ReviewerRequestScreen() {
               
               return (
                 <RNView key={`photo-${i}`} style={{ width: Dimensions.get('window').width, paddingHorizontal: 20, paddingVertical: 16, justifyContent: 'center' }}>
-                  {/* Section title card for first photo of each section */}
-                  {isFirstOfSection && (
-                    <RNView style={{ marginBottom: 16 }}>
-                      <RNView style={[styles.overlayCard, { alignSelf: 'center', maxWidth: 640, backgroundColor: 'rgba(255,255,255,0.95)' }]}>
-                        <Text style={[styles.overlayTitle, { color: '#333', textAlign: 'center' }]}>{photo.category}</Text>
-                        <Text style={[styles.overlayText, { color: '#666', textAlign: 'center', marginTop: 4 }]}>
-                          {reviewSections[sectionIndex]?.subtitle || 'Review this section'}
-                        </Text>
-                      </RNView>
-                    </RNView>
+                  {/* Upcoming section card - only show if this is the first photo of a section and not the very first photo */}
+                  {isFirstOfSection && i > 0 && (
+                    <UpcomingSectionCard
+                      title={photo.category}
+                      subtitle={reviewSections[sectionIndex]?.subtitle}
+                      isVisible={true}
+                      style={{ marginBottom: 16 }}
+                    />
                   )}
                   
                   <RNView style={[styles.overlayPhotoCard, { alignSelf: 'center', maxWidth: 640, marginBottom: 8 }] }>
-                    <Text style={styles.overlayTitle}>Photo {i + 1} of {allPhotos.length}</Text>
+                    <Text style={styles.overlayTitle}>{photo.category} - Photo {i + 1}</Text>
                   <View
                     style={{ 
                       width: '100%', 
@@ -607,11 +607,12 @@ export default function ReviewerRequestScreen() {
             </TouchableOpacity>
           </RNView>
 
-          {/* Progress indicator */}
+          {/* Pagination dots */}
           <RNView style={{ position: 'absolute', bottom: insets.bottom + 80, left: 0, right: 0, alignItems: 'center', zIndex: 10 }}>
-            <Text style={styles.progressText}>
-              {currentPhotoIndex + 1} of {allPhotos.length + 1} • Swipe to review photos
-            </Text>
+            <PaginationDots
+              totalItems={allPhotos.length + 1}
+              currentIndex={currentPhotoIndex}
+            />
           </RNView>
         </RNView>
       </Modal>
