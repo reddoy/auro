@@ -3,7 +3,8 @@ import { View, Pressable, Image as RNImage, FlatList, Platform, Alert } from 're
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import { Video, Audio } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
+import { Audio } from 'expo-audio';
 
 type Props = {
   photos?: string[];
@@ -19,7 +20,7 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
   const [recording, setRecording] = useState(false);
   const [starting, setStarting] = useState(false);
   const [videoUri, setVideoUri] = useState<string | null>(null);
-  const videoRef = useRef<Video | null>(null);
+  const videoPlayer = useVideoPlayer(videoUri || '');
   const [activeIdx, setActiveIdx] = useState(0);
   const [permission, requestPermission] = useCameraPermissions();
   const [isCameraReady, setIsCameraReady] = useState(false);
@@ -87,22 +88,18 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
               </View>
             ) : videoUri ? (
               <>
-                <Video
-                  ref={r => (videoRef.current = r)}
+                <VideoView
                   style={{ width: '100%', height: '100%' }}
-                  source={{ uri: videoUri || undefined }}
-                  resizeMode={"cover" as any}
-                  shouldPlay={false}
-                  isMuted={false}
-                  isLooping
-                  useNativeControls={false}
+                  player={videoPlayer}
+                  contentFit="cover"
+                  nativeControls={false}
                 />
                 <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
                   <Pressable
                     onPress={async () => {
                       try {
-                        if (isPlaying) { await videoRef.current?.pauseAsync(); setIsPlaying(false); }
-                        else { await videoRef.current?.playAsync(); setIsPlaying(true); }
+                        if (isPlaying) { videoPlayer.pause(); setIsPlaying(false); }
+                        else { videoPlayer.play(); setIsPlaying(true); }
                       } catch {}
                     }}
                     accessibilityLabel={isPlaying ? 'Pause playback' : 'Play playback'}
@@ -204,13 +201,11 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
           </View>
         </View>
       ) : (
-        <Video
+        <VideoView
           style={{ aspectRatio: 9/16, borderRadius: 16 }}
-          source={{ uri: (videoUri || value) || undefined }}
-          useNativeControls
-          resizeMode={"contain" as any}
-          shouldPlay={false}
-          isMuted={false}
+          player={videoPlayer}
+          nativeControls={true}
+          contentFit="contain"
         />
       )}
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16 }}>

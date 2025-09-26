@@ -2777,8 +2777,8 @@ footer {
 }
 
 .app-logo {
-  width: 24px;
-  height: 24px;
+  width: 40px;
+  height: 40px;
   opacity: 0.9;
   transition: opacity 0.3s ease;
 }
@@ -2852,8 +2852,8 @@ footer {
   }
   
   .app-logo {
-    width: 20px;
-    height: 20px;
+    width: 32px;
+    height: 32px;
   }
   
   .nav-countdown-section .countdown-label {
@@ -2916,8 +2916,8 @@ footer {
   }
   
   .app-logo {
-    width: 18px;
-    height: 18px;
+    width: 28px;
+    height: 28px;
   }
   
   .nav-center {
