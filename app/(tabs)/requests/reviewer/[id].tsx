@@ -11,7 +11,7 @@ import type { DbRequestSummary } from '@/types';
 import Avatar from '@/components/Avatar';
 import StatusBadge from '@/components/StatusBadge';
 import { Image } from 'expo-image';
-import ImageGalleryModal from '@/components/ImageGalleryModal';
+import SimplePhotoModal from '@/components/SimplePhotoModal';
 import PhotoCarousel from '@/components/PhotoCarousel';
 import { signRequestMediaUrls, getSignedRequestMediaUrl } from '@/lib/uploads';
 import RatingBar from '@/components/RatingBar';

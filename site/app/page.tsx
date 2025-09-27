@@ -74,12 +74,12 @@ export default function HomePage() {
               
               {/* Main Headline */}
               <h1 className="desktop-only">
-                <span className="phrase-1">Rate guys.</span><br />
+                <span className="phrase-1">Review guys.</span><br />
                 <span className="phrase-2">Give advice.</span><br />
                 <span className="phrase-3">Get paid.</span>
               </h1>
               <h1 className="mobile-only">
-                <span className="phrase-1">Rate guys.</span><br />
+                <span className="phrase-1">Review guys.</span><br />
                 <span className="phrase-2">Give advice.</span><br />
                 <span className="phrase-3">Get paid.</span>
               </h1>
@@ -143,53 +143,51 @@ export default function HomePage() {
       {/* Founding Members Section */}
       <section id="founding-program" className="founding-members">
         <div className="container">
-          <div className="founding-content">
+          <div className="founding-content" style={{ textAlign: 'center' }}>
             <div className="founding-header">
               <span className="founding-badge">🚨 FOUNDING MEMBERS ONLY</span>
               <h2>First 100 reviewers get exclusive benefits forever</h2>
             </div>
             
-            <div className="founding-grid">
-              <div className="benefit-card">
+            <div className="founding-grid" style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', maxWidth: '600px', margin: '0 auto' }}>
+              <div className="benefit-card" style={{ flex: '1', minWidth: '150px', maxWidth: '180px' }}>
                 <span className="benefit-icon">💰</span>
                 <div className="benefit-text">
                   <strong>85% earnings</strong>
-                  <span>vs 80% regular</span>
+                  <span>Keep more of what you earn compared to regular members.</span>
                 </div>
               </div>
-              <div className="benefit-card">
+              <div className="benefit-card" style={{ flex: '1', minWidth: '150px', maxWidth: '180px' }}>
                 <span className="benefit-icon">⭐</span>
                 <div className="benefit-text">
                   <strong>Exclusive badge</strong>
-                  <span>Higher priority</span>
+                  <span>Get recommended more to guys looking for reviewers.</span>
                 </div>
               </div>
-              <div className="benefit-card">
-                <span className="benefit-icon">🚀</span>
-                <div className="benefit-text">
-                  <strong>Founder access</strong>
-                  <span>Direct support</span>
-                </div>
+              <div className="benefit-card" style={{ flex: '1', minWidth: '150px', maxWidth: '180px' }}>
+                <a href="#about" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <span className="benefit-icon">🚀</span>
+                  <div className="benefit-text">
+                    <strong>Founder access</strong>
+                    <span>Direct line to me for support and feedback.</span>
+                  </div>
+                </a>
               </div>
             </div>
             
-            <div className="founding-urgency">
+            <div className="founding-urgency" style={{ margin: '40px 0' }}>
               <div className="countdown-timer">
                 <CountdownTimer 
                   targetDate={new Date('2025-10-15T21:00:00-08:00')}
                   className="main-countdown"
                 />
               </div>
-              <div className="spots-counter">
-                <ReviewerCounter 
-                  maxReviewers={100}
-                  className="main-counter"
-                />
-              </div>
             </div>
             
             <div className="founding-cta">
-              <a href="/reviewers/apply" className="cta-primary">Claim Your Spot</a>
+              <a href="/reviewers/apply" className="cta-primary">
+                Claim Your Spot ({reviewerCount}/100 taken)
+              </a>
               <p className="cta-note">No commitment • Benefits end Oct 15th</p>
             </div>
           </div>
@@ -314,7 +312,7 @@ export default function HomePage() {
       </section>
 
       {/* Founder */}
-      <section className="about">
+      <section id="about" className="about">
         <div className="container">
           <div style={{ display: 'flex', gap: 24, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', textAlign: 'center' }}>
             <h2 className="section-title" style={{ width: '100%', marginTop: 0 }}>Why I started Auro</h2>
