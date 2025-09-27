@@ -321,16 +321,13 @@ export default function HomePage() {
             <img src="/rj-headshot.jpg" alt="RJ headshot" style={{ width: 160, height: 160, objectFit: 'cover', borderRadius: 12 }} loading="lazy" />
             <div className="about__text" style={{ maxWidth: 720, textAlign: 'center' }}>
               <p>
-                I'm RJ, founder of Auro. This is where women reviewers get paid to rate men and help them improve.
+                I'm RJ, founder of Auro. I started this because guys like me need help from women to glow up and improve our style, rooms, and social presence.
               </p>
               <p>
-                On Auro, women reviewers rate men on attractiveness, style, room, and social profiles (1-5 scale), give advice on improvements, and get paid for their expertise. Reviews can be posted to social media to build the reviewer's brand.
+                I also wanted to help creators diversify their income by monetizing their expertise in style and presentation. It's a win-win for everyone.
               </p>
               <p>
-                We're building a community where women's opinions on men's presentation are valued and monetized. As a founding reviewer, you'll get reduced platform fees (85% vs 80%), exclusive status, and direct founder access.
-              </p>
-              <p>
-                Join the first 100 founding reviewers and lock in these benefits for life.
+                <strong>Join the first 100 founding reviewers and lock in 85% earnings forever.</strong>
               </p>
             </div>
           </div>
