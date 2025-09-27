@@ -140,7 +140,6 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <RNView style={{ height: insets.top, backgroundColor: Colors.brand.background, width: '100%' }} />
       <FlatList
         data={[]}
         keyExtractor={(item) => String(item)}

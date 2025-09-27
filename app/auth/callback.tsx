@@ -95,7 +95,7 @@ export default function AuthCallback() {
       {status === 'success' && (
         <>
           <Image
-            source={require('@/auro_aura_logo.png')}
+            source={require('@/Auro_side_side_no_bg.png')}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -109,7 +109,7 @@ export default function AuthCallback() {
       {status === 'error' && (
         <>
           <Image
-            source={require('@/auro_aura_logo.png')}
+            source={require('@/Auro_side_side_no_bg.png')}
             style={styles.logo}
             resizeMode="contain"
           />

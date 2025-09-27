@@ -4,6 +4,7 @@ import { useFonts } from 'expo-font';
 import { Inter_400Regular, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import { Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import { Stack, useRootNavigationState, useRouter, usePathname } from 'expo-router';
+import { View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
@@ -14,6 +15,7 @@ import { StripeProvider } from '@/components/StripeProvider';
 import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
 import { ToastProvider } from '@/components/Toast';
+import LogoHeader from '@/components/LogoHeader';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
@@ -159,12 +161,15 @@ function RootLayoutNav() {
       >
         <ThemeProvider value={customTheme}>
           <ToastProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="index" />
-              <Stack.Screen name="auth" />
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-            </Stack>
+            <View style={{ flex: 1 }}>
+              <LogoHeader />
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="index" />
+                <Stack.Screen name="auth" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+              </Stack>
+            </View>
           </ToastProvider>
         </ThemeProvider>
       </StripeProvider>

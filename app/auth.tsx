@@ -180,7 +180,7 @@ export default function AuthScreen() {
   const shouldShowNameAge = !isLogin && signupStep === 1;
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={insets.top + 12}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={12}>
       <View style={styles.container}>
       <StatusBar style="light" translucent />
       <ExpoLinearGradient
@@ -200,15 +200,10 @@ export default function AuthScreen() {
         style={[
           styles.headerPlain,
           isCompact && styles.headerPlainCompact,
-          { paddingTop: (isCompact ? insets.top * 0.5 : insets.top + 16) },
+          { paddingTop: 16 },
         ]}
       >
         <View style={styles.headerContent}>
-          <Image
-            source={require('@/auro_aura_logo.png')}
-            style={[styles.logoImage, isCompact && styles.logoImageCompact]}
-            resizeMode="contain"
-          />
           <Text style={[styles.tagline, isCompact && styles.taglineCompact]}>Your Aura, Amplified</Text>
         </View>
       </View>

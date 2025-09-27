@@ -56,13 +56,13 @@ export default function ConfirmEmailScreen() {
           style={styles.header}
         >
           <View style={styles.headerContent}>
-            <Image source={require('@/auro_aura_logo.png')} style={styles.logoTop} resizeMode="contain" />
+            <Image source={require('@/Auro_side_side_no_bg.png')} style={styles.logoTop} resizeMode="contain" />
             <Text style={styles.tagline}>Your Aura, Amplified</Text>
           </View>
         </ExpoLinearGradient>
 
         <View style={styles.card}>
-          <Image source={require('@/auro_aura_logo.png')} style={styles.logo} resizeMode="contain" />
+          <Image source={require('@/Auro_side_side_no_bg.png')} style={styles.logo} resizeMode="contain" />
           <Text style={styles.title}>Please confirm your email</Text>
           {!!email && <Text style={styles.body}>We sent a link to {email}.</Text>}
           {!email && <Text style={styles.body}>We sent a confirmation link to your inbox.</Text>}

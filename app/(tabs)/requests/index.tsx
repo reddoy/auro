@@ -296,20 +296,6 @@ export default function RequestsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <RNView
-        style={{
-          height: insets.top,
-          backgroundColor: Colors.brand.background,
-          width: '100%',
-        }}
-      />
-      <RNView
-        style={{
-          height: Platform.select({ web: 6, default: 4 }),
-          backgroundColor: Colors.brand.background,
-          width: '100%',
-        }}
-      />
       <FlatList
         data={data}
         keyExtractor={(item) => item.id}
