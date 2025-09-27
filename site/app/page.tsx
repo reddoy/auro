@@ -85,21 +85,13 @@ export default function HomePage() {
               </h1>
               
               {/* Subheadline */}
-              <p className="sub desktop-only">Women reviewers rate men's outfits, rooms, and socials (1-5 scale), give advice, and get paid. Post reviews to TikTok/IG to build your brand.</p>
-              <p className="sub mobile-only">Women reviewers rate men's outfits, rooms, and socials (1-5 scale), give advice, and get paid. Post reviews to TikTok/IG to build your brand.</p>
+              <p className="sub desktop-only">Men pay for your advice, you help them glow up, and grow your brand.</p>
+              <p className="sub mobile-only">Men pay for your advice, you help them glow up, and grow your brand.</p>
               
-              {/* Integrated CTA with Benefits */}
+              {/* CTA Button */}
               <div className="hero-cta-integrated desktop-only">
-                <a className="cta-hero-integrated" href="/reviewers/apply">
-                  <div className="cta-main-section">
-                    <span className="cta-main-text">Become a Founding Reviewer</span>
-                    <div className="cta-benefits">
-                      <span className="benefit-item">✓ Keep 85% cut instead of regular 80%</span>
-                      <span className="benefit-item">✓ Direct Founder Access</span>
-                      <span className="benefit-item">✓ Only first 100 reviewers</span>
-                      <span className="benefit-item">✓ Earn exclusive badge for higher discoverability</span>
-                    </div>
-                  </div>
+                <a className="cta-hero-integrated" href="#founding-program">
+                  <span className="cta-main-text">Learn more about the founding reviewer program</span>
                 </a>
               </div>
             </div>
@@ -125,16 +117,8 @@ export default function HomePage() {
             
             {/* Mobile CTA and scroll indicator */}
             <div className="hero-cta-integrated mobile-only" style={{ marginTop: 24 }}>
-              <a className="cta-hero-integrated" href="/reviewers/apply">
-                <div className="cta-main-section">
-                  <span className="cta-main-text">Become a Founding Reviewer</span>
-                  <div className="cta-benefits">
-                    <span className="benefit-item">✓ Keep 85% cut instead of regular 80%</span>
-                    <span className="benefit-item">✓ Direct Founder Access</span>
-                    <span className="benefit-item">✓ Only first 100 reviewers</span>
-                    <span className="benefit-item">✓ Earn exclusive badge for higher discoverability</span>
-                  </div>
-                </div>
+              <a className="cta-hero-integrated" href="#founding-program">
+                <span className="cta-main-text">Learn more about the founding reviewer program</span>
               </a>
             </div>
             <div className="scroll-indicator mobile-only">
@@ -152,6 +136,70 @@ export default function HomePage() {
           <h2 className="showcase-title">Rate guys. Give advice. Get paid.</h2>
           <div className="iphone-mockup-container">
             <img className="iphone-mockup" src="/iphone-mockup.png" alt="iPhone app mockup" loading="lazy" />
+          </div>
+        </div>
+      </section>
+
+      {/* Founding Members Section */}
+      <section id="founding-program" className="founding-members">
+        <div className="container">
+          <div className="founding-content">
+            <div className="urgency-badge">
+              <span className="urgency-icon">🚨</span>
+              <span className="urgency-label">FOUNDING MEMBERS ONLY</span>
+            </div>
+            <h2>⏰ Limited Time: Claim Your Exclusive Founding Spot</h2>
+            <p>Join the first 100 reviewers and lock in these exclusive benefits forever:</p>
+            
+            <div className="founding-benefits">
+              <div className="benefit-item featured">
+                <span className="benefit-icon">🎯</span>
+                <div className="benefit-content">
+                  <strong>Reduced Platform Fee</strong>
+                  <span>Keep 85% of earnings (vs 80% for regular members) - guaranteed for life</span>
+                </div>
+              </div>
+              <div className="benefit-item featured">
+                <span className="benefit-icon">💎</span>
+                <div className="benefit-content">
+                  <strong>Founding Reviewer Badge</strong>
+                  <span>Higher recommendation priority and exclusive status</span>
+                </div>
+              </div>
+              <div className="benefit-item featured">
+                <span className="benefit-icon">🚀</span>
+                <div className="benefit-content">
+                  <strong>Direct Founder Access</strong>
+                  <span>Priority support and help shape the community</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="countdown-display">
+              <CountdownTimer 
+                targetDate={new Date('2025-10-15T21:00:00-08:00')}
+                className="main-countdown"
+              />
+            </div>
+            <div className="reviewer-progress">
+              <ReviewerCounter 
+                maxReviewers={100}
+                className="main-counter"
+              />
+            </div>
+            
+            <div className="cta-buttons">
+              <a href="/reviewers/apply" className="cta-primary urgent">Claim Your Founding Spot Now</a>
+              <a href="#how-it-works" className="cta-secondary">Learn How It Works</a>
+            </div>
+            
+            <div className="final-urgency">
+              <p className="urgency-text">
+                <span className="highlight">Limited founding spots available</span> • 
+                Benefits end October 15th at 9 PM PST • 
+                <span className="highlight">No commitment required</span>
+              </p>
+            </div>
           </div>
         </div>
       </section>
