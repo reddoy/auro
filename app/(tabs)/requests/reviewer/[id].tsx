@@ -68,12 +68,6 @@ export default function ReviewerRequestScreen() {
   const [isVideoReviewMode, setIsVideoReviewMode] = useState(false);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   
-  // Camera state variables
-  const [type, setType] = useState<'front' | 'back'>('front');
-  const [recording, setRecording] = useState(false);
-  const [starting, setStarting] = useState(false);
-  const [isCameraReady, setIsCameraReady] = useState(false);
-  const cameraRef = useRef<any>(null);
   
   // Move useMemo to the top level, always called
   const parsedNotes = React.useMemo(() => {
@@ -339,16 +333,6 @@ export default function ReviewerRequestScreen() {
     }
   };
 
-  const startRecording = async () => {
-    if (!isCameraReady) {
-      Alert.alert('Camera not ready', 'Please wait for the camera to initialize.');
-      return;
-    }
-    setStarting(true);
-    setRecording(true);
-    // Note: The actual recording logic is handled by the MediaRecorder component
-    // This function just manages the state for the external controls
-  };
 
   if (loading) {
     return (
@@ -656,53 +640,6 @@ export default function ReviewerRequestScreen() {
             />
           </RNView>
 
-          {/* Camera controls positioned to the right of the camera */}
-          <RNView style={{ position: 'absolute', top: insets.top + 100, right: 20, zIndex: 11, elevation: 11 }}>
-            <View style={{ flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-              {!videoUri && (
-                <Pressable onPress={() => setType(prev => (prev === 'front' ? 'back' : 'front'))} accessibilityLabel="Flip camera" style={{ paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.4)' }}>
-                  <Text style={{ color: '#fff', fontWeight: '700' }}>Flip</Text>
-                </Pressable>
-              )}
-            </View>
-          </RNView>
-
-          {/* Recording controls positioned to the right of the camera, lower */}
-          <RNView style={{ position: 'absolute', top: insets.top + 200, right: 20, zIndex: 11, elevation: 11 }}>
-            <View style={{ flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-              {!recording && !videoUri && (
-                <Pressable
-                  onPress={startRecording}
-                  accessibilityLabel="Start recording"
-                  disabled={!isCameraReady || starting}
-                  style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isCameraReady && !starting ? '#ff3b30' : 'rgba(255,59,48,0.4)', borderWidth: 3, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' }}
-                />
-              )}
-              {recording && (
-                <Pressable
-                  onPress={async () => { if (!cameraRef.current) return; try { await cameraRef.current.stopRecording(); } catch {} }}
-                  accessibilityLabel="Stop recording"
-                  style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, backgroundColor: '#fff', marginHorizontal: 2 }}
-                >
-                  <Text style={{ color: Colors.brand.textPrimary, fontWeight: '700' }}>Stop</Text>
-                </Pressable>
-              )}
-              {videoUri && (
-                <View style={{ flexDirection: 'column', gap: 8 }}>
-                  <Pressable onPress={() => { 
-                    setRecordingModeOpen(false);
-                    setIsVideoReviewMode(false);
-                    Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
-                  }} accessibilityLabel="Use this video" style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: Colors.brand.status.completed }}>
-                    <Text style={{ color: '#fff', fontWeight: '700' }}>Use</Text>
-                  </Pressable>
-                  <Pressable onPress={() => setVideoUri(null)} accessibilityLabel="Re-record" style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: Colors.brand.cardBackground }}>
-                    <Text style={{ color: Colors.brand.textPrimary, fontWeight: '700' }}>Re-record</Text>
-                  </Pressable>
-                </View>
-              )}
-            </View>
-          </RNView>
 
           {/* Close button - positioned to the left of camera circle */}
           <RNView style={{ position: 'absolute', top: insets.top + 12, left: 16, zIndex: 11, elevation: 11 }}>

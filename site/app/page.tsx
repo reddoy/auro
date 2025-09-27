@@ -85,8 +85,8 @@ export default function HomePage() {
               </h1>
               
               {/* Subheadline */}
-              <p className="sub desktop-only">Guys pay to get reviewed on their outfits, room tours, and socials (Hinge/Tinder/Instagram). Reviewers give personalized video reviews and get paid. Post your review link on socials to get clients, then post reviews to TikTok/IG to build your brand.</p>
-              <p className="sub mobile-only">Guys pay to get reviewed on their outfits, room tours, and socials (Hinge/Tinder/Instagram). Reviewers give personalized video reviews and get paid. Post your review link on socials to get clients, then post reviews to TikTok/IG to build your brand.</p>
+              <p className="sub desktop-only">Women reviewers rate men's outfits, rooms, and socials (1-5 scale), give advice, and get paid. Post reviews to TikTok/IG to build your brand.</p>
+              <p className="sub mobile-only">Women reviewers rate men's outfits, rooms, and socials (1-5 scale), give advice, and get paid. Post reviews to TikTok/IG to build your brand.</p>
               
               {/* Trust Indicators */}
               <div className="hero-trust">
@@ -184,6 +184,70 @@ export default function HomePage() {
           <h2 className="showcase-title">Rate guys. Give advice. Get paid.</h2>
           <div className="iphone-mockup-container">
             <img className="iphone-mockup" src="/iphone-mockup.png" alt="iPhone app mockup" loading="lazy" />
+          </div>
+        </div>
+      </section>
+
+      {/* Combined Founding Members Section */}
+      <section className="founding-members">
+        <div className="container">
+          <div className="founding-content">
+            <div className="urgency-badge">
+              <span className="urgency-icon">🚨</span>
+              <span className="urgency-label">FOUNDING MEMBERS ONLY</span>
+            </div>
+            <h2>⏰ Limited Time: Claim Your Exclusive Founding Spot</h2>
+            <p>Join the first 100 reviewers and lock in these exclusive benefits forever:</p>
+            
+            <div className="founding-benefits">
+              <div className="benefit-item featured">
+                <span className="benefit-icon">🎯</span>
+                <div className="benefit-content">
+                  <strong>Reduced Platform Fee</strong>
+                  <span>Keep 85% of earnings (vs 80% for regular members) - guaranteed for life</span>
+                </div>
+              </div>
+              <div className="benefit-item featured">
+                <span className="benefit-icon">💎</span>
+                <div className="benefit-content">
+                  <strong>Founding Reviewer Badge</strong>
+                  <span>Higher recommendation priority and exclusive status</span>
+                </div>
+              </div>
+              <div className="benefit-item featured">
+                <span className="benefit-icon">🚀</span>
+                <div className="benefit-content">
+                  <strong>Direct Founder Access</strong>
+                  <span>Priority support and help shape the community</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="countdown-display">
+              <CountdownTimer 
+                targetDate={new Date('2025-10-15T21:00:00-08:00')}
+                className="main-countdown"
+              />
+            </div>
+            <div className="reviewer-progress">
+              <ReviewerCounter 
+                maxReviewers={100}
+                className="main-counter"
+              />
+            </div>
+            
+            <div className="cta-buttons">
+              <a href="/reviewers/apply" className="cta-primary urgent">Claim Your Founding Spot Now</a>
+              <a href="#how-it-works" className="cta-secondary">Learn More First</a>
+            </div>
+            
+            <div className="final-urgency">
+              <p className="urgency-text">
+                <span className="highlight">Limited founding spots available</span> • 
+                Benefits end October 15th at 9 PM PST • 
+                <span className="highlight">No commitment required</span>
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -323,70 +387,6 @@ export default function HomePage() {
               </p>
               <p>
                 Join the first 100 founding reviewers and lock in these benefits for life.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Combined Founding Members Section */}
-      <section className="founding-members">
-        <div className="container">
-          <div className="founding-content">
-            <div className="urgency-badge">
-              <span className="urgency-icon">🚨</span>
-              <span className="urgency-label">FOUNDING MEMBERS ONLY</span>
-            </div>
-            <h2>⏰ Limited Time: Claim Your Exclusive Founding Spot</h2>
-            <p>Join the first 100 reviewers and lock in these exclusive benefits forever:</p>
-            
-            <div className="founding-benefits">
-              <div className="benefit-item featured">
-                <span className="benefit-icon">🎯</span>
-                <div className="benefit-content">
-                  <strong>Reduced Platform Fee</strong>
-                  <span>Keep 85% of earnings (vs 80% for regular members) - guaranteed for life</span>
-                </div>
-              </div>
-              <div className="benefit-item featured">
-                <span className="benefit-icon">💎</span>
-                <div className="benefit-content">
-                  <strong>Founding Reviewer Badge</strong>
-                  <span>Higher recommendation priority and exclusive status</span>
-                </div>
-              </div>
-              <div className="benefit-item featured">
-                <span className="benefit-icon">🚀</span>
-                <div className="benefit-content">
-                  <strong>Direct Founder Access</strong>
-                  <span>Priority support and help shape the community</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="countdown-display">
-              <CountdownTimer 
-                targetDate={new Date('2025-10-15T21:00:00-08:00')}
-                className="main-countdown"
-              />
-            </div>
-            <div className="reviewer-progress">
-              <ReviewerCounter 
-                maxReviewers={100}
-                className="main-counter"
-              />
-            </div>
-            
-            <div className="cta-buttons">
-              <a href="/reviewers/apply" className="cta-primary urgent">Claim Your Founding Spot Now</a>
-              <a href="#how-it-works" className="cta-secondary">Learn More First</a>
-            </div>
-            
-            <div className="final-urgency">
-              <p className="urgency-text">
-                <span className="highlight">Limited founding spots available</span> • 
-                Benefits end October 15th at 9 PM PST • 
-                <span className="highlight">No commitment required</span>
               </p>
             </div>
           </div>
