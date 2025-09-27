@@ -548,7 +548,7 @@ export default function ReviewerRequestScreen() {
           >
             {/* All slides: profile, section cards, and photos */}
             {allSlides.map((slide, i) => (
-              <RNView key={`slide-${i}`} style={{ width: Dimensions.get('window').width, height: Dimensions.get('window').height, paddingHorizontal: 20, paddingTop: insets.top + 140, paddingBottom: insets.bottom + 20, justifyContent: 'center' }}>
+              <RNView key={`slide-${i}`} style={{ width: Dimensions.get('window').width, height: Dimensions.get('window').height, paddingHorizontal: 40, paddingTop: insets.top + 200, paddingBottom: insets.bottom + 20, justifyContent: 'center' }}>
                 {slide.type === 'profile' && (
                   <RNView style={[styles.overlayCard, { width: '100%', alignSelf: 'center' }] }>
                     <Text style={styles.overlayTitle}>{slide.data.name}</Text>
@@ -627,7 +627,7 @@ export default function ReviewerRequestScreen() {
           </ScrollView>
 
           {/* Circular selfie recorder centered at top-middle */}
-          <RNView style={{ position: 'absolute', top: insets.top + 12, left: 0, right: 0, alignItems: 'center', zIndex: 10, elevation: 10 }}>
+          <RNView style={{ position: 'absolute', top: insets.top + 20, left: 0, right: 0, alignItems: 'center', zIndex: 10, elevation: 10 }}>
             <MediaRecorder
               onRecorded={(uri) => {
                 setVideoUri(uri);
@@ -636,7 +636,7 @@ export default function ReviewerRequestScreen() {
                 Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
               }}
               variant="centered"
-              circleSize={160}
+              circleSize={140}
             />
           </RNView>
 
@@ -652,7 +652,7 @@ export default function ReviewerRequestScreen() {
           </RNView>
 
           {/* Vertical pagination dots on left side */}
-          <RNView style={{ position: 'absolute', top: insets.top + 180, left: 16, zIndex: 10 }}>
+          <RNView style={{ position: 'absolute', top: insets.top + 220, left: 12, zIndex: 10 }}>
             <PaginationDots
               totalItems={allSlides.length}
               currentIndex={currentPhotoIndex}

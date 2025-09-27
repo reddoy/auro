@@ -208,7 +208,7 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
         </View>
 
         {/* Controls positioned to the right side */}
-        <View style={{ position: 'absolute', top: circleSize / 2 - 60, left: circleSize + 20, flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+        <View style={{ position: 'absolute', top: circleSize / 2 - 50, left: circleSize + 16, flexDirection: 'column', alignItems: 'center', gap: 10 }}>
           {!videoUri && (
             <Pressable onPress={() => setType(prev => (prev === 'front' ? 'back' : 'front'))} accessibilityLabel="Flip camera" style={{ paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.4)' }}>
               <Text style={{ color: '#fff', fontWeight: '700' }}>Flip</Text>
