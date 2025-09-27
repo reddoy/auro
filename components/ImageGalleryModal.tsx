@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
-  useAnimatedGestureHandler, 
   withSpring, 
   runOnJS,
   interpolate,
@@ -34,14 +33,13 @@ function ZoomableImage({ uri, width, height }: ZoomableImageProps) {
   const savedTranslateX = useSharedValue(0);
   const savedTranslateY = useSharedValue(0);
 
-  const pinchHandler = useAnimatedGestureHandler({
-    onStart: () => {
+  const pinchGestureHandler = (event: any) => {
+    'worklet';
+    if (event.state === State.BEGAN) {
       savedScale.value = scale.value;
-    },
-    onActive: (event) => {
+    } else if (event.state === State.ACTIVE) {
       scale.value = Math.max(0.5, Math.min(3, savedScale.value * event.scale));
-    },
-    onEnd: () => {
+    } else if (event.state === State.END || event.state === State.CANCELLED) {
       savedScale.value = scale.value;
       if (scale.value < 1) {
         scale.value = withSpring(1);
@@ -51,15 +49,15 @@ function ZoomableImage({ uri, width, height }: ZoomableImageProps) {
         savedTranslateX.value = 0;
         savedTranslateY.value = 0;
       }
-    },
-  });
+    }
+  };
 
-  const panHandler = useAnimatedGestureHandler({
-    onStart: () => {
+  const panGestureHandler = (event: any) => {
+    'worklet';
+    if (event.state === State.BEGAN) {
       savedTranslateX.value = translateX.value;
       savedTranslateY.value = translateY.value;
-    },
-    onActive: (event) => {
+    } else if (event.state === State.ACTIVE) {
       if (scale.value > 1) {
         const maxTranslateX = (width * (scale.value - 1)) / 2;
         const maxTranslateY = (height * (scale.value - 1)) / 2;
@@ -67,12 +65,11 @@ function ZoomableImage({ uri, width, height }: ZoomableImageProps) {
         translateX.value = Math.max(-maxTranslateX, Math.min(maxTranslateX, savedTranslateX.value + event.translationX));
         translateY.value = Math.max(-maxTranslateY, Math.min(maxTranslateY, savedTranslateY.value + event.translationY));
       }
-    },
-    onEnd: () => {
+    } else if (event.state === State.END || event.state === State.CANCELLED) {
       savedTranslateX.value = translateX.value;
       savedTranslateY.value = translateY.value;
-    },
-  });
+    }
+  };
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
@@ -85,9 +82,9 @@ function ZoomableImage({ uri, width, height }: ZoomableImageProps) {
   });
 
   return (
-    <PanGestureHandler onGestureEvent={panHandler} minPointers={1} maxPointers={1}>
+    <PanGestureHandler onGestureEvent={panGestureHandler} minPointers={1} maxPointers={1}>
       <Animated.View style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>
-        <PinchGestureHandler onGestureEvent={pinchHandler}>
+        <PinchGestureHandler onGestureEvent={pinchGestureHandler}>
           <Animated.View style={animatedStyle}>
             <Image
               source={{ uri }}

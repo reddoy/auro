@@ -1,6 +1,6 @@
 import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs, useRouter } from 'expo-router';
+import { Link, Tabs } from 'expo-router';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -21,7 +21,6 @@ function TabBarIcon(props: {
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
 
   return (
     <View style={{ flex: 1 }}>
@@ -81,11 +80,6 @@ export default function TabLayout() {
           title: 'My Reviews',
           headerShown: false,
           tabBarIcon: ({ color }) => <TabBarIcon name="star" color={color} />,
-        }}
-        listeners={{
-          tabPress: (e) => {
-            try { router.replace('/(tabs)/requests'); } catch {}
-          },
         }}
       />
       <Tabs.Screen

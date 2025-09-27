@@ -540,24 +540,24 @@ export default function ReviewerRequestScreen() {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           />
-          {/* Increased opacity overlay for transparency */}
-          <RNView style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.6)' }]} />
+          {/* Increased opacity overlay for better contrast and modern look */}
+          <RNView style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.75)' }]} />
           
-          {/* Photo carousel with rating and note controls */}
+          {/* Vertical photo carousel with rating and note controls */}
           <ScrollView 
-            horizontal 
+            vertical
             pagingEnabled 
-            showsHorizontalScrollIndicator={false} 
+            showsVerticalScrollIndicator={false} 
             style={{ flex: 1 }} 
             contentContainerStyle={{ alignItems: 'center', paddingTop: insets.top + 140 }}
             onMomentumScrollEnd={(event) => {
-              const index = Math.round(event.nativeEvent.contentOffset.x / Dimensions.get('window').width);
+              const index = Math.round(event.nativeEvent.contentOffset.y / Dimensions.get('window').height);
               setCurrentPhotoIndex(index);
             }}
           >
             {/* All slides: profile, section cards, and photos */}
             {allSlides.map((slide, i) => (
-              <RNView key={`slide-${i}`} style={{ width: Dimensions.get('window').width, paddingHorizontal: 20, paddingVertical: 16, justifyContent: 'center' }}>
+              <RNView key={`slide-${i}`} style={{ width: Dimensions.get('window').width, height: Dimensions.get('window').height - insets.top - insets.bottom - 140, paddingHorizontal: 20, paddingVertical: 16, justifyContent: 'center' }}>
                 {slide.type === 'profile' && (
                   <RNView style={[styles.overlayCard, { alignSelf: 'center', maxWidth: 640, marginBottom: 8 }] }>
                     <Text style={styles.overlayTitle}>{slide.data.name}</Text>
@@ -658,11 +658,12 @@ export default function ReviewerRequestScreen() {
             </TouchableOpacity>
           </RNView>
 
-          {/* Pagination dots */}
-          <RNView style={{ position: 'absolute', bottom: insets.bottom + 80, left: 0, right: 0, alignItems: 'center', zIndex: 10 }}>
+          {/* Vertical pagination dots on left side */}
+          <RNView style={{ position: 'absolute', top: insets.top + 180, left: 16, zIndex: 10 }}>
             <PaginationDots
               totalItems={allSlides.length}
               currentIndex={currentPhotoIndex}
+              orientation="vertical"
             />
           </RNView>
         </RNView>
@@ -725,8 +726,28 @@ const styles = StyleSheet.create({
   sectionHint: { fontSize: 13, color: Colors.brand.textSecondary, marginTop: 2, fontWeight: '900' },
 
   disabledButton: { backgroundColor: Colors.brand.border },
-  overlayCard: { backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: Colors.brand.border, opacity: 0.95 },
-  overlayPhotoCard: { backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: Colors.brand.border, opacity: 0.95 },
+  overlayCard: { 
+    backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+    borderRadius: 20, 
+    padding: 24, 
+    borderWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8
+  },
+  overlayPhotoCard: { 
+    backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+    borderRadius: 20, 
+    padding: 24, 
+    borderWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8
+  },
   overlayTitle: { fontSize: 20, fontWeight: '900', color: Colors.brand.textPrimary, marginBottom: 8 },
   overlayText: { fontSize: 15, color: Colors.brand.textPrimary, lineHeight: 21 },
   consentPill: { alignSelf: 'center', borderWidth: 1, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 24, backgroundColor: Colors.brand.cardBackground, marginTop: 8 },
@@ -734,18 +755,28 @@ const styles = StyleSheet.create({
   
   // New styles for video review interface
   ratingButton: { 
-    width: 40, 
-    height: 40, 
-    borderRadius: 20, 
-    backgroundColor: 'rgba(255,255,255,0.2)', 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22, 
+    backgroundColor: 'rgba(255,255,255,0.15)', 
     alignItems: 'center', 
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.3)'
+    borderColor: 'rgba(255,255,255,0.25)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2
   },
   ratingButtonSelected: { 
     backgroundColor: Colors.brand.accentOrange,
-    borderColor: Colors.brand.accentOrange
+    borderColor: Colors.brand.accentOrange,
+    shadowColor: Colors.brand.accentOrange,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4
   },
   ratingButtonText: { 
     color: '#fff', 
@@ -756,13 +787,18 @@ const styles = StyleSheet.create({
     color: '#fff' 
   },
   noteButton: { 
-    paddingVertical: 12, 
-    paddingHorizontal: 20, 
-    borderRadius: 20, 
-    backgroundColor: 'rgba(255,255,255,0.2)', 
+    paddingVertical: 14, 
+    paddingHorizontal: 24, 
+    borderRadius: 24, 
+    backgroundColor: 'rgba(255,255,255,0.15)', 
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)'
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.25)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2
   },
   noteButtonHasNote: { 
     backgroundColor: Colors.brand.accentMagenta + '40',

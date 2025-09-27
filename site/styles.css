@@ -1275,7 +1275,7 @@ body {
     min-height: calc(100vh - var(--nav-h));
     max-height: calc(100vh - var(--nav-h));
     padding: clamp(20px, 3vh, 30px) 0 clamp(30px, 4vh, 40px);
-    overflow-y: auto;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -2181,6 +2181,8 @@ footer {
   gap: 20px;
   margin: 32px 0;
   text-align: left;
+  orphans: 3;
+  widows: 3;
 }
 
 .benefit-item.featured {
@@ -2221,6 +2223,7 @@ footer {
 .benefit-content {
   flex: 1;
   min-width: 0; /* Allow flex item to shrink below content size */
+  overflow: hidden; /* Prevent text overflow */
 }
 
 .benefit-content strong {
@@ -2231,6 +2234,8 @@ footer {
   margin-bottom: 6px;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  hyphens: auto;
+  line-height: 1.3;
 }
 
 .benefit-content span {
@@ -2239,6 +2244,8 @@ footer {
   line-height: 1.4;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  hyphens: auto;
+  display: block;
 }
 
 /* Urgent CTA Button */
@@ -2286,6 +2293,8 @@ footer {
   word-wrap: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
+  orphans: 2;
+  widows: 2;
 }
 
 .final-urgency .highlight {
@@ -2317,6 +2326,8 @@ footer {
     grid-template-columns: 1fr;
     gap: 16px;
     margin: 24px 0;
+    orphans: 2;
+    widows: 2;
   }
 
   .benefit-item.featured {
@@ -2335,12 +2346,16 @@ footer {
     font-size: 15px;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    hyphens: auto;
+    line-height: 1.3;
   }
 
   .benefit-content span {
     font-size: 13px;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    hyphens: auto;
+    line-height: 1.4;
   }
 
   /* Mobile final urgency */
@@ -2350,6 +2365,8 @@ footer {
     word-wrap: break-word;
     overflow-wrap: break-word;
     hyphens: auto;
+    orphans: 2;
+    widows: 2;
   }
 
   .final-urgency .highlight {
