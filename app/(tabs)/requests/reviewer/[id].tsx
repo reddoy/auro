@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Dimensions, Platform, Linking, Animated } from 'react-native';
+import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Dimensions, Platform, Linking, Animated, Pressable } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -73,6 +73,7 @@ export default function ReviewerRequestScreen() {
   const [recording, setRecording] = useState(false);
   const [starting, setStarting] = useState(false);
   const [isCameraReady, setIsCameraReady] = useState(false);
+  const cameraRef = useRef<any>(null);
   
   // Move useMemo to the top level, always called
   const parsedNotes = React.useMemo(() => {
@@ -336,6 +337,17 @@ export default function ReviewerRequestScreen() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const startRecording = async () => {
+    if (!isCameraReady) {
+      Alert.alert('Camera not ready', 'Please wait for the camera to initialize.');
+      return;
+    }
+    setStarting(true);
+    setRecording(true);
+    // Note: The actual recording logic is handled by the MediaRecorder component
+    // This function just manages the state for the external controls
   };
 
   if (loading) {
