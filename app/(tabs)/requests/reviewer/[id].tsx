@@ -551,6 +551,8 @@ export default function ReviewerRequestScreen() {
               <RNView key={`slide-${i}`} style={{ width: Dimensions.get('window').width, height: Dimensions.get('window').height, paddingHorizontal: 40, paddingTop: insets.top + 200, paddingBottom: insets.bottom + 20, justifyContent: 'center' }}>
                 {slide.type === 'profile' && (
                   <RNView style={[styles.overlayCard, { width: '100%', alignSelf: 'center' }] }>
+                    {/* Auro Logo */}
+                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={styles.overlayTitle}>{slide.data.name}</Text>
                     {slide.data.message ? (<Text style={styles.overlayText}>{slide.data.message}</Text>) : null}
                     {slide.data.selfie ? (<Image source={{ uri: slide.data.selfie }} style={{ width: '100%', aspectRatio: 1, borderRadius: 12, marginTop: 12 }} contentFit="cover" />) : null}
@@ -568,8 +570,10 @@ export default function ReviewerRequestScreen() {
                 
                 {slide.type === 'photo' && (
                   <RNView style={[styles.overlayPhotoCard, { width: '100%', alignSelf: 'center' }] }>
+                    {/* Auro Logo */}
+                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 12, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={styles.overlayTitle}>{slide.data.category} - Photo {slide.data.photoIndex + 1}</Text>
-                    <View
+                    <TouchableOpacity
                       style={{ 
                         width: '100%', 
                         aspectRatio: 3/4, 
@@ -577,9 +581,14 @@ export default function ReviewerRequestScreen() {
                         marginTop: 8,
                         overflow: 'hidden'
                       }}
+                      onPress={() => {
+                        setGalleryUris([slide.data.uri]);
+                        setGalleryIndex(0);
+                        setGalleryOpen(true);
+                      }}
                     >
                       <Image source={{ uri: slide.data.uri }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
-                    </View>
+                    </TouchableOpacity>
                     
                     {/* Rating controls */}
                     <RNView style={{ marginTop: 16, alignItems: 'center' }}>

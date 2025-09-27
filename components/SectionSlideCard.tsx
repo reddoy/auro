@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { View, Text } from '@/components/Themed';
+import { Image } from 'expo-image';
 import Colors from '@/constants/Colors';
 
 type Props = {
@@ -13,6 +14,8 @@ type Props = {
 export default function SectionSlideCard({ title, subtitle, revieweeName, style }: Props) {
   return (
     <View style={[styles.card, style]}>
+      {/* Auro Logo */}
+      <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>
         {subtitle.replace('{name}', revieweeName)}
