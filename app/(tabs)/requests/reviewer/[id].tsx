@@ -12,6 +12,7 @@ import Avatar from '@/components/Avatar';
 import StatusBadge from '@/components/StatusBadge';
 import { Image } from 'expo-image';
 import SimplePhotoModal from '@/components/SimplePhotoModal';
+import ImageGalleryModal from '@/components/ImageGalleryModal';
 import PhotoCarousel from '@/components/PhotoCarousel';
 import { signRequestMediaUrls, getSignedRequestMediaUrl } from '@/lib/uploads';
 import RatingBar from '@/components/RatingBar';
@@ -47,6 +48,8 @@ export default function ReviewerRequestScreen() {
   const [recordingModeOpen, setRecordingModeOpen] = useState(false);
   const [galleryUris, setGalleryUris] = useState<string[]>([]);
   const [galleryIndex, setGalleryIndex] = useState(0);
+  const [photoModalOpen, setPhotoModalOpen] = useState(false);
+  const [currentPhotoUri, setCurrentPhotoUri] = useState<string>('');
   // Earnings UI
   const amountCents = (request as any)?.amount_cents as number | undefined;
   const auroFeeCents = (request as any)?.application_fee_cents as number | undefined;
@@ -582,9 +585,8 @@ export default function ReviewerRequestScreen() {
                         overflow: 'hidden'
                       }}
                       onPress={() => {
-                        setGalleryUris([slide.data.uri]);
-                        setGalleryIndex(0);
-                        setGalleryOpen(true);
+                        setCurrentPhotoUri(slide.data.uri);
+                        setPhotoModalOpen(true);
                       }}
                     >
                       <Image source={{ uri: slide.data.uri }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
@@ -695,6 +697,7 @@ export default function ReviewerRequestScreen() {
         </View>
       </Modal>
       <ImageGalleryModal visible={galleryOpen} uris={galleryUris} initialIndex={galleryIndex} onClose={() => setGalleryOpen(false)} />
+      <SimplePhotoModal visible={photoModalOpen} uri={currentPhotoUri} onClose={() => setPhotoModalOpen(false)} />
     </SafeAreaView>
   );
 }
@@ -729,10 +732,11 @@ const styles = StyleSheet.create({
 
   disabledButton: { backgroundColor: Colors.brand.border },
   overlayCard: { 
-    backgroundColor: Colors.brand.primary, 
+    backgroundColor: Colors.brand.cardBackground, 
     borderRadius: 20, 
     padding: 24, 
-    borderWidth: 0,
+    borderWidth: 2,
+    borderColor: Colors.brand.accentOrange,
     shadowColor: Colors.brand.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
@@ -740,18 +744,19 @@ const styles = StyleSheet.create({
     elevation: 12
   },
   overlayPhotoCard: { 
-    backgroundColor: Colors.brand.primary, 
+    backgroundColor: Colors.brand.cardBackground, 
     borderRadius: 20, 
     padding: 24, 
-    borderWidth: 0,
+    borderWidth: 2,
+    borderColor: Colors.brand.accentOrange,
     shadowColor: Colors.brand.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
     elevation: 12
   },
-  overlayTitle: { fontSize: 20, fontWeight: '900', color: '#fff', marginBottom: 8 },
-  overlayText: { fontSize: 15, color: 'rgba(255, 255, 255, 0.9)', lineHeight: 21 },
+  overlayTitle: { fontSize: 20, fontWeight: '900', color: Colors.brand.textPrimary, marginBottom: 8 },
+  overlayText: { fontSize: 15, color: Colors.brand.textSecondary, lineHeight: 21 },
   consentPill: { alignSelf: 'center', borderWidth: 1, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 24, backgroundColor: Colors.brand.cardBackground, marginTop: 8 },
   consentPillText: { fontSize: 12, fontWeight: '700' },
   

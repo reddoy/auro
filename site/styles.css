@@ -2777,6 +2777,7 @@ footer {
   align-items: center;
   gap: 8px;
   font-family: var(--font-family, 'Poppins', sans-serif);
+  justify-content: center;
 }
 
 .countdown-item {
@@ -5459,6 +5460,26 @@ footer {
   font-size: 15px;
 }
 
+/* Founding Members Section Specific Styles */
+.founding-members .benefit-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.founding-members .benefit-text strong {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.founding-members .benefit-text span {
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
 /* Features CTA */
 .features-cta {
   text-align: center;
@@ -5596,6 +5617,17 @@ footer {
 
   .benefit-card p {
     font-size: 14px;
+  }
+
+  /* Mobile founding members section */
+  .founding-members .founding-grid {
+    gap: 20px !important;
+    max-width: 100% !important;
+  }
+
+  .founding-members .benefit-card {
+    min-width: 140px !important;
+    max-width: 160px !important;
   }
 }
 

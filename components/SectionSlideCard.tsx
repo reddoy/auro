@@ -26,14 +26,16 @@ export default function SectionSlideCard({ title, subtitle, revieweeName, style 
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.brand.primary,
+    backgroundColor: Colors.brand.cardBackground,
     borderRadius: 20,
     padding: 32,
     marginHorizontal: 20,
     marginVertical: 16,
+    borderWidth: 2,
+    borderColor: Colors.brand.accentOrange,
     shadowColor: Colors.brand.shadow,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 16,
     elevation: 12,
     alignItems: 'center',
@@ -43,13 +45,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#fff',
+    color: Colors.brand.textPrimary,
     textAlign: 'center',
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: Colors.brand.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
     fontWeight: '500',
