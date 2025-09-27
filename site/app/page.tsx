@@ -74,19 +74,19 @@ export default function HomePage() {
               
               {/* Main Headline */}
               <h1 className="desktop-only">
-                <span className="phrase-1">Rate guys.</span><br />
-                <span className="phrase-2">Give advice.</span><br />
+                <span className="phrase-1">Rate guys on</span><br />
+                <span className="phrase-2">attractiveness, style & room.</span><br />
                 <span className="phrase-3">Get paid.</span>
               </h1>
               <h1 className="mobile-only">
-                <span className="phrase-1">Rate guys.</span><br />
-                <span className="phrase-2">Give advice.</span><br />
+                <span className="phrase-1">Rate guys on</span><br />
+                <span className="phrase-2">attractiveness, style & room.</span><br />
                 <span className="phrase-3">Get paid.</span>
               </h1>
               
               {/* Subheadline */}
-              <p className="sub desktop-only">Share quick video reviews and monetize your expertise in style, photos, and presentation. Set your own rates and build your income stream.</p>
-              <p className="sub mobile-only">Share quick video reviews and monetize your expertise in style, photos, and presentation. Set your own rates and build your income stream.</p>
+              <p className="sub desktop-only">Women reviewers rate men's photos, outfits, rooms, and social profiles (1-5 scale). Give advice, get paid, and optionally post reviews to build your brand.</p>
+              <p className="sub mobile-only">Women reviewers rate men's photos, outfits, rooms, and social profiles (1-5 scale). Give advice, get paid, and optionally post reviews to build your brand.</p>
               
               {/* Trust Indicators */}
               <div className="hero-trust">
@@ -181,7 +181,7 @@ export default function HomePage() {
       {/* iPhone Showcase Section for Mobile */}
       <section className="iphone-showcase mobile-only">
         <div className="showcase-content">
-          <h2 className="showcase-title">Share quick video reviews and monetize your expertise in confidence, image, and aesthetic.</h2>
+          <h2 className="showcase-title">Rate men's attractiveness, style, and rooms. Give advice. Get paid.</h2>
           <div className="iphone-mockup-container">
             <img className="iphone-mockup" src="/iphone-mockup.png" alt="iPhone app mockup" loading="lazy" />
           </div>
@@ -200,10 +200,10 @@ export default function HomePage() {
               <div className="step-number">1</div>
               <div className="step-content">
                 <h3>Set Your Rate & Share Your Link</h3>
-                <p>Set your own price per review and share your profile link across social media. Guys will find you and request reviews through your link.</p>
+                <p>Set your own price per review and share your Auro profile link on social media. Guys pay through your link and request reviews.</p>
                 <div className="step-benefits">
                   <span className="benefit-tag">💰 You set your rates</span>
-                  <span className="benefit-tag">📱 Easy link sharing</span>
+                  <span className="benefit-tag">📱 Share on Instagram/TikTok</span>
                 </div>
               </div>
             </div>
@@ -213,11 +213,11 @@ export default function HomePage() {
             <div className="process-step">
               <div className="step-number">2</div>
               <div className="step-content">
-                <h3>Review Profiles & Record Videos</h3>
-                <p>Accept requests you want to review and record quick video feedback. You control your time and choose what to review.</p>
+                <h3>Rate & Give Advice</h3>
+                <p>Accept requests and rate men on attractiveness, style, room, and social profiles (Hinge/Tinder/Instagram) from 1-5. Give specific advice on what they could improve.</p>
                 <div className="step-benefits">
-                  <span className="benefit-tag">⏱️ Quick reviews</span>
-                  <span className="benefit-tag">🎯 Full control</span>
+                  <span className="benefit-tag">📊 Rate 1-5 scale</span>
+                  <span className="benefit-tag">💡 Give improvement advice</span>
                 </div>
               </div>
             </div>
@@ -227,11 +227,11 @@ export default function HomePage() {
             <div className="process-step">
               <div className="step-number">3</div>
               <div className="step-content">
-                <h3>Get Paid After Review</h3>
-                <p>Complete your review and get paid via Stripe. Optional: Share reviews to social media to build your personal brand and attract more clients.</p>
+                <h3>Get Paid & Build Your Brand</h3>
+                <p>Get paid instantly after your review. If the guy consents, you can post the review to social media to build your brand and attract more review requests.</p>
                 <div className="step-benefits">
-                  <span className="benefit-tag">💳 Secure payments</span>
-                  <span className="benefit-tag">📸 Social sharing</span>
+                  <span className="benefit-tag">💳 Instant payments</span>
+                  <span className="benefit-tag">📸 Build your brand</span>
                 </div>
               </div>
             </div>
@@ -263,19 +263,19 @@ export default function HomePage() {
       <section className="social-proof">
         <div className="container">
           <h2 className="section-title">Why Join Auro?</h2>
-          <p className="section-subtitle">Be part of the platform that's changing how creators monetize their expertise</p>
+          <p className="section-subtitle">Get paid to share your opinions on men's style and presentation</p>
           
           {/* Value Props */}
           <div className="value-props">
             <div className="value-card">
               <div className="value-icon">💰</div>
               <h3>Set Your Own Rates</h3>
-              <p>You control your pricing. Charge what you think your expertise is worth - no platform taking a huge cut.</p>
+              <p>You control your pricing. Charge what you think your expertise is worth. Founding members keep 85% (vs 80% for regular members) - guaranteed for life.</p>
             </div>
             <div className="value-card">
               <div className="value-icon">🚀</div>
-              <h3>Launch With Us</h3>
-              <p>Be part of the founding group that shapes the platform. Your feedback directly influences features and improvements.</p>
+              <h3>Founding Member Perks</h3>
+              <p>Get founding reviewer badge, higher recommendation priority, direct founder access, and help shape the community from day one.</p>
             </div>
           </div>
           
@@ -313,16 +313,16 @@ export default function HomePage() {
             <img src="/rj-headshot.jpg" alt="RJ headshot" style={{ width: 160, height: 160, objectFit: 'cover', borderRadius: 12 }} loading="lazy" />
             <div className="about__text" style={{ maxWidth: 720, textAlign: 'center' }}>
               <p>
-                I'm RJ, founder of Auro. This is where creators turn expertise into income.
+                I'm RJ, founder of Auro. This is where women reviewers get paid to rate men and help them improve.
               </p>
               <p>
-                On Auro, reviewers earn by sharing their insights on style, confidence, and aesthetic—helping others elevate their personal brand and make smarter choices.
+                On Auro, women reviewers rate men on attractiveness, style, room, and social profiles (1-5 scale), give advice on improvements, and get paid for their expertise. Reviews can be posted to social media to build the reviewer's brand.
               </p>
               <p>
-                We're building a community of trusted voices who shape trends and influence culture. As part of the founding group, you'll get exclusive early access, premium exposure, and the chance to establish yourself before the platform opens to everyone.
+                We're building a community where women's opinions on men's presentation are valued and monetized. As a founding reviewer, you'll get reduced platform fees (85% vs 80%), exclusive status, and direct founder access.
               </p>
               <p>
-                Join the founding group and start getting paid to share your expertise.
+                Join the first 100 founding reviewers and lock in these benefits for life.
               </p>
             </div>
           </div>
@@ -369,15 +369,22 @@ export default function HomePage() {
               <div className="benefit-item featured">
                 <span className="benefit-icon">🎯</span>
                 <div className="benefit-content">
-                  <strong>Higher Commission Rates</strong>
-                  <span>Keep 90% of earnings (vs 80% for regular members)</span>
+                  <strong>Reduced Platform Fee</strong>
+                  <span>Keep 85% of earnings (vs 80% for regular members) - guaranteed for life</span>
                 </div>
               </div>
               <div className="benefit-item featured">
                 <span className="benefit-icon">💎</span>
                 <div className="benefit-content">
-                  <strong>Founding Member Badge</strong>
-                  <span>Exclusive status that commands higher rates</span>
+                  <strong>Founding Reviewer Badge</strong>
+                  <span>Higher recommendation priority and exclusive status</span>
+                </div>
+              </div>
+              <div className="benefit-item featured">
+                <span className="benefit-icon">🚀</span>
+                <div className="benefit-content">
+                  <strong>Direct Founder Access</strong>
+                  <span>Priority support and help shape the community</span>
                 </div>
               </div>
             </div>

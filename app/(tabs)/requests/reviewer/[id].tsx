@@ -68,6 +68,12 @@ export default function ReviewerRequestScreen() {
   const [isVideoReviewMode, setIsVideoReviewMode] = useState(false);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   
+  // Camera state variables
+  const [type, setType] = useState<'front' | 'back'>('front');
+  const [recording, setRecording] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [isCameraReady, setIsCameraReady] = useState(false);
+  
   // Move useMemo to the top level, always called
   const parsedNotes = React.useMemo(() => {
     try {
@@ -531,24 +537,14 @@ export default function ReviewerRequestScreen() {
       </ScrollView>
       {/* Immersive recording modal with rating and note controls */}
       <Modal visible={recordingModeOpen} animationType="slide" onRequestClose={() => setRecordingModeOpen(false)}>
-        <RNView style={{ flex: 1, backgroundColor: 'transparent' }}>
-          {/* Gradient background using logo colors */}
-          <LinearGradient
-            colors={['#FF6F00', '#FF4F33', '#FF2D55', '#d83986', '#ea4b64', '#e14072', '#cb3597']}
-            locations={[0, 0.2, 0.4, 0.6, 0.75, 0.9, 1]}
-            style={StyleSheet.absoluteFill}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          />
-          {/* Increased opacity overlay for better contrast and modern look */}
-          <RNView style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.75)' }]} />
+        <RNView style={{ flex: 1, backgroundColor: Colors.brand.background }}>
           
           {/* Vertical photo carousel with rating and note controls */}
           <ScrollView 
             pagingEnabled 
             showsVerticalScrollIndicator={false} 
             style={{ flex: 1 }} 
-            contentContainerStyle={{ alignItems: 'center', paddingTop: insets.top + 140 }}
+            contentContainerStyle={{ alignItems: 'center' }}
             onMomentumScrollEnd={(event) => {
               const index = Math.round(event.nativeEvent.contentOffset.y / Dimensions.get('window').height);
               setCurrentPhotoIndex(index);
@@ -556,9 +552,9 @@ export default function ReviewerRequestScreen() {
           >
             {/* All slides: profile, section cards, and photos */}
             {allSlides.map((slide, i) => (
-              <RNView key={`slide-${i}`} style={{ width: Dimensions.get('window').width, height: Dimensions.get('window').height - insets.top - insets.bottom - 140, paddingHorizontal: 20, paddingVertical: 16, justifyContent: 'center' }}>
+              <RNView key={`slide-${i}`} style={{ width: Dimensions.get('window').width, height: Dimensions.get('window').height, paddingHorizontal: 20, paddingTop: insets.top + 140, paddingBottom: insets.bottom + 20, justifyContent: 'center' }}>
                 {slide.type === 'profile' && (
-                  <RNView style={[styles.overlayCard, { alignSelf: 'center', maxWidth: 640, marginBottom: 8 }] }>
+                  <RNView style={[styles.overlayCard, { width: '100%', alignSelf: 'center' }] }>
                     <Text style={styles.overlayTitle}>{slide.data.name}</Text>
                     {slide.data.message ? (<Text style={styles.overlayText}>{slide.data.message}</Text>) : null}
                     {slide.data.selfie ? (<Image source={{ uri: slide.data.selfie }} style={{ width: '100%', aspectRatio: 1, borderRadius: 12, marginTop: 12 }} contentFit="cover" />) : null}
@@ -570,11 +566,12 @@ export default function ReviewerRequestScreen() {
                     title={slide.data.title}
                     subtitle={slide.data.subtitle}
                     revieweeName={reviewee?.displayName || 'User'}
+                    style={{ marginHorizontal: 0, width: '100%' }}
                   />
                 )}
                 
                 {slide.type === 'photo' && (
-                  <RNView style={[styles.overlayPhotoCard, { alignSelf: 'center', maxWidth: 640, marginBottom: 8 }] }>
+                  <RNView style={[styles.overlayPhotoCard, { width: '100%', alignSelf: 'center' }] }>
                     <Text style={styles.overlayTitle}>{slide.data.category} - Photo {slide.data.photoIndex + 1}</Text>
                     <View
                       style={{ 
@@ -642,9 +639,53 @@ export default function ReviewerRequestScreen() {
                 setIsVideoReviewMode(false);
                 Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
               }}
-              variant="overlay"
+              variant="centered"
               circleSize={160}
             />
+          </RNView>
+
+          {/* Camera controls positioned to the right of the camera */}
+          <RNView style={{ position: 'absolute', top: insets.top + 100, right: 20, zIndex: 11, elevation: 11 }}>
+            <View style={{ flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+              {!videoUri && (
+                <Pressable onPress={() => setType(prev => (prev === 'front' ? 'back' : 'front'))} accessibilityLabel="Flip camera" style={{ paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.4)' }}>
+                  <Text style={{ color: '#fff', fontWeight: '700' }}>Flip</Text>
+                </Pressable>
+              )}
+            </View>
+          </RNView>
+
+          {/* Recording controls positioned to the right of the camera, lower */}
+          <RNView style={{ position: 'absolute', top: insets.top + 200, right: 20, zIndex: 11, elevation: 11 }}>
+            <View style={{ flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+              {!recording && !videoUri && (
+                <Pressable
+                  onPress={startRecording}
+                  accessibilityLabel="Start recording"
+                  disabled={!isCameraReady || starting}
+                  style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isCameraReady && !starting ? '#ff3b30' : 'rgba(255,59,48,0.4)', borderWidth: 3, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' }}
+                />
+              )}
+              {recording && (
+                <Pressable
+                  onPress={async () => { if (!cameraRef.current) return; try { await cameraRef.current.stopRecording(); } catch {} }}
+                  accessibilityLabel="Stop recording"
+                  style={{ paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, backgroundColor: '#fff', marginHorizontal: 2 }}
+                >
+                  <Text style={{ color: Colors.brand.textPrimary, fontWeight: '700' }}>Stop</Text>
+                </Pressable>
+              )}
+              {videoUri && (
+                <View style={{ flexDirection: 'column', gap: 8 }}>
+                  <Pressable onPress={() => { onRecorded(videoUri); }} accessibilityLabel="Use this video" style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: Colors.brand.status.completed }}>
+                    <Text style={{ color: '#fff', fontWeight: '700' }}>Use</Text>
+                  </Pressable>
+                  <Pressable onPress={() => setVideoUri(null)} accessibilityLabel="Re-record" style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: Colors.brand.cardBackground }}>
+                    <Text style={{ color: Colors.brand.textPrimary, fontWeight: '700' }}>Re-record</Text>
+                  </Pressable>
+                </View>
+              )}
+            </View>
           </RNView>
 
           {/* Close button - positioned to the left of camera circle */}

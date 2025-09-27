@@ -9,7 +9,7 @@ import { Audio } from 'expo-audio';
 type Props = {
   photos?: string[];
   onRecorded: (uri: string) => void;
-  variant?: 'inline' | 'overlay';
+  variant?: 'inline' | 'overlay' | 'centered';
   circleSize?: number;
   value?: string | null;
 };
@@ -156,6 +156,55 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
               </View>
             )}
           </View>
+        </View>
+      </View>
+    );
+  }
+
+  if (variant === 'centered') {
+    return (
+      <View style={{ alignItems: 'center', position: 'relative' }}>
+        {/* Circular camera surface - centered */}
+        <View style={{ width: circleSize, height: circleSize, borderRadius: circleSize / 2, overflow: 'hidden', backgroundColor: 'transparent' }}>
+          {!permission?.granted ? (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.brand.cardBackground }}>
+              <Pressable onPress={requestPermission} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: Colors.brand.status.accepted }}>
+                <Text style={{ color: '#fff', fontWeight: '700' }}>Enable Camera</Text>
+              </Pressable>
+            </View>
+          ) : videoUri ? (
+            <>
+              <VideoView
+                style={{ width: '100%', height: '100%' }}
+                player={videoPlayer}
+                contentFit="cover"
+                nativeControls={false}
+              />
+              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+                <Pressable
+                  onPress={async () => {
+                    try {
+                      if (isPlaying) { videoPlayer.pause(); setIsPlaying(false); }
+                      else { videoPlayer.play(); setIsPlaying(true); }
+                    } catch {}
+                  }}
+                  accessibilityLabel={isPlaying ? 'Pause playback' : 'Play playback'}
+                  style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '900' }}>{isPlaying ? '❚❚' : '▶'}</Text>
+                </Pressable>
+              </View>
+            </>
+          ) : (
+            <CameraView
+              ref={r => (cameraRef.current = r)}
+              style={{ width: '100%', height: '100%' }}
+              facing={type as any}
+              mode={"video" as any}
+              onCameraReady={() => setIsCameraReady(true)}
+              onError={() => setIsCameraReady(false)}
+            />
+          )}
         </View>
       </View>
     );
