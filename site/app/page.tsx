@@ -74,19 +74,19 @@ export default function HomePage() {
               
               {/* Main Headline */}
               <h1 className="desktop-only">
-                <span className="phrase-1">Rate guys on</span><br />
-                <span className="phrase-2">attractiveness, style & room.</span><br />
+                <span className="phrase-1">Rate guys.</span><br />
+                <span className="phrase-2">Give advice.</span><br />
                 <span className="phrase-3">Get paid.</span>
               </h1>
               <h1 className="mobile-only">
-                <span className="phrase-1">Rate guys on</span><br />
-                <span className="phrase-2">attractiveness, style & room.</span><br />
+                <span className="phrase-1">Rate guys.</span><br />
+                <span className="phrase-2">Give advice.</span><br />
                 <span className="phrase-3">Get paid.</span>
               </h1>
               
               {/* Subheadline */}
-              <p className="sub desktop-only">Women reviewers rate men's photos, outfits, rooms, and social profiles (1-5 scale). Give advice, get paid, and optionally post reviews to build your brand.</p>
-              <p className="sub mobile-only">Women reviewers rate men's photos, outfits, rooms, and social profiles (1-5 scale). Give advice, get paid, and optionally post reviews to build your brand.</p>
+              <p className="sub desktop-only">Guys pay to get reviewed on their outfits, room tours, and socials (Hinge/Tinder/Instagram). Reviewers give personalized video reviews and get paid. Post your review link on socials to get clients, then post reviews to TikTok/IG to build your brand.</p>
+              <p className="sub mobile-only">Guys pay to get reviewed on their outfits, room tours, and socials (Hinge/Tinder/Instagram). Reviewers give personalized video reviews and get paid. Post your review link on socials to get clients, then post reviews to TikTok/IG to build your brand.</p>
               
               {/* Trust Indicators */}
               <div className="hero-trust">
@@ -181,7 +181,7 @@ export default function HomePage() {
       {/* iPhone Showcase Section for Mobile */}
       <section className="iphone-showcase mobile-only">
         <div className="showcase-content">
-          <h2 className="showcase-title">Rate men's attractiveness, style, and rooms. Give advice. Get paid.</h2>
+          <h2 className="showcase-title">Rate guys. Give advice. Get paid.</h2>
           <div className="iphone-mockup-container">
             <img className="iphone-mockup" src="/iphone-mockup.png" alt="iPhone app mockup" loading="lazy" />
           </div>
@@ -329,40 +329,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Launch Countdown Section */}
-      <section className="launch-countdown">
+      {/* Combined Founding Members Section */}
+      <section className="founding-members">
         <div className="container">
-          <div className="countdown-content">
-            <h2>⏰ Limited Time: Founding Member Benefits End Soon</h2>
-            <p>Join before we launch on October 15th at 9 PM PST to lock in exclusive founding perks</p>
-            <div className="countdown-display">
-              <CountdownTimer 
-                targetDate={new Date('2025-10-15T21:00:00-08:00')}
-                className="main-countdown"
-              />
-            </div>
-            <div className="reviewer-progress">
-              <ReviewerCounter 
-                maxReviewers={100}
-                className="main-counter"
-              />
-            </div>
-            <div className="urgency-message">
-              <span className="urgency-text">⚡ Only founding members get these exclusive benefits</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA with Enhanced Urgency */}
-      <section className="cta-section">
-        <div className="container">
-          <div className="cta-content">
+          <div className="founding-content">
             <div className="urgency-badge">
               <span className="urgency-icon">🚨</span>
               <span className="urgency-label">FOUNDING MEMBERS ONLY</span>
             </div>
-            <h2>Claim Your Exclusive Founding Spot</h2>
+            <h2>⏰ Limited Time: Claim Your Exclusive Founding Spot</h2>
             <p>Join the first 100 reviewers and lock in these exclusive benefits forever:</p>
             
             <div className="founding-benefits">
@@ -387,6 +362,19 @@ export default function HomePage() {
                   <span>Priority support and help shape the community</span>
                 </div>
               </div>
+            </div>
+            
+            <div className="countdown-display">
+              <CountdownTimer 
+                targetDate={new Date('2025-10-15T21:00:00-08:00')}
+                className="main-countdown"
+              />
+            </div>
+            <div className="reviewer-progress">
+              <ReviewerCounter 
+                maxReviewers={100}
+                className="main-counter"
+              />
             </div>
             
             <div className="cta-buttons">

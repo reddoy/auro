@@ -689,7 +689,11 @@ export default function ReviewerRequestScreen() {
               )}
               {videoUri && (
                 <View style={{ flexDirection: 'column', gap: 8 }}>
-                  <Pressable onPress={() => { onRecorded(videoUri); }} accessibilityLabel="Use this video" style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: Colors.brand.status.completed }}>
+                  <Pressable onPress={() => { 
+                    setRecordingModeOpen(false);
+                    setIsVideoReviewMode(false);
+                    Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
+                  }} accessibilityLabel="Use this video" style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: Colors.brand.status.completed }}>
                     <Text style={{ color: '#fff', fontWeight: '700' }}>Use</Text>
                   </Pressable>
                   <Pressable onPress={() => setVideoUri(null)} accessibilityLabel="Re-record" style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: Colors.brand.cardBackground }}>
