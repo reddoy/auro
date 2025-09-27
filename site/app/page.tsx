@@ -88,39 +88,17 @@ export default function HomePage() {
               <p className="sub desktop-only">Women reviewers rate men's outfits, rooms, and socials (1-5 scale), give advice, and get paid. Post reviews to TikTok/IG to build your brand.</p>
               <p className="sub mobile-only">Women reviewers rate men's outfits, rooms, and socials (1-5 scale), give advice, and get paid. Post reviews to TikTok/IG to build your brand.</p>
               
-              {/* Trust Indicators */}
-              <div className="hero-trust">
-                <div className="trust-item">
-                  <span className="trust-icon">⚡</span>
-                  <span className="trust-text">Launching October 15th</span>
-                </div>
-                <div className="trust-item">
-                  <span className="trust-icon">🎯</span>
-                  <span className="trust-text">First 100 reviewers only</span>
-                </div>
-              </div>
-              
-              {/* Integrated CTA with Counter */}
+              {/* Integrated CTA with Benefits */}
               <div className="hero-cta-integrated desktop-only">
                 <a className="cta-hero-integrated" href="/reviewers/apply">
-                  <div className="cta-count-section">
-                    {isLoadingCount ? (
-                      <span className="cta-loading">Loading...</span>
-                    ) : (
-                      <>
-                        <span className="cta-count-number fade-in">{reviewerCount}</span>
-                        <span className="cta-count-separator fade-in">/</span>
-                        <span className="cta-count-max fade-in">100</span>
-                      </>
-                    )}
-                  </div>
-                  <div className="cta-text-section">
-                    <span className="cta-main-text">Become Founding Reviewer</span>
-                    {isLoadingCount ? (
-                      <span className="cta-loading">Loading...</span>
-                    ) : (
-                      <span className="cta-sub-text fade-in">{getSubText()}</span>
-                    )}
+                  <div className="cta-main-section">
+                    <span className="cta-main-text">Become a Founding Reviewer</span>
+                    <div className="cta-benefits">
+                      <span className="benefit-item">✓ Keep 85% cut instead of regular 80%</span>
+                      <span className="benefit-item">✓ Direct Founder Access</span>
+                      <span className="benefit-item">✓ Only first 100 reviewers</span>
+                      <span className="benefit-item">✓ Earn exclusive badge for higher discoverability</span>
+                    </div>
                   </div>
                 </a>
               </div>
@@ -148,24 +126,14 @@ export default function HomePage() {
             {/* Mobile CTA and scroll indicator */}
             <div className="hero-cta-integrated mobile-only" style={{ marginTop: 24 }}>
               <a className="cta-hero-integrated" href="/reviewers/apply">
-                <div className="cta-count-section">
-                  {isLoadingCount ? (
-                    <span className="cta-loading">Loading...</span>
-                  ) : (
-                    <>
-                      <span className="cta-count-number fade-in">{reviewerCount}</span>
-                      <span className="cta-count-separator fade-in">/</span>
-                      <span className="cta-count-max fade-in">100</span>
-                    </>
-                  )}
-                </div>
-                <div className="cta-text-section">
-                  <span className="cta-main-text">Become Founding Reviewer</span>
-                  {isLoadingCount ? (
-                    <span className="cta-loading">Loading...</span>
-                  ) : (
-                    <span className="cta-sub-text fade-in">{getSubText()}</span>
-                  )}
+                <div className="cta-main-section">
+                  <span className="cta-main-text">Become a Founding Reviewer</span>
+                  <div className="cta-benefits">
+                    <span className="benefit-item">✓ Keep 85% cut instead of regular 80%</span>
+                    <span className="benefit-item">✓ Direct Founder Access</span>
+                    <span className="benefit-item">✓ Only first 100 reviewers</span>
+                    <span className="benefit-item">✓ Earn exclusive badge for higher discoverability</span>
+                  </div>
                 </div>
               </a>
             </div>
