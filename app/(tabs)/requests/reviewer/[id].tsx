@@ -545,7 +545,6 @@ export default function ReviewerRequestScreen() {
           
           {/* Vertical photo carousel with rating and note controls */}
           <ScrollView 
-            vertical
             pagingEnabled 
             showsVerticalScrollIndicator={false} 
             style={{ flex: 1 }} 
@@ -727,29 +726,29 @@ const styles = StyleSheet.create({
 
   disabledButton: { backgroundColor: Colors.brand.border },
   overlayCard: { 
-    backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+    backgroundColor: Colors.brand.primary, 
     borderRadius: 20, 
     padding: 24, 
     borderWidth: 0,
-    shadowColor: '#000',
+    shadowColor: Colors.brand.shadow,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.3,
     shadowRadius: 16,
-    elevation: 8
+    elevation: 12
   },
   overlayPhotoCard: { 
-    backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+    backgroundColor: Colors.brand.primary, 
     borderRadius: 20, 
     padding: 24, 
     borderWidth: 0,
-    shadowColor: '#000',
+    shadowColor: Colors.brand.shadow,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.3,
     shadowRadius: 16,
-    elevation: 8
+    elevation: 12
   },
-  overlayTitle: { fontSize: 20, fontWeight: '900', color: Colors.brand.textPrimary, marginBottom: 8 },
-  overlayText: { fontSize: 15, color: Colors.brand.textPrimary, lineHeight: 21 },
+  overlayTitle: { fontSize: 20, fontWeight: '900', color: '#fff', marginBottom: 8 },
+  overlayText: { fontSize: 15, color: 'rgba(255, 255, 255, 0.9)', lineHeight: 21 },
   consentPill: { alignSelf: 'center', borderWidth: 1, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 24, backgroundColor: Colors.brand.cardBackground, marginTop: 8 },
   consentPillText: { fontSize: 12, fontWeight: '700' },
   

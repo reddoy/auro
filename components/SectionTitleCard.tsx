@@ -26,7 +26,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     marginHorizontal: 16,
-    marginVertical: 8,
+    marginVertical: 12,
     shadowColor: Colors.brand.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
   },
   activeCard: {
     borderColor: Colors.brand.primary,
-    backgroundColor: Colors.brand.primary + '10', // 10% opacity
+    backgroundColor: Colors.brand.primary + '15', // 15% opacity for better visibility
   },
   title: {
     fontSize: 18,

@@ -3,6 +3,7 @@ import { StyleSheet, ScrollView } from 'react-native';
 import { View, Text } from '@/components/Themed';
 import SectionTitleCard from './SectionTitleCard';
 import PhotoCarousel from './PhotoCarousel';
+import PaginationDots from './PaginationDots';
 import Colors from '@/constants/Colors';
 
 type PhotoSection = {
@@ -16,9 +17,10 @@ type Props = {
   sections: PhotoSection[];
   onPhotoPress: (photos: string[], index: number) => void;
   currentSectionIndex?: number;
+  currentPhotoIndex?: number;
 };
 
-export default function VideoReviewSection({ sections, onPhotoPress, currentSectionIndex = 0 }: Props) {
+export default function VideoReviewSection({ sections, onPhotoPress, currentSectionIndex = 0, currentPhotoIndex = 0 }: Props) {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {sections.map((section, sectionIndex) => (
@@ -35,6 +37,14 @@ export default function VideoReviewSection({ sections, onPhotoPress, currentSect
                 onPressItem={(photoIndex) => onPhotoPress(section.photos, photoIndex)}
                 height={140}
               />
+              {section.photos.length > 1 && (
+                <View style={styles.paginationContainer}>
+                  <PaginationDots
+                    totalItems={section.photos.length}
+                    currentIndex={currentPhotoIndex}
+                  />
+                </View>
+              )}
             </View>
           )}
         </View>
@@ -52,8 +62,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   carouselContainer: {
-    marginHorizontal: 16,
     marginTop: 8,
     marginBottom: 16,
+  },
+  paginationContainer: {
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 8,
   },
 });

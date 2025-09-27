@@ -45,16 +45,16 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     transition: 'all 0.3s ease',
   },
   activeDot: {
     backgroundColor: Colors.brand.primary,
-    width: 12,
-    height: 8,
-    borderRadius: 4,
+    width: 8,
+    height: 6,
+    borderRadius: 3,
   },
   inactiveDot: {
     backgroundColor: 'rgba(255, 255, 255, 0.4)',

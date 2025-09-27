@@ -13,6 +13,7 @@ const brandColors = {
   // Accents
   accentOrange: '#FF6F00',
   accentMagenta: '#FF2D55',
+  primary: '#FF2D55', // Main brand color (magenta)
 
   // Text
   textPrimary: '#FFFFFF',

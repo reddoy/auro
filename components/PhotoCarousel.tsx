@@ -14,7 +14,7 @@ type Props = {
 export default function PhotoCarousel({ uris, onPressItem, onLongPressItem, height = 110 }: Props) {
   if (!Array.isArray(uris) || uris.length === 0) return null;
   return (
-    <View style={{ backgroundColor: Colors.brand.cardBackground }}>
+    <View style={styles.container}>
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -45,6 +45,17 @@ export default function PhotoCarousel({ uris, onPressItem, onLongPressItem, heig
 }
 
 const styles = StyleSheet.create({
+  container: {
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 16,
+    padding: 12,
+    marginHorizontal: 16,
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+  },
   thumbWrap: {
     marginRight: 10,
     borderRadius: 12,
