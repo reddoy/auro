@@ -6,13 +6,18 @@ type Props = {
   totalItems: number;
   currentIndex: number;
   style?: any;
+  orientation?: 'horizontal' | 'vertical';
 };
 
-export default function PaginationDots({ totalItems, currentIndex, style }: Props) {
+export default function PaginationDots({ totalItems, currentIndex, style, orientation = 'horizontal' }: Props) {
   if (totalItems <= 1) return null;
 
+  const containerStyle = orientation === 'vertical' 
+    ? [styles.container, styles.verticalContainer, style]
+    : [styles.container, style];
+
   return (
-    <View style={[styles.container, style]}>
+    <View style={containerStyle}>
       {Array.from({ length: totalItems }, (_, index) => (
         <View
           key={index}
@@ -33,6 +38,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  verticalContainer: {
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    gap: 12,
+  },
   dot: {
     width: 8,
     height: 8,
@@ -46,6 +57,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   inactiveDot: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
   },
 });
