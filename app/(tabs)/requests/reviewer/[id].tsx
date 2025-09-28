@@ -522,8 +522,8 @@ export default function ReviewerRequestScreen() {
             <Text style={styles.label}>Video Review</Text>
             <Text style={styles.sectionHint}>Record a video review while swiping through photos. You can rate and add notes to each photo during the recording.</Text>
             {Platform.OS !== 'web' && (
-              <RNView style={{ flexDirection: 'row', gap: 10 }}>
-                <TouchableOpacity style={[styles.actionButton, styles.primaryButton, { flex: 1 }]} onPress={() => {
+              <RNView style={{ marginTop: 16 }}>
+                <TouchableOpacity style={[styles.actionButton, styles.primaryButton]} onPress={() => {
                   setIsVideoReviewMode(true);
                   setRecordingModeOpen(true);
                 }}>
@@ -532,14 +532,13 @@ export default function ReviewerRequestScreen() {
               </RNView>
             )}
             {videoUri && (
-              <RNView style={{ marginTop: 12, padding: 12, backgroundColor: Colors.brand.cardBackground, borderRadius: 12, borderWidth: 1, borderColor: Colors.brand.status.completed }}>
-                <Text style={{ color: Colors.brand.status.completed, fontWeight: '700', textAlign: 'center' }}>✅ Video Review Complete</Text>
+              <RNView style={{ marginTop: 16, padding: 16, backgroundColor: Colors.brand.status.completed + '15', borderRadius: 16, borderWidth: 2, borderColor: Colors.brand.status.completed }}>
+                <Text style={{ color: Colors.brand.status.completed, fontWeight: '700', textAlign: 'center', fontSize: 16 }}>✅ Video Review Complete</Text>
               </RNView>
             )}
-            <RNView style={{ height: 12 }} />
 
             <TouchableOpacity
-              style={[styles.actionButton, canSubmit ? styles.primaryButton : styles.disabledButton, { marginBottom: 24 }]}
+              style={[styles.actionButton, canSubmit ? styles.primaryButton : styles.disabledButton, { marginTop: 20 }]}
               onPress={handleSubmitReview}
               disabled={!canSubmit || submitting}
             >
@@ -744,7 +743,7 @@ const styles = StyleSheet.create({
   noteInput: { minHeight: 100, borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 12, padding: 12, color: Colors.brand.textPrimary, marginBottom: 12 },
   sectionHint: { fontSize: 14, color: Colors.brand.textSecondary, marginTop: 8, fontWeight: '500', lineHeight: 20, fontStyle: 'italic' },
 
-  disabledButton: { backgroundColor: Colors.brand.border },
+  disabledButton: { backgroundColor: Colors.brand.border, opacity: 0.6 },
   overlayCard: { 
     backgroundColor: Colors.brand.cardBackground, 
     borderRadius: 20, 
