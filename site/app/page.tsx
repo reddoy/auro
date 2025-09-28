@@ -273,51 +273,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Why Join Auro */}
-      <section className="social-proof">
-        <div className="container">
-          <h2 className="section-title">Why Join Auro?</h2>
-          <p className="section-subtitle">Get paid to share your opinions on men's style and presentation</p>
-          
-          {/* Value Props */}
-          <div className="value-props">
-            <div className="value-card">
-              <div className="value-icon">💰</div>
-              <h3>Set Your Own Rates</h3>
-              <p>You control your pricing. Charge what you think your expertise is worth. Founding members keep 85% (vs 80% for regular members) - guaranteed for life.</p>
-            </div>
-            <div className="value-card">
-              <div className="value-icon">🚀</div>
-              <h3>Founding Member Perks</h3>
-              <p>Get founding reviewer badge, higher recommendation priority, direct founder access, and help shape the community from day one.</p>
-            </div>
-          </div>
-          
-          {/* Trust Signals */}
-          <div className="trust-signals">
-            <div className="trust-item">
-              <div className="trust-icon">💳</div>
-              <div className="trust-content">
-                <strong>Secure Payments</strong>
-                <span>Via Stripe • After review completion</span>
-              </div>
-            </div>
-            <div className="trust-item">
-              <div className="trust-icon">⚡</div>
-              <div className="trust-content">
-                <strong>Founding Support</strong>
-                <span>Direct founder access • Priority help</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* CTA After Value Props */}
-          <div className="social-proof-cta">
-            <a href="/reviewers/apply" className="cta-primary">Become a Founding Reviewer</a>
-            <p className="cta-note">Join the first 100 • Shape the platform • Launch October 15th</p>
-          </div>
-        </div>
-      </section>
 
       {/* Founder */}
       <section id="about" className="about">

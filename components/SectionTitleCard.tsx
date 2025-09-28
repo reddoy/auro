@@ -23,37 +23,39 @@ export default function SectionTitleCard({ title, subtitle, isActive = false }: 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.brand.cardBackground,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 20,
-    marginHorizontal: 16,
+    marginHorizontal: 20,
     marginVertical: 12,
     shadowColor: Colors.brand.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: Colors.brand.accentOrange,
   },
   activeCard: {
-    borderColor: Colors.brand.primary,
-    backgroundColor: Colors.brand.primary + '15', // 15% opacity for better visibility
+    borderColor: Colors.brand.accentOrange,
+    backgroundColor: Colors.brand.accentOrange + '15', // 15% opacity for better visibility
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '800',
     color: Colors.brand.textPrimary,
-    marginBottom: 4,
+    marginBottom: 8,
+    letterSpacing: 0.3,
   },
   activeTitle: {
-    color: Colors.brand.primary,
+    color: Colors.brand.accentOrange,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: Colors.brand.textSecondary,
-    lineHeight: 20,
+    lineHeight: 24,
+    fontWeight: '500',
   },
   activeSubtitle: {
-    color: Colors.brand.primary + 'CC', // 80% opacity
+    color: Colors.brand.accentOrange + 'CC', // 80% opacity
   },
 });

@@ -406,7 +406,7 @@ export default function ReviewerRequestScreen() {
               )}
               {typeof stripeFeeCents === 'number' && (
                 <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={[styles.value, { color: Colors.brand.textSecondary }]}>Stripe fee</Text>
+                  <Text style={[styles.value, { color: Colors.brand.textSecondary }]}>Stripe processing fee</Text>
                   <Text style={[styles.value, { color: Colors.brand.status.rejected, fontWeight: '600' }]}>-${(stripeFeeCents / 100).toFixed(2)}</Text>
                 </RNView>
               )}
@@ -724,7 +724,7 @@ const styles = StyleSheet.create({
   requestDate: { fontSize: 14, color: Colors.brand.textSecondary, marginTop: 12, fontWeight: '500', opacity: 0.8 },
   section: { marginHorizontal: 20, marginVertical: 12, backgroundColor: Colors.brand.cardBackground, borderRadius: 20, padding: 20, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4 },
   mediaSection: { alignItems: 'stretch' },
-  label: { fontSize: 20, color: Colors.brand.textPrimary, marginBottom: 12, fontWeight: '800', letterSpacing: 0.3, textTransform: 'uppercase' },
+  label: { fontSize: 20, color: Colors.brand.textPrimary, marginBottom: 12, fontWeight: '800', letterSpacing: 0.3 },
   value: { fontSize: 16, color: Colors.brand.textPrimary, lineHeight: 24, fontWeight: '500' },
   selfie: { width: '100%', aspectRatio: 1.2, borderRadius: 12, marginTop: 8, maxHeight: 280 },
   photosGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 8, justifyContent: 'center' },

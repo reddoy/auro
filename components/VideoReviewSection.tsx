@@ -36,15 +36,8 @@ export default function VideoReviewSection({ sections, onPhotoPress, currentSect
                 uris={section.photos}
                 onPressItem={(photoIndex) => onPhotoPress(section.photos, photoIndex)}
                 height={140}
+                showScrollIndicator={true}
               />
-              {section.photos.length > 1 && (
-                <View style={styles.paginationContainer}>
-                  <PaginationDots
-                    totalItems={section.photos.length}
-                    currentIndex={currentPhotoIndex}
-                  />
-                </View>
-              )}
             </View>
           )}
         </View>
@@ -64,10 +57,5 @@ const styles = StyleSheet.create({
   carouselContainer: {
     marginTop: 8,
     marginBottom: 16,
-  },
-  paginationContainer: {
-    alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 8,
   },
 });

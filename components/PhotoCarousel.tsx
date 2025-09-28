@@ -9,15 +9,16 @@ type Props = {
   onPressItem?: (index: number) => void;
   onLongPressItem?: (index: number) => void;
   height?: number;
+  showScrollIndicator?: boolean;
 };
 
-export default function PhotoCarousel({ uris, onPressItem, onLongPressItem, height = 110 }: Props) {
+export default function PhotoCarousel({ uris, onPressItem, onLongPressItem, height = 110, showScrollIndicator = false }: Props) {
   if (!Array.isArray(uris) || uris.length === 0) return null;
   return (
     <View style={styles.container}>
       <FlatList
         horizontal
-        showsHorizontalScrollIndicator={false}
+        showsHorizontalScrollIndicator={showScrollIndicator}
         data={uris}
         keyExtractor={(u, i) => `${u}-${i}`}
         getItemLayout={(_, i) => ({ length: height * 0.66 + 10, offset: (height * 0.66 + 10) * i, index: i })}
@@ -29,7 +30,12 @@ export default function PhotoCarousel({ uris, onPressItem, onLongPressItem, heig
         }}
         contentContainerStyle={{ paddingHorizontal: 0 }}
         renderItem={({ item, index }) => (
-          <Pressable onPress={() => onPressItem?.(index)} onLongPress={() => onLongPressItem?.(index)} style={styles.thumbWrap} accessibilityLabel={`Open photo ${index + 1}`}>
+          <Pressable 
+            onPress={showScrollIndicator ? undefined : () => onPressItem?.(index)} 
+            onLongPress={showScrollIndicator ? undefined : () => onLongPressItem?.(index)} 
+            style={styles.thumbWrap} 
+            accessibilityLabel={showScrollIndicator ? `Photo ${index + 1}` : `Open photo ${index + 1}`}
+          >
             <Image
               source={{ uri: item }}
               style={{ width: height * 0.66, height, borderRadius: 12 }}
