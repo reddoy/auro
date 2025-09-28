@@ -146,7 +146,7 @@ export default function HomePage() {
           <div className="founding-content" style={{ textAlign: 'center' }}>
             <div className="founding-header">
               <span className="founding-badge">🚨 FOUNDING MEMBERS ONLY</span>
-              <h2>First 100 reviewers get exclusive benefits forever</h2>
+              <h2>First 100 reviewers get exclusive benefits <em style={{ textDecoration: 'underline' }}>forever</em></h2>
             </div>
             
             <div className="founding-grid" style={{ display: 'flex', justifyContent: 'center', gap: '32px', flexWrap: 'wrap', maxWidth: '700px', margin: '0 auto' }}>
@@ -154,14 +154,14 @@ export default function HomePage() {
                 <span className="benefit-icon">💰</span>
                 <div className="benefit-text">
                   <strong>85% earnings</strong>
-                  <span style={{ marginTop: '8px', display: 'block' }}>Keep more of what you earn compared to regular members.</span>
+                  <span>Keep more of what you earn compared to regular members.</span>
                 </div>
               </div>
               <div className="benefit-card" style={{ flex: '1', minWidth: '150px', maxWidth: '180px' }}>
                 <span className="benefit-icon">⭐</span>
                 <div className="benefit-text">
                   <strong>Exclusive badge</strong>
-                  <span style={{ marginTop: '8px', display: 'block' }}>Get recommended more to guys looking for reviewers.</span>
+                  <span>Get recommended more to guys looking for reviewers.</span>
                 </div>
               </div>
               <div className="benefit-card" style={{ flex: '1', minWidth: '150px', maxWidth: '180px' }}>
@@ -169,7 +169,7 @@ export default function HomePage() {
                   <span className="benefit-icon">🚀</span>
                   <div className="benefit-text">
                     <strong>Founder access</strong>
-                    <span style={{ marginTop: '8px', display: 'block' }}>Direct line to me for support and feedback.</span>
+                    <span>Direct line to me for support and feedback.</span>
                   </div>
                 </a>
               </div>

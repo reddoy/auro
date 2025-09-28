@@ -355,22 +355,22 @@ export default function ReviewerRequestScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 120, paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 120, paddingHorizontal: 0 }} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <RNView style={styles.avatarWrap}>
-            <Avatar uri={avatarUri} name={reviewee?.displayName || 'User'} size={84} />
+            <Avatar uri={avatarUri} name={reviewee?.displayName || 'User'} size={96} />
           </RNView>
           <Text style={styles.name}>{reviewee?.displayName || 'User'}</Text>
-          <RNView style={{ marginTop: 6 }}>
+          <RNView style={{ marginTop: 12 }}>
             <StatusBadge status={request.status as any} />
           </RNView>
-          <RNView style={{ marginTop: 6, alignItems: 'center' }}>
+          <RNView style={{ marginTop: 16, alignItems: 'center', paddingHorizontal: 20 }}>
             {request.status === 'in_progress' ? (
-              <Text style={{ color: Colors.brand.textSecondary, fontSize: 12, textAlign: 'center' }}>
+              <Text style={{ color: Colors.brand.textSecondary, fontSize: 14, textAlign: 'center', lineHeight: 20, fontWeight: '500' }}>
                 You have 30 days to complete this review. After 30 days, the requester is refunded.
               </Text>
             ) : (request.status === 'pending' || request.status === 'accepted') ? (
-              <Text style={{ color: Colors.brand.textSecondary, fontSize: 12, textAlign: 'center' }}>
+              <Text style={{ color: Colors.brand.textSecondary, fontSize: 14, textAlign: 'center', lineHeight: 20, fontWeight: '500' }}>
                 Waiting for the requester to finish payment. They have 30 days to finish payment.
               </Text>
             ) : null}
@@ -391,20 +391,34 @@ export default function ReviewerRequestScreen() {
         {(amountCents || netAmountCents) && (
           <View style={styles.section}>
             <Text style={styles.label}>Earnings</Text>
-            {typeof amountCents === 'number' && (
-              <Text style={styles.value}>Price: ${(amountCents / 100).toFixed(2)}</Text>
-            )}
-            {typeof auroFeeCents === 'number' && (
-              <Text style={styles.value}>Auro fee{typeof auroFeeBps === 'number' ? ` (${(auroFeeBps/100).toFixed(2)}%)` : ''}: -${(auroFeeCents / 100).toFixed(2)}</Text>
-            )}
-            {typeof stripeFeeCents === 'number' && (
-              <Text style={styles.value}>Stripe fee: -${(stripeFeeCents / 100).toFixed(2)}</Text>
-            )}
-            {typeof netAmountCents === 'number' && (
-              <Text style={[styles.value, { fontWeight: '900' }]}>You receive (net): ${(netAmountCents / 100).toFixed(2)}</Text>
-            )}
+            <RNView style={{ gap: 8 }}>
+              {typeof amountCents === 'number' && (
+                <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={[styles.value, { color: Colors.brand.textSecondary }]}>Price</Text>
+                  <Text style={[styles.value, { fontWeight: '600' }]}>${(amountCents / 100).toFixed(2)}</Text>
+                </RNView>
+              )}
+              {typeof auroFeeCents === 'number' && (
+                <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={[styles.value, { color: Colors.brand.textSecondary }]}>Auro fee{typeof auroFeeBps === 'number' ? ` (${(auroFeeBps/100).toFixed(2)}%)` : ''}</Text>
+                  <Text style={[styles.value, { color: Colors.brand.status.rejected, fontWeight: '600' }]}>-${(auroFeeCents / 100).toFixed(2)}</Text>
+                </RNView>
+              )}
+              {typeof stripeFeeCents === 'number' && (
+                <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={[styles.value, { color: Colors.brand.textSecondary }]}>Stripe fee</Text>
+                  <Text style={[styles.value, { color: Colors.brand.status.rejected, fontWeight: '600' }]}>-${(stripeFeeCents / 100).toFixed(2)}</Text>
+                </RNView>
+              )}
+              {typeof netAmountCents === 'number' && (
+                <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: Colors.brand.border }}>
+                  <Text style={[styles.value, { fontWeight: '700', fontSize: 18 }]}>You receive</Text>
+                  <Text style={[styles.value, { fontWeight: '800', fontSize: 18, color: Colors.brand.status.completed }]}>${(netAmountCents / 100).toFixed(2)}</Text>
+                </RNView>
+              )}
+            </RNView>
             {!!expressUrl && (
-              <TouchableOpacity style={[styles.actionButton, styles.primaryButton, { marginTop: 10 }]} onPress={() => {
+              <TouchableOpacity style={[styles.actionButton, styles.primaryButton, { marginTop: 16 }]} onPress={() => {
                 try { Linking.openURL(expressUrl!); } catch {}
               }}>
                 <Text style={styles.actionButtonText}>Open Stripe Dashboard</Text>
@@ -416,7 +430,7 @@ export default function ReviewerRequestScreen() {
         {parsedNotes?.message && (
           <View style={styles.section}>
             <Text style={styles.label}>About Me</Text>
-            <Text style={styles.value}>{parsedNotes.message}</Text>
+            <Text style={[styles.value, { lineHeight: 26, fontStyle: 'italic' }]}>{parsedNotes.message}</Text>
           </View>
         )}
 
@@ -704,31 +718,31 @@ export default function ReviewerRequestScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
-  header: { alignItems: 'center', paddingVertical: 24, backgroundColor: Colors.brand.cardBackground, borderTopLeftRadius: 20, borderTopRightRadius: 20, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, marginBottom: 12 },
-  avatarWrap: { width: 84, height: 84, borderRadius: 42, overflow: 'hidden', backgroundColor: Colors.brand.avatarPlaceholder, marginBottom: 10 },
-  name: { fontSize: 22, fontWeight: '700', color: Colors.brand.textPrimary },
+  header: { alignItems: 'center', paddingVertical: 32, paddingHorizontal: 24, backgroundColor: Colors.brand.cardBackground, borderRadius: 24, marginBottom: 20, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 16, elevation: 8 },
+  avatarWrap: { width: 96, height: 96, borderRadius: 48, overflow: 'hidden', backgroundColor: Colors.brand.avatarPlaceholder, marginBottom: 16, borderWidth: 3, borderColor: Colors.brand.accentOrange, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+  name: { fontSize: 26, fontWeight: '800', color: Colors.brand.textPrimary, marginBottom: 8, letterSpacing: 0.5 },
   requestStatus: { fontSize: 14, color: Colors.brand.accentMagenta, marginTop: 4, fontWeight: '600' },
-  requestDate: { fontSize: 14, color: Colors.brand.textSecondary, marginTop: 4 },
-  section: { margin: 16, backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 16 },
+  requestDate: { fontSize: 14, color: Colors.brand.textSecondary, marginTop: 12, fontWeight: '500', opacity: 0.8 },
+  section: { marginHorizontal: 20, marginVertical: 12, backgroundColor: Colors.brand.cardBackground, borderRadius: 20, padding: 20, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4 },
   mediaSection: { alignItems: 'stretch' },
-  label: { fontSize: 18, color: Colors.brand.textPrimary, marginBottom: 8, fontWeight: '900', letterSpacing: 0.4 },
-  value: { fontSize: 15, color: Colors.brand.textPrimary, lineHeight: 22 },
+  label: { fontSize: 20, color: Colors.brand.textPrimary, marginBottom: 12, fontWeight: '800', letterSpacing: 0.3, textTransform: 'uppercase' },
+  value: { fontSize: 16, color: Colors.brand.textPrimary, lineHeight: 24, fontWeight: '500' },
   selfie: { width: '100%', aspectRatio: 1.2, borderRadius: 12, marginTop: 8, maxHeight: 280 },
   photosGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 8, justifyContent: 'center' },
   photo: { width: '31%', aspectRatio: 1, borderRadius: 8 },
-  actionsSection: { margin: 16, gap: 12 },
-  actionButton: { paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
+  actionsSection: { marginHorizontal: 20, marginVertical: 16, gap: 16 },
+  actionButton: { paddingVertical: 18, paddingHorizontal: 24, borderRadius: 16, alignItems: 'center', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
   acceptButton: { backgroundColor: Colors.brand.status.completed },
   primaryButton: { backgroundColor: Colors.brand.accentOrange },
   denyButton: { backgroundColor: 'transparent', borderWidth: 2, borderColor: Colors.brand.status.rejected },
-  actionButtonText: { fontSize: 16, fontWeight: '700', color: Colors.brand.textOnGradient },
+  actionButtonText: { fontSize: 17, fontWeight: '700', color: Colors.brand.textOnGradient, letterSpacing: 0.3 },
   denyButtonText: { color: Colors.brand.status.rejected },
   statusMessage: { fontSize: 16, fontWeight: '600', color: Colors.brand.textSecondary, textAlign: 'center', padding: 16 },
   emptyText: { color: Colors.brand.textSecondary },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   modalCard: { width: '90%', backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 16 },
   noteInput: { minHeight: 100, borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 12, padding: 12, color: Colors.brand.textPrimary, marginBottom: 12 },
-  sectionHint: { fontSize: 13, color: Colors.brand.textSecondary, marginTop: 2, fontWeight: '900' },
+  sectionHint: { fontSize: 14, color: Colors.brand.textSecondary, marginTop: 8, fontWeight: '500', lineHeight: 20, fontStyle: 'italic' },
 
   disabledButton: { backgroundColor: Colors.brand.border },
   overlayCard: { 
@@ -757,8 +771,8 @@ const styles = StyleSheet.create({
   },
   overlayTitle: { fontSize: 20, fontWeight: '900', color: Colors.brand.textPrimary, marginBottom: 8 },
   overlayText: { fontSize: 15, color: Colors.brand.textSecondary, lineHeight: 21 },
-  consentPill: { alignSelf: 'center', borderWidth: 1, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 24, backgroundColor: Colors.brand.cardBackground, marginTop: 8 },
-  consentPillText: { fontSize: 12, fontWeight: '700' },
+  consentPill: { alignSelf: 'center', borderWidth: 1.5, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: Colors.brand.cardBackground, marginTop: 12, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  consentPillText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.2 },
   
   // New styles for video review interface
   ratingButton: { 

@@ -25,7 +25,7 @@ type ZoomableImageProps = {
   height: number;
 };
 
-function ZoomableImage({ uri, width, height }: ZoomableImageProps) {
+export function ZoomableImage({ uri, width, height }: ZoomableImageProps) {
   const scale = useSharedValue(1);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);

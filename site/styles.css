@@ -5464,20 +5464,28 @@ footer {
 .founding-members .benefit-text {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
+  padding: 8px 0;
 }
 
 .founding-members .benefit-text strong {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  line-height: 1.3;
 }
 
 .founding-members .benefit-text span {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-2);
-  line-height: 1.5;
+  line-height: 1.6;
+  text-align: left;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  orphans: 2;
+  widows: 2;
 }
 
 /* Features CTA */
@@ -5621,13 +5629,30 @@ footer {
 
   /* Mobile founding members section */
   .founding-members .founding-grid {
-    gap: 20px !important;
+    gap: 24px !important;
     max-width: 100% !important;
+    padding: 0 16px;
   }
 
   .founding-members .benefit-card {
-    min-width: 140px !important;
-    max-width: 160px !important;
+    min-width: 160px !important;
+    max-width: 200px !important;
+    padding: 16px 12px;
+  }
+
+  .founding-members .benefit-text {
+    gap: 10px;
+    padding: 4px 0;
+  }
+
+  .founding-members .benefit-text strong {
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+
+  .founding-members .benefit-text span {
+    font-size: 14px;
+    line-height: 1.5;
   }
 }
 
