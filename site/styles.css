@@ -546,10 +546,10 @@ body {
   min-height: var(--nav-h);
   position: sticky;
   top: 0;
-  background: rgba(15, 15, 35, 0.95);
-  backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 1px solid var(--border);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  background: transparent;
+  backdrop-filter: none;
+  border-bottom: none;
+  box-shadow: none;
   z-index: 1000;
   transition: all 0.3s ease;
 }
@@ -575,8 +575,8 @@ body {
 }
 
 .nav.scrolled {
-  background: rgba(15, 15, 35, 0.98);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+  background: transparent;
+  box-shadow: none;
 }
 
 .brand {

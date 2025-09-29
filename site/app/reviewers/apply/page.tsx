@@ -245,10 +245,10 @@ export default function FoundingReviewerApplyPage() {
     ];
 
         return (
-      <div className="w-full max-w-4xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between relative">
+      <div className="w-full px-4 py-4 md:py-6">
+        <div className="flex items-center justify-between relative max-w-5xl mx-auto">
           {/* Progress line */}
-          <div className="absolute top-6 left-0 right-0 h-0.5 bg-gray-200 dark:bg-gray-700">
+          <div className="absolute top-5 md:top-6 left-0 right-0 h-0.5 bg-gray-200 dark:bg-gray-700">
             <div 
               className="h-full bg-gradient-to-r from-orange-500 to-purple-600 transition-all duration-500 ease-out"
               style={{ width: `${((step - 1) / (steps.length - 1)) * 100}%` }}
@@ -264,13 +264,13 @@ export default function FoundingReviewerApplyPage() {
             return (
               <div
                 key={stepItem.id}
-                className="flex flex-col items-center relative z-10"
+                className="flex flex-col items-center relative z-10 flex-1"
                 onClick={isClickable ? () => setStep(stepItem.id) : undefined}
                 style={{ cursor: isClickable ? 'pointer' : 'default' }}
               >
                 <div
                   className={`
-                    w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold
+                    w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center text-sm font-semibold
                     transition-all duration-300 ease-out
                     ${isCompleted 
                       ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-lg' 
@@ -281,14 +281,15 @@ export default function FoundingReviewerApplyPage() {
                   `}
                 >
                   {isCompleted ? (
-                    <Check className="w-5 h-5" />
+                    <Check className="w-3 h-3 md:w-5 md:h-5" />
                   ) : (
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-3 h-3 md:w-5 md:h-5" />
                   )}
                 </div>
                 <span className={`
-                  mt-2 text-xs font-medium text-center max-w-16
+                  mt-1 md:mt-2 text-xs font-medium text-center px-1
                   ${isCurrent ? 'text-orange-500' : isCompleted ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}
+                  ${stepItem.label === 'Bio & Focus' ? 'text-xs' : ''}
                 `}>
                   {stepItem.label}
                 </span>
@@ -307,11 +308,11 @@ export default function FoundingReviewerApplyPage() {
       </div>
       
       {step === 1 && (
-        <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className="flex-1 flex items-center justify-center px-4 py-8 min-h-[calc(100vh-120px)]">
           <div className="w-full max-w-4xl mx-auto">
-            <div className="text-center space-y-8">
-              {/* Header */}
-              <div className="space-y-4">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Left Content */}
+              <div className="text-center lg:text-left space-y-8">
                 <Badge className="bg-gradient-to-r from-orange-500/20 to-purple-600/20 border-orange-500/30 text-orange-400 px-4 py-2">
                   <Star className="w-4 h-4 mr-2" />
                   Exclusive Founding Program
@@ -324,79 +325,100 @@ export default function FoundingReviewerApplyPage() {
                   </span>
                 </h1>
                 
-                <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+                <p className="text-xl text-gray-300 max-w-2xl mx-auto lg:mx-0">
                   Join an exclusive group of 100 founding reviewers shaping the next big lifestyle feedback platform.
                 </p>
-              </div>
-                
-                {/* Reviewer Counter */}
-              <div className="flex justify-center">
-                  <ReviewerCounter 
-                    maxReviewers={100}
-                    className="apply-counter"
-                  />
+
+                {/* 3 Clean Bullets */}
+                <div className="space-y-4 max-w-lg mx-auto lg:mx-0">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-gradient-to-r from-orange-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Check className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white">85% Earnings Forever</h3>
+                      <p className="text-gray-300 text-sm">Keep more of what you earn compared to regular members</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-gradient-to-r from-orange-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Check className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white">Founding Member Badge</h3>
+                      <p className="text-gray-300 text-sm">Get priority visibility and exclusive founding status</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 bg-gradient-to-r from-orange-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Check className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white">Direct Founder Access</h3>
+                      <p className="text-gray-300 text-sm">Influence app features and get first access to opportunities</p>
+                    </div>
+                  </div>
                 </div>
                 
-              {/* Benefits Grid */}
-              <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-                <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all duration-300">
-                  <CardContent className="p-6 text-center space-y-4">
-                    <div className="w-16 h-16 bg-gradient-to-r from-green-500/20 to-green-600/20 rounded-full flex items-center justify-center mx-auto">
-                      <DollarSign className="w-8 h-8 text-green-400" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-white">85% Earnings</h3>
-                    <p className="text-gray-300">
-                      Keep 85% of every payment forever (vs 80% for regular members)
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all duration-300">
-                  <CardContent className="p-6 text-center space-y-4">
-                    <div className="w-16 h-16 bg-gradient-to-r from-orange-500/20 to-orange-600/20 rounded-full flex items-center justify-center mx-auto">
-                      <Star className="w-8 h-8 text-orange-400" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-white">Founding Badge</h3>
-                    <p className="text-gray-300">
-                      Get exclusive founding member badge and priority visibility
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all duration-300">
-                  <CardContent className="p-6 text-center space-y-4">
-                    <div className="w-16 h-16 bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-full flex items-center justify-center mx-auto">
-                      <Users className="w-8 h-8 text-purple-400" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-white">Early Access</h3>
-                    <p className="text-gray-300">
-                      Influence app features and get first access to new opportunities
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* CTA */}
-              <div className="space-y-4">
-                <Button 
-                  size="xl" 
-                  className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                {/* CTA */}
+                <div className="space-y-4">
+                  <Button 
+                    size="xl" 
+                    className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                     onClick={() => setStep(2)}
-                >
-                  Claim Your Founding Spot
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
-                <p className="text-sm text-gray-400">
-                  No commitment required • Limited to first 100 reviewers
-                </p>
+                  >
+                    Claim Your Founding Spot
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
+                  <p className="text-sm text-gray-400">
+                    No commitment required • Limited to first 100 reviewers
+                  </p>
+                </div>
               </div>
+
+              {/* Right Content - iPhone Mockup */}
+              <div className="relative flex justify-center lg:justify-end">
+                <div className="relative">
+                  <img 
+                    className="w-64 md:w-80 h-auto animate-bounce" 
+                    src="/iphone-mockup.png" 
+                    alt="iPhone app mockup showing review process" 
+                    loading="eager" 
+                  />
+                  
+                  {/* Floating Benefit Callouts */}
+                  <div className="absolute top-4 -right-4 bg-white/10 backdrop-blur-sm rounded-lg p-3 shadow-lg animate-pulse">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-green-400" />
+                      <span className="text-xs font-medium text-white">Set your rates</span>
+                    </div>
+                  </div>
+                  
+                  <div className="absolute top-1/2 -left-4 bg-white/10 backdrop-blur-sm rounded-lg p-3 shadow-lg animate-pulse" style={{ animationDelay: '0.5s' }}>
+                    <div className="flex items-center gap-2">
+                      <Star className="w-4 h-4 text-orange-400" />
+                      <span className="text-xs font-medium text-white">Founding perks</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Reviewer Counter - Centered below content */}
+            <div className="flex justify-center mt-12">
+              <ReviewerCounter 
+                maxReviewers={100}
+                className="apply-counter"
+              />
             </div>
           </div>
         </div>
       )}
 
       {step === 2 && (
-        <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className="flex-1 flex items-center justify-center px-4 py-8 min-h-[calc(100vh-120px)]">
           <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
             <CardHeader className="text-center space-y-2">
               <div className="w-16 h-16 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-full flex items-center justify-center mx-auto">
@@ -491,7 +513,7 @@ export default function FoundingReviewerApplyPage() {
       )}
 
       {step === 3 && (
-        <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className="flex-1 flex items-center justify-center px-4 py-8 min-h-[calc(100vh-120px)]">
           <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
             <CardHeader className="text-center space-y-2">
               <div className="w-16 h-16 bg-gradient-to-r from-green-500/20 to-green-600/20 rounded-full flex items-center justify-center mx-auto">
@@ -608,7 +630,7 @@ export default function FoundingReviewerApplyPage() {
       )}
 
       {step === 4 && (
-        <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className="flex-1 flex items-center justify-center px-4 py-8 min-h-[calc(100vh-120px)]">
           <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
             <CardHeader className="text-center space-y-2">
               <div className="w-16 h-16 bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-full flex items-center justify-center mx-auto">
@@ -724,7 +746,7 @@ export default function FoundingReviewerApplyPage() {
       )}
 
       {step === 5 && (
-        <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className="flex-1 flex items-center justify-center px-4 py-8 min-h-[calc(100vh-120px)]">
           <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
             <CardHeader className="text-center space-y-2">
               <div className="w-16 h-16 bg-gradient-to-r from-pink-500/20 to-pink-600/20 rounded-full flex items-center justify-center mx-auto">
@@ -853,7 +875,7 @@ export default function FoundingReviewerApplyPage() {
       )}
 
       {step === 6 && (
-        <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className="flex-1 flex items-center justify-center px-4 py-8 min-h-[calc(100vh-120px)]">
           <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
             <CardHeader className="text-center space-y-2">
               <div className="w-16 h-16 bg-gradient-to-r from-indigo-500/20 to-indigo-600/20 rounded-full flex items-center justify-center mx-auto">
@@ -919,10 +941,10 @@ export default function FoundingReviewerApplyPage() {
                         <p className="font-medium">Dating Coach:</p>
                         <p>"Dating coach who's helped 200+ guys improve their profiles. I specialize in photos, bios, and conversation starters that get matches."</p>
                       </div>
-                    </div>
-                  </div>
-                </div>
               </div>
+            </div>
+            </div>
+          </div>
 
               {/* Actions */}
               <div className="flex gap-3">
@@ -949,7 +971,7 @@ export default function FoundingReviewerApplyPage() {
       )}
 
       {step === 7 && (
-        <div className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className="flex-1 flex items-center justify-center px-4 py-8 min-h-[calc(100vh-120px)]">
           <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20 text-center">
             <CardContent className="p-8 space-y-6">
               <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto">
@@ -978,8 +1000,8 @@ export default function FoundingReviewerApplyPage() {
                     <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                     <span>Start earning with your founding benefits</span>
                   </div>
-                </div>
-              </div>
+            </div>
+          </div>
 
               <div className="space-y-4">
                 <Button 
