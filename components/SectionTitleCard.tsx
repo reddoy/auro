@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
   },
   activeCard: {
     borderColor: Colors.brand.accentOrange,
-    backgroundColor: Colors.brand.accentOrange + '15', // 15% opacity for better visibility
+    // Remove background color change to keep consistent background
   },
   title: {
     fontSize: 20,
@@ -47,15 +47,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   activeTitle: {
-    color: Colors.brand.accentOrange,
+    color: Colors.brand.textPrimary, // Keep white text even when active
   },
   subtitle: {
     fontSize: 16,
-    color: Colors.brand.textSecondary,
+    color: Colors.brand.textPrimary, // Use white text instead of secondary gray
     lineHeight: 24,
     fontWeight: '500',
   },
   activeSubtitle: {
-    color: Colors.brand.accentOrange + 'CC', // 80% opacity
+    color: Colors.brand.textPrimary, // Keep white text even when active
   },
 });

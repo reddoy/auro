@@ -201,6 +201,13 @@ export default function ProfileScreen() {
               </View>
             </View>
 
+            {profile?.bio && (
+              <View style={styles.bioSection}>
+                <Text style={styles.sectionTitle}>Bio</Text>
+                <Text style={styles.bioText}>{profile.bio}</Text>
+              </View>
+            )}
+
             {!!profile?.links && (
               <View style={styles.bioSection}>
                 <Text style={styles.sectionTitle}>Socials</Text>
@@ -323,13 +330,6 @@ export default function ProfileScreen() {
 
             {/* Removed separate payouts banner; consolidated into Reviewer Settings card above */}
 
-            {profile?.bio && (
-              <View style={styles.bioSection}>
-                <Text style={styles.sectionTitle}>Bio</Text>
-                <Text style={styles.bioText}>{profile.bio}</Text>
-              </View>
-            )}
-
             {!!profile?.skills?.length && (
               <View style={styles.bioSection}>
                 <Text style={styles.sectionTitle}>Skills</Text>
@@ -409,9 +409,9 @@ const styles = StyleSheet.create({
   statCard: { alignItems: 'center', flex: 1, backgroundColor: 'transparent' },
   statNumber: { fontSize: 26, fontWeight: 'bold', color: Colors.brand.accentMagenta, marginBottom: 6 },
   statLabel: { fontSize: 13, color: Colors.brand.textSecondary, textAlign: 'center', fontWeight: '500' },
-  bioSection: { margin: 24, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, padding: 28, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 12, borderWidth: 1, borderColor: 'rgba(255, 111, 0, 0.15)', overflow: 'hidden' },
+  bioSection: { margin: 24, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, padding: 28, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 12, borderWidth: 2, borderColor: Colors.brand.accentOrange, overflow: 'hidden' },
   bioText: { fontSize: 18, color: Colors.brand.textSecondary, lineHeight: 26 },
-  actionsSection: { margin: 24, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 8, borderWidth: 1, borderColor: 'rgba(255, 111, 0, 0.1)', overflow: 'hidden' },
+  actionsSection: { margin: 24, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 8, borderWidth: 2, borderColor: Colors.brand.accentOrange, overflow: 'hidden' },
   actionItem: { flexDirection: 'row', alignItems: 'center', padding: 24, borderBottomWidth: 1, borderBottomColor: Colors.brand.divider, marginHorizontal: 4 },
   actionIconContainer: { width: 44, height: 44, borderRadius: 22, marginRight: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 4 },
   actionIconGradient: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 22 },
@@ -419,8 +419,8 @@ const styles = StyleSheet.create({
   actionText: { flex: 1, fontSize: 18, color: Colors.brand.textPrimary, fontWeight: '500' },
   actionArrow: { fontSize: 22, color: Colors.brand.textLight },
   dangerSection: { margin: 24, marginBottom: 120 },
-  logoutButtonDark: { backgroundColor: Colors.brand.cardBackground, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 6, overflow: 'hidden', position: 'relative' },
-  logoutButtonBorder: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 26, borderWidth: 2, borderColor: 'rgba(255, 111, 0, 0.3)' },
+  logoutButtonDark: { backgroundColor: Colors.brand.cardBackground, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 6, overflow: 'hidden', position: 'relative', borderWidth: 2, borderColor: Colors.brand.accentOrange },
+  logoutButtonBorder: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 26, borderWidth: 2, borderColor: Colors.brand.accentOrange },
   logoutText: { color: Colors.brand.textPrimary, fontSize: 18, fontWeight: 'bold', zIndex: 1 },
   // New enhanced component styles
   statusChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: Colors.brand.cardBackgroundLight, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },

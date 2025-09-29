@@ -18,15 +18,14 @@ export default function ProfileSettingsScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
 
   // Local form state
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
-  const [skills, setSkills] = useState('');
   const [instagram, setInstagram] = useState('');
   const [tiktok, setTiktok] = useState('');
   const [linktree, setLinktree] = useState('');
   const [isReviewer, setIsReviewer] = useState(false);
-  const [hourlyRate, setHourlyRate] = useState<string>('');
   
   
   const [emailNotif, setEmailNotif] = useState(true);
@@ -36,13 +35,12 @@ export default function ProfileSettingsScreen() {
   const [hasMFA, setHasMFA] = useState(false);
   const [checkingMFA, setCheckingMFA] = useState(false);
 
-  const fullNameRef = useRef<any>(null);
+  const firstNameRef = useRef<any>(null);
+  const lastNameRef = useRef<any>(null);
   const usernameRef = useRef<any>(null);
-  const skillsRef = useRef<any>(null);
   const instagramRef = useRef<any>(null);
   const tiktokRef = useRef<any>(null);
   const linktreeRef = useRef<any>(null);
-  const hourlyRateRef = useRef<any>(null);
   
   // Normalize any user-entered social value to a handle-only string (no leading '@', no URL)
   const normalizeHandle = (input: string): string => {
@@ -72,15 +70,17 @@ export default function ProfileSettingsScreen() {
         const p = await getCurrentProfile();
         setProfile(p);
         if (p) {
-          setFullName(p.full_name || '');
+          // Split full name into first and last name
+          const fullName = p.full_name || '';
+          const nameParts = fullName.trim().split(' ');
+          setFirstName(nameParts[0] || '');
+          setLastName(nameParts.slice(1).join(' ') || '');
           setUsername(p.username || '');
           setBio(p.bio || '');
-          setSkills((p.skills || []).join(', '));
           setInstagram(normalizeHandle((p.links as any)?.instagram || ''));
           setTiktok(normalizeHandle((p.links as any)?.tiktok || ''));
           setLinktree(normalizeHandle((p.links as any)?.linktree || ''));
           setIsReviewer(!!p.is_reviewer);
-          setHourlyRate(p.hourly_rate != null ? String(p.hourly_rate) : '');
           // Resolve avatar to a displayable URL if it's a storage path
           let initialAvatar: string | null = p.avatar_url || null;
           if (initialAvatar && !/^https?:\/\//i.test(initialAvatar)) {
@@ -136,7 +136,6 @@ export default function ProfileSettingsScreen() {
     }
   };
 
-  const parsedSkills = useMemo(() => skills.split(',').map(s => s.trim()).filter(Boolean), [skills]);
 
   const handleSave = async () => {
     try {
@@ -147,18 +146,13 @@ export default function ProfileSettingsScreen() {
         linktree: normalizeHandle(linktree) || null,
       } as any;
       const payload: Partial<Profile> = {
-        full_name: fullName || null,
+        full_name: `${firstName} ${lastName}`.trim() || null,
         username: username || null,
         bio: bio || null,
-        skills: parsedSkills.length ? parsedSkills : [],
         links,
         is_reviewer: isReviewer,
-        hourly_rate: hourlyRate ? Number(hourlyRate) : null,
         preferences: { email_notifications: emailNotif, push_notifications: pushNotif },
         avatar_url: avatarUrl || null,
-        // Store as JSON array (up to 5 entries)
-        // Schema: profiles.packages JSONB (optional). RLS should allow own row update.
-        
       };
       const updated = await updateProfile(payload);
       setProfile(updated);
@@ -198,19 +192,25 @@ export default function ProfileSettingsScreen() {
           contentInsetAdjustmentBehavior="always"
         >
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Avatar</Text>
-        <View style={{ alignItems: 'center', marginTop: 8 }}>
-          <AvatarUploader uri={avatarUrl || undefined} onUploaded={handleUploaded} onRemoved={handleRemoved} size={110} accessibilityLabel="Change profile photo" previousPathOrUrl={avatarUrl || undefined as any} />
+        <Text style={styles.sectionTitle}>Profile Picture</Text>
+        <View style={{ alignItems: 'center', marginTop: 16 }}>
+          <AvatarUploader uri={avatarUrl || undefined} onUploaded={handleUploaded} onRemoved={handleRemoved} size={120} accessibilityLabel="Change profile photo" previousPathOrUrl={avatarUrl || undefined as any} />
           <Text style={styles.hint}>Tap to change, long-press to remove</Text>
         </View>
       </View>
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Public Profile</Text>
-        <LabeledInput label="Full Name" value={fullName} onChangeText={setFullName} placeholder="Your name" inputRef={fullNameRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => usernameRef.current?.focus()} />
-        <LabeledInput label="Username" value={username} onChangeText={setUsername} placeholder="username" autoCapitalize="none" inputRef={usernameRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => skillsRef.current?.focus()} />
+        <View style={styles.nameRow}>
+          <View style={styles.nameField}>
+            <LabeledInput label="First Name" value={firstName} onChangeText={setFirstName} placeholder="First name" inputRef={firstNameRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => lastNameRef.current?.focus()} />
+          </View>
+          <View style={styles.nameField}>
+            <LabeledInput label="Last Name" value={lastName} onChangeText={setLastName} placeholder="Last name" inputRef={lastNameRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => usernameRef.current?.focus()} />
+          </View>
+        </View>
+        <LabeledInput label="Username" value={username} onChangeText={setUsername} placeholder="username" autoCapitalize="none" inputRef={usernameRef} returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => instagramRef.current?.focus()} />
         <LabeledInput label="Bio" value={bio} onChangeText={setBio} placeholder="Tell us about yourself" multiline numberOfLines={4} />
-        <LabeledInput label="Skills" value={skills} onChangeText={setSkills} placeholder="e.g. fashion, design, photography" inputRef={skillsRef} returnKeyType="done" blurOnSubmit />
       </View>
 
       <View style={styles.card}>
@@ -225,9 +225,12 @@ export default function ProfileSettingsScreen() {
         <Text style={styles.sectionTitle}>Reviewer</Text>
         <LabeledSwitch label="Become a reviewer" value={isReviewer} onValueChange={setIsReviewer} />
         {isReviewer && (
-          <>
-            <LabeledInput label="Price per Review (optional)" value={hourlyRate} onChangeText={setHourlyRate} keyboardType="numeric" placeholder="e.g. 25" inputRef={hourlyRateRef} returnKeyType="done" blurOnSubmit />
-          </>
+          <TouchableOpacity 
+            style={styles.reviewerSettingsButton} 
+            onPress={() => router.push('/profile/reviewer-settings')}
+          >
+            <Text style={styles.reviewerSettingsButtonText}>Reviewer Settings</Text>
+          </TouchableOpacity>
         )}
       </View>
 
@@ -313,16 +316,99 @@ const styles = StyleSheet.create({
   content: { flex: 1 },
   scrollView: { flex: 1 },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.brand.background },
-  card: { margin: 16, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, padding: 24, borderWidth: 1, borderColor: 'rgba(255, 111, 0, 0.1)', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 8 },
-  sectionTitle: { fontSize: 24, fontWeight: 'bold', fontFamily: 'Poppins_700Bold', color: Colors.brand.textPrimary, marginBottom: 12 },
-  label: { fontSize: 16, color: Colors.brand.textSecondary, marginBottom: 6 },
-  input: { borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 12, color: Colors.brand.textPrimary, fontSize: 16 },
-  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
-  hint: { marginTop: 8, color: Colors.brand.textSecondary, fontSize: 14 },
-  saveBar: { padding: 16 },
-  saveButton: { backgroundColor: Colors.brand.accentMagenta, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
-  saveButtonDisabled: { opacity: 0.6 },
-  saveButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  card: { 
+    margin: 20, 
+    backgroundColor: Colors.brand.cardBackground, 
+    borderRadius: 20, 
+    padding: 24, 
+    borderWidth: 0, 
+    shadowColor: Colors.brand.shadow, 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.12, 
+    shadowRadius: 20, 
+    elevation: 8 
+  },
+  sectionTitle: { 
+    fontSize: 22, 
+    fontWeight: '700', 
+    fontFamily: 'Poppins_700Bold', 
+    color: Colors.brand.textPrimary, 
+    marginBottom: 20 
+  },
+  label: { 
+    fontSize: 15, 
+    color: Colors.brand.textSecondary, 
+    marginBottom: 8, 
+    fontWeight: '500' 
+  },
+  input: { 
+    borderWidth: 1.5, 
+    borderColor: Colors.brand.border, 
+    borderRadius: 12, 
+    paddingHorizontal: 16, 
+    paddingVertical: 14, 
+    color: Colors.brand.textPrimary, 
+    fontSize: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)'
+  },
+  switchRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingVertical: 12 
+  },
+  hint: { 
+    marginTop: 12, 
+    color: Colors.brand.textSecondary, 
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18
+  },
+  saveBar: { 
+    padding: 20, 
+    paddingBottom: 40 
+  },
+  saveButton: { 
+    backgroundColor: Colors.brand.accentMagenta, 
+    paddingVertical: 16, 
+    borderRadius: 16, 
+    alignItems: 'center',
+    shadowColor: Colors.brand.accentMagenta,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6
+  },
+  saveButtonDisabled: { 
+    opacity: 0.6 
+  },
+  saveButtonText: { 
+    color: '#fff', 
+    fontSize: 18, 
+    fontWeight: '700' 
+  },
+  nameRow: {
+    flexDirection: 'row',
+    gap: 12
+  },
+  nameField: {
+    flex: 1
+  },
+  reviewerSettingsButton: {
+    backgroundColor: 'rgba(255, 111, 0, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 111, 0, 0.3)',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginTop: 12,
+    alignItems: 'center'
+  },
+  reviewerSettingsButtonText: {
+    color: Colors.brand.accentMagenta,
+    fontSize: 16,
+    fontWeight: '600'
+  },
   securityRow: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 

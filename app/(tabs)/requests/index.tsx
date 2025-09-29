@@ -309,16 +309,16 @@ export default function RequestsScreen() {
             <View style={styles.headerPlain}>
               <View style={styles.headerContentPlain}>
                 <Text style={styles.titlePlain}>My Reviews</Text>
-                <Text style={styles.subtitlePlain}>Track your review requests and feedback</Text>
+                <Text style={styles.subtitlePlain} numberOfLines={1}>Track your review requests and feedback</Text>
 
                 <RNView style={[styles.countersRowPlain, { justifyContent: 'center' }]}>
-                  <TouchableOpacity onPress={() => setFilter('active')} style={[styles.counterPillPlain, filter === 'active' && { borderColor: 'rgba(255,255,255,0.4)', backgroundColor: Colors.brand.cardBackgroundLight }]}>
+                  <TouchableOpacity onPress={() => setFilter('active')} style={[styles.counterPillPlain, filter === 'active' ? styles.counterPillActive : styles.counterPillInactive]}>
                     <Text style={styles.counterTextPlain}>Active {requests.filter(r => (r.status === 'pending' || r.status === 'accepted' || r.status === 'paid' || r.status === 'in_progress') && !r.archived_at).length}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setFilter('completed')} style={[styles.counterPillPlain, filter === 'completed' && { borderColor: 'rgba(255,255,255,0.4)', backgroundColor: Colors.brand.cardBackgroundLight }]}>
+                  <TouchableOpacity onPress={() => setFilter('completed')} style={[styles.counterPillPlain, filter === 'completed' ? styles.counterPillActive : styles.counterPillInactive]}>
                     <Text style={styles.counterTextPlain}>Completed {requests.filter(r => r.status === 'completed' && !r.archived_at).length}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setFilter('archived')} style={[styles.counterPillPlain, filter === 'archived' && { borderColor: 'rgba(255,255,255,0.4)', backgroundColor: Colors.brand.cardBackgroundLight }]}>
+                  <TouchableOpacity onPress={() => setFilter('archived')} style={[styles.counterPillPlain, filter === 'archived' ? styles.counterPillActive : styles.counterPillInactive]}>
                     <Text style={styles.counterTextPlain}>Archived {requests.filter(r => !!r.archived_at).length}</Text>
                   </TouchableOpacity>
                 </RNView>
@@ -431,6 +431,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     opacity: 0.9,
     fontWeight: '500',
+    flexWrap: 'nowrap',
+    numberOfLines: 1,
   },
   segmentedRow: {
     flexDirection: 'row',
@@ -483,11 +485,15 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 10,
     paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 111, 0, 0.15)',
+    borderWidth: 2,
   },
   counterPillActive: {
-    backgroundColor: 'rgba(0,0,0,0.15)',
+    borderColor: Colors.brand.accentOrange,
+    backgroundColor: Colors.brand.cardBackgroundLight,
+  },
+  counterPillInactive: {
+    borderColor: Colors.brand.textSecondary,
+    backgroundColor: Colors.brand.cardBackground,
   },
   counterPillActivePlain: {
     backgroundColor: Colors.brand.cardBackground,
@@ -578,8 +584,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 20,
     elevation: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 111, 0, 0.15)',
+    borderWidth: 2,
+    borderColor: Colors.brand.accentOrange,
     overflow: 'hidden',
     minHeight: 100,
   },
