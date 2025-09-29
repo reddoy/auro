@@ -308,110 +308,94 @@ export default function FoundingReviewerApplyPage() {
       </div>
       
       {step === 1 && (
-        <div className="flex-1 flex items-center justify-center px-4 py-8 min-h-[calc(100vh-120px)]">
-          <div className="w-full max-w-4xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              {/* Left Content */}
-              <div className="text-center lg:text-left space-y-8">
-                <Badge className="bg-gradient-to-r from-orange-500/20 to-purple-600/20 border-orange-500/30 text-orange-400 px-4 py-2">
-                  <Star className="w-4 h-4 mr-2" />
-                  Exclusive Founding Program
-                </Badge>
+        <div className="flex-1 flex items-center justify-center px-4 py-6 min-h-[calc(100vh-120px)]">
+          <div className="w-full max-w-4xl mx-auto text-center space-y-8">
+            {/* Badge */}
+            <Badge className="bg-gradient-to-r from-orange-500/20 to-purple-600/20 border-orange-500/30 text-orange-400 px-4 py-2">
+              <Star className="w-4 h-4 mr-2" />
+              Exclusive Founding Program
+            </Badge>
+            
+            {/* Headline */}
+            <h1 className="text-4xl md:text-6xl font-bold leading-tight">
+              <span className="block text-white">Become a</span>
+              <span className="block bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
+                Founding Reviewer
+              </span>
+            </h1>
+            
+            {/* iPhone Mockup - Prominent */}
+            <div className="relative flex justify-center">
+              <div className="relative">
+                <img 
+                  className="w-64 md:w-80 h-auto animate-bounce" 
+                  src="/iphone-mockup.png" 
+                  alt="iPhone app mockup showing review process" 
+                  loading="eager" 
+                />
                 
-                <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-                  <span className="block text-white">Become a</span>
-                  <span className="block bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
-                    Founding Reviewer
-                  </span>
-                </h1>
-                
-                <p className="text-xl text-gray-300 max-w-2xl mx-auto lg:mx-0">
-                  Join an exclusive group of 100 founding reviewers shaping the next big lifestyle feedback platform.
-                </p>
-
-                {/* 3 Clean Bullets */}
-                <div className="space-y-4 max-w-lg mx-auto lg:mx-0">
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-gradient-to-r from-orange-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-white">85% Earnings Forever</h3>
-                      <p className="text-gray-300 text-sm">Keep more of what you earn compared to regular members</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-gradient-to-r from-orange-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-white">Founding Member Badge</h3>
-                      <p className="text-gray-300 text-sm">Get priority visibility and exclusive founding status</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-gradient-to-r from-orange-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-white">Direct Founder Access</h3>
-                      <p className="text-gray-300 text-sm">Influence app features and get first access to opportunities</p>
-                    </div>
+                {/* Floating Benefit Callouts */}
+                <div className="absolute top-4 -right-4 bg-white/10 backdrop-blur-sm rounded-lg p-3 shadow-lg animate-pulse">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-green-400" />
+                    <span className="text-xs font-medium text-white">85% earnings</span>
                   </div>
                 </div>
                 
-                {/* CTA */}
-                <div className="space-y-4">
-                  <Button 
-                    size="xl" 
-                    className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
-                    onClick={() => setStep(2)}
-                  >
-                    Claim Your Founding Spot
-                    <ArrowRight className="ml-2 w-5 h-5" />
-                  </Button>
-                  <p className="text-sm text-gray-400">
-                    No commitment required • Limited to first 100 reviewers
-                  </p>
-                </div>
-              </div>
-
-              {/* Right Content - iPhone Mockup */}
-              <div className="relative flex justify-center lg:justify-end">
-                <div className="relative">
-                  <img 
-                    className="w-64 md:w-80 h-auto animate-bounce" 
-                    src="/iphone-mockup.png" 
-                    alt="iPhone app mockup showing review process" 
-                    loading="eager" 
-                  />
-                  
-                  {/* Floating Benefit Callouts */}
-                  <div className="absolute top-4 -right-4 bg-white/10 backdrop-blur-sm rounded-lg p-3 shadow-lg animate-pulse">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-green-400" />
-                      <span className="text-xs font-medium text-white">Set your rates</span>
-                    </div>
-                  </div>
-                  
-                  <div className="absolute top-1/2 -left-4 bg-white/10 backdrop-blur-sm rounded-lg p-3 shadow-lg animate-pulse" style={{ animationDelay: '0.5s' }}>
-                    <div className="flex items-center gap-2">
-                      <Star className="w-4 h-4 text-orange-400" />
-                      <span className="text-xs font-medium text-white">Founding perks</span>
-                    </div>
+                <div className="absolute top-1/2 -left-4 bg-white/10 backdrop-blur-sm rounded-lg p-3 shadow-lg animate-pulse" style={{ animationDelay: '0.5s' }}>
+                  <div className="flex items-center gap-2">
+                    <Star className="w-4 h-4 text-orange-400" />
+                    <span className="text-xs font-medium text-white">Founding perks</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Reviewer Counter - Centered below content */}
-            <div className="flex justify-center mt-12">
+            {/* 3 Simple Icons */}
+            <div className="flex justify-center gap-8 md:gap-12">
+              <div className="flex flex-col items-center space-y-2">
+                <div className="w-12 h-12 bg-gradient-to-r from-green-500/20 to-green-600/20 rounded-full flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-green-400" />
+                </div>
+                <span className="text-sm font-medium text-white">85% Earnings</span>
+              </div>
+              
+              <div className="flex flex-col items-center space-y-2">
+                <div className="w-12 h-12 bg-gradient-to-r from-orange-500/20 to-orange-600/20 rounded-full flex items-center justify-center">
+                  <Star className="w-6 h-6 text-orange-400" />
+                </div>
+                <span className="text-sm font-medium text-white">Founding Badge</span>
+              </div>
+              
+              <div className="flex flex-col items-center space-y-2">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-full flex items-center justify-center">
+                  <Users className="w-6 h-6 text-purple-400" />
+                </div>
+                <span className="text-sm font-medium text-white">Early Access</span>
+              </div>
+            </div>
+
+            {/* Reviewer Counter */}
+            <div className="flex justify-center">
               <ReviewerCounter 
                 maxReviewers={100}
                 className="apply-counter"
               />
+            </div>
+
+            {/* CTA */}
+            <div className="space-y-3">
+              <Button 
+                size="xl" 
+                className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                onClick={() => setStep(2)}
+              >
+                Claim Your Founding Spot
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+              <p className="text-sm text-gray-400">
+                No commitment • Limited to 100 reviewers
+              </p>
             </div>
           </div>
         </div>

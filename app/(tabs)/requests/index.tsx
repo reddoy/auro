@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 24,
     paddingHorizontal: 0,
-    backgroundColor: Colors.brand.background,
+    backgroundColor: 'transparent',
   },
   headerContent: {
     paddingHorizontal: 20,
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
   headerContentPlain: {
     paddingHorizontal: 20,
     alignItems: 'center',
-    backgroundColor: Colors.brand.background,
+    backgroundColor: 'transparent',
     width: '100%',
   },
   title: {
