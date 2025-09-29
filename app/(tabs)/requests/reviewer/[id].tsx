@@ -24,6 +24,7 @@ import Spinner from '@/components/Spinner';
 import VideoReviewSection from '@/components/VideoReviewSection';
 import PaginationDots from '@/components/PaginationDots';
 import SectionSlideCard from '@/components/SectionSlideCard';
+import ReviewStatusCard from '@/components/ReviewStatusCard';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // Removed unused URL helper functions since we're not showing social links in this screen
@@ -356,76 +357,28 @@ export default function ReviewerRequestScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 20, paddingBottom: insets.bottom + 120, paddingHorizontal: 0 }} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <RNView style={styles.avatarWrap}>
-            <Avatar uri={avatarUri} name={reviewee?.displayName || 'User'} size={96} />
-          </RNView>
-          <Text style={styles.name}>{reviewee?.displayName || 'User'}</Text>
-          <RNView style={{ marginTop: 12 }}>
-            <StatusBadge status={request.status as any} />
-          </RNView>
-          <RNView style={{ marginTop: 16, alignItems: 'center', paddingHorizontal: 20 }}>
-            {request.status === 'in_progress' ? (
-              <Text style={{ color: Colors.brand.textSecondary, fontSize: 14, textAlign: 'center', lineHeight: 20, fontWeight: '500' }}>
-                You have 30 days to complete this review. After 30 days, the requester is refunded.
-              </Text>
-            ) : (request.status === 'pending' || request.status === 'accepted') ? (
-              <Text style={{ color: Colors.brand.textSecondary, fontSize: 14, textAlign: 'center', lineHeight: 20, fontWeight: '500' }}>
-                Waiting for the requester to finish payment. They have 30 days to finish payment.
-              </Text>
-            ) : null}
-          </RNView>
-        {hasConsent ? (
-          <RNView style={[styles.consentPill, { borderColor: shareConsent ? Colors.brand.status.completed : Colors.brand.status.rejected }]}>
-            <Text style={[styles.consentPillText, { color: shareConsent ? Colors.brand.status.completed : Colors.brand.status.rejected }]}>
-              {`Consent to share on socials? ${shareConsent ? 'Yes' : 'No'}`}
-            </Text>
-          </RNView>
-        ) : null}
-          <Text style={styles.requestDate}>
-            Requested on {new Date(request.createdAt).toLocaleDateString()}
-          </Text>
-        </View>
-
-        {/* Earnings summary for reviewer */}
-        {(amountCents || netAmountCents) && (
-          <View style={styles.section}>
-            <Text style={styles.label}>Earnings</Text>
-            <RNView style={{ gap: 8 }}>
-              {typeof amountCents === 'number' && (
-                <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={[styles.value, { color: Colors.brand.textSecondary }]}>Price</Text>
-                  <Text style={[styles.value, { fontWeight: '600' }]}>${(amountCents / 100).toFixed(2)}</Text>
-                </RNView>
-              )}
-              {typeof auroFeeCents === 'number' && (
-                <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={[styles.value, { color: Colors.brand.textSecondary }]}>Auro fee{typeof auroFeeBps === 'number' ? ` (${(auroFeeBps/100).toFixed(2)}%)` : ''}</Text>
-                  <Text style={[styles.value, { color: Colors.brand.status.rejected, fontWeight: '600' }]}>-${(auroFeeCents / 100).toFixed(2)}</Text>
-                </RNView>
-              )}
-              {typeof stripeFeeCents === 'number' && (
-                <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={[styles.value, { color: Colors.brand.textSecondary }]}>Stripe processing fee</Text>
-                  <Text style={[styles.value, { color: Colors.brand.status.rejected, fontWeight: '600' }]}>-${(stripeFeeCents / 100).toFixed(2)}</Text>
-                </RNView>
-              )}
-              {typeof netAmountCents === 'number' && (
-                <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: Colors.brand.border }}>
-                  <Text style={[styles.value, { fontWeight: '700', fontSize: 18 }]}>You receive</Text>
-                  <Text style={[styles.value, { fontWeight: '800', fontSize: 18, color: Colors.brand.status.completed }]}>${(netAmountCents / 100).toFixed(2)}</Text>
-                </RNView>
-              )}
-            </RNView>
-            {!!expressUrl && (
-              <TouchableOpacity style={[styles.actionButton, styles.primaryButton, { marginTop: 16 }]} onPress={() => {
-                try { Linking.openURL(expressUrl!); } catch {}
-              }}>
-                <Text style={styles.actionButtonText}>Open Stripe Dashboard</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
+        {/* Modern Review Status Card */}
+        <ReviewStatusCard
+          displayName={reviewee?.displayName || 'User'}
+          avatarUri={avatarUri}
+          status={request.status}
+          createdAt={request.createdAt}
+          hasConsent={hasConsent}
+          shareConsent={shareConsent}
+          amountCents={amountCents}
+          auroFeeCents={auroFeeCents}
+          stripeFeeCents={stripeFeeCents}
+          netAmountCents={netAmountCents}
+          auroFeeBps={auroFeeBps}
+          expressUrl={expressUrl}
+          statusMessage={
+            request.status === 'in_progress' 
+              ? 'You have 30 days to complete this review. After 30 days, the requester is refunded.'
+              : (request.status === 'pending' || request.status === 'accepted')
+              ? 'Waiting for the requester to finish payment. They have 30 days to finish payment.'
+              : undefined
+          }
+        />
 
         {parsedNotes?.message && (
           <View style={styles.section}>
@@ -717,11 +670,6 @@ export default function ReviewerRequestScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
-  header: { alignItems: 'center', paddingVertical: 32, paddingHorizontal: 24, backgroundColor: Colors.brand.cardBackground, borderRadius: 24, marginBottom: 20, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 16, elevation: 8 },
-  avatarWrap: { width: 96, height: 96, borderRadius: 48, overflow: 'hidden', backgroundColor: Colors.brand.avatarPlaceholder, marginBottom: 16, borderWidth: 3, borderColor: Colors.brand.accentOrange, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
-  name: { fontSize: 26, fontWeight: '800', color: Colors.brand.textPrimary, marginBottom: 8, letterSpacing: 0.5 },
-  requestStatus: { fontSize: 14, color: Colors.brand.accentMagenta, marginTop: 4, fontWeight: '600' },
-  requestDate: { fontSize: 14, color: Colors.brand.textSecondary, marginTop: 12, fontWeight: '500', opacity: 0.8 },
   section: { marginHorizontal: 20, marginVertical: 12, backgroundColor: Colors.brand.cardBackground, borderRadius: 20, padding: 20, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4 },
   mediaSection: { alignItems: 'stretch' },
   label: { fontSize: 20, color: Colors.brand.textPrimary, marginBottom: 12, fontWeight: '800', letterSpacing: 0.3 },
@@ -770,8 +718,6 @@ const styles = StyleSheet.create({
   },
   overlayTitle: { fontSize: 20, fontWeight: '900', color: Colors.brand.textPrimary, marginBottom: 8 },
   overlayText: { fontSize: 15, color: Colors.brand.textSecondary, lineHeight: 21 },
-  consentPill: { alignSelf: 'center', borderWidth: 1.5, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: Colors.brand.cardBackground, marginTop: 12, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
-  consentPillText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.2 },
   
   // New styles for video review interface
   ratingButton: { 
