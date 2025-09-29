@@ -1,4 +1,199 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  /* Mobile performance optimizations */
+  @media (max-width: 768px) {
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Reduce motion for users who prefer it */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+    
+    /* Optimize scrolling on mobile */
+    html {
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Prevent zoom on input focus */
+    input, textarea, select {
+      font-size: 16px;
+    }
+  }
+}
+
+@layer components {
+  /* Custom iPhone peeking effect for mobile */
+  .iphone-peek {
+    @apply relative;
+  }
+  
+  .iphone-peek::after {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent pointer-events-none;
+  }
+  
+  /* Enhanced floating animations */
+  .float-slow {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .float-fast {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  /* Gradient text effect */
+  .gradient-text {
+    @apply bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text text-transparent;
+  }
+  
+  /* Glass morphism effect */
+  .glass {
+    @apply bg-white/5 backdrop-blur-sm border border-white/10;
+  }
+  
+  /* Enhanced hover effects */
+  .hover-lift {
+    @apply transition-all duration-300 hover:scale-105 hover:shadow-xl;
+  }
+  
+  /* Mobile-specific stunning effects */
+  .mobile-hero-bg {
+    background: radial-gradient(ellipse at center, rgba(255, 111, 0, 0.3) 0%, rgba(255, 79, 51, 0.2) 25%, rgba(255, 45, 85, 0.1) 50%, transparent 70%);
+    animation: pulse-glow 4s ease-in-out infinite;
+  }
+  
+  .mobile-floating-orb {
+    position: absolute;
+    border-radius: 50%;
+    background: linear-gradient(45deg, rgba(255, 111, 0, 0.6), rgba(255, 45, 85, 0.4));
+    filter: blur(1px);
+    animation: float-orb 8s ease-in-out infinite;
+  }
+  
+  .mobile-iphone-container {
+    position: relative;
+    transform-style: preserve-3d;
+    animation: mobile-iphone-float 6s ease-in-out infinite;
+  }
+  
+  .mobile-iphone-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120%;
+    height: 120%;
+    background: radial-gradient(circle, rgba(255, 111, 0, 0.4) 0%, transparent 70%);
+    border-radius: 50px;
+    filter: blur(20px);
+    animation: mobile-glow-pulse 3s ease-in-out infinite;
+  }
+  
+  .mobile-text-reveal {
+    animation: mobile-text-slide-up 1s ease-out forwards;
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  
+  .mobile-card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .mobile-card-hover:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(255, 111, 0, 0.2);
+  }
+  
+  .mobile-gradient-border {
+    position: relative;
+    background: linear-gradient(45deg, rgba(255, 111, 0, 0.1), rgba(255, 45, 85, 0.1));
+    border: 1px solid transparent;
+    background-clip: padding-box;
+  }
+  
+  .mobile-gradient-border::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    margin: -1px;
+    border-radius: inherit;
+    background: linear-gradient(45deg, #ff6f00, #ff2d55);
+  }
+  
+  /* Mobile-specific performance classes */
+  .mobile-optimized {
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+  
+  .mobile-smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Mobile touch feedback */
+  .mobile-touch-feedback {
+    transition: transform 0.1s ease-out;
+  }
+  
+  .mobile-touch-feedback:active {
+    transform: scale(0.98);
+  }
+  
+  /* Mobile-specific text sizing */
+  .mobile-text-responsive {
+    font-size: clamp(1rem, 4vw, 1.5rem);
+  }
+  
+  .mobile-heading-responsive {
+    font-size: clamp(2rem, 8vw, 4rem);
+  }
+}
+
 :root {
+  --background: 15 15 35;
+  --foreground: 255 255 255;
+  --card: 26 26 46;
+  --card-foreground: 255 255 255;
+  --popover: 26 26 46;
+  --popover-foreground: 255 255 255;
+  --primary: 255 111 0;
+  --primary-foreground: 255 255 255;
+  --secondary: 26 26 46;
+  --secondary-foreground: 184 184 209;
+  --muted: 26 26 46;
+  --muted-foreground: 139 139 165;
+  --accent: 37 37 69;
+  --accent-foreground: 255 255 255;
+  --destructive: 239 68 68;
+  --destructive-foreground: 255 255 255;
+  --border: 255 255 255 / 0.08;
+  --input: 255 255 255 / 0.08;
+  --ring: 255 111 0;
+  --radius: 0.5rem;
+  
+  /* Legacy variables for compatibility */
   --bg: #0F0F23;
   --card: #1A1A2E;
   --card-hover: #252545;
@@ -105,6 +300,76 @@
   }
   60% {
     transform: translateY(-5px);
+  }
+}
+
+/* Mobile-specific animations */
+@keyframes float-orb {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-20px) translateX(10px) rotate(90deg);
+  }
+  50% {
+    transform: translateY(-10px) translateX(-15px) rotate(180deg);
+  }
+  75% {
+    transform: translateY(-30px) translateX(5px) rotate(270deg);
+  }
+}
+
+@keyframes mobile-iphone-float {
+  0%, 100% {
+    transform: translateY(0px) rotateY(0deg);
+  }
+  50% {
+    transform: translateY(-15px) rotateY(5deg);
+  }
+}
+
+@keyframes mobile-glow-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+@keyframes mobile-text-slide-up {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mobile-card-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(50px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes mobile-gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
   }
 }
 

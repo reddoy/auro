@@ -12,7 +12,9 @@
     "esModuleInterop": true,
     "strict": true,
     "baseUrl": ".",
-    "paths": {},
+    "paths": {
+      "@/*": ["./*"]
+    },
     "allowJs": true,
     "skipLibCheck": true,
     "noEmit": true,
