@@ -58,7 +58,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground mobile-smooth-scroll">
+    <div className="min-h-screen bg-slate-900 text-white mobile-smooth-scroll">
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Enhanced Mobile Background */}
@@ -90,14 +90,14 @@ export default function HomePage() {
               {/* Main Headline */}
               <div className="space-y-4">
                 <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
-                  <span className="block text-foreground mobile-text-reveal" style={{ animationDelay: '0.4s' }}>Review guys.</span>
+                  <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.4s' }}>Review guys.</span>
                   <span className="block bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text text-transparent mobile-text-reveal" style={{ animationDelay: '0.6s' }}>
                     Give advice.
                   </span>
-                  <span className="block text-foreground mobile-text-reveal" style={{ animationDelay: '0.8s' }}>Get paid.</span>
-                </h1>
-                
-                <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto lg:mx-0 mobile-text-reveal" style={{ animationDelay: '1s' }}>
+                  <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.8s' }}>Get paid.</span>
+              </h1>
+              
+                <p className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto lg:mx-0 mobile-text-reveal" style={{ animationDelay: '1s' }}>
                   Men pay for your advice, you help them glow up, and grow your brand.
                 </p>
               </div>
@@ -126,8 +126,8 @@ export default function HomePage() {
                     Claim Your Spot ({reviewerCount}/100)
                   </a>
                 </Button>
-              </div>
-              
+            </div>
+
               {/* Stats */}
               <div className="flex flex-wrap gap-6 justify-center lg:justify-start text-sm text-muted-foreground mobile-text-reveal" style={{ animationDelay: '1.4s' }}>
                 <div className="flex items-center gap-2">
@@ -176,7 +176,7 @@ export default function HomePage() {
                     <span className="text-sm font-medium">Founding member perks</span>
                   </div>
                 </div>
-              </div>
+            </div>
             </div>
           </div>
         </div>
@@ -219,7 +219,7 @@ export default function HomePage() {
                 <CardHeader className="text-center">
                   <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-glow">
                     <DollarSign className="w-8 h-8 text-green-500" />
-                  </div>
+                </div>
                   <CardTitle className="text-xl">85% Earnings</CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -233,7 +233,7 @@ export default function HomePage() {
                 <CardHeader className="text-center">
                   <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-glow">
                     <Star className="w-8 h-8 text-yellow-500" />
-                  </div>
+              </div>
                   <CardTitle className="text-xl">Exclusive Badge</CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -283,9 +283,9 @@ export default function HomePage() {
                 asChild
               >
                 <a href="/reviewers/apply">
-                  Claim Your Spot ({reviewerCount}/100 taken)
+                Claim Your Spot ({reviewerCount}/100 taken)
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </a>
+              </a>
               </Button>
               <p className="text-sm text-muted-foreground">
                 No commitment • Benefits end Oct 15th
@@ -346,7 +346,7 @@ export default function HomePage() {
                 <CardHeader className="text-center">
                   <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 text-white font-bold text-xl">
                     3
-                  </div>
+                </div>
                   <CardTitle className="text-xl">Get Paid & Build Your Brand</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -356,7 +356,7 @@ export default function HomePage() {
                   <div className="flex flex-wrap gap-2 justify-center">
                     <Badge variant="outline" className="text-xs">💳 Instant payments</Badge>
                     <Badge variant="outline" className="text-xs">📸 Build your brand</Badge>
-                  </div>
+              </div>
                 </CardContent>
               </Card>
             </div>
@@ -390,8 +390,8 @@ export default function HomePage() {
                       <p className="text-muted-foreground">
                         Increase your rates as you build reputation and demand grows
                       </p>
-                    </div>
-                  </div>
+                </div>
+              </div>
                 </CardContent>
               </Card>
             </div>
@@ -511,8 +511,8 @@ export default function HomePage() {
                   className="w-40 h-40 rounded-2xl object-cover shadow-lg" 
                   loading="lazy" 
                 />
-              </div>
-              
+          </div>
+          
               <div className="space-y-4 text-left">
                 <p className="text-lg text-muted-foreground">
                   I'm RJ, founder of Auro. I started this because guys like me need help from women to glow up and improve our style, rooms, and social presence.
