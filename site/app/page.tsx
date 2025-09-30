@@ -247,7 +247,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="text-center space-y-16">
             <div className="space-y-6">
-              <Badge variant="destructive" className="text-sm px-4 py-2 font-semibold">
+              <Badge variant="destructive" className="text-sm px-4 py-2 font-semibold text-white">
                 🚨 FOUNDING MEMBERS ONLY
               </Badge>
               <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight">
@@ -260,43 +260,43 @@ export default function HomePage() {
             
             {/* Benefits Grid */}
             <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300 hover:scale-105 mobile-card-hover mobile-gradient-border">
+              <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-green-400/40 hover:bg-white/[0.15] transition-all duration-300 hover:scale-105 mobile-card-hover">
                 <CardHeader className="text-center">
-                  <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-glow">
-                    <DollarSign className="w-8 h-8 text-green-400" />
+                  <div className="w-20 h-20 bg-green-500/30 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/20">
+                    <DollarSign className="w-10 h-10 text-green-400" />
                 </div>
                   <CardTitle className="text-2xl font-bold text-white">85% Earnings</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-center text-white/80 text-base">
+                  <CardDescription className="text-center text-white/90 text-base leading-relaxed">
                     Keep more of what you earn compared to regular members.
                   </CardDescription>
                 </CardContent>
               </Card>
               
-              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300 hover:scale-105 mobile-card-hover mobile-gradient-border">
+              <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-orange-400/40 hover:bg-white/[0.15] transition-all duration-300 hover:scale-105 mobile-card-hover">
                 <CardHeader className="text-center">
-                  <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-glow">
-                    <Star className="w-8 h-8 text-orange-400" />
+                  <div className="w-20 h-20 bg-orange-500/30 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/20">
+                    <Star className="w-10 h-10 text-orange-400" />
               </div>
                   <CardTitle className="text-2xl font-bold text-white">Exclusive Badge</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-center text-white/80 text-base">
+                  <CardDescription className="text-center text-white/90 text-base leading-relaxed">
                     Get recommended more to guys looking for reviewers.
                   </CardDescription>
                 </CardContent>
               </Card>
               
-              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300 hover:scale-105 mobile-card-hover mobile-gradient-border">
+              <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-blue-400/40 hover:bg-white/[0.15] transition-all duration-300 hover:scale-105 mobile-card-hover">
                 <CardHeader className="text-center">
-                  <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse-glow">
-                    <Users className="w-8 h-8 text-blue-400" />
+                  <div className="w-20 h-20 bg-blue-500/30 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/20">
+                    <Users className="w-10 h-10 text-blue-400" />
                   </div>
                   <CardTitle className="text-2xl font-bold text-white">Founder Access</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="text-center text-white/80 text-base">
+                  <CardDescription className="text-center text-white/90 text-base leading-relaxed">
                     Direct line to me for support and feedback.
                   </CardDescription>
                 </CardContent>

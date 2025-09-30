@@ -546,10 +546,10 @@ body {
   min-height: var(--nav-h);
   position: sticky;
   top: 0;
-  background: transparent;
-  backdrop-filter: none;
-  border-bottom: none;
-  box-shadow: none;
+  background: #0c0325;
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
   z-index: 1000;
   transition: all 0.3s ease;
 }
