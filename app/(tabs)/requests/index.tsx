@@ -236,10 +236,13 @@ export default function RequestsScreen() {
         </View>
         {item.status === 'completed' && (item as any).review && (item as any).review.ratings?.overall != null && (
           <View style={styles.reviewPreview}>
-            <Text style={styles.reviewLabel}>Overall Rating:</Text>
+            <Text style={styles.reviewLabel}>Video Review Completed ✨</Text>
             <Text style={styles.overallRating}>
-              {(item as any).review.ratings?.overall}/10
+              Overall Rating: {(item as any).review.ratings?.overall}/10
             </Text>
+            {(item as any).review.media?.videoUrl && (
+              <Text style={styles.videoHint}>Video review available</Text>
+            )}
           </View>
         )}
         {/* Photo previews removed per request */}
@@ -432,7 +435,6 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     fontWeight: '500',
     flexWrap: 'nowrap',
-    numberOfLines: 1,
   },
   segmentedRow: {
     flexDirection: 'row',
@@ -674,6 +676,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: Colors.brand.accentMagenta,
+  },
+  videoHint: {
+    fontSize: 12,
+    color: Colors.brand.textSecondary,
+    fontStyle: 'italic',
+    marginTop: 4,
   },
   photosPreview: {
     marginTop: 10,

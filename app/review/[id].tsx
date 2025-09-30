@@ -16,6 +16,7 @@ import StatusBadge from '@/components/StatusBadge';
 import Avatar from '@/components/Avatar';
 import { getSignedAvatarUrl } from '@/lib/profile';
 import * as Sharing from 'expo-sharing';
+import StarRating from '@/components/StarRating';
 
 export default function ReviewDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -135,18 +136,6 @@ export default function ReviewDetailScreen() {
     );
   }
 
-  const getRatingColor = (rating: number) => {
-    if (rating >= 8) return Colors.brand.status.completed;
-    if (rating >= 6) return Colors.brand.status.in_progress;
-    return Colors.brand.status.rejected;
-  };
-
-  const getRatingLabel = (rating: number) => {
-    if (rating >= 8) return 'Excellent';
-    if (rating >= 6) return 'Good';
-    if (rating >= 4) return 'Fair';
-    return 'Needs Work';
-  };
 
   const mediaVideoUrl = review?.media?.videoUrl as string | undefined;
   const mediaImageUrl = review?.media?.imageUrl as string | undefined;
@@ -227,32 +216,32 @@ export default function ReviewDetailScreen() {
         <Text style={styles.sectionTitle}>Your Ratings</Text>
         <RNView style={styles.ratingsGrid}>
           <View style={styles.ratingCard}>
-            <Text style={styles.ratingCategory}>Overall</Text>
-            <Text style={[styles.ratingNumber, { color: getRatingColor(review?.ratings?.overall ?? 0) }]}>
-              {review?.ratings?.overall ?? 0}/10
-            </Text>
-            <Text style={styles.ratingLabel}>{getRatingLabel(review?.ratings?.overall ?? 0)}</Text>
+            <StarRating 
+              rating={review?.ratings?.overall ?? 0} 
+              category="Overall"
+              size="medium"
+            />
           </View>
           <View style={styles.ratingCard}>
-            <Text style={styles.ratingCategory}>Attractiveness</Text>
-            <Text style={[styles.ratingNumber, { color: getRatingColor(review?.ratings?.attractiveness ?? 0) }]}>
-              {review?.ratings?.attractiveness ?? 0}/10
-            </Text>
-            <Text style={styles.ratingLabel}>{getRatingLabel(review?.ratings?.attractiveness ?? 0)}</Text>
+            <StarRating 
+              rating={review?.ratings?.attractiveness ?? 0} 
+              category="Attractiveness"
+              size="medium"
+            />
           </View>
           <View style={styles.ratingCard}>
-            <Text style={styles.ratingCategory}>Wardrobe</Text>
-            <Text style={[styles.ratingNumber, { color: getRatingColor(review?.ratings?.wardrobe ?? 0) }]}>
-              {review?.ratings?.wardrobe ?? 0}/10
-            </Text>
-            <Text style={styles.ratingLabel}>{getRatingLabel(review?.ratings?.wardrobe ?? 0)}</Text>
+            <StarRating 
+              rating={review?.ratings?.wardrobe ?? 0} 
+              category="Wardrobe"
+              size="medium"
+            />
           </View>
           <View style={styles.ratingCard}>
-            <Text style={styles.ratingCategory}>Room</Text>
-            <Text style={[styles.ratingNumber, { color: getRatingColor(review?.ratings?.room ?? 0) }]}>
-              {review?.ratings?.room ?? 0}/10
-            </Text>
-            <Text style={styles.ratingLabel}>{getRatingLabel(review?.ratings?.room ?? 0)}</Text>
+            <StarRating 
+              rating={review?.ratings?.room ?? 0} 
+              category="Room"
+              size="medium"
+            />
           </View>
         </RNView>
       </View>) : null}
@@ -468,21 +457,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.04)',
     borderRadius: 12,
     marginBottom: 10,
-  },
-  ratingCategory: {
-    fontSize: 14,
-    color: Colors.brand.textSecondary,
-    marginBottom: 8,
-  },
-  ratingNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    color: Colors.brand.textPrimary,
-  },
-  ratingLabel: {
-    fontSize: 12,
-    color: Colors.brand.textSecondary,
   },
   feedbackSection: {
     margin: 15,

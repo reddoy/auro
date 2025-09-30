@@ -50,8 +50,8 @@ export default function ReviewSubmittedScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={[styles.card, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24 }] }>
-        <Text style={styles.title}>Thank you for submitting a review! 🎉</Text>
-        <Text style={styles.subtitle}>You can optionally post your video to TikTok or Instagram Reels.</Text>
+        <Text style={styles.title}>Video Review Complete! 🎉</Text>
+        <Text style={styles.subtitle}>Great job! Your video review has been submitted successfully. You can optionally share it to social media.</Text>
 
         {!!mediaUri && (
           <Text style={styles.hint}>Attached media ready: {mediaUri.split('/').pop()}</Text>

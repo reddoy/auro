@@ -26,6 +26,7 @@ import PaginationDots from '@/components/PaginationDots';
 import SectionSlideCard from '@/components/SectionSlideCard';
 import ReviewStatusCard from '@/components/ReviewStatusCard';
 import { LinearGradient } from 'expo-linear-gradient';
+import StarRating from '@/components/StarRating';
 
 // Removed unused URL helper functions since we're not showing social links in this screen
 
@@ -59,12 +60,10 @@ export default function ReviewerRequestScreen() {
   const auroFeeBps = (request as any)?.auro_fee_bps as number | undefined;
   const [expressUrl, setExpressUrl] = useState<string | null>(null);
 
-  // Video review is now the only option - no individual section ratings needed
-  const canSubmit = !!videoUri;
-
   // Per-photo notes and ratings for video review
   const [photoNotes, setPhotoNotes] = useState<Record<string, string>>({});
   const [photoRatings, setPhotoRatings] = useState<Record<string, number>>({});
+  const [overallRating, setOverallRating] = useState<number>(0);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [noteUri, setNoteUri] = useState<string | null>(null);
   const [noteText, setNoteText] = useState('');
@@ -72,6 +71,8 @@ export default function ReviewerRequestScreen() {
   const [isVideoReviewMode, setIsVideoReviewMode] = useState(false);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   
+  // Video review is now the only option - no individual section ratings needed
+  const canSubmit = React.useMemo(() => !!videoUri && overallRating > 0, [videoUri, overallRating]);
   
   // Move useMemo to the top level, always called
   const parsedNotes = React.useMemo(() => {
@@ -83,9 +84,9 @@ export default function ReviewerRequestScreen() {
     }
   }, [request?.notes]);
   
-  // Create combined slides array: profile + section cards + photos
+  // Create combined slides array: profile + section cards + photos + overall rating
   const allSlides = React.useMemo(() => {
-    const slides: Array<{type: 'profile' | 'section' | 'photo', data: any, index: number}> = [];
+    const slides: Array<{type: 'profile' | 'section' | 'photo' | 'overall', data: any, index: number}> = [];
     let slideIndex = 0;
     
     // Add profile slide
@@ -146,6 +147,13 @@ export default function ReviewerRequestScreen() {
         });
       });
     }
+    
+    // Add overall rating slide at the end
+    slides.push({
+      type: 'overall',
+      data: { name: reviewee?.displayName || 'User', selfie: signedSelfie },
+      index: slideIndex++
+    });
     
     return slides;
   }, [signedOutfits, signedRoom, signedSocials, signedSelfie, reviewee?.displayName, parsedNotes?.message]);
@@ -307,7 +315,11 @@ export default function ReviewerRequestScreen() {
   const handleSubmitReview = async () => {
     if (!request?.id) return;
     if (!canSubmit) {
-      Alert.alert('Video Required', 'Please record a video review before submitting.');
+      if (!videoUri) {
+        Alert.alert('Video Required', 'Please record a video review before submitting.');
+      } else if (overallRating === 0) {
+        Alert.alert('Overall Rating Required', 'Please provide an overall rating before submitting.');
+      }
       return;
     }
     setSubmitting(true);
@@ -320,7 +332,7 @@ export default function ReviewerRequestScreen() {
       const updated = await submitRequestReview({
         requestId: request.id,
         review: {
-          ratings: { overall: 5 }, // Default overall rating since we're only doing video reviews
+          ratings: { overall: overallRating * 2 }, // Convert 1-5 scale to 2-10 scale for overall rating
           feedback: { strengths: [], improvements: [], generalFeedback: 'Video review completed', sectionNotes: {}, photoNotes } as any,
         },
         videoUrl: uploadedVideoUrl || null,
@@ -597,6 +609,81 @@ export default function ReviewerRequestScreen() {
                         </Text>
                       </TouchableOpacity>
                     )}
+                  </RNView>
+                )}
+                
+                {slide.type === 'overall' && (
+                  <RNView style={[styles.overlayCard, { width: '100%', alignSelf: 'center' }] }>
+                    {/* Auro Logo */}
+                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
+                    <Text style={styles.overlayTitle}>Overall Rating</Text>
+                    <Text style={styles.overlayText}>Rate {slide.data.name} overall</Text>
+                    
+                    {/* Selfie display */}
+                    {slide.data.selfie ? (
+                      <TouchableOpacity
+                        style={{ 
+                          width: '100%', 
+                          aspectRatio: 1, 
+                          borderRadius: 12, 
+                          marginTop: 16,
+                          marginBottom: 16,
+                          overflow: 'hidden'
+                        }}
+                        onPress={() => {
+                          setCurrentPhotoUri(slide.data.selfie);
+                          setPhotoModalOpen(true);
+                        }}
+                      >
+                        <Image source={{ uri: slide.data.selfie }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
+                      </TouchableOpacity>
+                    ) : null}
+                    
+                    {/* Overall Rating with Stars */}
+                    <RNView style={{ marginTop: 16, alignItems: 'center' }}>
+                      <Text style={[styles.overlayText, { marginBottom: 16 }]}>Overall Rating:</Text>
+                      <StarRating 
+                        rating={overallRating * 2} // Convert 1-5 to 2-10 scale for StarRating component
+                        category="Overall"
+                        size="large"
+                        showNumber={false}
+                      />
+                      <RNView style={{ flexDirection: 'row', gap: 8, justifyContent: 'center', marginTop: 16 }}>
+                        {[1, 2, 3, 4, 5].map((rating) => (
+                          <TouchableOpacity
+                            key={rating}
+                            onPress={() => setOverallRating(rating)}
+                            style={[
+                              styles.ratingButton,
+                              overallRating === rating && styles.ratingButtonSelected
+                            ]}
+                          >
+                            <Text style={[
+                              styles.ratingButtonText,
+                              overallRating === rating && styles.ratingButtonTextSelected
+                            ]}>
+                              {rating}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </RNView>
+                    </RNView>
+                    
+                    {/* Finish Video Review Button */}
+                    <TouchableOpacity
+                      onPress={handleSubmitReview}
+                      disabled={!canSubmit || submitting}
+                      style={[
+                        styles.actionButton, 
+                        styles.acceptButton, 
+                        { marginTop: 24 },
+                        (!canSubmit || submitting) && styles.disabledButton
+                      ]}
+                    >
+                      <Text style={styles.actionButtonText}>
+                        {submitting ? 'Submitting...' : 'Finish Video Review'}
+                      </Text>
+                    </TouchableOpacity>
                   </RNView>
                 )}
               </RNView>
