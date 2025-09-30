@@ -118,7 +118,7 @@ export default function FoundingReviewerApplyPage() {
     const res = await fetch('/api/storage/signed-upload', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ fileName: avatarFile.name || 'avatar.jpg', contentType, category: 'selfie', uploadSessionId: 'reviewer-apply' })
+      body: JSON.stringify({ fileName: avatarFile.name || 'avatar.jpg', contentType, category: 'avatar', uploadSessionId: 'reviewer-apply' })
     });
     if (!res.ok) throw new Error('Failed to get signed upload URL');
     const { path, token, bucket } = await res.json();
@@ -932,7 +932,7 @@ export default function FoundingReviewerApplyPage() {
                     type="text"
                     value={focusAreas}
                     onChange={(e) => setFocusAreas(e.target.value)}
-                    placeholder="e.g., wardrobe, room setup, selfies, dating profile"
+                    placeholder="e.g., wardrobe, room setup, dating profile"
                     className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </div>

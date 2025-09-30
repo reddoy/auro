@@ -121,21 +121,25 @@ export async function POST(req: Request) {
                 console.error('move temp uploads error', mvErr);
               }
 
-              // Move selfie from avatars temp path to a permanent user path and update profile.avatar_url
+              // Move avatar from avatars temp path to a permanent user path and update profile.avatar_url
               try {
                 if (uploadSessionId) {
                   const avatarsBucket = process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET || 'avatars';
-                  // Find selfie file under avatars/temp-uploads/<session>/selfie/
+                  // Find avatar file under avatars/temp-uploads/<session>/avatar/ or /selfie/ (legacy)
+                  const { data: avatarEntries } = await (admin.storage as any).from(avatarsBucket).list(`temp-uploads/${uploadSessionId}/avatar`);
                   const { data: selfieEntries } = await (admin.storage as any).from(avatarsBucket).list(`temp-uploads/${uploadSessionId}/selfie`);
-                  if (Array.isArray(selfieEntries) && selfieEntries.length > 0) {
+                  const entries = [...(avatarEntries || []), ...(selfieEntries || [])];
+                  if (Array.isArray(entries) && entries.length > 0) {
                     // Determine user_id from request
                     let userIdForAvatar: string | undefined = undefined;
                     try {
                       const { data: reqRow } = await admin.from('requests').select('user_id').eq('id', requestId).maybeSingle();
                       userIdForAvatar = (reqRow as any)?.user_id as string | undefined;
                     } catch {}
-                    const first = selfieEntries.find((e: any) => e?.id) || selfieEntries[0];
-                    const fromPath = `temp-uploads/${uploadSessionId}/selfie/${first.name}`;
+                    const first = entries.find((e: any) => e?.id) || entries[0];
+                    const fromPath = first.name.includes('/avatar/') ? 
+                      `temp-uploads/${uploadSessionId}/avatar/${first.name}` : 
+                      `temp-uploads/${uploadSessionId}/selfie/${first.name}`;
                     const toPath = userIdForAvatar ? `users/${userIdForAvatar}/avatar/${first.name}` : `requests/${requestId}/avatar/${first.name}`;
                     await (admin.storage as any).from(avatarsBucket).move(fromPath, toPath);
                     // Update profile.avatar_url to object path (bucket-relative)

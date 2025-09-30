@@ -185,24 +185,8 @@ export async function POST(req: Request) {
               const updates: any = { id: userId };
               if (fallbackEmail) updates.email = fallbackEmail;
               if (fullName) updates.full_name = fullName;
-              // Apply selfie as avatar if provided
-              if (reviewPayload?.selfieUrl) {
-                // Store only the object path for avatars bucket
-                const raw = reviewPayload.selfieUrl as string;
-                let path = raw;
-                try {
-                  const urlObj = new URL(raw);
-                  const m = urlObj.pathname.match(/\/storage\/v1\/object\/(?:public|sign)\/([^/]+)\/(.+)$/);
-                  if (m) {
-                    const bucket = m[1];
-                    const objPath = decodeURIComponent(m[2]);
-                    if (bucket === (process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET || 'avatars')) {
-                      path = objPath;
-                    }
-                  }
-                } catch {}
-                updates.avatar_url = path;
-              }
+              // Profile picture will be used from the user's existing profile
+              // No need to set avatar_url here as it should already exist in the profile
               await admin.from('profiles').upsert(updates, { onConflict: 'id' });
             }
           } catch {}
@@ -215,7 +199,7 @@ export async function POST(req: Request) {
             message: reviewPayload?.message,
             media: reviewPayload?.photos,
             consent: reviewPayload?.consent,
-            selfieUrl: reviewPayload?.selfieUrl || null,
+            // No longer using selfieUrl - profile picture will be used instead
           };
           const insertPayload: any = {
             user_id: fallbackUserId || null,

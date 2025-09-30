@@ -195,12 +195,7 @@ export default function ReviewerSubmitScreen() {
       {!!parsedNotes?.media && (
         <View style={styles.mediaBox}>
           <Text style={styles.label}>Breakdown by section</Text>
-          {parsedNotes.media.selfie ? (
-            <RNView style={{ marginTop: 8 }}>
-              <Text style={{ color: Colors.brand.textSecondary, marginBottom: 6 }}>Selfie</Text>
-              <LightboxImage uri={parsedNotes.media.selfie} thumbStyle={styles.thumb} />
-            </RNView>
-          ) : null}
+          {/* Selfie section removed - now using profile picture */}
           {Array.isArray(parsedNotes.media.outfits) && parsedNotes.media.outfits.length ? (
             <RNView style={{ marginTop: 8 }}>
               <Text style={{ color: Colors.brand.textSecondary, marginBottom: 6 }}>Outfits</Text>

@@ -25,6 +25,7 @@ export default function ReviewDetailScreen() {
   const [influencerName, setInfluencerName] = React.useState<string>('');
   const [influencerAvatar, setInfluencerAvatar] = React.useState<string | undefined>(undefined);
   const [revieweeName, setRevieweeName] = React.useState<string>('You');
+  const [revieweeAvatar, setRevieweeAvatar] = React.useState<string | undefined>(undefined);
   
   const [request, setRequest] = React.useState<any>(null);
   const review = request?.review;
@@ -68,7 +69,7 @@ export default function ReviewDetailScreen() {
   const [signedOutfits, setSignedOutfits] = React.useState<string[]>([]);
   const [signedRoom, setSignedRoom] = React.useState<string[]>([]);
   const [signedSocials, setSignedSocials] = React.useState<string[]>([]);
-  const [signedSelfie, setSignedSelfie] = React.useState<string | null>(null);
+  // Removed signedSelfie - now using user's profile picture
 
   React.useEffect(() => {
     (async () => {
@@ -76,11 +77,10 @@ export default function ReviewDetailScreen() {
         const outfits = Array.isArray(parsedNotes?.media?.outfits) ? parsedNotes?.media?.outfits as string[] : [];
         const room = Array.isArray(parsedNotes?.media?.roomTourPhotos) ? parsedNotes?.media?.roomTourPhotos as string[] : [];
         const socials = Array.isArray(parsedNotes?.media?.datingProfileScreenshots) ? parsedNotes?.media?.datingProfileScreenshots as string[] : [];
-        const selfie = (parsedNotes?.media?.selfie || parsedNotes?.selfieUrl) as string | undefined;
+        // No longer loading selfie - using user's profile picture instead
         setSignedOutfits(await signRequestMediaUrls(outfits));
         setSignedRoom(await signRequestMediaUrls(room));
         setSignedSocials(await signRequestMediaUrls(socials));
-        setSignedSelfie(selfie ? await getSignedRequestMediaUrl(selfie) : null);
       } catch {}
     })();
   }, [parsedNotes?.media]);
@@ -106,11 +106,18 @@ export default function ReviewDetailScreen() {
             } catch {}
           }
         }
-        // Resolve reviewee display name for "About {name}" label
+        // Resolve reviewee display name and profile picture for "About {name}" label
         if (req?.userId) {
           try {
             const profile = await getProfileById(String(req.userId));
             if (profile?.displayName) setRevieweeName(profile.displayName);
+            // Load user's profile picture
+            if (profile?.avatarUrl) {
+              try {
+                const signed = await getSignedAvatarUrl(profile.avatarUrl);
+                setRevieweeAvatar(signed || profile.avatarUrl);
+              } catch {}
+            }
           } catch {}
         }
       } finally {
@@ -297,12 +304,15 @@ export default function ReviewDetailScreen() {
 
         {!!parsedNotes?.message && (
           <View style={styles.mediaSection}>
-            <Text style={styles.sectionTitle}>Selfie</Text>
-            {signedSelfie ? (
-              <TouchableOpacity onPress={() => { setGalleryUris([signedSelfie]); setGalleryIndex(0); setGalleryOpen(true); }}>
-                <Image source={{ uri: signedSelfie }} style={styles.selfie} contentFit="cover" transition={200} cachePolicy="none" />
+            <Text style={styles.sectionTitle}>Profile Picture</Text>
+            {revieweeAvatar ? (
+              <TouchableOpacity onPress={() => { setGalleryUris([revieweeAvatar]); setGalleryIndex(0); setGalleryOpen(true); }}>
+                <Image source={{ uri: revieweeAvatar }} style={styles.selfie} contentFit="cover" transition={200} cachePolicy="none" />
               </TouchableOpacity>
             ) : null}
+            <Text style={[styles.promptLabel, { fontSize: 12, color: Colors.brand.textSecondary }]}>
+              This is the profile picture used in reviews
+            </Text>
             <Text style={styles.promptLabel}>{`About ${revieweeName || 'You'}`}</Text>
             <Text style={styles.promptText}>{parsedNotes.message}</Text>
           </View>

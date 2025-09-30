@@ -32,7 +32,7 @@ function buildContentTypeFromExt(ext: string | null): string | undefined {
   }
 }
 
-export type RequestMediaCategory = 'selfie' | 'outfit' | 'roomTour' | 'roomPhoto' | 'datingProfile' | 'other';
+export type RequestMediaCategory = 'outfit' | 'roomTour' | 'roomPhoto' | 'datingProfile' | 'other';
 
 export async function uploadRequestMedia(
   fileUri: string,

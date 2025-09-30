@@ -45,7 +45,7 @@ export default function ReviewerRequestScreen() {
   const [signedOutfits, setSignedOutfits] = useState<string[]>([]);
   const [signedRoom, setSignedRoom] = useState<string[]>([]);
   const [signedSocials, setSignedSocials] = useState<string[]>([]);
-  const [signedSelfie, setSignedSelfie] = useState<string | null>(null);
+  // Removed signedSelfie - now using user's profile picture from avatarUri
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [recordingModeOpen, setRecordingModeOpen] = useState(false);
   const [galleryUris, setGalleryUris] = useState<string[]>([]);
@@ -92,7 +92,7 @@ export default function ReviewerRequestScreen() {
     // Add profile slide
     slides.push({
       type: 'profile',
-      data: { name: reviewee?.displayName || 'User', message: parsedNotes?.message, selfie: signedSelfie },
+      data: { name: reviewee?.displayName || 'User', message: parsedNotes?.message, profilePicture: avatarUri },
       index: slideIndex++
     });
     
@@ -151,12 +151,12 @@ export default function ReviewerRequestScreen() {
     // Add overall rating slide at the end
     slides.push({
       type: 'overall',
-      data: { name: reviewee?.displayName || 'User', selfie: signedSelfie },
+      data: { name: reviewee?.displayName || 'User', profilePicture: avatarUri }, // Use profile picture instead of selfie
       index: slideIndex++
     });
     
     return slides;
-  }, [signedOutfits, signedRoom, signedSocials, signedSelfie, reviewee?.displayName, parsedNotes?.message]);
+  }, [signedOutfits, signedRoom, signedSocials, avatarUri, reviewee?.displayName, parsedNotes?.message]);
 
   // Create sections for VideoReviewSection
   const reviewSections = React.useMemo(() => {
@@ -239,12 +239,7 @@ export default function ReviewerRequestScreen() {
             setSignedPhotos([]);
           }
 
-          const selfieUrl = (() => {
-            try {
-              return (n?.media?.selfie || n?.selfieUrl) as string | undefined;
-            } catch { return undefined; }
-          })();
-          setSignedSelfie(selfieUrl ? await getSignedRequestMediaUrl(selfieUrl) : null);
+          // No longer loading selfie - using user's profile picture instead
         } catch {}
         // Prepare Stripe Express Portal link for reviewers
         try {
@@ -399,17 +394,20 @@ export default function ReviewerRequestScreen() {
           </View>
         )}
 
-        {signedSelfie && (
+        {avatarUri && (
           <View style={[styles.section, styles.mediaSection]}>
-            <Text style={styles.label}>Selfie</Text>
+            <Text style={styles.label}>Profile Picture</Text>
+            <Text style={[styles.value, { fontSize: 14, color: Colors.brand.textSecondary, marginBottom: 12 }]}>
+              This is the profile picture that will be used in reviews
+            </Text>
             <TouchableOpacity onPress={() => { 
               if (!isVideoReviewMode) {
-                setGalleryUris([signedSelfie]); 
+                setGalleryUris([avatarUri]); 
                 setGalleryIndex(0); 
                 setGalleryOpen(true); 
               }
             }}>
-              <Image source={{ uri: signedSelfie }} style={styles.selfie} contentFit="cover" cachePolicy="none" />
+              <Image source={{ uri: avatarUri }} style={styles.selfie} contentFit="cover" cachePolicy="none" />
             </TouchableOpacity>
           </View>
         )}
@@ -536,7 +534,7 @@ export default function ReviewerRequestScreen() {
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={styles.overlayTitle}>{slide.data.name}</Text>
                     {slide.data.message ? (<Text style={styles.overlayText}>{slide.data.message}</Text>) : null}
-                    {slide.data.selfie ? (<Image source={{ uri: slide.data.selfie }} style={{ width: '100%', aspectRatio: 1, borderRadius: 12, marginTop: 12 }} contentFit="cover" />) : null}
+                    {slide.data.profilePicture ? (<Image source={{ uri: slide.data.profilePicture }} style={{ width: '100%', aspectRatio: 1, borderRadius: 12, marginTop: 12 }} contentFit="cover" />) : null}
                   </RNView>
                 )}
                 
@@ -619,8 +617,8 @@ export default function ReviewerRequestScreen() {
                     <Text style={styles.overlayTitle}>Overall Rating</Text>
                     <Text style={styles.overlayText}>Rate {slide.data.name} overall</Text>
                     
-                    {/* Selfie display */}
-                    {slide.data.selfie ? (
+                    {/* Profile Picture display */}
+                    {slide.data.profilePicture ? (
                       <TouchableOpacity
                         style={{ 
                           width: '100%', 
@@ -631,11 +629,11 @@ export default function ReviewerRequestScreen() {
                           overflow: 'hidden'
                         }}
                         onPress={() => {
-                          setCurrentPhotoUri(slide.data.selfie);
+                          setCurrentPhotoUri(slide.data.profilePicture);
                           setPhotoModalOpen(true);
                         }}
                       >
-                        <Image source={{ uri: slide.data.selfie }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
+                        <Image source={{ uri: slide.data.profilePicture }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
                       </TouchableOpacity>
                     ) : null}
                     
@@ -690,7 +688,7 @@ export default function ReviewerRequestScreen() {
             ))}
           </ScrollView>
 
-          {/* Circular selfie recorder centered at top-middle */}
+          {/* Circular video recorder centered at top-middle */}
           <RNView style={{ position: 'absolute', top: insets.top + 20, left: 0, right: 0, alignItems: 'center', zIndex: 10, elevation: 10 }}>
             <MediaRecorder
               onRecorded={(uri) => {
