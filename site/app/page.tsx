@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -14,6 +14,10 @@ export default function HomePage() {
   const [showRibbon, setShowRibbon] = useState(true);
   const [reviewerCount, setReviewerCount] = useState<number>(0);
   const [isLoadingCount, setIsLoadingCount] = useState<boolean>(true);
+  const desktopVideoRef = useRef<HTMLVideoElement>(null);
+  const desktopOverlayRef = useRef<HTMLDivElement>(null);
+  const mobileVideoRef = useRef<HTMLVideoElement>(null);
+  const mobileOverlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchReviewerCount = async () => {
@@ -48,6 +52,46 @@ export default function HomePage() {
     fetchReviewerCount();
     const interval = setInterval(fetchReviewerCount, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Video handling for desktop
+  useEffect(() => {
+    const video = desktopVideoRef.current;
+    const overlay = desktopOverlayRef.current;
+
+    if (!video || !overlay) return;
+
+    const handleVideoEnd = () => {
+      overlay.style.opacity = '1';
+      setTimeout(() => {
+        overlay.style.opacity = '0';
+        video.currentTime = 0;
+        video.play();
+      }, 5000);
+    };
+
+    video.addEventListener('ended', handleVideoEnd);
+    return () => video.removeEventListener('ended', handleVideoEnd);
+  }, []);
+
+  // Video handling for mobile
+  useEffect(() => {
+    const video = mobileVideoRef.current;
+    const overlay = mobileOverlayRef.current;
+
+    if (!video || !overlay) return;
+
+    const handleVideoEnd = () => {
+      overlay.style.opacity = '1';
+      setTimeout(() => {
+        overlay.style.opacity = '0';
+        video.currentTime = 0;
+        video.play();
+      }, 5000);
+    };
+
+    video.addEventListener('ended', handleVideoEnd);
+    return () => video.removeEventListener('ended', handleVideoEnd);
   }, []);
 
   const spotsLeft = Math.max(0, 100 - reviewerCount);
@@ -188,15 +232,26 @@ export default function HomePage() {
                 </div>
               </div>
               
-              {/* Right Content - Desktop iPhone */}
+              {/* Right Content - Desktop iPhone Video */}
               <div className="relative animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
                 <div className="relative">
-                  <img 
-                    className="w-full max-w-xs mx-auto animate-float" 
-                    src="/iphone-mockup.png" 
-                    alt="iPhone app mockup showing review process" 
-                    loading="eager" 
-                  />
+                  <div className="desktop-iphone-frame">
+                    <video 
+                      ref={desktopVideoRef}
+                      className="desktop-iphone-video"
+                      src="/katie_demo.mov" 
+                      autoPlay 
+                      muted 
+                      playsInline
+                      loop
+                    />
+                    <div ref={desktopOverlayRef} className="desktop-iphone-overlay">
+                      <div className="overlay-content">
+                        <h3>Click to watch full review</h3>
+                        <p>Get your personalized style review</p>
+                      </div>
+                    </div>
+                  </div>
                   
                   {/* Floating Benefit Callouts */}
                   <div className="absolute top-2 right-2 glass rounded-lg p-2 shadow-lg animate-slide-in-right hover-lift">
@@ -225,18 +280,29 @@ export default function HomePage() {
           </div>
         </div>
         
-        {/* Enhanced Mobile iPhone - Integrated into Hero */}
+        {/* Enhanced Mobile iPhone Video - Integrated into Hero */}
         <div className="lg:hidden absolute bottom-8 left-1/2 transform -translate-x-1/2" style={{ animationDelay: '1.6s' }}>
           <div className="mobile-iphone-container">
             <div className="mobile-iphone-glow"></div>
             <div className="mobile-iphone-shadow"></div>
             <div className="iphone-peek">
-              <img 
-                className="w-80 h-auto relative z-10 drop-shadow-2xl rounded-3xl" 
-                src="/iphone-mockup.png" 
-                alt="iPhone app mockup" 
-                loading="lazy" 
-              />
+              <div className="mobile-iphone-frame">
+                <video 
+                  ref={mobileVideoRef}
+                  className="mobile-iphone-video"
+                  src="/katie_demo.mov" 
+                  autoPlay 
+                  muted 
+                  playsInline
+                  loop
+                />
+                <div ref={mobileOverlayRef} className="mobile-iphone-overlay">
+                  <div className="overlay-content">
+                    <h3>Click to watch full review</h3>
+                    <p>Get your personalized style review</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -472,67 +538,67 @@ export default function HomePage() {
             </div>
             
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300 mobile-card-hover mobile-gradient-border">
-                <CardContent className="p-8 space-y-4">
+              <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-orange-400/40 hover:bg-white/[0.15] transition-all duration-300 mobile-card-hover">
+                <CardContent className="p-8 space-y-5">
                   <div className="flex items-center gap-1">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className="w-5 h-5 fill-orange-400 text-orange-400" />
                     ))}
                   </div>
-                  <p className="text-white/90 italic text-base leading-relaxed">
+                  <p className="text-white text-base leading-relaxed italic">
                     "I made $200 in my first week just reviewing guys' profiles. The founding member benefits are incredible!"
                   </p>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-12 h-12 ring-2 ring-orange-500/40">
+                  <div className="flex items-center gap-3 pt-2">
+                    <Avatar className="w-12 h-12 ring-2 ring-orange-500/50">
                       <AvatarFallback className="bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold">SM</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-bold text-white">Sarah M.</p>
-                      <p className="text-sm text-white/70">Founding Reviewer</p>
+                      <p className="text-sm text-white/80">Founding Reviewer</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300 mobile-card-hover mobile-gradient-border">
-                <CardContent className="p-8 space-y-4">
+              <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-orange-400/40 hover:bg-white/[0.15] transition-all duration-300 mobile-card-hover">
+                <CardContent className="p-8 space-y-5">
                   <div className="flex items-center gap-1">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className="w-5 h-5 fill-orange-400 text-orange-400" />
                     ))}
                   </div>
-                  <p className="text-white/90 italic text-base leading-relaxed">
+                  <p className="text-white text-base leading-relaxed italic">
                     "The 85% earnings rate is amazing. I can finally monetize my fashion expertise without the hassle of traditional influencer work."
                   </p>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-12 h-12 ring-2 ring-red-500/40">
+                  <div className="flex items-center gap-3 pt-2">
+                    <Avatar className="w-12 h-12 ring-2 ring-red-500/50">
                       <AvatarFallback className="bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold">JL</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-bold text-white">Jessica L.</p>
-                      <p className="text-sm text-white/70">Style Expert</p>
+                      <p className="text-sm text-white/80">Style Expert</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               
-              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300 mobile-card-hover mobile-gradient-border">
-                <CardContent className="p-8 space-y-4">
+              <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-orange-400/40 hover:bg-white/[0.15] transition-all duration-300 mobile-card-hover">
+                <CardContent className="p-8 space-y-5">
                   <div className="flex items-center gap-1">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className="w-5 h-5 fill-orange-400 text-orange-400" />
                     ))}
                   </div>
-                  <p className="text-white/90 italic text-base leading-relaxed">
+                  <p className="text-white text-base leading-relaxed italic">
                     "RJ's vision is spot on. Guys really do need honest feedback, and we get paid well for providing it. Win-win!"
                   </p>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-12 h-12 ring-2 ring-pink-500/40">
+                  <div className="flex items-center gap-3 pt-2">
+                    <Avatar className="w-12 h-12 ring-2 ring-pink-500/50">
                       <AvatarFallback className="bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold">AM</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-bold text-white">Alex M.</p>
-                      <p className="text-sm text-white/70">Content Creator</p>
+                      <p className="text-sm text-white/80">Content Creator</p>
                     </div>
                   </div>
                 </CardContent>
@@ -634,6 +700,137 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* iPhone Frame Styles */}
+      <style jsx>{`
+        .desktop-iphone-frame {
+          position: relative;
+          width: 300px;
+          max-width: 100%;
+          aspect-ratio: 9 / 19.5;
+          border: 8px solid #000;
+          border-radius: 30px;
+          background: #000;
+          overflow: hidden;
+          box-shadow: 0 0 20px rgba(0,0,0,0.4);
+          margin: 0 auto;
+        }
+
+        .desktop-iphone-frame::before {
+          content: '';
+          position: absolute;
+          top: 6px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 80px;
+          height: 24px;
+          background: #000;
+          border-radius: 16px;
+          z-index: 2;
+        }
+
+        .desktop-iphone-video {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 22px;
+        }
+
+        .desktop-iphone-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border-radius: 22px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background: linear-gradient(135deg, #6C63FF, #FF6584);
+          color: white;
+          opacity: 0;
+          transition: opacity 1s ease;
+          text-align: center;
+          padding: 1.5rem;
+          z-index: 3;
+        }
+
+        .desktop-iphone-overlay .overlay-content h3 {
+          font-size: 1.25rem;
+          font-weight: bold;
+          margin-bottom: 0.5rem;
+          margin: 0;
+        }
+
+        .desktop-iphone-overlay .overlay-content p {
+          font-size: 0.9rem;
+          margin: 0;
+          opacity: 0.9;
+        }
+
+        .mobile-iphone-frame {
+          position: relative;
+          width: 320px;
+          height: 640px;
+          border: 8px solid #000;
+          border-radius: 32px;
+          background: #000;
+          overflow: hidden;
+          box-shadow: 0 0 20px rgba(0,0,0,0.4);
+        }
+
+        .mobile-iphone-frame::before {
+          content: '';
+          position: absolute;
+          top: 6px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 80px;
+          height: 24px;
+          background: #000;
+          border-radius: 16px;
+          z-index: 2;
+        }
+
+        .mobile-iphone-video {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 24px;
+        }
+
+        .mobile-iphone-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border-radius: 24px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background: linear-gradient(135deg, #6C63FF, #FF6584);
+          color: white;
+          opacity: 0;
+          transition: opacity 1s ease;
+          text-align: center;
+          padding: 1.5rem;
+          z-index: 3;
+        }
+
+        .mobile-iphone-overlay .overlay-content h3 {
+          font-size: 1.25rem;
+          font-weight: bold;
+          margin-bottom: 0.5rem;
+          margin: 0;
+        }
+
+        .mobile-iphone-overlay .overlay-content p {
+          font-size: 0.9rem;
+          margin: 0;
+          opacity: 0.9;
+        }
+      `}</style>
     </div>
   );
 }
