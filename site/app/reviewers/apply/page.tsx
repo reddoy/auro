@@ -32,6 +32,7 @@ export default function FoundingReviewerApplyPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
+  const [reviewerCount, setReviewerCount] = useState<number>(0);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -46,6 +47,37 @@ export default function FoundingReviewerApplyPage() {
     return () => {
       try { (sub as any)?.data?.subscription?.unsubscribe?.(); } catch {}
     };
+  }, []);
+
+  // Fetch reviewer count
+  useEffect(() => {
+    const fetchReviewerCount = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('creators')
+          .select('id', { count: 'exact' })
+          .eq('is_reviewer', true);
+
+        if (error) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('id', { count: 'exact' })
+            .eq('is_reviewer', true);
+          
+          if (!profileError) {
+            setReviewerCount(profileData?.length || 0);
+          }
+        } else {
+          setReviewerCount(data?.length || 0);
+        }
+      } catch (err) {
+        console.error('Error fetching reviewer count:', err);
+      }
+    };
+
+    fetchReviewerCount();
+    const interval = setInterval(fetchReviewerCount, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const passwordStrength = useMemo(() => {
@@ -318,9 +350,10 @@ export default function FoundingReviewerApplyPage() {
             
             {/* Headline */}
             <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-              <span className="block text-white">Become a</span>
+              <span className="block text-white">Girls rate guys.</span>
+              <span className="block text-white">Guys get advice.</span>
               <span className="block bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
-                Founding Reviewer
+                Girls get paid.
               </span>
             </h1>
             
@@ -338,14 +371,14 @@ export default function FoundingReviewerApplyPage() {
                 <div className="absolute top-4 -right-4 bg-white/10 backdrop-blur-sm rounded-lg p-3 shadow-lg animate-pulse">
                   <div className="flex items-center gap-2">
                     <DollarSign className="w-4 h-4 text-green-400" />
-                    <span className="text-xs font-medium text-white">85% earnings</span>
+                    <span className="text-xs font-medium text-white">$25-50/review</span>
                   </div>
                 </div>
                 
                 <div className="absolute top-1/2 -left-4 bg-white/10 backdrop-blur-sm rounded-lg p-3 shadow-lg animate-pulse" style={{ animationDelay: '0.5s' }}>
                   <div className="flex items-center gap-2">
                     <Star className="w-4 h-4 text-orange-400" />
-                    <span className="text-xs font-medium text-white">Founding perks</span>
+                    <span className="text-xs font-medium text-white">Keep 85% forever</span>
                   </div>
                 </div>
               </div>
@@ -357,44 +390,39 @@ export default function FoundingReviewerApplyPage() {
                 <div className="w-12 h-12 bg-gradient-to-r from-green-500/20 to-green-600/20 rounded-full flex items-center justify-center">
                   <DollarSign className="w-6 h-6 text-green-400" />
                 </div>
-                <span className="text-sm font-medium text-white">85% Earnings</span>
+                <span className="text-sm font-medium text-white">$25-50/review</span>
               </div>
               
               <div className="flex flex-col items-center space-y-2">
                 <div className="w-12 h-12 bg-gradient-to-r from-orange-500/20 to-orange-600/20 rounded-full flex items-center justify-center">
                   <Star className="w-6 h-6 text-orange-400" />
                 </div>
-                <span className="text-sm font-medium text-white">Founding Badge</span>
+                <span className="text-sm font-medium text-white">Keep 85% forever</span>
               </div>
               
               <div className="flex flex-col items-center space-y-2">
                 <div className="w-12 h-12 bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-full flex items-center justify-center">
                   <Users className="w-6 h-6 text-purple-400" />
                 </div>
-                <span className="text-sm font-medium text-white">Early Access</span>
+                <span className="text-sm font-medium text-white">Founding Badge</span>
               </div>
             </div>
 
-            {/* Reviewer Counter */}
-            <div className="flex justify-center">
-              <ReviewerCounter 
-                maxReviewers={100}
-                className="apply-counter"
-              />
-            </div>
-
-            {/* CTA */}
+            {/* Merged CTA with Live Count */}
             <div className="space-y-3">
               <Button 
                 size="xl" 
-                className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                className="bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 w-full max-w-md"
                 onClick={() => setStep(2)}
               >
-                Claim Your Founding Spot
-                <ArrowRight className="ml-2 w-5 h-5" />
+                <div className="flex flex-col items-center">
+                  <span className="text-base font-bold">Hurry! Only <span className="text-yellow-300">{Math.max(0, 100 - reviewerCount)} spots left</span></span>
+                  <span className="text-sm opacity-90">Join 100 Founding Reviewers</span>
+                </div>
+                <ArrowRight className="ml-3 w-5 h-5" />
               </Button>
               <p className="text-sm text-gray-400">
-                No commitment • Limited to 100 reviewers
+                Keep 85% forever (vs 80% regular) • No commitment
               </p>
             </div>
           </div>
@@ -1008,5 +1036,6 @@ export default function FoundingReviewerApplyPage() {
     </div>
   );
 }
+
 
 

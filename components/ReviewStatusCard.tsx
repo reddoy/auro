@@ -1,6 +1,5 @@
 import React from 'react';
 import { StyleSheet, View as RNView, TouchableOpacity, Linking } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import Avatar from '@/components/Avatar';
@@ -50,19 +49,13 @@ export default function ReviewStatusCard({
 
   return (
     <View style={styles.card}>
-      <LinearGradient
-        colors={[Colors.brand.accentOrange + '15', Colors.brand.accentMagenta + '08']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradient}
-      >
+      <View style={styles.gradient}>
         {/* Header Section */}
         <RNView style={styles.header}>
-          <RNView style={styles.avatarContainer}>
-            <Avatar uri={avatarUri} name={displayName} size={80} />
-            <RNView style={styles.statusBadge}>
-              <StatusBadge status={status as any} />
-            </RNView>
+          <Avatar uri={avatarUri} name={displayName} size={80} />
+          
+          <RNView style={styles.statusBadge}>
+            <StatusBadge status={status as any} />
           </RNView>
           
           <Text style={styles.displayName}>{displayName}</Text>
@@ -172,7 +165,7 @@ export default function ReviewStatusCard({
             })}
           </Text>
         </RNView>
-      </LinearGradient>
+      </View>
     </View>
   );
 }
@@ -191,27 +184,16 @@ const styles = StyleSheet.create({
   },
   gradient: {
     padding: 24,
+    backgroundColor: Colors.brand.cardBackground,
   },
   header: {
     alignItems: 'center',
     marginBottom: 20,
   },
-  avatarContainer: {
-    position: 'relative',
-    marginBottom: 16,
-  },
   statusBadge: {
-    position: 'absolute',
-    bottom: -4,
-    right: -4,
-    backgroundColor: Colors.brand.cardBackground,
-    borderRadius: 12,
-    padding: 2,
-    shadowColor: Colors.brand.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    marginTop: 12,
+    marginBottom: 16,
+    alignItems: 'center',
   },
   displayName: {
     fontSize: 28,
