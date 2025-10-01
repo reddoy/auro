@@ -92,6 +92,8 @@
     transform-style: preserve-3d;
     animation: mobile-iphone-float 8s ease-in-out infinite;
     z-index: 10;
+    margin: 20px 0;
+    padding: 0 20px;
   }
   
   .mobile-iphone-glow {
@@ -204,6 +206,11 @@
       0 4px 20px rgba(255, 107, 107, 0.3),
       0 8px 40px rgba(255, 107, 107, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1.4;
+    overflow: hidden;
   }
 
   .mobile-cta-glow:hover {
@@ -229,6 +236,71 @@
     border-radius: 12px;
     padding: 16px;
     margin: 0 16px;
+  }
+
+  /* Mobile iPhone video styles */
+  .mobile-iphone-frame {
+    position: relative;
+    width: 260px;
+    height: 520px;
+    background: #1a1a1a;
+    border-radius: 32px;
+    overflow: hidden;
+    box-shadow: 
+      0 0 0 2px rgba(255, 255, 255, 0.1),
+      0 20px 60px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    margin: 0 auto;
+    z-index: 5;
+  }
+
+  .mobile-iphone-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 32px;
+  }
+
+  .mobile-iphone-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.3) 0%,
+      rgba(0, 0, 0, 0.1) 50%,
+      rgba(0, 0, 0, 0.4) 100%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    cursor: pointer;
+    z-index: 10;
+  }
+
+  .mobile-iphone-overlay:hover {
+    opacity: 1;
+  }
+
+  .overlay-content {
+    text-align: center;
+    color: white;
+    padding: 20px;
+  }
+
+  .overlay-content h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .overlay-content p {
+    font-size: 14px;
+    opacity: 0.9;
   }
 
   /* Mobile video interaction */

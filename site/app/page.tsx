@@ -159,22 +159,22 @@ export default function HomePage() {
               </div>
 
               {/* CTA Button - Moved above iPhone for better conversion */}
-              <div className="flex justify-center mobile-text-reveal" style={{ animationDelay: '1.2s' }}>
+              <div className="flex justify-center mobile-text-reveal mb-8" style={{ animationDelay: '1.2s' }}>
                 <Button 
                   size="xl" 
                   variant="gradient" 
-                  className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-sm text-lg px-6 py-4 shadow-2xl"
+                  className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-sm text-sm sm:text-base px-3 sm:px-4 py-3 shadow-2xl font-semibold"
                   asChild
                 >
                   <a href="/reviewers/apply">
-                    🚀 Start Earning Today ({reviewerCount}/100 spots taken)
-                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    <span className="truncate">🚀 Start Earning Today ({reviewerCount}/100 spots taken)</span>
+                    <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                   </a>
                 </Button>
               </div>
 
-              {/* Mobile iPhone Video - Moved below CTA */}
-              <div className="flex justify-center mobile-text-reveal" style={{ animationDelay: '1.3s' }}>
+              {/* Mobile iPhone Video - Moved below CTA with proper spacing */}
+              <div className="flex justify-center mobile-text-reveal mt-4" style={{ animationDelay: '1.3s' }}>
                 <div className="mobile-iphone-container">
                   <div className="mobile-iphone-glow"></div>
                   <div className="mobile-iphone-shadow"></div>

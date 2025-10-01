@@ -8,6 +8,7 @@ import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
 import { ArrowLeft, ArrowRight, Check, Star, DollarSign, Users, Clock, Shield, Mail, Lock, User, Camera, Instagram, Smartphone, FileText, Target } from 'lucide-react';
+import ImageCropModal from './components/ImageCropModal';
 
 type SocialAccount = {
   provider: 'tiktok' | 'instagram';
@@ -25,8 +26,6 @@ export default function FoundingReviewerApplyPage() {
   const [marketingConsent, setMarketingConsent] = useState<boolean>(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [bio, setBio] = useState('');
-  const [focusAreas, setFocusAreas] = useState('');
   const [rate, setRate] = useState<string>('');
   const [instagramHandle, setInstagramHandle] = useState('');
   const [tiktokHandle, setTiktokHandle] = useState('');
@@ -35,6 +34,8 @@ export default function FoundingReviewerApplyPage() {
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [reviewerCount, setReviewerCount] = useState<number>(0);
   const [isGoogleAuthed, setIsGoogleAuthed] = useState(false);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -177,11 +178,33 @@ export default function FoundingReviewerApplyPage() {
       setAvatarPreview(null);
       return;
     }
-    setAvatarFile(f);
+    
+    // Show crop modal
     try {
       const url = URL.createObjectURL(f);
+      setImageToCrop(url);
+      setShowCropModal(true);
+    } catch (e) {
+      console.error('Failed to load image:', e);
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    try {
+      // Convert blob to file
+      const croppedFile = new File([croppedBlob], 'avatar.jpg', { type: 'image/jpeg' });
+      setAvatarFile(croppedFile);
+      
+      // Create preview URL
+      const url = URL.createObjectURL(croppedBlob);
       setAvatarPreview(url);
-    } catch {}
+      
+      // Close modal
+      setShowCropModal(false);
+      setImageToCrop(null);
+    } catch (e) {
+      console.error('Failed to process cropped image:', e);
+    }
   };
 
   const uploadAvatarViaSignedUrl = async (): Promise<{ url: string; path: string } | null> => {
@@ -293,17 +316,12 @@ export default function FoundingReviewerApplyPage() {
       return;
     }
     if (step === 4) {
-      // Profile details step
-      if (!rate || isNaN(Number(rate)) || Number(rate) <= 0) { setError('Please enter a valid rate'); return; }
+      // Profile details step - rate is now optional
       setStep(5);
       return;
     }
     if (step === 5) {
-      // Socials step -> go to Bio & Focus
-      setStep(6);
-      return;
-    }
-    if (step === 6) {
+      // Socials step -> submit application
       try {
         setLoading(true);
         const avatar = await uploadAvatarViaSignedUrl();
@@ -327,15 +345,15 @@ export default function FoundingReviewerApplyPage() {
           method: 'POST',
           headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({
-            bio,
-            focusAreas,
-            hourlyRate: Number(rate),
+            bio: '',
+            focusAreas: '',
+            hourlyRate: rate ? Number(rate) : null,
             avatarUrl: avatar?.url || null,
             avatarPath: avatar?.path || null,
             socials: socialArray,
             instagramHandle: instagramHandle || null,
             tiktokHandle: tiktokHandle || null,
-            phone,
+            phone: phone || null,
             marketingConsent,
             userId: explicitUserId || null,
           })
@@ -343,7 +361,7 @@ export default function FoundingReviewerApplyPage() {
         const json = await resp.json();
         if (!resp.ok) throw new Error(json?.error || 'Failed to submit');
         try { router.replace('/reviewers/thanks'); } catch {}
-        setStep(7);
+        setStep(6);
       } catch (e: any) {
         setError(e?.message || 'Failed to submit application');
       } finally {
@@ -361,8 +379,7 @@ export default function FoundingReviewerApplyPage() {
       { id: 3, label: 'Password', shortLabel: 'Pass', icon: Lock },
       { id: 4, label: 'Profile', shortLabel: 'Profile', icon: Camera },
       { id: 5, label: 'Socials', shortLabel: 'Social', icon: Instagram },
-      { id: 6, label: 'Bio & Focus', shortLabel: 'Bio', icon: Target },
-      { id: 7, label: 'Done', shortLabel: 'Done', icon: Check }
+      { id: 6, label: 'Done', shortLabel: 'Done', icon: Check }
     ];
 
     return (
@@ -1010,9 +1027,11 @@ export default function FoundingReviewerApplyPage() {
                   </p>
                 </div>
                 
-                {/* Rate */}
+                {/* Rate - Now Optional */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Rate per Review (USD)</label>
+                  <label className="text-sm font-medium text-gray-300">
+                    Rate per Review (USD) <span className="text-gray-500 font-normal">- Optional</span>
+                  </label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
                     <input
@@ -1024,16 +1043,12 @@ export default function FoundingReviewerApplyPage() {
                       className="w-full pl-8 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     />
                   </div>
-                  <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3">
+                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
                     <div className="flex items-start gap-2">
-                      <DollarSign className="w-4 h-4 text-orange-400 mt-0.5" />
-                      <div className="text-xs text-orange-200">
-                        <p className="font-medium mb-1">Pricing Tips:</p>
-                        <ul className="space-y-1">
-                          <li>• $15-25: Good for starting out</li>
-                          <li>• $25-40: Experienced reviewers</li>
-                          <li>• $40+: Premium/celebrity reviewers</li>
-                        </ul>
+                      <DollarSign className="w-4 h-4 text-blue-400 mt-0.5" />
+                      <div className="text-xs text-blue-200">
+                        <p className="font-medium mb-1">Don't know yet? No problem!</p>
+                        <p>You can set or change your rate anytime in the app. Most reviewers charge $25-50 per review.</p>
                       </div>
                     </div>
                   </div>
@@ -1052,7 +1067,7 @@ export default function FoundingReviewerApplyPage() {
                 </Button>
                 <Button
                   onClick={handleNext}
-                  disabled={loading || !rate || isNaN(Number(rate)) || Number(rate) <= 0}
+                  disabled={loading}
                   className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
                 >
                   {loading ? 'Saving...' : 'Continue'}
@@ -1121,11 +1136,11 @@ export default function FoundingReviewerApplyPage() {
                   </div>
                 </div>
                 
-                {/* Phone */}
+                {/* Phone - Optional */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
                     <Smartphone className="w-4 h-4" />
-                    Phone Number
+                    Phone Number <span className="text-gray-500 font-normal text-xs">- Optional</span>
                   </label>
                   <input
                     type="tel"
@@ -1134,6 +1149,7 @@ export default function FoundingReviewerApplyPage() {
                     placeholder="+1 555 123 4567"
                     className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
+                  <p className="text-xs text-gray-400">We'll use this to notify you about new review requests</p>
               </div>
                 
                 {/* Marketing Consent */}
@@ -1194,102 +1210,6 @@ export default function FoundingReviewerApplyPage() {
       )}
 
       {step === 6 && (
-        <div className="flex-1 flex items-center justify-center px-4 py-4 md:py-8 min-h-[calc(100vh-120px)]">
-          <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
-            <CardHeader className="text-center space-y-1 md:space-y-2 py-4 md:py-6">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-indigo-500/20 to-indigo-600/20 rounded-full flex items-center justify-center mx-auto">
-                <Target className="w-6 h-6 md:w-8 md:h-8 text-indigo-400" />
-              </div>
-              <CardTitle className="text-xl md:text-2xl font-bold text-white">Bio & Focus Areas</CardTitle>
-              <CardDescription className="text-sm md:text-base text-gray-300">
-                Tell guys what makes you a great reviewer
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent className="space-y-4 md:space-y-6 py-4 md:py-6">
-              {error && (
-                <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-3 py-2 md:px-4 md:py-3 rounded-lg text-xs md:text-sm">
-                  {error}
-                </div>
-              )}
-              
-              <div className="space-y-3 md:space-y-4">
-                {/* Bio */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Your Bio
-                  </label>
-                  <textarea
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="Tell guys why you're great at giving reviews and what your expertise is..."
-                    rows={4}
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
-                  />
-                  <div className="text-xs text-gray-400">
-                    {bio.length}/500 characters
-                  </div>
-                </div>
-                
-                {/* Focus Areas */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Focus Areas</label>
-                  <input
-                    type="text"
-                    value={focusAreas}
-                    onChange={(e) => setFocusAreas(e.target.value)}
-                    placeholder="e.g., wardrobe, room setup, dating profile"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              {/* Examples */}
-              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-                <div className="flex items-start gap-2">
-                  <Star className="w-4 h-4 text-green-400 mt-0.5" />
-                  <div className="text-xs text-green-200">
-                    <p className="font-medium mb-2">Great bio examples:</p>
-                    <div className="space-y-2">
-                      <div className="bg-green-500/20 rounded p-2">
-                        <p className="font-medium">Fashion Expert:</p>
-                        <p>"Fashion stylist with 5+ years helping guys upgrade their wardrobe. I focus on finding pieces that make you look confident and attractive."</p>
-                      </div>
-                      <div className="bg-green-500/20 rounded p-2">
-                        <p className="font-medium">Dating Coach:</p>
-                        <p>"Dating coach who's helped 200+ guys improve their profiles. I specialize in photos, bios, and conversation starters that get matches."</p>
-                      </div>
-              </div>
-            </div>
-            </div>
-          </div>
-
-              {/* Actions */}
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setStep(5)}
-                  className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
-                <Button
-                  onClick={handleNext}
-                  disabled={loading}
-                  className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
-                >
-                  {loading ? 'Submitting...' : 'Submit Application'}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {step === 7 && (
         <div className="flex-1 flex items-center justify-center px-4 py-8 min-h-[calc(100vh-120px)]">
           <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20 text-center">
             <CardContent className="p-8 space-y-6">
@@ -1339,6 +1259,18 @@ export default function FoundingReviewerApplyPage() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Image Crop Modal */}
+      {showCropModal && imageToCrop && (
+        <ImageCropModal
+          image={imageToCrop}
+          onCropComplete={handleCropComplete}
+          onClose={() => {
+            setShowCropModal(false);
+            setImageToCrop(null);
+          }}
+        />
       )}
     </div>
   );
