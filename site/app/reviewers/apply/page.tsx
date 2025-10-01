@@ -88,23 +88,58 @@ export default function FoundingReviewerApplyPage() {
   }, []);
 
   useEffect(() => {
-    // Check if user is already authenticated via Google
-    const checkGoogleAuth = async () => {
+    // Check if user is already authenticated and load existing profile data
+    const checkAuthAndLoadProfile = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user && user.app_metadata?.provider === 'google') {
-          setIsGoogleAuthed(true);
-          // Auto-fill from Google data
+        if (user) {
+          // User is authenticated
+          if (user.app_metadata?.provider === 'google') {
+            setIsGoogleAuthed(true);
+          }
+          
+          // Auto-fill from auth data
           if (user.email) setEmail(user.email);
           if (user.user_metadata?.given_name) setFirstName(user.user_metadata.given_name);
           if (user.user_metadata?.family_name) setLastName(user.user_metadata.family_name);
+          
+          // Load existing profile data if they already have one
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('avatar_url, hourly_rate, links, preferences')
+            .eq('id', user.id)
+            .maybeSingle();
+            
+          if (profile) {
+            // Pre-populate with existing data so they can see what they're changing
+            if (profile.avatar_url && !avatarPreview) {
+              setAvatarPreview(profile.avatar_url);
+              // Note: We don't set avatarFile here, so if they don't upload a new one,
+              // we won't overwrite their existing avatar
+            }
+            if (profile.hourly_rate) {
+              setRate(String(profile.hourly_rate));
+            }
+            if (profile.links?.instagram) {
+              setInstagramHandle(profile.links.instagram);
+            }
+            if (profile.links?.tiktok) {
+              setTiktokHandle(profile.links.tiktok);
+            }
+            if (profile.preferences?.phone) {
+              setPhone(profile.preferences.phone);
+            }
+            if (profile.preferences?.marketing_consent !== undefined) {
+              setMarketingConsent(profile.preferences.marketing_consent);
+            }
+          }
         }
       } catch (e) {
-        console.error('Failed to check auth:', e);
+        console.error('Failed to check auth and load profile:', e);
       }
     };
     
-    checkGoogleAuth();
+    checkAuthAndLoadProfile();
     
     const sub = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user && session.user.app_metadata?.provider === 'google') {

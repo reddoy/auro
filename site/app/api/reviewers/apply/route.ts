@@ -12,38 +12,105 @@ export async function POST(req: Request) {
     }
     const admin = createClient(url, key);
 
-    // Determine user from Authorization header if present
+    // SECURITY: Only trust the auth token - NEVER accept userId from request body
     const auth = req.headers.get('authorization') || '';
     const token = auth.replace(/^Bearer\s+/i, '');
+    
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Authentication required' }), { status: 401 });
+    }
+    
     let userId: string | null = null;
-    if (token) {
-      try {
-        const { data: u } = await admin.auth.getUser(token);
-        userId = (u?.user?.id as string) || null;
-      } catch {}
+    try {
+      const { data: u, error: authError } = await admin.auth.getUser(token);
+      if (authError || !u?.user) {
+        return new Response(JSON.stringify({ error: 'Invalid authentication token' }), { status: 401 });
+      }
+      userId = u.user.id;
+    } catch (e) {
+      return new Response(JSON.stringify({ error: 'Authentication failed' }), { status: 401 });
     }
-    // Fallback for pre-verified accounts: accept explicit userId from body
-    if (!userId && userIdFromBody) {
-      userId = String(userIdFromBody);
-    }
+    
     if (!userId) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
     }
 
-    // Upsert profile fields
-    const updates: any = { id: userId };
-    if (typeof bio === 'string') updates.bio = bio;
-    if (typeof focusAreas === 'string') updates.skills = focusAreas.split(',').map((s: string) => s.trim()).filter(Boolean);
-    if (!isNaN(Number(hourlyRate))) updates.hourly_rate = Number(hourlyRate);
-    // Prefer storage path (server-readable) if available over signed URL
-    if (avatarPath) updates.avatar_url = avatarPath;
-    else if (avatarUrl) updates.avatar_url = avatarUrl;
-    updates.is_reviewer = true;
-    // Optionally store contact/marketing consent in preferences JSON
-    updates.preferences = { marketing_consent: !!marketingConsent, phone: phone || null };
+    // Ensure profile exists first - only create if missing, don't overwrite existing data
+    try {
+      const { data: existingProfile } = await admin.from('profiles').select('id').eq('id', userId).maybeSingle();
+      
+      if (!existingProfile) {
+        // Profile doesn't exist - create it with basic info from auth
+        let userEmail: string | undefined;
+        let userFullName: string | undefined;
+        
+        if (token) {
+          const { data: userData } = await admin.auth.getUser(token);
+          userEmail = userData?.user?.email;
+          userFullName = userData?.user?.user_metadata?.full_name || userData?.user?.user_metadata?.name;
+        } else {
+          // Fallback: try to get user by ID directly
+          const { data: { user } } = await admin.auth.admin.getUserById(userId);
+          userEmail = user?.email;
+          userFullName = user?.user_metadata?.full_name || user?.user_metadata?.name;
+        }
 
-    const { error: upErr } = await admin.from('profiles').upsert(updates, { onConflict: 'id' });
-    if (upErr) return new Response(JSON.stringify({ error: upErr.message }), { status: 400 });
+        const { error: createErr } = await admin.from('profiles').insert({
+          id: userId,
+          email: userEmail,
+          full_name: userFullName || '',
+          username: userEmail?.split('@')[0] || `user_${userId.slice(0, 8)}`,
+        });
+        if (createErr) {
+          console.error('Failed to create profile:', createErr);
+          return new Response(JSON.stringify({ error: 'Failed to create profile: ' + createErr.message }), { status: 400 });
+        }
+      }
+    } catch (profileCheckErr: any) {
+      console.error('Profile check error:', profileCheckErr);
+    }
+
+    // Now update ONLY reviewer-specific fields - don't touch core profile data
+    // IMPORTANT: Only update fields that were explicitly provided to avoid overwriting existing data
+    const reviewerUpdates: any = {
+      is_reviewer: true, // Always set this
+    };
+    
+    // Only update bio if provided (empty string counts as intentional)
+    if (typeof bio === 'string') reviewerUpdates.bio = bio;
+    
+    // Only update skills if provided
+    if (typeof focusAreas === 'string') {
+      reviewerUpdates.skills = focusAreas.split(',').map((s: string) => s.trim()).filter(Boolean);
+    }
+    
+    // Only update hourly_rate if provided (they might want to set it later)
+    if (hourlyRate && !isNaN(Number(hourlyRate))) {
+      reviewerUpdates.hourly_rate = Number(hourlyRate);
+    }
+    
+    // CRITICAL: Only update avatar if they actually uploaded a new one in this session
+    // If avatarPath is set, they uploaded a new file - update it
+    // If not set, preserve their existing avatar (don't overwrite)
+    if (avatarPath) {
+      reviewerUpdates.avatar_url = avatarPath;
+    } else if (avatarUrl) {
+      reviewerUpdates.avatar_url = avatarUrl;
+    }
+    // If neither avatarPath nor avatarUrl, don't include avatar_url in update
+    
+    // Store contact/marketing consent in preferences JSON
+    // Merge with existing preferences to not lose other data
+    reviewerUpdates.preferences = { 
+      marketing_consent: !!marketingConsent, 
+      phone: phone || null 
+    };
+
+    const { error: upErr } = await admin.from('profiles').update(reviewerUpdates).eq('id', userId);
+    if (upErr) {
+      console.error('Profile update error:', upErr);
+      return new Response(JSON.stringify({ error: upErr.message }), { status: 400 });
+    }
 
     // Store socials if provided
     if (Array.isArray(socials) && socials.length) {
@@ -61,12 +128,17 @@ export async function POST(req: Request) {
     }
 
     // Also persist handles into profiles.links json for convenience
-    const linksUpdate: any = { id: userId };
-    linksUpdate.links = {
-      instagram: instagramHandle || null,
-      tiktok: tiktokHandle || null,
+    const linksUpdate = {
+      links: {
+        instagram: instagramHandle || null,
+        tiktok: tiktokHandle || null,
+      }
     };
-    try { await admin.from('profiles').upsert(linksUpdate, { onConflict: 'id' }); } catch {}
+    try { 
+      await admin.from('profiles').update(linksUpdate).eq('id', userId);
+    } catch (linkErr) {
+      console.error('Links update error:', linkErr);
+    }
 
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   } catch (e: any) {
