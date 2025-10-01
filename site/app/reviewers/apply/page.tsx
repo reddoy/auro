@@ -37,6 +37,50 @@ export default function FoundingReviewerApplyPage() {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
+  // Check if resuming from OAuth
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const shouldResume = urlParams.get('resume') === 'true';
+    
+    if (shouldResume) {
+      try {
+        const saved = localStorage.getItem('auro_reviewer_signup_state');
+        if (saved) {
+          const state = JSON.parse(saved);
+          // Only restore if saved within last 30 minutes
+          if (Date.now() - state.timestamp < 30 * 60 * 1000) {
+            // Restore what they entered before OAuth
+            setFirstName(state.firstName || '');
+            setLastName(state.lastName || '');
+            setEmail(state.email || '');
+            
+            // Also try to get info from Google OAuth if available
+            try {
+              const googleFirstName = localStorage.getItem('auro_signup_first_name');
+              const googleLastName = localStorage.getItem('auro_signup_last_name');
+              const googleEmail = localStorage.getItem('auro_signup_email');
+              
+              if (googleFirstName && !state.firstName) setFirstName(googleFirstName);
+              if (googleLastName && !state.lastName) setLastName(googleLastName);
+              if (googleEmail && !state.email) setEmail(googleEmail);
+            } catch {}
+            
+            // Skip to step 4 (Profile) after successful OAuth
+            setStep(4);
+          }
+          localStorage.removeItem('auro_reviewer_signup_state');
+        }
+      } catch (e) {
+        console.error('Failed to restore state:', e);
+      }
+      
+      // Clean up URL
+      window.history.replaceState({}, '', '/reviewers/apply');
+    }
+  }, []);
+
   const isAuthed = useMemo(() => {
     return false;
   }, []);
@@ -54,25 +98,29 @@ export default function FoundingReviewerApplyPage() {
   useEffect(() => {
     const fetchReviewerCount = async () => {
       try {
+        // Try profiles table first since creators might not exist yet
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id', { count: 'exact' })
+          .eq('is_reviewer', true);
+        
+        if (!profileError && profileData) {
+          setReviewerCount(profileData.length || 0);
+          return;
+        }
+
+        // Fallback to creators table
         const { data, error } = await supabase
           .from('creators')
           .select('id', { count: 'exact' })
           .eq('is_reviewer', true);
 
-        if (error) {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('id', { count: 'exact' })
-            .eq('is_reviewer', true);
-          
-          if (!profileError) {
-            setReviewerCount(profileData?.length || 0);
-          }
-        } else {
-          setReviewerCount(data?.length || 0);
+        if (!error && data) {
+          setReviewerCount(data.length || 0);
         }
       } catch (err) {
         console.error('Error fetching reviewer count:', err);
+        // Silently fail - default to 0
       }
     };
 
@@ -142,10 +190,21 @@ export default function FoundingReviewerApplyPage() {
     setError('');
 
     try {
+      // Save current state to localStorage before OAuth redirect
+      try {
+        localStorage.setItem('auro_reviewer_signup_state', JSON.stringify({
+          step: 2,
+          firstName,
+          lastName,
+          email,
+          timestamp: Date.now()
+        }));
+      } catch {}
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?redirect_to=${encodeURIComponent('/reviewers/apply')}`,
+          redirectTo: `${window.location.origin}/auth/callback?redirect_to=${encodeURIComponent('/reviewers/apply?resume=true')}`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

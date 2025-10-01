@@ -39,6 +39,40 @@ function AuthCallbackContent() {
           setStatus('success');
           setMessage('Successfully signed in!');
           
+          // Store user info for profile creation
+          try {
+            const user = data.session.user;
+            if (user) {
+              localStorage.setItem('auro_signup_user_id', user.id);
+              localStorage.setItem('auro_signup_email', user.email || '');
+              
+              // Extract name from Google OAuth metadata
+              const metadata = user.user_metadata;
+              if (metadata) {
+                const fullName = metadata.full_name || metadata.name || '';
+                const firstName = metadata.given_name || '';
+                const lastName = metadata.family_name || '';
+                
+                if (fullName) localStorage.setItem('auro_signup_full_name', fullName);
+                if (firstName) localStorage.setItem('auro_signup_first_name', firstName);
+                if (lastName) localStorage.setItem('auro_signup_last_name', lastName);
+              }
+              
+              // Ensure profile exists
+              await fetch('/api/auth/ensure-profile', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ 
+                  userId: user.id, 
+                  email: user.email,
+                  fullName: user.user_metadata?.full_name || user.user_metadata?.name
+                })
+              });
+            }
+          } catch (e) {
+            console.error('Failed to store user info:', e);
+          }
+          
           // Redirect to the intended destination or default page
           const redirectTo = searchParams.get('redirect_to') || '/request';
           setTimeout(() => {

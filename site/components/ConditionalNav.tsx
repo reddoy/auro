@@ -17,27 +17,30 @@ export default function ConditionalNav() {
       try {
         setLoading(true);
         
-        // Try to fetch from creators table, filtering for actual reviewers
+        // Try profiles table first since creators might not exist yet
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id', { count: 'exact' })
+          .eq('is_reviewer', true);
+        
+        if (!profileError && profileData) {
+          setCount(profileData.length || 0);
+          setLoading(false);
+          return;
+        }
+
+        // Fallback to creators table
         const { data, error } = await supabase
           .from('creators')
           .select('id', { count: 'exact' })
           .eq('is_reviewer', true);
 
-        if (error) {
-          // If creators table doesn't exist or has issues, try profiles table
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('id', { count: 'exact' })
-            .eq('is_reviewer', true);
-          
-          if (!profileError) {
-            setCount(profileData?.length || 0);
-          }
-        } else {
-          setCount(data?.length || 0);
+        if (!error && data) {
+          setCount(data.length || 0);
         }
       } catch (err) {
         console.error('Error fetching reviewer count:', err);
+        // Silently fail - default to 0
       } finally {
         setLoading(false);
       }
