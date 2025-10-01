@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 // Step components
+import IntroStep from './components/IntroStep';
 import CreatorSelection from './components/CreatorSelection';
 import PhotoUpload from './components/PhotoUpload';
 import PromptAnswers from './components/PromptAnswers';
@@ -27,6 +28,7 @@ export type RequestData = {
 };
 
 const STEPS = [
+  'intro',
   'creator-selection',
   'photo-upload', 
   'prompt-answers',
@@ -39,7 +41,7 @@ const STEPS = [
 type Step = typeof STEPS[number];
 
 export default function RequestPage() {
-  const [currentStep, setCurrentStep] = useState<Step>('creator-selection');
+  const [currentStep, setCurrentStep] = useState<Step>('intro');
   const [requestData, setRequestData] = useState<RequestData>({
     photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
     message: '',
@@ -167,6 +169,7 @@ export default function RequestPage() {
 
   const getStepTitle = (step: Step) => {
     const titles = {
+      'intro': 'Welcome',
       'creator-selection': 'Choose Your Reviewer',
       'photo-upload': 'Upload Your Photos',
       'prompt-answers': 'Tell Us About Yourself',
@@ -206,6 +209,12 @@ export default function RequestPage() {
     }
 
     switch (currentStep) {
+      case 'intro':
+        return (
+          <IntroStep
+            onNext={nextStep}
+          />
+        );
       case 'creator-selection':
         return (
           <CreatorSelection
@@ -283,7 +292,7 @@ export default function RequestPage() {
     <div className="request-page">
       <div className="container">
         <div className="request-header">
-          <h1>Request a Review</h1>
+          <h1>Become a Founding Reviewer</h1>
           {/* Debug: Clear auth session button */}
           {isAuthenticated && (
             <button 
