@@ -34,6 +34,7 @@ export default function FoundingReviewerApplyPage() {
   const [error, setError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [reviewerCount, setReviewerCount] = useState<number>(0);
+  const [isGoogleAuthed, setIsGoogleAuthed] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -86,8 +87,31 @@ export default function FoundingReviewerApplyPage() {
   }, []);
 
   useEffect(() => {
+    // Check if user is already authenticated via Google
+    const checkGoogleAuth = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && user.app_metadata?.provider === 'google') {
+          setIsGoogleAuthed(true);
+          // Auto-fill from Google data
+          if (user.email) setEmail(user.email);
+          if (user.user_metadata?.given_name) setFirstName(user.user_metadata.given_name);
+          if (user.user_metadata?.family_name) setLastName(user.user_metadata.family_name);
+        }
+      } catch (e) {
+        console.error('Failed to check auth:', e);
+      }
+    };
+    
+    checkGoogleAuth();
+    
     const sub = supabase.auth.onAuthStateChange((_event, session) => {
-      // no-op; we can trigger a re-render by updating local state if needed
+      if (session?.user && session.user.app_metadata?.provider === 'google') {
+        setIsGoogleAuthed(true);
+        if (session.user.email) setEmail(session.user.email);
+        if (session.user.user_metadata?.given_name) setFirstName(session.user.user_metadata.given_name);
+        if (session.user.user_metadata?.family_name) setLastName(session.user.user_metadata.family_name);
+      }
     });
     return () => {
       try { (sub as any)?.data?.subscription?.unsubscribe?.(); } catch {}
@@ -630,16 +654,50 @@ export default function FoundingReviewerApplyPage() {
 
       {step === 2 && (
         <div className="flex-1 flex items-center justify-center px-4 py-4 md:py-8 min-h-[calc(100vh-120px)]">
-          <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
-            <CardHeader className="text-center space-y-1 md:space-y-2 py-4 md:py-6">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-full flex items-center justify-center mx-auto">
-                <User className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
-              </div>
-              <CardTitle className="text-xl md:text-2xl font-bold text-white">Create Your Account</CardTitle>
-              <CardDescription className="text-sm md:text-base text-gray-300">
-                Tell us who you are and how to reach you
-              </CardDescription>
-            </CardHeader>
+          {isGoogleAuthed ? (
+            <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
+              <CardContent className="py-12 text-center space-y-6">
+                <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto">
+                  <Check className="w-10 h-10 text-white" />
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-bold text-white">Already Signed In!</h3>
+                  <p className="text-gray-300">
+                    You're authenticated with Google as <span className="text-green-400 font-semibold">{email}</span>
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setStep(1)}
+                    className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back
+                  </Button>
+                  <Button
+                    onClick={() => setStep(4)}
+                    className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+                  >
+                    Continue to Profile
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
+              <CardHeader className="text-center space-y-1 md:space-y-2 py-4 md:py-6">
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-full flex items-center justify-center mx-auto">
+                  <User className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
+                </div>
+                <CardTitle className="text-xl md:text-2xl font-bold text-white">Create Your Account</CardTitle>
+                <CardDescription className="text-sm md:text-base text-gray-300">
+                  Tell us who you are and how to reach you
+                </CardDescription>
+              </CardHeader>
             
             <CardContent className="space-y-4 md:space-y-6 py-4 md:py-6">
               {error && (
@@ -734,21 +792,56 @@ export default function FoundingReviewerApplyPage() {
               </div>
             </CardContent>
           </Card>
+          )}
         </div>
       )}
 
       {step === 3 && (
         <div className="flex-1 flex items-center justify-center px-4 py-4 md:py-8 min-h-[calc(100vh-120px)]">
-          <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
-            <CardHeader className="text-center space-y-1 md:space-y-2 py-4 md:py-6">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-green-500/20 to-green-600/20 rounded-full flex items-center justify-center mx-auto">
-                <Lock className="w-6 h-6 md:w-8 md:h-8 text-green-400" />
-              </div>
-              <CardTitle className="text-xl md:text-2xl font-bold text-white">Secure Your Account</CardTitle>
-              <CardDescription className="text-sm md:text-base text-gray-300">
-                Create a strong password to protect your account
-              </CardDescription>
-            </CardHeader>
+          {isGoogleAuthed ? (
+            <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
+              <CardContent className="py-12 text-center space-y-6">
+                <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto">
+                  <Check className="w-10 h-10 text-white" />
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-bold text-white">Password Not Required</h3>
+                  <p className="text-gray-300">
+                    You signed in with Google, so you don't need a password!
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setStep(2)}
+                    className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back
+                  </Button>
+                  <Button
+                    onClick={() => setStep(4)}
+                    className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+                  >
+                    Continue to Profile
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
+              <CardHeader className="text-center space-y-1 md:space-y-2 py-4 md:py-6">
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-green-500/20 to-green-600/20 rounded-full flex items-center justify-center mx-auto">
+                  <Lock className="w-6 h-6 md:w-8 md:h-8 text-green-400" />
+                </div>
+                <CardTitle className="text-xl md:text-2xl font-bold text-white">Secure Your Account</CardTitle>
+                <CardDescription className="text-sm md:text-base text-gray-300">
+                  Create a strong password to protect your account
+                </CardDescription>
+              </CardHeader>
             
             <CardContent className="space-y-4 md:space-y-6 py-4 md:py-6">
               {error && (
@@ -851,6 +944,7 @@ export default function FoundingReviewerApplyPage() {
           </div>
             </CardContent>
           </Card>
+          )}
         </div>
       )}
 
