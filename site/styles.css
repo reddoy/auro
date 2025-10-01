@@ -236,6 +236,11 @@
     transform: scale(1.02);
     transition: transform 0.3s ease;
   }
+
+  /* Mobile navigation improvements */
+  .mobile-brand-centered {
+    justify-self: center;
+  }
   
   /* Enhanced mobile hero effects */
   .mobile-hero-content {
@@ -3401,6 +3406,23 @@ footer {
 
 /* Mobile responsive */
 @media (max-width: 768px) {
+  /* Center the brand on mobile */
+  .nav-content {
+    justify-content: center;
+    position: relative;
+  }
+  
+  .mobile-brand-centered {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    justify-self: center;
+  }
+  
+  .nav-cta-section {
+    display: none; /* Hide CTA section on mobile */
+  }
+  
   .nav-countdown-section {
     gap: 8px;
   }
@@ -3437,10 +3459,6 @@ footer {
   .nav .countdown-separator {
     font-size: 16px;
     margin: 0 2px;
-  }
-  
-  .nav-cta-section {
-    gap: 12px;
   }
   
   .nav .reviewer-counter {

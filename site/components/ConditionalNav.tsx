@@ -60,7 +60,7 @@ export default function ConditionalNav() {
   const isFull = spotsLeft === 0;
   
   return (
-    <div className="nav-cta-group">
+    <div className="nav-cta-group desktop-only">
       <a className="cta-nav-integrated" href="/reviewers/apply">
         <div className="cta-count-section">
           <span className="cta-count-number">{count}</span>

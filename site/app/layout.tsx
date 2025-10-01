@@ -40,12 +40,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="nav">
           <div className="container">
             <div className="nav-content">
-              <a href="/" className="brand" aria-label="Auro Home">
+              <a href="/" className="brand mobile-brand-centered" aria-label="Auro Home">
                 <img src="/auro_aura_logo_nobg.png" alt="Auro logo" width={40} height={40} />
                 <span className="brand__name">Auro</span>
               </a>
               
-              <div className="nav-center">
+              <div className="nav-center desktop-only">
                 <div className="nav-countdown-section">
                   <div className="app-logos">
                     <img src="/apple_logo_no_bg.png" alt="iOS App" className="app-logo" />
