@@ -126,28 +126,40 @@ export default function HomePage() {
               
               {/* Main Headline */}
               <div className="space-y-4">
-                <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.1] text-center tracking-tight">
+                <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.2] text-center tracking-tight px-4">
                   <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.4s' }}>
-                    Girls <span className="bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">review guys</span>.
+                    Girls <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-pink-500 bg-clip-text text-transparent">review guys</span>.
                   </span>
                   <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.6s' }}>
-                    Guys <span className="bg-gradient-to-r from-pink-400 to-purple-600 bg-clip-text text-transparent">get advice</span>.
+                    Guys <span className="bg-gradient-to-r from-pink-500 via-purple-500 to-purple-600 bg-clip-text text-transparent">get advice</span>.
                   </span>
                   <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.8s' }}>
-                    Girls get <span className="bg-gradient-to-r from-green-400 to-emerald-600 bg-clip-text text-transparent italic">paid</span>.
+                    Girls get <span className="bg-gradient-to-r from-purple-600 via-green-400 to-emerald-600 bg-clip-text text-transparent italic underline decoration-2 underline-offset-4">paid</span>.
                   </span>
                 </h1>
                 
                 <p className="text-lg text-white/90 max-w-lg mx-auto mobile-text-reveal leading-relaxed px-4 font-medium" style={{ animationDelay: '1s' }}>
                   Get paid to review men's profiles, style, and dating photos.
-                  <span className="block mt-2 text-base text-white/80">
-                    Set your own rates • Work when you want • 85% earnings for founding members
-                  </span>
                 </p>
+                
+                <div className="mobile-text-reveal space-y-2 px-4" style={{ animationDelay: '1.1s' }}>
+                  <div className="flex items-center justify-center gap-2 text-base text-white/90">
+                    <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                    <span className="font-medium">Set your own rates</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-base text-white/90">
+                    <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                    <span className="font-medium">Work when you want</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-base text-white/90">
+                    <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                    <span className="font-medium">85% earnings for founding members</span>
+                  </div>
+                </div>
               </div>
 
               {/* CTA Button - Moved above iPhone for better conversion */}
-              <div className="flex justify-center mobile-text-reveal" style={{ animationDelay: '1.1s' }}>
+              <div className="flex justify-center mobile-text-reveal" style={{ animationDelay: '1.2s' }}>
                 <Button 
                   size="xl" 
                   variant="gradient" 
@@ -188,11 +200,11 @@ export default function HomePage() {
               </div>
 
               {/* Mobile App Launch Countdown */}
-              <div className="text-center mobile-text-reveal" style={{ animationDelay: '1.5s' }}>
-                <p className="text-white/80 text-sm mb-2">App launches in:</p>
+              <div className="text-center mobile-text-reveal bg-white/5 backdrop-blur-sm rounded-xl p-4 mx-4" style={{ animationDelay: '1.4s' }}>
+                <p className="text-white/90 text-base font-semibold mb-3">🚀 App launches in:</p>
                 <CountdownTimer 
                   targetDate={new Date('2025-10-15T21:00:00-08:00')}
-                  className="text-base"
+                  className="text-lg font-bold"
                 />
               </div>
 
@@ -228,13 +240,13 @@ export default function HomePage() {
                 <div className="space-y-6">
                   <h1 className="text-5xl xl:text-6xl font-extrabold leading-[1.2] tracking-tight pb-2">
                     <span className="block text-white pb-1">
-                      Girls <span className="bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">review guys</span>.
+                      Girls <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-pink-500 bg-clip-text text-transparent">review guys</span>.
                     </span>
                     <span className="block text-white whitespace-nowrap pb-1">
-                      Guys <span className="bg-gradient-to-r from-pink-400 to-purple-600 bg-clip-text text-transparent">get advice</span>.
+                      Guys <span className="bg-gradient-to-r from-pink-500 via-purple-500 to-purple-600 bg-clip-text text-transparent">get advice</span>.
                     </span>
                     <span className="block text-white pb-1">
-                      Girls get <span className="bg-gradient-to-r from-green-400 to-emerald-600 bg-clip-text text-transparent italic">paid</span>.
+                      Girls get <span className="bg-gradient-to-r from-purple-600 via-green-400 to-emerald-600 bg-clip-text text-transparent italic underline decoration-2 underline-offset-4">paid</span>.
                     </span>
                   </h1>
                   
@@ -262,11 +274,11 @@ export default function HomePage() {
                 </div>
 
                 {/* App Launch Countdown */}
-                <div className="space-y-2">
-                  <p className="text-white/80 text-sm">App launches in:</p>
+                <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 space-y-2">
+                  <p className="text-white/90 text-base font-semibold">🚀 App launches in:</p>
                   <CountdownTimer 
                     targetDate={new Date('2025-10-15T21:00:00-08:00')}
-                    className="text-lg"
+                    className="text-xl font-bold"
                   />
                 </div>
 
