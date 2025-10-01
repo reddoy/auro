@@ -140,8 +140,11 @@ export default function HomePage() {
                   </span>
                 </h1>
                 
-                <p className="text-lg text-white/90 max-w-lg mx-auto mobile-text-reveal leading-relaxed px-4" style={{ animationDelay: '1s' }}>
-                  Men pay for your advice, you help them glow up, and grow your brand.
+                <p className="text-lg text-white/90 max-w-lg mx-auto mobile-text-reveal leading-relaxed px-4 font-medium" style={{ animationDelay: '1s' }}>
+                  Get paid to review men's profiles, style, and dating photos.
+                  <span className="block mt-2 text-base text-white/80">
+                    Set your own rates • Work when you want • 85% earnings for founding members
+                  </span>
                 </p>
               </div>
 
@@ -175,11 +178,11 @@ export default function HomePage() {
                 <Button 
                   size="xl" 
                   variant="gradient" 
-                  className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-sm"
+                  className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-sm text-lg px-6 py-4 shadow-2xl"
                   asChild
                 >
                   <a href="/reviewers/apply">
-                    Claim Your Founding Reviewer Spot ({reviewerCount}/100)
+                    🚀 Start Earning Today ({reviewerCount}/100 spots taken)
                     <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </a>
                 </Button>
@@ -242,8 +245,11 @@ export default function HomePage() {
                     </span>
                   </h1>
                   
-                  <p className="text-2xl text-white/90 max-w-2xl leading-relaxed">
-                    Auro connects women with men who want glow-up advice—and get paid for it.
+                  <p className="text-xl text-white/90 max-w-2xl leading-relaxed font-medium">
+                    Get paid to review men's profiles, style, and dating photos. 
+                    <span className="block mt-2 text-lg text-white/80">
+                      Set your own rates • Work when you want • 85% earnings for founding members
+                    </span>
                   </p>
                 </div>
                 
@@ -252,11 +258,11 @@ export default function HomePage() {
                   <Button 
                     size="xl" 
                     variant="gradient" 
-                    className="group"
+                    className="group text-lg px-8 py-4 shadow-2xl hover:shadow-3xl transition-all duration-300"
                     asChild
                   >
                     <a href="/reviewers/apply">
-                      Claim Your Founding Reviewer Spot ({reviewerCount}/100)
+                      🚀 Start Earning Today ({reviewerCount}/100 spots taken)
                       <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </a>
                   </Button>
@@ -650,11 +656,11 @@ export default function HomePage() {
               <Button 
                 size="xl" 
                 variant="gradient" 
-                className="group text-lg px-8 py-4 mobile-gradient-border animate-pulse-glow"
+                className="group text-lg px-8 py-4 mobile-gradient-border animate-pulse-glow shadow-2xl hover:shadow-3xl transition-all duration-300"
                 asChild
               >
                 <a href="/reviewers/apply">
-                  Claim Your Founding Spot
+                  🚀 Start Earning Today ({reviewerCount}/100 spots taken)
                   <ArrowRight className="ml-2 w-6 h-6 group-hover:translate-x-1 transition-transform" />
                 </a>
               </Button>
@@ -702,8 +708,30 @@ export default function HomePage() {
           border-radius: 30px;
           background: #000;
           overflow: hidden;
-          box-shadow: 0 0 20px rgba(0,0,0,0.4);
+          box-shadow: 
+            0 0 30px rgba(236, 72, 153, 0.6),
+            0 0 60px rgba(236, 72, 153, 0.4),
+            0 0 90px rgba(236, 72, 153, 0.2),
+            0 0 20px rgba(0,0,0,0.4);
           margin: 0 auto;
+          animation: iphone-glow-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes iphone-glow-pulse {
+          0%, 100% { 
+            box-shadow: 
+              0 0 30px rgba(236, 72, 153, 0.6),
+              0 0 60px rgba(236, 72, 153, 0.4),
+              0 0 90px rgba(236, 72, 153, 0.2),
+              0 0 20px rgba(0,0,0,0.4);
+          }
+          50% { 
+            box-shadow: 
+              0 0 40px rgba(236, 72, 153, 0.8),
+              0 0 80px rgba(236, 72, 153, 0.6),
+              0 0 120px rgba(236, 72, 153, 0.3),
+              0 0 20px rgba(0,0,0,0.4);
+          }
         }
 
         .desktop-iphone-frame::before {
@@ -767,10 +795,32 @@ export default function HomePage() {
           background: #000;
           overflow: hidden;
           box-shadow: 
+            0 0 25px rgba(236, 72, 153, 0.6),
+            0 0 50px rgba(236, 72, 153, 0.4),
+            0 0 75px rgba(236, 72, 153, 0.2),
             0 0 30px rgba(0,0,0,0.6),
-            0 0 60px rgba(204, 53, 151, 0.1),
             inset 0 0 20px rgba(255,255,255,0.05);
           margin: 0 auto;
+          animation: mobile-iphone-glow-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes mobile-iphone-glow-pulse {
+          0%, 100% { 
+            box-shadow: 
+              0 0 25px rgba(236, 72, 153, 0.6),
+              0 0 50px rgba(236, 72, 153, 0.4),
+              0 0 75px rgba(236, 72, 153, 0.2),
+              0 0 30px rgba(0,0,0,0.6),
+              inset 0 0 20px rgba(255,255,255,0.05);
+          }
+          50% { 
+            box-shadow: 
+              0 0 35px rgba(236, 72, 153, 0.8),
+              0 0 70px rgba(236, 72, 153, 0.6),
+              0 0 105px rgba(236, 72, 153, 0.3),
+              0 0 30px rgba(0,0,0,0.6),
+              inset 0 0 20px rgba(255,255,255,0.05);
+          }
         }
 
         .mobile-iphone-frame::before {
@@ -823,6 +873,15 @@ export default function HomePage() {
           font-size: 0.85rem;
           margin: 0;
           opacity: 0.9;
+        }
+
+        /* Enhanced shadow effects for CTA buttons */
+        .shadow-2xl {
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .shadow-3xl {
+          box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.35);
         }
       `}</style>
     </div>
