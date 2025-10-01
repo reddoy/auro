@@ -349,7 +349,7 @@ export default function FoundingReviewerApplyPage() {
           <div className="w-full max-w-4xl mx-auto md:hidden">
             <div className="flex flex-col justify-between h-[calc(100vh-140px)] max-h-[700px]">
               {/* Top Section - Compact */}
-              <div className="text-center space-y-3 pt-2">
+              <div className="text-center space-y-2.5 pt-2">
                 <Badge className="bg-gradient-to-r from-orange-500/20 to-purple-600/20 border-orange-500/30 text-orange-400 px-3 py-1 text-xs">
                   <Star className="w-3 h-3 mr-1.5" />
                   Exclusive Founding Program
@@ -358,55 +358,77 @@ export default function FoundingReviewerApplyPage() {
                 <h1 className="text-3xl font-bold leading-tight px-2">
                   <span className="block text-white">Girls rate guys.</span>
                   <span className="block text-white">Guys get advice.</span>
-                  <span className="block bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
+                  <span className="block bg-gradient-to-r from-orange-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
                     Girls get paid.
                   </span>
                 </h1>
+                
+                <p className="text-xs text-gray-300 px-4 leading-relaxed">
+                  We're building the platform where your honest feedback helps guys level up—and you earn money doing it. 
+                  <span className="text-orange-400 font-semibold"> Join the first 100 reviewers</span> and lock in exclusive perks forever.
+                </p>
               </div>
 
               {/* Middle Section - Benefits Cards */}
-              <div className="flex justify-center gap-3 px-4">
-                <div className="flex-1 max-w-[110px] bg-gradient-to-br from-green-500/10 to-green-600/5 backdrop-blur-sm rounded-2xl p-3 border border-green-500/20">
-                  <div className="flex flex-col items-center space-y-1.5">
-                    <div className="w-10 h-10 bg-gradient-to-br from-green-500/30 to-green-600/20 rounded-full flex items-center justify-center">
-                      <DollarSign className="w-5 h-5 text-green-400" />
+              <div className="px-4 space-y-2.5">
+                <div className="grid grid-cols-3 gap-2.5">
+                  <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 backdrop-blur-sm rounded-xl p-2.5 border border-green-500/20">
+                    <div className="flex flex-col items-center space-y-1">
+                      <div className="w-9 h-9 bg-gradient-to-br from-green-500/30 to-green-600/20 rounded-full flex items-center justify-center">
+                        <DollarSign className="w-4 h-4 text-green-400" />
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-white">$25-50</div>
+                        <div className="text-[9px] text-gray-300">per review</div>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-sm font-bold text-white">$25-50</div>
-                      <div className="text-[10px] text-gray-300">per review</div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 backdrop-blur-sm rounded-xl p-2.5 border border-orange-500/20">
+                    <div className="flex flex-col items-center space-y-1">
+                      <div className="w-9 h-9 bg-gradient-to-br from-orange-500/30 to-orange-600/20 rounded-full flex items-center justify-center">
+                        <Star className="w-4 h-4 text-orange-400" />
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-white">85%</div>
+                        <div className="text-[9px] text-gray-300">forever</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 backdrop-blur-sm rounded-xl p-2.5 border border-purple-500/20">
+                    <div className="flex flex-col items-center space-y-1">
+                      <div className="w-9 h-9 bg-gradient-to-br from-purple-500/30 to-purple-600/20 rounded-full flex items-center justify-center">
+                        <Clock className="w-4 h-4 text-purple-400" />
+                      </div>
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-white">Flexible</div>
+                        <div className="text-[9px] text-gray-300">schedule</div>
+                      </div>
                     </div>
                   </div>
                 </div>
                 
-                <div className="flex-1 max-w-[110px] bg-gradient-to-br from-orange-500/10 to-orange-600/5 backdrop-blur-sm rounded-2xl p-3 border border-orange-500/20">
-                  <div className="flex flex-col items-center space-y-1.5">
-                    <div className="w-10 h-10 bg-gradient-to-br from-orange-500/30 to-orange-600/20 rounded-full flex items-center justify-center">
-                      <Star className="w-5 h-5 text-orange-400" />
+                {/* Additional perks */}
+                <div className="bg-gradient-to-r from-blue-500/10 to-indigo-600/10 backdrop-blur-sm rounded-xl p-2.5 border border-blue-500/20">
+                  <div className="flex items-center justify-center gap-4 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5 text-blue-400" />
+                      <span className="text-white font-medium">Founding badge</span>
                     </div>
-                    <div className="text-center">
-                      <div className="text-sm font-bold text-white">85%</div>
-                      <div className="text-[10px] text-gray-300">forever</div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex-1 max-w-[110px] bg-gradient-to-br from-purple-500/10 to-purple-600/5 backdrop-blur-sm rounded-2xl p-3 border border-purple-500/20">
-                  <div className="flex flex-col items-center space-y-1.5">
-                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500/30 to-purple-600/20 rounded-full flex items-center justify-center">
-                      <Clock className="w-5 h-5 text-purple-400" />
-                    </div>
-                    <div className="text-center">
-                      <div className="text-sm font-bold text-white">Flexible</div>
-                      <div className="text-[10px] text-gray-300">schedule</div>
+                    <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
+                    <div className="flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-blue-400" />
+                      <span className="text-white font-medium">Priority reviews</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Bottom Section - CTA + Urgency */}
-              <div className="space-y-3 px-4 pb-4">
+              <div className="space-y-2.5 px-4 pb-4">
                 {/* Live counter urgency bar */}
-                <div className="bg-gradient-to-r from-orange-500/20 via-pink-500/20 to-purple-600/20 backdrop-blur-sm rounded-xl p-3 border border-orange-500/30">
+                <div className="bg-gradient-to-r from-orange-500/20 via-pink-500/20 to-purple-600/20 backdrop-blur-sm rounded-xl p-2.5 border border-orange-500/30">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-xs font-medium text-orange-300">Founding Spots</span>
                     <span className="text-xs font-bold text-white">{Math.max(0, 100 - reviewerCount)}/100 left</span>
@@ -422,7 +444,7 @@ export default function FoundingReviewerApplyPage() {
                 {/* Main CTA */}
                 <Button 
                   size="xl" 
-                  className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white py-6 text-base font-bold rounded-2xl shadow-2xl shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300 border-2 border-white/10"
+                  className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white py-5 text-base font-bold rounded-2xl shadow-2xl shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300 border-2 border-white/10"
                   onClick={() => setStep(2)}
                 >
                   <div className="flex items-center justify-center gap-2">
@@ -432,15 +454,20 @@ export default function FoundingReviewerApplyPage() {
                 </Button>
 
                 {/* Trust indicators */}
-                <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
+                <div className="flex items-center justify-center gap-3 text-[10px] text-gray-400">
                   <div className="flex items-center gap-1">
                     <Check className="w-3 h-3 text-green-400" />
                     <span>No commitment</span>
                   </div>
-                  <div className="w-1 h-1 bg-gray-600 rounded-full"></div>
+                  <div className="w-0.5 h-0.5 bg-gray-600 rounded-full"></div>
                   <div className="flex items-center gap-1">
-                    <Shield className="w-3 h-3 text-blue-400" />
+                    <Clock className="w-3 h-3 text-blue-400" />
                     <span>Launch Oct 15</span>
+                  </div>
+                  <div className="w-0.5 h-0.5 bg-gray-600 rounded-full"></div>
+                  <div className="flex items-center gap-1">
+                    <Shield className="w-3 h-3 text-purple-400" />
+                    <span>Vetted only</span>
                   </div>
                 </div>
               </div>
@@ -460,10 +487,15 @@ export default function FoundingReviewerApplyPage() {
                 <h1 className="text-5xl xl:text-6xl font-bold leading-tight">
                   <span className="block text-white">Girls rate guys.</span>
                   <span className="block text-white">Guys get advice.</span>
-                  <span className="block bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
+                  <span className="block bg-gradient-to-r from-orange-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
                     Girls get paid.
                   </span>
                 </h1>
+                
+                <p className="text-lg text-gray-300 leading-relaxed">
+                  We're building the platform where your honest feedback helps guys level up—and you earn money doing it. 
+                  <span className="text-orange-400 font-semibold"> Join the first 100 reviewers</span> and lock in exclusive perks forever.
+                </p>
 
                 <div className="flex flex-wrap justify-center lg:justify-start gap-4">
                   <div className="flex items-center gap-3 bg-white/5 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
