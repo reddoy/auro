@@ -134,7 +134,7 @@ export default function HomePage() {
               </h1>
               
                 <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto mobile-text-reveal leading-relaxed" style={{ animationDelay: '1s' }}>
-                  Men pay for your advice, you help them glow up, and grow your brand.
+                  Auro connects women with men who want glow-up advice—and get paid for it.
                 </p>
               </div>
               
@@ -196,7 +196,7 @@ export default function HomePage() {
                   </h1>
                   
                   <p className="text-2xl text-white/90 max-w-2xl leading-relaxed">
-                    Men pay for your advice, you help them glow up, and grow your brand.
+                    Auro connects women with men who want glow-up advice—and get paid for it.
                   </p>
                 </div>
                 
