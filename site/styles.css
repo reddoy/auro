@@ -644,6 +644,7 @@ body {
   gap: 12px;
   text-decoration: none;
   transition: transform 0.2s ease;
+  flex-direction: row;
 }
 
 .brand:hover {
@@ -929,12 +930,12 @@ body {
 
 @media (max-width: 640px) {
   :root {
-    --nav-h: 50px;
+    --nav-h: 60px;
   }
   
   .nav {
-    padding: 8px 0;
-    min-height: 50px;
+    padding: 12px 0;
+    min-height: 60px;
   }
 
   .nav-content {
@@ -3417,6 +3418,9 @@ footer {
     left: 50%;
     transform: translateX(-50%);
     justify-self: center;
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
   
   .nav-cta-section {

@@ -185,6 +185,15 @@ export default function HomePage() {
                 </Button>
               </div>
 
+              {/* Mobile App Launch Countdown */}
+              <div className="text-center mobile-text-reveal" style={{ animationDelay: '1.5s' }}>
+                <p className="text-white/80 text-sm mb-2">App launches in:</p>
+                <CountdownTimer 
+                  targetDate={new Date('2025-10-15T21:00:00-08:00')}
+                  className="text-base"
+                />
+              </div>
+
               {/* Stats */}
               <div className="mobile-text-reveal mobile-stats" style={{ animationDelay: '1.6s' }}>
                 <div className="flex flex-col gap-3 text-sm text-white">
@@ -253,6 +262,15 @@ export default function HomePage() {
                   </Button>
                 </div>
 
+                {/* App Launch Countdown */}
+                <div className="space-y-2">
+                  <p className="text-white/80 text-sm">App launches in:</p>
+                  <CountdownTimer 
+                    targetDate={new Date('2025-10-15T21:00:00-08:00')}
+                    className="text-lg"
+                  />
+                </div>
+
                 {/* Stats */}
                 <div className="flex flex-wrap gap-4 text-sm text-white">
                   <div className="flex items-center gap-2">
@@ -299,17 +317,10 @@ export default function HomePage() {
                     </div>
                   </div>
                   
-                  <div className="absolute top-1/2 -left-4 glass rounded-lg p-2 shadow-lg animate-slide-in-left hover-lift">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-blue-500" />
-                      <span className="text-xs font-medium text-white">Quick video reviews</span>
-                    </div>
-                  </div>
-                  
                   <div className="absolute bottom-2 right-2 glass rounded-lg p-2 shadow-lg animate-slide-in-right hover-lift" style={{ animationDelay: '0.5s' }}>
                     <div className="flex items-center gap-2">
                       <Star className="w-4 h-4 text-orange-500" />
-                      <span className="text-xs font-medium text-white">Founding member perks</span>
+                      <span className="text-xs font-medium text-white">85% earnings forever</span>
                     </div>
                   </div>
                 </div>
@@ -396,23 +407,7 @@ export default function HomePage() {
               </div>
             </div>
             
-            {/* CTA */}
-            <div className="space-y-4">
-              <Button 
-                size="xl" 
-                variant="gradient" 
-                className="group"
-                asChild
-              >
-                <a href="/reviewers/apply">
-                Claim Your Spot ({reviewerCount}/100 taken)
-                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </a>
-              </Button>
-              <p className="text-sm text-white/80">
-                No commitment • Benefits end Oct 15th
-              </p>
-            </div>
+            {/* Removed CTA to reduce clutter - keeping focus on main hero CTA */}
           </div>
         </div>
       </section>
@@ -518,23 +513,7 @@ export default function HomePage() {
               </Card>
             </div>
             
-            {/* CTA */}
-            <div className="space-y-4">
-              <Button 
-                size="xl" 
-                variant="gradient" 
-                className="group"
-                asChild
-              >
-                <a href="/reviewers/apply">
-                  Become a Founding Reviewer
-                  <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </a>
-              </Button>
-              <p className="text-sm text-white/80">
-                Free to join • No commitment required • Launch October 15th
-              </p>
-            </div>
+            {/* Removed CTA to reduce clutter - keeping focus on main hero CTA */}
           </div>
         </div>
       </section>
