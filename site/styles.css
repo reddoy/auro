@@ -90,7 +90,8 @@
   .mobile-iphone-container {
     position: relative;
     transform-style: preserve-3d;
-    animation: mobile-iphone-float 6s ease-in-out infinite;
+    animation: mobile-iphone-float 8s ease-in-out infinite;
+    z-index: 10;
   }
   
   .mobile-iphone-glow {
@@ -98,12 +99,13 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 130%;
-    height: 130%;
-    background: radial-gradient(circle, rgba(204, 53, 151, 0.6) 0%, rgba(227, 66, 113, 0.4) 40%, rgba(240, 103, 85, 0.2) 70%, transparent 90%);
-    border-radius: 60px;
-    filter: blur(25px);
-    animation: mobile-glow-pulse 3s ease-in-out infinite;
+    width: 120%;
+    height: 120%;
+    background: radial-gradient(circle, rgba(255, 107, 107, 0.3) 0%, rgba(255, 142, 142, 0.2) 40%, rgba(255, 165, 165, 0.1) 70%, transparent 90%);
+    border-radius: 40px;
+    filter: blur(20px);
+    animation: mobile-glow-pulse 4s ease-in-out infinite;
+    z-index: -1;
   }
   
   .mobile-iphone-shadow {
@@ -111,11 +113,12 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 110%;
-    height: 110%;
-    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
-    border-radius: 50px;
-    filter: blur(15px);
+    width: 105%;
+    height: 105%;
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+    border-radius: 35px;
+    filter: blur(12px);
+    z-index: -2;
   }
   
   .mobile-text-reveal {
@@ -181,6 +184,57 @@
   
   .mobile-heading-responsive {
     font-size: clamp(2rem, 8vw, 4rem);
+  }
+
+  /* Enhanced mobile text readability */
+  .mobile-hero-content h1 {
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-weight: 800;
+  }
+
+  .mobile-hero-content p {
+    line-height: 1.6;
+    font-weight: 400;
+  }
+
+  /* Mobile-specific button enhancements */
+  .mobile-cta-glow {
+    box-shadow: 
+      0 4px 20px rgba(255, 107, 107, 0.3),
+      0 8px 40px rgba(255, 107, 107, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .mobile-cta-glow:hover {
+    box-shadow: 
+      0 6px 25px rgba(255, 107, 107, 0.4),
+      0 12px 50px rgba(255, 107, 107, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+  }
+
+  /* Mobile-specific badge styling */
+  .mobile-badge {
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Mobile stats styling */
+  .mobile-stats {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 0 16px;
+  }
+
+  /* Mobile video interaction */
+  .mobile-iphone-frame:hover {
+    transform: scale(1.02);
+    transition: transform 0.3s ease;
   }
   
   /* Enhanced mobile hero effects */
@@ -373,18 +427,18 @@
     transform: translateY(0px) rotateY(0deg);
   }
   50% {
-    transform: translateY(-15px) rotateY(5deg);
+    transform: translateY(-8px) rotateY(2deg);
   }
 }
 
 @keyframes mobile-glow-pulse {
   0%, 100% {
-    opacity: 0.6;
+    opacity: 0.4;
     transform: translate(-50%, -50%) scale(1);
   }
   50% {
-    opacity: 0.8;
-    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(1.02);
   }
 }
 

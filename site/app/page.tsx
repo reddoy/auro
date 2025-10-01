@@ -111,39 +111,71 @@ export default function HomePage() {
         {/* Clean Background */}
         <div className="absolute inset-0 bg-[#0c0325]" />
         
+        {/* Mobile Background Gradient */}
+        <div className="absolute inset-0 lg:hidden bg-gradient-to-b from-[#0c0325] via-[#0f0528] to-[#0c0325]" />
+        
         
         {/* Hero Content - Mobile Only */}
-        <div className="container mx-auto px-4 relative z-10 pt-8 pb-32 lg:hidden">
-          <div className="text-center space-y-6 lg:space-y-8 mobile-hero-content lg:text-left w-full lg:w-auto">
+        <div className="container mx-auto px-4 relative z-10 pt-8 pb-8 lg:hidden">
+          <div className="text-center space-y-8 mobile-hero-content w-full">
               {/* Badge */}
               <div className="flex justify-center">
-                <Badge variant="gradient" className="text-sm px-4 py-2 mobile-text-reveal" style={{ animationDelay: '0.2s' }}>
+                <Badge variant="gradient" className="text-sm px-4 py-2 mobile-text-reveal mobile-badge" style={{ animationDelay: '0.2s' }}>
                   <Sparkles className="w-4 h-4 mr-2" />
                   Exclusive Founding Reviewer Program
                 </Badge>
               </div>
               
               {/* Main Headline */}
-              <div className="space-y-4 lg:space-y-6">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-[1.1] text-center tracking-tight">
-                  <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.4s' }}>Girls review guys.</span>
-                  <span className="block bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent mobile-text-reveal whitespace-nowrap" style={{ animationDelay: '0.6s' }}>
-                    Guys get advice.
+              <div className="space-y-6">
+                <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.1] text-center tracking-tight">
+                  <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.4s' }}>
+                    Girls <span className="bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">review guys</span>.
                   </span>
-                  <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.8s' }}>Girls get paid.</span>
-              </h1>
-              
-                <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto mobile-text-reveal leading-relaxed" style={{ animationDelay: '1s' }}>
-                  Auro connects women with men who want glow-up advice—and get paid for it.
+                  <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.6s' }}>
+                    Guys <span className="bg-gradient-to-r from-pink-400 to-purple-600 bg-clip-text text-transparent">get advice</span>.
+                  </span>
+                  <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.8s' }}>
+                    Girls get <span className="bg-gradient-to-r from-green-400 to-emerald-600 bg-clip-text text-transparent italic">paid</span>.
+                  </span>
+                </h1>
+                
+                <p className="text-lg text-white/90 max-w-lg mx-auto mobile-text-reveal leading-relaxed px-4" style={{ animationDelay: '1s' }}>
+                  Men pay for your advice, you help them glow up, and grow your brand.
                 </p>
+              </div>
+
+              {/* Mobile iPhone Video - Integrated into Hero */}
+              <div className="flex justify-center mobile-text-reveal" style={{ animationDelay: '1.2s' }}>
+                <div className="mobile-iphone-container">
+                  <div className="mobile-iphone-glow"></div>
+                  <div className="mobile-iphone-shadow"></div>
+                  <div className="mobile-iphone-frame">
+                    <video 
+                      ref={mobileVideoRef}
+                      className="mobile-iphone-video"
+                      src="/katie_demo.mov" 
+                      autoPlay 
+                      muted 
+                      playsInline
+                      loop
+                    />
+                    <div ref={mobileOverlayRef} className="mobile-iphone-overlay">
+                      <div className="overlay-content">
+                        <h3>Click to watch full review</h3>
+                        <p>Get your personalized style review</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
               
               {/* CTA Button */}
-              <div className="flex justify-center mobile-text-reveal" style={{ animationDelay: '1.2s' }}>
+              <div className="flex justify-center mobile-text-reveal" style={{ animationDelay: '1.4s' }}>
                 <Button 
                   size="xl" 
                   variant="gradient" 
-                  className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-md"
+                  className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-sm"
                   asChild
                 >
                   <a href="/reviewers/apply">
@@ -151,21 +183,23 @@ export default function HomePage() {
                     <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </a>
                 </Button>
-            </div>
+              </div>
 
               {/* Stats */}
-              <div className="flex flex-col sm:flex-row flex-wrap gap-3 lg:gap-4 justify-center text-sm text-white mobile-text-reveal" style={{ animationDelay: '1.4s' }}>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>No commitment required</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>85% earnings forever</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500" />
-                  <span>Launch October 15th</span>
+              <div className="mobile-text-reveal mobile-stats" style={{ animationDelay: '1.6s' }}>
+                <div className="flex flex-col gap-3 text-sm text-white">
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>No commitment required</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>85% earnings forever</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>Launch October 15th</span>
+                  </div>
                 </div>
               </div>
           </div>
@@ -187,12 +221,16 @@ export default function HomePage() {
                 
                 {/* Main Headline */}
                 <div className="space-y-6">
-                  <h1 className="text-5xl xl:text-6xl font-extrabold leading-[1.1] tracking-tight">
-                    <span className="block text-white">Girls review guys.</span>
-                    <span className="block bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent whitespace-nowrap">
-                      Guys get advice.
+                  <h1 className="text-5xl xl:text-6xl font-extrabold leading-[1.2] tracking-tight pb-2">
+                    <span className="block text-white pb-1">
+                      Girls <span className="bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">review guys</span>.
                     </span>
-                    <span className="block text-white">Girls get paid.</span>
+                    <span className="block text-white whitespace-nowrap pb-1">
+                      Guys <span className="bg-gradient-to-r from-pink-400 to-purple-600 bg-clip-text text-transparent">get advice</span>.
+                    </span>
+                    <span className="block text-white pb-1">
+                      Girls get <span className="bg-gradient-to-r from-green-400 to-emerald-600 bg-clip-text text-transparent italic">paid</span>.
+                    </span>
                   </h1>
                   
                   <p className="text-2xl text-white/90 max-w-2xl leading-relaxed">
@@ -273,33 +311,6 @@ export default function HomePage() {
                       <Star className="w-4 h-4 text-orange-500" />
                       <span className="text-xs font-medium text-white">Founding member perks</span>
                     </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Enhanced Mobile iPhone Video - Integrated into Hero */}
-        <div className="lg:hidden absolute bottom-8 left-1/2 transform -translate-x-1/2" style={{ animationDelay: '1.6s' }}>
-          <div className="mobile-iphone-container">
-            <div className="mobile-iphone-glow"></div>
-            <div className="mobile-iphone-shadow"></div>
-            <div className="iphone-peek">
-              <div className="mobile-iphone-frame">
-                <video 
-                  ref={mobileVideoRef}
-                  className="mobile-iphone-video"
-                  src="/katie_demo.mov" 
-                  autoPlay 
-                  muted 
-                  playsInline
-                  loop
-                />
-                <div ref={mobileOverlayRef} className="mobile-iphone-overlay">
-                  <div className="overlay-content">
-                    <h3>Click to watch full review</h3>
-                    <p>Get your personalized style review</p>
                   </div>
                 </div>
               </div>
@@ -770,25 +781,29 @@ export default function HomePage() {
 
         .mobile-iphone-frame {
           position: relative;
-          width: 320px;
-          height: 640px;
-          border: 8px solid #000;
-          border-radius: 32px;
+          width: 280px;
+          height: 560px;
+          border: 6px solid #1a1a1a;
+          border-radius: 28px;
           background: #000;
           overflow: hidden;
-          box-shadow: 0 0 20px rgba(0,0,0,0.4);
+          box-shadow: 
+            0 0 30px rgba(0,0,0,0.6),
+            0 0 60px rgba(204, 53, 151, 0.1),
+            inset 0 0 20px rgba(255,255,255,0.05);
+          margin: 0 auto;
         }
 
         .mobile-iphone-frame::before {
           content: '';
           position: absolute;
-          top: 6px;
+          top: 4px;
           left: 50%;
           transform: translateX(-50%);
-          width: 80px;
-          height: 24px;
-          background: #000;
-          border-radius: 16px;
+          width: 60px;
+          height: 20px;
+          background: #1a1a1a;
+          border-radius: 12px;
           z-index: 2;
         }
 
@@ -796,7 +811,7 @@ export default function HomePage() {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          border-radius: 24px;
+          border-radius: 22px;
         }
 
         .mobile-iphone-overlay {
@@ -805,11 +820,11 @@ export default function HomePage() {
           left: 0;
           width: 100%;
           height: 100%;
-          border-radius: 24px;
+          border-radius: 22px;
           display: flex;
           justify-content: center;
           align-items: center;
-          background: linear-gradient(135deg, #6C63FF, #FF6584);
+          background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
           color: white;
           opacity: 0;
           transition: opacity 1s ease;
@@ -819,14 +834,14 @@ export default function HomePage() {
         }
 
         .mobile-iphone-overlay .overlay-content h3 {
-          font-size: 1.25rem;
+          font-size: 1.1rem;
           font-weight: bold;
           margin-bottom: 0.5rem;
           margin: 0;
         }
 
         .mobile-iphone-overlay .overlay-content p {
-          font-size: 0.9rem;
+          font-size: 0.85rem;
           margin: 0;
           opacity: 0.9;
         }
