@@ -3418,14 +3418,14 @@ footer {
 @media (max-width: 768px) {
   /* Center the brand on mobile */
   .nav-content {
-    justify-content: space-between;
+    justify-content: flex-end;
     position: relative;
   }
   
   .mobile-brand-centered {
-    position: static;
-    transform: none;
-    justify-self: flex-start;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
     gap: 8px;

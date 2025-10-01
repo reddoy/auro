@@ -19,7 +19,8 @@ export default function FoundingReviewerApplyPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [marketingConsent, setMarketingConsent] = useState<boolean>(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -168,7 +169,7 @@ export default function FoundingReviewerApplyPage() {
     }
     if (step === 2) {
       // Account basics step
-      if (!fullName || !email) { setError('Please enter your name and email'); return; }
+      if (!firstName || !lastName || !email) { setError('Please enter your first name, last name, and email'); return; }
       setStep(3);
       return;
     }
@@ -179,10 +180,11 @@ export default function FoundingReviewerApplyPage() {
       if (!passwordsMatch) { setError('Passwords do not match'); return; }
       try {
         setLoading(true);
+        const fullName = `${firstName} ${lastName}`.trim();
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: fullName } }
+          options: { data: { full_name: fullName, first_name: firstName, last_name: lastName } }
         });
         if (error) throw error;
         if (data?.user) {
@@ -615,16 +617,30 @@ export default function FoundingReviewerApplyPage() {
 
               {/* Form Fields */}
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Full Name</label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Jane Doe"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-            </div>
+                {/* Name Fields - Side by Side */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">First Name</label>
+                    <input
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Jane"
+                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-300">Last Name</label>
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Doe"
+                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">Email Address</label>
@@ -650,7 +666,7 @@ export default function FoundingReviewerApplyPage() {
                 </Button>
                 <Button
                   onClick={handleNext}
-                  disabled={loading || !fullName || !email}
+                  disabled={loading || !firstName || !lastName || !email}
                   className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
                 >
                   {loading ? 'Please wait...' : 'Continue'}
