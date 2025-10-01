@@ -6,12 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import CountdownTimer from '../components/CountdownTimer';
-import ReviewerCounter from '../components/ReviewerCounter';
 import { supabase } from '../lib/supabase';
-import { ArrowRight, Star, DollarSign, Clock, Users, TrendingUp, CheckCircle, Sparkles } from 'lucide-react';
+import { ArrowRight, Star, DollarSign, Clock, Users, TrendingUp, CheckCircle } from 'lucide-react';
 
 export default function HomePage() {
-  const [showRibbon, setShowRibbon] = useState(true);
+  // Removed unused showRibbon state
   const [reviewerCount, setReviewerCount] = useState<number>(0);
   const [isLoadingCount, setIsLoadingCount] = useState<boolean>(true);
   const desktopVideoRef = useRef<HTMLVideoElement>(null);
@@ -31,6 +30,7 @@ export default function HomePage() {
           .eq('is_reviewer', true);
 
         if (error) {
+          console.warn('Primary table query failed, trying fallback:', error.message);
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('id', { count: 'exact' })
@@ -38,12 +38,16 @@ export default function HomePage() {
           
           if (!profileError) {
             setReviewerCount(profileData?.length || 0);
+          } else {
+            console.error('Both database queries failed:', profileError.message);
+            // Keep current count instead of resetting to 0
           }
         } else {
           setReviewerCount(data?.length || 0);
         }
       } catch (err) {
         console.error('Error fetching reviewer count:', err);
+        // Keep current count instead of resetting to 0 on error
       } finally {
         setIsLoadingCount(false);
       }
@@ -107,7 +111,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background text-foreground mobile-smooth-scroll">
       {/* Hero Section */}
-      <section className="relative min-h-screen overflow-hidden pt-16 lg:pt-0">
+      <section className="relative min-h-screen overflow-hidden pt-16 lg:pt-0" role="banner" aria-label="Hero section">
         {/* Clean Background */}
         <div className="absolute inset-0 bg-[#0c0325]" />
         
@@ -116,18 +120,12 @@ export default function HomePage() {
         
         
         {/* Hero Content - Mobile Only */}
-        <div className="container mx-auto px-4 relative z-10 pt-8 pb-8 lg:hidden">
-          <div className="text-center space-y-8 mobile-hero-content w-full">
-              {/* Badge */}
-              <div className="flex justify-center">
-                <Badge variant="gradient" className="text-sm px-4 py-2 mobile-text-reveal mobile-badge" style={{ animationDelay: '0.2s' }}>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Exclusive Founding Reviewer Program
-                </Badge>
-              </div>
+        <div className="container mx-auto px-4 relative z-10 pt-12 pb-8 lg:hidden">
+          <div className="text-center space-y-6 mobile-hero-content w-full">
+              {/* Removed redundant badge to save space and reduce clutter */}
               
               {/* Main Headline */}
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.1] text-center tracking-tight">
                   <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.4s' }}>
                     Girls <span className="bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">review guys</span>.
@@ -148,8 +146,23 @@ export default function HomePage() {
                 </p>
               </div>
 
-              {/* Mobile iPhone Video - Integrated into Hero */}
-              <div className="flex justify-center mobile-text-reveal" style={{ animationDelay: '1.2s' }}>
+              {/* CTA Button - Moved above iPhone for better conversion */}
+              <div className="flex justify-center mobile-text-reveal" style={{ animationDelay: '1.1s' }}>
+                <Button 
+                  size="xl" 
+                  variant="gradient" 
+                  className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-sm text-lg px-6 py-4 shadow-2xl"
+                  asChild
+                >
+                  <a href="/reviewers/apply">
+                    🚀 Start Earning Today ({reviewerCount}/100 spots taken)
+                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </a>
+                </Button>
+              </div>
+
+              {/* Mobile iPhone Video - Moved below CTA */}
+              <div className="flex justify-center mobile-text-reveal" style={{ animationDelay: '1.3s' }}>
                 <div className="mobile-iphone-container">
                   <div className="mobile-iphone-glow"></div>
                   <div className="mobile-iphone-shadow"></div>
@@ -162,6 +175,7 @@ export default function HomePage() {
                       muted 
                       playsInline
                       loop
+                      aria-label="Demo video showing how Auro app works - reviewing a guy's profile and style"
                     />
                     <div ref={mobileOverlayRef} className="mobile-iphone-overlay">
                       <div className="overlay-content">
@@ -171,21 +185,6 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
-              </div>
-              
-              {/* CTA Button */}
-              <div className="flex justify-center mobile-text-reveal" style={{ animationDelay: '1.4s' }}>
-                <Button 
-                  size="xl" 
-                  variant="gradient" 
-                  className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-sm text-lg px-6 py-4 shadow-2xl"
-                  asChild
-                >
-                  <a href="/reviewers/apply">
-                    🚀 Start Earning Today ({reviewerCount}/100 spots taken)
-                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </a>
-                </Button>
               </div>
 
               {/* Mobile App Launch Countdown */}
@@ -223,13 +222,7 @@ export default function HomePage() {
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               {/* Left Content */}
               <div className="text-left space-y-8">
-                {/* Badge */}
-                <div className="flex justify-start">
-                  <Badge variant="gradient" className="text-sm px-4 py-2">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Exclusive Founding Reviewer Program
-                  </Badge>
-                </div>
+                {/* Removed redundant badge to save space and reduce clutter */}
                 
                 {/* Main Headline */}
                 <div className="space-y-6">
@@ -306,6 +299,7 @@ export default function HomePage() {
                       muted 
                       playsInline
                       loop
+                      aria-label="Demo video showing how Auro app works - reviewing a guy's profile and style"
                     />
                     <div ref={desktopOverlayRef} className="desktop-iphone-overlay">
                       <div className="overlay-content">
@@ -614,9 +608,11 @@ export default function HomePage() {
               <div className="flex-shrink-0">
                 <img 
                   src="/rj-headshot.jpg" 
-                  alt="RJ headshot" 
+                  alt="RJ, founder of Auro - helping men improve their style and helping women monetize their expertise" 
                   className="w-40 h-40 rounded-2xl object-cover shadow-lg" 
-                  loading="lazy" 
+                  loading="lazy"
+                  width={160}
+                  height={160}
                 />
           </div>
           
@@ -641,7 +637,7 @@ export default function HomePage() {
       {/* Final CTA Section */}
       <section className="py-16 lg:py-24 bg-[#0c0325] relative overflow-hidden">
         
-        <div className="container mx-auto px-4 relative z-10">
+        <div className="container mx-auto px-6 sm:px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-10">
             <div className="space-y-6">
               <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight mobile-text-reveal" style={{ animationDelay: '0.2s' }}>
@@ -656,12 +652,12 @@ export default function HomePage() {
               <Button 
                 size="xl" 
                 variant="gradient" 
-                className="group text-lg px-8 py-4 mobile-gradient-border animate-pulse-glow shadow-2xl hover:shadow-3xl transition-all duration-300"
+                className="group text-base sm:text-lg px-4 sm:px-8 py-4 mobile-gradient-border animate-pulse-glow shadow-2xl hover:shadow-3xl transition-all duration-300 w-full max-w-sm sm:max-w-none"
                 asChild
               >
-                <a href="/reviewers/apply">
-                  🚀 Start Earning Today ({reviewerCount}/100 spots taken)
-                  <ArrowRight className="ml-2 w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                <a href="/reviewers/apply" className="flex items-center justify-center">
+                  <span className="truncate">🚀 Start Earning Today ({reviewerCount}/100 spots taken)</span>
+                  <ArrowRight className="ml-2 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                 </a>
               </Button>
               
@@ -882,6 +878,18 @@ export default function HomePage() {
 
         .shadow-3xl {
           box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.35);
+        }
+
+        /* Mobile CTA button fixes */
+        @media (max-width: 640px) {
+          .mobile-text-reveal {
+            padding: 0 8px;
+          }
+          
+          .mobile-text-reveal .group {
+            max-width: calc(100vw - 32px);
+            box-sizing: border-box;
+          }
         }
       `}</style>
     </div>

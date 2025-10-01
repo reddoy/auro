@@ -11,14 +11,14 @@ const poppins = Poppins({ subsets: ['latin'], weight: ['400', '600', '700'] });
 
 export const metadata: Metadata = {
   title: 'Auro - Monetize Your Style Expertise | Become a Reviewer',
-  description: 'Join OnlyFans creators and influencers earning $200+ daily reviewing guys\' profiles. Set your own rates, work on your schedule, and monetize your eye for style.',
-  keywords: 'onlyfans creators, style reviewer, profile reviewer, monetize expertise, influencer income, fashion advice, dating coach',
+  description: 'Join content creators and influencers earning $200+ daily reviewing guys\' profiles. Set your own rates, work on your schedule, and monetize your eye for style.',
+  keywords: 'content creators, style reviewer, profile reviewer, monetize expertise, influencer income, fashion advice, dating coach, women entrepreneurs',
   icons: {
     icon: '/auro_aura_logo.png',
   },
   openGraph: {
     title: 'Auro - Monetize Your Style Expertise | Become a Reviewer',
-    description: 'Join OnlyFans creators and influencers earning $200+ daily reviewing guys\' profiles. Set your own rates, work on your schedule.',
+    description: 'Join content creators and influencers earning $200+ daily reviewing guys\' profiles. Set your own rates, work on your schedule.',
     images: ['/auro_aura_logo.png'],
     type: 'website',
   },
