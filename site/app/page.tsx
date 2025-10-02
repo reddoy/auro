@@ -74,8 +74,16 @@ export default function HomePage() {
       }, 3000);
     };
 
+    const handleVideoClick = () => {
+      video.muted = !video.muted;
+    };
+
     video.addEventListener('ended', handleVideoEnd);
-    return () => video.removeEventListener('ended', handleVideoEnd);
+    video.addEventListener('click', handleVideoClick);
+    return () => {
+      video.removeEventListener('ended', handleVideoEnd);
+      video.removeEventListener('click', handleVideoClick);
+    };
   }, []);
 
   // Video handling for mobile
@@ -94,8 +102,16 @@ export default function HomePage() {
       }, 3000);
     };
 
+    const handleVideoClick = () => {
+      video.muted = !video.muted;
+    };
+
     video.addEventListener('ended', handleVideoEnd);
-    return () => video.removeEventListener('ended', handleVideoEnd);
+    video.addEventListener('click', handleVideoClick);
+    return () => {
+      video.removeEventListener('ended', handleVideoEnd);
+      video.removeEventListener('click', handleVideoClick);
+    };
   }, []);
 
   const spotsLeft = Math.max(0, 100 - reviewerCount);
