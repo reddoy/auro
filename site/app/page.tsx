@@ -71,7 +71,7 @@ export default function HomePage() {
         overlay.style.opacity = '0';
         video.currentTime = 0;
         video.play();
-      }, 5000);
+      }, 3000);
     };
 
     video.addEventListener('ended', handleVideoEnd);
@@ -91,7 +91,7 @@ export default function HomePage() {
         overlay.style.opacity = '0';
         video.currentTime = 0;
         video.play();
-      }, 5000);
+      }, 3000);
     };
 
     video.addEventListener('ended', handleVideoEnd);
@@ -128,7 +128,7 @@ export default function HomePage() {
               <div className="space-y-4">
                 <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.2] text-center tracking-tight px-4">
                   <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.4s' }}>
-                    Guys get <span className="bg-clip-text text-transparent" style={{ color: '#d83a86' }}>reviewed</span>.
+                    Guys get <span className="bg-clip-text text-transparent" style={{ color: '#ff6b35' }}>reviewed</span>.
                   </span>
                   <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.6s' }}>
                     Guys get <span className="bg-clip-text text-transparent" style={{ color: '#cc3598' }}>advice</span>.
@@ -167,7 +167,7 @@ export default function HomePage() {
                   asChild
                 >
                   <a href="/reviewers/apply">
-                    <span className="truncate">🚀 Start Earning ({reviewerCount}/100)</span>
+                    <span className="truncate">Only {spotsLeft} founding spots left</span>
                     <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                   </a>
                 </Button>
@@ -184,7 +184,6 @@ export default function HomePage() {
                       className="mobile-iphone-video"
                       src="/katie_demo.mov" 
                       autoPlay 
-                      muted 
                       playsInline
                       loop
                       aria-label="Demo video showing how Auro app works - reviewing a guy's profile and style"
@@ -308,7 +307,6 @@ export default function HomePage() {
                       className="desktop-iphone-video"
                       src="/katie_demo.mov" 
                       autoPlay 
-                      muted 
                       playsInline
                       loop
                       aria-label="Demo video showing how Auro app works - reviewing a guy's profile and style"
@@ -630,10 +628,10 @@ export default function HomePage() {
           
               <div className="space-y-5 text-left">
                 <p className="text-xl text-white/90 leading-relaxed">
-                  I'm RJ, founder of Auro. I started this because guys like me need help from women to glow up and improve our style, rooms, and social presence.
+                  I started Auro because I know a lot of guys could use a little guidance—and getting a woman's perspective can make a huge difference in style, rooms, and even how you come across on dating apps.
                 </p>
                 <p className="text-xl text-white/90 leading-relaxed">
-                  I also wanted to help creators diversify their income by monetizing their expertise in style and presentation. It's a win-win for everyone.
+                  At the same time, I wanted to give creators a way to monetize their expertise in style, rooms, and dating advice. Auro makes it easy to share your knowledge, get paid, and help people level up—all at the same time.
                 </p>
                 <p className="text-xl font-bold leading-relaxed">
                   <span className="bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
