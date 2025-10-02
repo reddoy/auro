@@ -10,21 +10,21 @@ import ConditionalNav from '../components/ConditionalNav';
 const poppins = Poppins({ subsets: ['latin'], weight: ['400', '600', '700'] });
 
 export const metadata: Metadata = {
-  title: 'Auro - Monetize Your Style Expertise | Become a Reviewer',
+  title: 'Auro - Rate Guys, Get Paid',
   description: 'Join content creators and influencers earning $200+ daily reviewing guys\' profiles. Set your own rates, work on your schedule, and monetize your eye for style.',
   keywords: 'content creators, style reviewer, profile reviewer, monetize expertise, influencer income, fashion advice, dating coach, women entrepreneurs',
   icons: {
     icon: '/auro_aura_logo.png',
   },
   openGraph: {
-    title: 'Auro - Monetize Your Style Expertise | Become a Reviewer',
+    title: 'Auro - Rate Guys, Get Paid',
     description: 'Join content creators and influencers earning $200+ daily reviewing guys\' profiles. Set your own rates, work on your schedule.',
     images: ['/auro_aura_logo.png'],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Auro - Monetize Your Style Expertise',
+    title: 'Auro - Rate Guys, Get Paid',
     description: 'Join creators earning $200+ daily reviewing profiles. Set your own rates, work on your schedule.',
     images: ['/auro_aura_logo.png'],
   },
@@ -73,5 +73,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-
 
