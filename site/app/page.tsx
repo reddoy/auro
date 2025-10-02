@@ -274,7 +274,7 @@ export default function HomePage() {
                 </div>
 
                 {/* App Launch Countdown */}
-                <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 space-y-2">
+                <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 py-8 space-y-4">
                   <p className="text-white/90 text-base font-semibold">🚀 App launches in:</p>
                   <CountdownTimer 
                     targetDate={new Date('2025-10-15T21:00:00-08:00')}
