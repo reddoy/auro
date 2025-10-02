@@ -36,6 +36,8 @@ export default function FoundingReviewerApplyPage() {
   const [isGoogleAuthed, setIsGoogleAuthed] = useState(false);
   const [showCropModal, setShowCropModal] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [signupStatus, setSignupStatus] = useState<'not_started' | 'pending' | 'completed' | null>(null);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -103,19 +105,68 @@ export default function FoundingReviewerApplyPage() {
           if (user.user_metadata?.given_name) setFirstName(user.user_metadata.given_name);
           if (user.user_metadata?.family_name) setLastName(user.user_metadata.family_name);
           
-          // Load existing profile data if they already have one
+          // Check signup status first
+          const { data: { session } } = await supabase.auth.getSession();
+          const token = session?.access_token;
+          
+          if (token) {
+            try {
+              const response = await fetch('/api/reviewers/signup-status', {
+                headers: { authorization: `Bearer ${token}` }
+              });
+              
+              if (response.ok) {
+                const data = await response.json();
+                setSignupStatus(data.status);
+                
+                // If they already completed signup, show completion message
+                if (data.status === 'completed') {
+                  setError('You have already completed the reviewer application. An account with this email is already associated with our platform.');
+                  setIsCheckingStatus(false);
+                  return;
+                }
+                
+                // If they have a pending profile, load their data
+                if (data.status === 'pending' && data.profile) {
+                  const profile = data.profile;
+                  if (profile.avatar_url && !avatarPreview) {
+                    setAvatarPreview(profile.avatar_url);
+                  }
+                  if (profile.hourly_rate) {
+                    setRate(String(profile.hourly_rate));
+                  }
+                  if (profile.links?.instagram) {
+                    setInstagramHandle(profile.links.instagram);
+                  }
+                  if (profile.links?.tiktok) {
+                    setTiktokHandle(profile.links.tiktok);
+                  }
+                  if (profile.preferences?.phone) {
+                    setPhone(profile.preferences.phone);
+                  }
+                  if (profile.preferences?.marketing_consent !== undefined) {
+                    setMarketingConsent(profile.preferences.marketing_consent);
+                  }
+                }
+              }
+            } catch (statusError) {
+              console.error('Failed to check signup status:', statusError);
+            }
+          }
+          
+          // Fallback: Load existing profile data if they already have one (legacy)
           const { data: profile } = await supabase
             .from('profiles')
-            .select('avatar_url, hourly_rate, links, preferences')
+            .select('avatar_url, hourly_rate, links, preferences, reviewer_signup_status')
             .eq('id', user.id)
             .maybeSingle();
             
-          if (profile) {
+          if (profile && !signupStatus) {
+            setSignupStatus(profile.reviewer_signup_status || 'not_started');
+            
             // Pre-populate with existing data so they can see what they're changing
             if (profile.avatar_url && !avatarPreview) {
               setAvatarPreview(profile.avatar_url);
-              // Note: We don't set avatarFile here, so if they don't upload a new one,
-              // we won't overwrite their existing avatar
             }
             if (profile.hourly_rate) {
               setRate(String(profile.hourly_rate));
@@ -136,6 +187,8 @@ export default function FoundingReviewerApplyPage() {
         }
       } catch (e) {
         console.error('Failed to check auth and load profile:', e);
+      } finally {
+        setIsCheckingStatus(false);
       }
     };
     
@@ -154,22 +207,23 @@ export default function FoundingReviewerApplyPage() {
     };
   }, []);
 
-  // Fetch reviewer count
+  // Fetch reviewer count - only count completed reviewers
   useEffect(() => {
     const fetchReviewerCount = async () => {
       try {
-        // Try profiles table first since creators might not exist yet
+        // Count only completed reviewers from profiles table
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('id', { count: 'exact' })
-          .eq('is_reviewer', true);
+          .eq('is_reviewer', true)
+          .eq('reviewer_signup_status', 'completed');
         
         if (!profileError && profileData) {
           setReviewerCount(profileData.length || 0);
           return;
         }
 
-        // Fallback to creators table
+        // Fallback to creators table (legacy)
         const { data, error } = await supabase
           .from('creators')
           .select('id', { count: 'exact' })
@@ -311,6 +365,29 @@ export default function FoundingReviewerApplyPage() {
     if (step === 2) {
       // Account basics step
       if (!firstName || !lastName || !email) { setError('Please enter your first name, last name, and email'); return; }
+      
+      // Set status to pending when they start filling out the form
+      if (signupStatus === 'not_started') {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const token = session?.access_token;
+          
+          if (token) {
+            await fetch('/api/reviewers/signup-status', {
+              method: 'POST',
+              headers: { 
+                'content-type': 'application/json',
+                authorization: `Bearer ${token}`
+              },
+              body: JSON.stringify({ status: 'pending' })
+            });
+            setSignupStatus('pending');
+          }
+        } catch (e) {
+          console.error('Failed to update signup status:', e);
+        }
+      }
+      
       setStep(3);
       return;
     }
@@ -473,6 +550,51 @@ export default function FoundingReviewerApplyPage() {
       </div>
     );
   };
+
+  // Show loading state while checking signup status
+  if (isCheckingStatus) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0c0325] via-[#1a0b3d] to-[#0c0325] text-white flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin mx-auto"></div>
+          <p className="text-gray-300">Checking your account status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show completion message if they already completed signup
+  if (signupStatus === 'completed') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0c0325] via-[#1a0b3d] to-[#0c0325] text-white flex items-center justify-center">
+        <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
+          <CardContent className="py-12 text-center space-y-6">
+            <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto">
+              <Check className="w-10 h-10 text-white" />
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="text-2xl font-bold text-white">Already Signed Up!</h3>
+              <p className="text-gray-300">
+                You have already completed the reviewer application. An account with this email is already associated with our platform.
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                asChild
+                className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+              >
+                <a href="/">
+                  Back to Home
+                </a>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0c0325] via-[#1a0b3d] to-[#0c0325] text-white">
@@ -714,9 +836,16 @@ export default function FoundingReviewerApplyPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <h3 className="text-2xl font-bold text-white">Already Signed In!</h3>
+                  <h3 className="text-2xl font-bold text-white">
+                    {signupStatus === 'pending' ? 'Continue Your Application' : 'Already Signed In!'}
+                  </h3>
                   <p className="text-gray-300">
                     You're authenticated with Google as <span className="text-green-400 font-semibold">{email}</span>
+                    {signupStatus === 'pending' && (
+                      <span className="block mt-2 text-orange-400 text-sm">
+                        You started the application process. You can continue where you left off.
+                      </span>
+                    )}
                   </p>
                 </div>
 
@@ -733,7 +862,7 @@ export default function FoundingReviewerApplyPage() {
                     onClick={() => setStep(4)}
                     className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
                   >
-                    Continue to Profile
+                    {signupStatus === 'pending' ? 'Continue Application' : 'Continue to Profile'}
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>

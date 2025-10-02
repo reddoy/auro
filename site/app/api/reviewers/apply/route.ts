@@ -70,10 +70,24 @@ export async function POST(req: Request) {
       console.error('Profile check error:', profileCheckErr);
     }
 
+    // Check if user can complete reviewer signup (prevent duplicates)
+    const { data: existingProfile } = await admin
+      .from('profiles')
+      .select('reviewer_signup_status, is_reviewer')
+      .eq('id', userId)
+      .single();
+    
+    if (existingProfile?.reviewer_signup_status === 'completed') {
+      return new Response(JSON.stringify({ 
+        error: 'You have already completed the reviewer application. An account with this email is already associated with our platform.' 
+      }), { status: 400 });
+    }
+
     // Now update ONLY reviewer-specific fields - don't touch core profile data
     // IMPORTANT: Only update fields that were explicitly provided to avoid overwriting existing data
     const reviewerUpdates: any = {
       is_reviewer: true, // Always set this
+      reviewer_signup_status: 'completed', // Mark as completed when they submit
     };
     
     // Only update bio if provided (empty string counts as intentional)
