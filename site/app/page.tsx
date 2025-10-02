@@ -14,9 +14,9 @@ export default function HomePage() {
   const [reviewerCount, setReviewerCount] = useState<number>(0);
   const [isLoadingCount, setIsLoadingCount] = useState<boolean>(true);
   const desktopVideoRef = useRef<HTMLVideoElement>(null);
-  const desktopOverlayRef = useRef<HTMLDivElement>(null);
+  const desktopOverlayRef = useRef<HTMLAnchorElement>(null);
   const mobileVideoRef = useRef<HTMLVideoElement>(null);
-  const mobileOverlayRef = useRef<HTMLDivElement>(null);
+  const mobileOverlayRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
     const fetchReviewerCount = async () => {
@@ -67,15 +67,20 @@ export default function HomePage() {
 
     const handleVideoEnd = () => {
       overlay.style.opacity = '1';
+      overlay.style.pointerEvents = 'auto';
       setTimeout(() => {
         overlay.style.opacity = '0';
+        overlay.style.pointerEvents = 'none';
         video.currentTime = 0;
         video.play();
-      }, 3000);
+      }, 5000);
     };
 
-    const handleVideoClick = () => {
-      video.muted = !video.muted;
+    const handleVideoClick = (e: MouseEvent) => {
+      // Only toggle mute if clicking video, not overlay
+      if (e.target === video) {
+        video.muted = !video.muted;
+      }
     };
 
     video.addEventListener('ended', handleVideoEnd);
@@ -95,15 +100,20 @@ export default function HomePage() {
 
     const handleVideoEnd = () => {
       overlay.style.opacity = '1';
+      overlay.style.pointerEvents = 'auto';
       setTimeout(() => {
         overlay.style.opacity = '0';
+        overlay.style.pointerEvents = 'none';
         video.currentTime = 0;
         video.play();
-      }, 3000);
+      }, 5000);
     };
 
-    const handleVideoClick = () => {
-      video.muted = !video.muted;
+    const handleVideoClick = (e: MouseEvent) => {
+      // Only toggle mute if clicking video, not overlay
+      if (e.target === video) {
+        video.muted = !video.muted;
+      }
     };
 
     video.addEventListener('ended', handleVideoEnd);
@@ -201,15 +211,19 @@ export default function HomePage() {
                       src="/katie_demo.mov" 
                       autoPlay 
                       playsInline
-                      loop
+                      muted
                       aria-label="Demo video showing how Auro app works - reviewing a guy's profile and style"
                     />
-                    <div ref={mobileOverlayRef} className="mobile-iphone-overlay">
+                    <a 
+                      ref={mobileOverlayRef} 
+                      href="/reviewers/apply" 
+                      className="mobile-iphone-overlay"
+                    >
                       <div className="overlay-content">
-                        <h3>Click to watch full review</h3>
+                        <h3>👆 Click here to see the full review</h3>
                         <p>Get your personalized style review</p>
                       </div>
-                    </div>
+                    </a>
                   </div>
                 </div>
               </div>
@@ -324,15 +338,19 @@ export default function HomePage() {
                       src="/katie_demo.mov" 
                       autoPlay 
                       playsInline
-                      loop
+                      muted
                       aria-label="Demo video showing how Auro app works - reviewing a guy's profile and style"
                     />
-                    <div ref={desktopOverlayRef} className="desktop-iphone-overlay">
+                    <a 
+                      ref={desktopOverlayRef} 
+                      href="/reviewers/apply" 
+                      className="desktop-iphone-overlay"
+                    >
                       <div className="overlay-content">
-                        <h3>Click to watch full review</h3>
+                        <h3>👆 Click here to see the full review</h3>
                         <p>Get your personalized style review</p>
                       </div>
-                    </div>
+                    </a>
                   </div>
                   
                   {/* Floating Benefit Callouts */}
@@ -774,10 +792,17 @@ export default function HomePage() {
           background: linear-gradient(135deg, #6C63FF, #FF6584);
           color: white;
           opacity: 0;
+          pointer-events: none;
           transition: opacity 1s ease;
           text-align: center;
           padding: 1.5rem;
           z-index: 3;
+          text-decoration: none;
+          cursor: pointer;
+        }
+        
+        .desktop-iphone-overlay:hover {
+          background: linear-gradient(135deg, #5A51FF, #FF5070);
         }
 
         .desktop-iphone-overlay .overlay-content h3 {
@@ -851,10 +876,17 @@ export default function HomePage() {
           background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
           color: white;
           opacity: 0;
+          pointer-events: none;
           transition: opacity 1s ease;
           text-align: center;
           padding: 1.5rem;
           z-index: 3;
+          text-decoration: none;
+          cursor: pointer;
+        }
+        
+        .mobile-iphone-overlay:active {
+          background: linear-gradient(135deg, #ff5555, #ff7878);
         }
 
         .mobile-iphone-overlay .overlay-content h3 {
