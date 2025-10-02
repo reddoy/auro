@@ -126,14 +126,14 @@ export default function HomePage() {
               
               {/* Main Headline */}
               <div className="space-y-4">
-                <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.2] text-center tracking-tight px-4">
-                  <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.4s' }}>
+                <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.3] text-center tracking-tight px-4">
+                  <span className="block text-white mobile-text-reveal whitespace-nowrap" style={{ animationDelay: '0.4s' }}>
                     Guys get <span className="bg-clip-text text-transparent" style={{ color: '#ff6b35' }}>reviewed</span>.
                   </span>
-                  <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.6s' }}>
+                  <span className="block text-white mobile-text-reveal whitespace-nowrap mt-2" style={{ animationDelay: '0.6s' }}>
                     Guys get <span className="bg-clip-text text-transparent" style={{ color: '#cc3598' }}>advice</span>.
                   </span>
-                  <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.8s' }}>
+                  <span className="block text-white mobile-text-reveal whitespace-nowrap mt-2" style={{ animationDelay: '0.8s' }}>
                     Girls get <span className="bg-clip-text text-transparent italic underline decoration-2 underline-offset-4" style={{ color: '#ea4c64' }}>paid</span>.
                   </span>
                 </h1>
@@ -163,7 +163,7 @@ export default function HomePage() {
                 <Button 
                   size="xl" 
                   variant="gradient" 
-                  className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-sm text-sm sm:text-base px-3 sm:px-4 py-3 shadow-2xl font-semibold"
+                  className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-sm text-base sm:text-lg px-3 sm:px-4 py-3 shadow-2xl font-semibold"
                   asChild
                 >
                   <a href="/reviewers/apply">
