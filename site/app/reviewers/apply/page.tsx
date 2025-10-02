@@ -436,14 +436,27 @@ export default function FoundingReviewerApplyPage() {
       // Socials step -> submit application
       try {
         setLoading(true);
+        
+        // Verify user session is still valid
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !session) {
+          setError('Your session has expired. Please sign out and try again.');
+          await supabase.auth.signOut();
+          return;
+        }
+        
+        // Verify user still exists
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError || !userData?.user) {
+          setError('Your account is no longer valid. Please sign out and create a new account.');
+          await supabase.auth.signOut();
+          return;
+        }
+        
         const avatar = await uploadAvatarViaSignedUrl();
-        const { data: s } = await supabase.auth.getSession();
-        const token = (s as any)?.session?.access_token as string | undefined;
-        let explicitUserId: string | null = null;
-        try {
-          const { data: u } = await supabase.auth.getUser();
-          explicitUserId = (u?.user?.id as string) || null;
-        } catch {}
+        const token = session?.access_token as string | undefined;
+        let explicitUserId: string | null = userData?.user?.id || null;
+        
         if (!explicitUserId) {
           try { explicitUserId = localStorage.getItem('auro_signup_user_id'); } catch {}
         }
@@ -471,11 +484,26 @@ export default function FoundingReviewerApplyPage() {
           })
         });
         const json = await resp.json();
+        
+        // Handle authentication errors specifically
+        if (resp.status === 401 || resp.status === 403) {
+          setError('Your session is no longer valid. Please sign out and try again.');
+          await supabase.auth.signOut();
+          return;
+        }
+        
         if (!resp.ok) throw new Error(json?.error || 'Failed to submit');
-        try { router.replace('/reviewers/thanks'); } catch {}
         setStep(6);
       } catch (e: any) {
-        setError(e?.message || 'Failed to submit application');
+        // Check if it's an authentication error
+        if (e?.message?.toLowerCase().includes('token') || 
+            e?.message?.toLowerCase().includes('authentication') ||
+            e?.message?.toLowerCase().includes('unauthorized')) {
+          setError('Your session is no longer valid. Please sign out and try again.');
+          await supabase.auth.signOut();
+        } else {
+          setError(e?.message || 'Failed to submit application');
+        }
       } finally {
         setLoading(false);
       }
@@ -893,7 +921,7 @@ export default function FoundingReviewerApplyPage() {
                 variant="outline"
                 onClick={handleGoogleAuth}
                 disabled={loading}
-                className="w-full bg-white hover:bg-gray-50 text-gray-900 border-gray-300 py-2.5 md:py-3 active:text-gray-900 focus:text-gray-900"
+                className="w-full bg-white hover:bg-gray-50 text-gray-900 border-gray-300 py-2.5 md:py-3 hover:text-gray-900 active:text-gray-900 focus:text-gray-900"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" className="mr-2">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
