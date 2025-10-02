@@ -1286,8 +1286,21 @@ export default function FoundingReviewerApplyPage() {
             
             <CardContent className="space-y-4 md:space-y-6 py-4 md:py-6">
               {error && (
-                <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-3 py-2 md:px-4 md:py-3 rounded-lg text-xs md:text-sm">
-                  {error}
+                <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-3 py-2 md:px-4 md:py-3 rounded-lg text-xs md:text-sm space-y-2">
+                  <p>{error}</p>
+                  {(error.toLowerCase().includes('session') || error.toLowerCase().includes('account')) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        await supabase.auth.signOut();
+                        window.location.href = '/reviewers/apply';
+                      }}
+                      className="w-full bg-transparent border-red-400/30 text-red-200 hover:bg-red-500/20 text-xs"
+                    >
+                      Sign Out & Start Fresh
+                    </Button>
+                  )}
                 </div>
               )}
               
