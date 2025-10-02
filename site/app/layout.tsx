@@ -45,12 +45,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <span className="brand__name">Auro</span>
               </a>
               
-              <div className="nav-center desktop-only">
-                <div className="app-logos">
-                  <img src="/apple_logo_no_bg.png" alt="iOS App" className="app-logo" />
-                  <img src="/android_logo_no_bg.png" alt="Android App" className="app-logo" />
-                </div>
-              </div>
               
               <nav className="nav-cta-section">
                 <ConditionalNav />

@@ -238,13 +238,13 @@ export default function HomePage() {
                 {/* Main Headline */}
                 <div className="space-y-6">
                   <h1 className="text-5xl xl:text-6xl font-extrabold leading-[1.2] tracking-tight pb-2">
-                    <span className="block text-white pb-1">
+                    <span className="block text-white pb-1 whitespace-nowrap">
                       Guys get <span className="bg-clip-text text-transparent" style={{ color: '#d83a86' }}>reviewed</span>.
                     </span>
                     <span className="block text-white whitespace-nowrap pb-1">
                       Guys get <span className="bg-clip-text text-transparent" style={{ color: '#cc3598' }}>advice</span>.
                     </span>
-                    <span className="block text-white pb-1">
+                    <span className="block text-white pb-1 whitespace-nowrap">
                       Girls get <span className="bg-clip-text text-transparent italic underline decoration-2 underline-offset-4" style={{ color: '#ea4c64' }}>paid</span>.
                     </span>
                   </h1>
