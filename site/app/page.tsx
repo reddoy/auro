@@ -540,13 +540,8 @@ export default function HomePage() {
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
               <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-orange-400/40 hover:bg-white/[0.15] transition-all duration-300 mobile-card-hover">
                 <CardContent className="p-8 space-y-5">
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 fill-orange-400 text-orange-400" />
-                    ))}
-                  </div>
                   <p className="text-white text-base leading-relaxed italic">
-                    "I made $200 in my first week just reviewing guys' profiles. The founding member benefits are incredible!"
+                    "OMG, so many guys on dating apps are actually cute but their profiles just don't show it. I'm stoked to be a founding reviewer and help them glow up their pics and bios."
                   </p>
                   <div className="flex items-center gap-3 pt-2">
                     <Avatar className="w-12 h-12 ring-2 ring-orange-500/50">
@@ -562,13 +557,8 @@ export default function HomePage() {
               
               <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-orange-400/40 hover:bg-white/[0.15] transition-all duration-300 mobile-card-hover">
                 <CardContent className="p-8 space-y-5">
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 fill-orange-400 text-orange-400" />
-                    ))}
-                  </div>
                   <p className="text-white text-base leading-relaxed italic">
-                    "The 85% earnings rate is amazing. I can finally monetize my fashion expertise without the hassle of traditional influencer work."
+                    "Honestly, sometimes all it takes is a little tweak here or there to get more matches. I'm excited to be part of Auro and spill the tea with honest feedback."
                   </p>
                   <div className="flex items-center gap-3 pt-2">
                     <Avatar className="w-12 h-12 ring-2 ring-red-500/50">
@@ -584,13 +574,8 @@ export default function HomePage() {
               
               <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-orange-400/40 hover:bg-white/[0.15] transition-all duration-300 mobile-card-hover">
                 <CardContent className="p-8 space-y-5">
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-5 h-5 fill-orange-400 text-orange-400" />
-                    ))}
-                  </div>
                   <p className="text-white text-base leading-relaxed italic">
-                    "RJ's vision is spot on. Guys really do need honest feedback, and we get paid well for providing it. Win-win!"
+                    "There are so many guys who seem sweet but their profiles just feel off. Being a founding reviewer sounds like a chill way to help them fix that and keep it real."
                   </p>
                   <div className="flex items-center gap-3 pt-2">
                     <Avatar className="w-12 h-12 ring-2 ring-pink-500/50">
