@@ -578,8 +578,12 @@ export default function HomePage() {
                     "OMG, so many guys on dating apps are actually cute but their profiles just don't show it. I'm stoked to be a founding reviewer and help them glow up their pics and bios."
                   </p>
                   <div className="flex items-center gap-4 pt-2">
-                    <Avatar className="w-20 h-20 md:w-24 md:h-24 ring-2 ring-orange-500/50">
-                      <AvatarImage src="/jenna_headshot.jpg" alt="Jenna - Founding Reviewer" />
+                    <Avatar className="w-20 h-20 md:w-24 md:h-24 ring-2 ring-orange-500/50 overflow-hidden">
+                      <AvatarImage 
+                        src="/jenna_headshot.jpg" 
+                        alt="Jenna - Founding Reviewer"
+                        className="object-cover scale-110"
+                      />
                       <AvatarFallback className="bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold text-2xl">J</AvatarFallback>
                     </Avatar>
                     <div>
@@ -596,8 +600,13 @@ export default function HomePage() {
                     "Honestly, sometimes all it takes is a little tweak here or there to get more matches. I'm excited to be part of Auro and spill the tea with honest feedback."
                   </p>
                   <div className="flex items-center gap-4 pt-2">
-                    <Avatar className="w-20 h-20 md:w-24 md:h-24 ring-2 ring-red-500/50">
-                      <AvatarImage src="/katie_headshot.jpg" alt="Katie - Founding Reviewer" />
+                    <Avatar className="w-20 h-20 md:w-24 md:h-24 ring-2 ring-red-500/50 overflow-hidden">
+                      <AvatarImage 
+                        src="/katie_headshot.jpg" 
+                        alt="Katie - Founding Reviewer"
+                        className="object-cover scale-y-110 scale-x-100"
+                        style={{ objectPosition: 'center 40%' }}
+                      />
                       <AvatarFallback className="bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold text-2xl">K</AvatarFallback>
                     </Avatar>
                     <div>
