@@ -128,13 +128,13 @@ export default function HomePage() {
               <div className="space-y-4">
                 <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.2] text-center tracking-tight px-4">
                   <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.4s' }}>
-                    Girls <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-pink-500 bg-clip-text text-transparent">review guys</span>.
+                    Guys get <span className="bg-clip-text text-transparent" style={{ color: '#d83a86' }}>reviewed</span>.
                   </span>
                   <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.6s' }}>
-                    Guys <span className="bg-gradient-to-r from-pink-500 via-purple-500 to-purple-600 bg-clip-text text-transparent">get advice</span>.
+                    Guys get <span className="bg-clip-text text-transparent" style={{ color: '#cc3598' }}>advice</span>.
                   </span>
                   <span className="block text-white mobile-text-reveal" style={{ animationDelay: '0.8s' }}>
-                    Girls get <span className="bg-gradient-to-r from-purple-600 via-green-400 to-emerald-600 bg-clip-text text-transparent italic underline decoration-2 underline-offset-4">paid</span>.
+                    Girls get <span className="bg-clip-text text-transparent italic underline decoration-2 underline-offset-4" style={{ color: '#ea4c64' }}>paid</span>.
                   </span>
                 </h1>
                 
@@ -167,7 +167,7 @@ export default function HomePage() {
                   asChild
                 >
                   <a href="/reviewers/apply">
-                    <span className="truncate">🚀 Start Earning Today ({reviewerCount}/100 spots taken)</span>
+                    <span className="truncate">🚀 Start Earning ({reviewerCount}/100)</span>
                     <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                   </a>
                 </Button>
@@ -240,13 +240,13 @@ export default function HomePage() {
                 <div className="space-y-6">
                   <h1 className="text-5xl xl:text-6xl font-extrabold leading-[1.2] tracking-tight pb-2">
                     <span className="block text-white pb-1">
-                      Girls <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-pink-500 bg-clip-text text-transparent">review guys</span>.
+                      Guys get <span className="bg-clip-text text-transparent" style={{ color: '#d83a86' }}>reviewed</span>.
                     </span>
                     <span className="block text-white whitespace-nowrap pb-1">
-                      Guys <span className="bg-gradient-to-r from-pink-500 via-purple-500 to-purple-600 bg-clip-text text-transparent">get advice</span>.
+                      Guys get <span className="bg-clip-text text-transparent" style={{ color: '#cc3598' }}>advice</span>.
                     </span>
                     <span className="block text-white pb-1">
-                      Girls get <span className="bg-gradient-to-r from-purple-600 via-green-400 to-emerald-600 bg-clip-text text-transparent italic underline decoration-2 underline-offset-4">paid</span>.
+                      Girls get <span className="bg-clip-text text-transparent italic underline decoration-2 underline-offset-4" style={{ color: '#ea4c64' }}>paid</span>.
                     </span>
                   </h1>
                   
@@ -347,7 +347,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="text-center space-y-16">
             <div className="space-y-6">
-              <Badge variant="destructive" className="text-sm px-4 py-2 font-semibold text-white">
+              <Badge variant="gradient" className="text-sm px-4 py-2 font-semibold">
                 🚨 FOUNDING MEMBERS ONLY
               </Badge>
               <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight">
@@ -831,18 +831,6 @@ export default function HomePage() {
           }
         }
 
-        .mobile-iphone-frame::before {
-          content: '';
-          position: absolute;
-          top: 4px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 60px;
-          height: 20px;
-          background: #1a1a1a;
-          border-radius: 12px;
-          z-index: 2;
-        }
 
         .mobile-iphone-video {
           width: 100%;
