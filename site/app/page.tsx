@@ -571,7 +571,7 @@ export default function HomePage() {
               <p className="text-xl md:text-2xl text-white/80 leading-relaxed">Join the community that's already making money</p>
             </div>
             
-            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-orange-400/40 hover:bg-white/[0.15] transition-all duration-300 mobile-card-hover">
                 <CardContent className="p-8 space-y-5">
                   <p className="text-white text-base leading-relaxed italic">
@@ -579,10 +579,11 @@ export default function HomePage() {
                   </p>
                   <div className="flex items-center gap-3 pt-2">
                     <Avatar className="w-12 h-12 ring-2 ring-orange-500/50">
-                      <AvatarFallback className="bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold">SM</AvatarFallback>
+                      <AvatarImage src="/jenna_headshot.jpg" alt="Jenna - Founding Reviewer" />
+                      <AvatarFallback className="bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold">J</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-bold text-white">Sarah M.</p>
+                      <p className="font-bold text-white">Jenna</p>
                       <p className="text-sm text-white/80">Founding Reviewer</p>
                     </div>
                   </div>
@@ -596,28 +597,12 @@ export default function HomePage() {
                   </p>
                   <div className="flex items-center gap-3 pt-2">
                     <Avatar className="w-12 h-12 ring-2 ring-red-500/50">
-                      <AvatarFallback className="bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold">JL</AvatarFallback>
+                      <AvatarImage src="/katie_headshot.jpg" alt="Katie - Style Expert" />
+                      <AvatarFallback className="bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold">K</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-bold text-white">Jessica L.</p>
+                      <p className="font-bold text-white">Katie</p>
                       <p className="text-sm text-white/80">Style Expert</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-orange-400/40 hover:bg-white/[0.15] transition-all duration-300 mobile-card-hover">
-                <CardContent className="p-8 space-y-5">
-                  <p className="text-white text-base leading-relaxed italic">
-                    "There are so many guys who seem sweet but their profiles just feel off. Being a founding reviewer sounds like a chill way to help them fix that and keep it real."
-                  </p>
-                  <div className="flex items-center gap-3 pt-2">
-                    <Avatar className="w-12 h-12 ring-2 ring-pink-500/50">
-                      <AvatarFallback className="bg-gradient-to-r from-pink-500 to-purple-500 text-white font-semibold">AM</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-bold text-white">Alex M.</p>
-                      <p className="text-sm text-white/80">Content Creator</p>
                     </div>
                   </div>
                 </CardContent>
