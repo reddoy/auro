@@ -577,13 +577,13 @@ export default function HomePage() {
                   <p className="text-white text-base leading-relaxed italic">
                     "OMG, so many guys on dating apps are actually cute but their profiles just don't show it. I'm stoked to be a founding reviewer and help them glow up their pics and bios."
                   </p>
-                  <div className="flex items-center gap-3 pt-2">
-                    <Avatar className="w-12 h-12 ring-2 ring-orange-500/50">
+                  <div className="flex items-center gap-4 pt-2">
+                    <Avatar className="w-20 h-20 md:w-24 md:h-24 ring-2 ring-orange-500/50">
                       <AvatarImage src="/jenna_headshot.jpg" alt="Jenna - Founding Reviewer" />
-                      <AvatarFallback className="bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold">J</AvatarFallback>
+                      <AvatarFallback className="bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold text-2xl">J</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-bold text-white">Jenna</p>
+                      <p className="font-bold text-white text-xl md:text-2xl">Jenna</p>
                       <p className="text-sm text-white/80">Founding Reviewer</p>
                     </div>
                   </div>
@@ -595,14 +595,14 @@ export default function HomePage() {
                   <p className="text-white text-base leading-relaxed italic">
                     "Honestly, sometimes all it takes is a little tweak here or there to get more matches. I'm excited to be part of Auro and spill the tea with honest feedback."
                   </p>
-                  <div className="flex items-center gap-3 pt-2">
-                    <Avatar className="w-12 h-12 ring-2 ring-red-500/50">
-                      <AvatarImage src="/katie_headshot.jpg" alt="Katie - Style Expert" />
-                      <AvatarFallback className="bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold">K</AvatarFallback>
+                  <div className="flex items-center gap-4 pt-2">
+                    <Avatar className="w-20 h-20 md:w-24 md:h-24 ring-2 ring-red-500/50">
+                      <AvatarImage src="/katie_headshot.jpg" alt="Katie - Founding Reviewer" />
+                      <AvatarFallback className="bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold text-2xl">K</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-bold text-white">Katie</p>
-                      <p className="text-sm text-white/80">Style Expert</p>
+                      <p className="font-bold text-white text-xl md:text-2xl">Katie</p>
+                      <p className="text-sm text-white/80">Founding Reviewer</p>
                     </div>
                   </div>
                 </CardContent>
