@@ -185,16 +185,16 @@ export default function HomePage() {
               </div>
 
               {/* CTA Button - Moved above iPhone for better conversion */}
-              <div className="flex justify-center mobile-text-reveal mb-8" style={{ animationDelay: '1.2s' }}>
+              <div className="flex justify-center mobile-text-reveal mb-8 px-4" style={{ animationDelay: '1.2s' }}>
                 <Button 
                   size="xl" 
                   variant="gradient" 
-                  className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-sm text-base sm:text-lg px-3 sm:px-4 py-3 shadow-2xl font-semibold"
+                  className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-sm text-base sm:text-lg px-4 sm:px-6 py-3 shadow-2xl font-semibold"
                   asChild
                 >
-                  <a href="/reviewers/apply">
+                  <a href="/reviewers/apply" className="flex items-center justify-center">
                     <span className="truncate">Only {spotsLeft} founding spots left</span>
-                    <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                    <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                   </a>
                 </Button>
               </div>
@@ -662,16 +662,16 @@ export default function HomePage() {
               </p>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mobile-text-reveal" style={{ animationDelay: '0.6s' }}>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mobile-text-reveal px-4" style={{ animationDelay: '0.6s' }}>
               <Button 
                 size="xl" 
                 variant="gradient" 
-                className="group text-base sm:text-lg px-4 sm:px-8 py-4 mobile-gradient-border animate-pulse-glow shadow-2xl hover:shadow-3xl transition-all duration-300 w-full max-w-sm sm:max-w-none"
+                className="group text-base sm:text-lg px-6 sm:px-8 py-4 mobile-gradient-border animate-pulse-glow shadow-2xl hover:shadow-3xl transition-all duration-300 w-full max-w-sm sm:max-w-none"
                 asChild
               >
-                <a href="/reviewers/apply" className="flex items-center justify-center">
+                <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
                   <span className="truncate">🚀 Start Earning Today ({reviewerCount}/100 spots taken)</span>
-                  <ArrowRight className="ml-2 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                  <ArrowRight className="ml-1 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                 </a>
               </Button>
               

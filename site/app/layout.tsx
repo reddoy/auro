@@ -55,7 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main style={{ padding: 0 }}>{children}</main>
         <footer>
           <div className="container footer__inner">
-            <div>
+            <div className="text-center sm:text-left">
               <a href="https://coolhandstudios.xyz" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-2)', textDecoration: 'none' }}>
                 © {new Date().getFullYear()} Cool Hand Studios LLC
               </a>

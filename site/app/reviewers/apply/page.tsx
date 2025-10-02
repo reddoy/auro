@@ -565,7 +565,7 @@ export default function FoundingReviewerApplyPage() {
                   )}
                 </div>
                 <span className={`
-                  mt-1 md:mt-2 text-[9px] md:text-xs font-medium text-center px-0.5
+                  mt-1 md:mt-2 text-[10px] md:text-xs font-medium text-center px-0.5
                   hidden sm:block
                   ${isCurrent ? 'text-orange-400 font-bold' : isCompleted ? 'text-white' : 'text-gray-500'}
                 `}>
@@ -666,7 +666,7 @@ export default function FoundingReviewerApplyPage() {
                       </div>
                       <div className="text-center">
                         <div className="text-sm md:text-lg font-bold text-white">$25-50</div>
-                        <div className="text-[9px] md:text-xs text-gray-300">per review</div>
+                        <div className="text-[10px] md:text-xs text-gray-300">per review</div>
                       </div>
                     </div>
                   </div>
@@ -678,7 +678,7 @@ export default function FoundingReviewerApplyPage() {
                       </div>
                       <div className="text-center">
                         <div className="text-sm md:text-lg font-bold text-white">85%</div>
-                        <div className="text-[9px] md:text-xs text-gray-300">forever</div>
+                        <div className="text-[10px] md:text-xs text-gray-300">forever</div>
                       </div>
                     </div>
                   </div>
@@ -690,7 +690,7 @@ export default function FoundingReviewerApplyPage() {
                       </div>
                       <div className="text-center">
                         <div className="text-sm md:text-lg font-bold text-white">Flexible</div>
-                        <div className="text-[9px] md:text-xs text-gray-300">schedule</div>
+                        <div className="text-[10px] md:text-xs text-gray-300">schedule</div>
                       </div>
                     </div>
                   </div>
