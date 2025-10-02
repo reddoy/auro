@@ -582,7 +582,7 @@ export default function HomePage() {
                       <AvatarImage 
                         src="/jenna_headshot.jpg" 
                         alt="Jenna - Founding Reviewer"
-                        className="object-cover scale-110"
+                        className="object-cover scale-125"
                       />
                       <AvatarFallback className="bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold text-2xl">J</AvatarFallback>
                     </Avatar>
@@ -628,11 +628,11 @@ export default function HomePage() {
             <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight">Why I started Auro</h2>
             
             <div className="flex flex-col md:flex-row items-center gap-8">
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 w-40 h-40 rounded-2xl overflow-hidden shadow-lg">
                 <img 
                   src="/rj-headshot.jpg" 
                   alt="RJ, founder of Auro - helping men improve their style and helping women monetize their expertise" 
-                  className="w-40 h-40 rounded-2xl object-cover shadow-lg" 
+                  className="w-full h-full object-cover scale-125" 
                   loading="lazy"
                   width={160}
                   height={160}
