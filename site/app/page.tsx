@@ -679,7 +679,7 @@ export default function HomePage() {
                 asChild
               >
                 <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
-                  <span className="truncate">🚀 Start Earning Today ({reviewerCount}/100 spots taken)</span>
+                  <span>🚀 Start Earning Today ({reviewerCount}/100 spots taken)</span>
                   <ArrowRight className="ml-1 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                 </a>
               </Button>

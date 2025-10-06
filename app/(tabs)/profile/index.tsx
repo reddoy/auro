@@ -375,6 +375,20 @@ export default function ProfileScreen() {
                 <Text style={styles.actionText}>Account Settings</Text>
                 <Text style={styles.actionArrow}>›</Text>
               </TouchableOpacity>
+
+              <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/profile/video-review-demo' as any)} accessibilityLabel="Open video review demo">
+                <View style={styles.actionIconContainer}>
+                  <ExpoLinearGradient
+                    colors={[Colors.brand.accentOrange, Colors.brand.primary]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.actionIconGradient}
+                  />
+                  <Text style={styles.actionIcon}>🎥</Text>
+                </View>
+                <Text style={styles.actionText}>Video Review Demo</Text>
+                <Text style={styles.actionArrow}>›</Text>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.dangerSection}>
