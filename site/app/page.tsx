@@ -232,7 +232,7 @@ export default function HomePage() {
               <div className="text-center mobile-text-reveal bg-white/5 backdrop-blur-sm rounded-xl p-4 mx-4" style={{ animationDelay: '1.4s' }}>
                 <p className="text-white/90 text-base font-semibold mb-3">🚀 App launches in:</p>
                 <CountdownTimer 
-                  targetDate={new Date('2025-10-15T21:00:00-08:00')}
+                  targetDate={new Date('2026-01-15T21:00:00-08:00')}
                   className="text-lg font-bold"
                 />
               </div>
@@ -250,7 +250,7 @@ export default function HomePage() {
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>Launch October 15th</span>
+                    <span>Launch January 15th</span>
                   </div>
                 </div>
               </div>
@@ -306,7 +306,7 @@ export default function HomePage() {
                 <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 py-8 space-y-4">
                   <p className="text-white/90 text-base font-semibold">🚀 App launches in:</p>
                   <CountdownTimer 
-                    targetDate={new Date('2025-10-15T21:00:00-08:00')}
+                    targetDate={new Date('2026-01-15T21:00:00-08:00')}
                     className="text-xl font-bold"
                   />
                 </div>
@@ -323,7 +323,7 @@ export default function HomePage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>Launch October 15th</span>
+                    <span>Launch January 15th</span>
                   </div>
                 </div>
               </div>
@@ -445,7 +445,7 @@ export default function HomePage() {
               </div>
               <div className="flex justify-center">
                 <CountdownTimer 
-                  targetDate={new Date('2025-10-15T21:00:00-08:00')}
+                  targetDate={new Date('2026-01-15T21:00:00-08:00')}
                   className="main-countdown"
                 />
               </div>
@@ -689,7 +689,7 @@ export default function HomePage() {
                   {spotsLeft > 0 ? `${spotsLeft} spots remaining` : 'Spots filled!'}
                 </p>
                 <p className="text-xs text-white/80">
-                  Benefits end October 15th, 2025
+                  Benefits end January 15th, 2026
                 </p>
               </div>
             </div>

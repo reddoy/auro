@@ -222,7 +222,7 @@ export default function IntroStep({ onNext }: Props) {
               </div>
               <div className="trust-item">
                 <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Launch October 15th</span>
+                <span>Launch January 15th</span>
               </div>
             </div>
           </div>
