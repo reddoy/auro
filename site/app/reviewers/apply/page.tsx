@@ -7,13 +7,8 @@ import ReviewerCounter from '../../../components/ReviewerCounter';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
-import { ArrowLeft, ArrowRight, Check, Star, DollarSign, Users, Clock, Shield, Mail, Lock, User, Camera, Instagram, Smartphone, FileText, Target } from 'lucide-react';
-import ImageCropModal from './components/ImageCropModal';
+import { ArrowLeft, ArrowRight, Check, Star, DollarSign, Users, Clock, Shield, Mail, Lock, User, FileText, Target } from 'lucide-react';
 
-type SocialAccount = {
-  provider: 'tiktok' | 'instagram';
-  username?: string | null;
-};
 
 export default function FoundingReviewerApplyPage() {
   const [step, setStep] = useState<number>(1);
@@ -22,23 +17,14 @@ export default function FoundingReviewerApplyPage() {
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
   const [marketingConsent, setMarketingConsent] = useState<boolean>(false);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [rate, setRate] = useState<string>('');
-  const [instagramHandle, setInstagramHandle] = useState('');
-  const [tiktokHandle, setTiktokHandle] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [reviewerCount, setReviewerCount] = useState<number>(0);
   const [isGoogleAuthed, setIsGoogleAuthed] = useState(false);
-  const [showCropModal, setShowCropModal] = useState(false);
-  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [signupStatus, setSignupStatus] = useState<'not_started' | 'pending' | 'completed' | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
-  const avatarInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   // Check if resuming from OAuth
@@ -71,8 +57,8 @@ export default function FoundingReviewerApplyPage() {
               if (googleEmail && !state.email) setEmail(googleEmail);
             } catch {}
             
-            // Skip to step 4 (Profile) after successful OAuth
-            setStep(4);
+            // Skip to step 6 (Done) after successful OAuth
+            setStep(6);
           }
           localStorage.removeItem('auro_reviewer_signup_state');
         }
@@ -129,21 +115,6 @@ export default function FoundingReviewerApplyPage() {
                 // If they have a pending profile, load their data
                 if (data.status === 'pending' && data.profile) {
                   const profile = data.profile;
-                  if (profile.avatar_url && !avatarPreview) {
-                    setAvatarPreview(profile.avatar_url);
-                  }
-                  if (profile.hourly_rate) {
-                    setRate(String(profile.hourly_rate));
-                  }
-                  if (profile.links?.instagram) {
-                    setInstagramHandle(profile.links.instagram);
-                  }
-                  if (profile.links?.tiktok) {
-                    setTiktokHandle(profile.links.tiktok);
-                  }
-                  if (profile.preferences?.phone) {
-                    setPhone(profile.preferences.phone);
-                  }
                   if (profile.preferences?.marketing_consent !== undefined) {
                     setMarketingConsent(profile.preferences.marketing_consent);
                   }
@@ -157,7 +128,7 @@ export default function FoundingReviewerApplyPage() {
           // Fallback: Load existing profile data if they already have one (legacy)
           const { data: profile } = await supabase
             .from('profiles')
-            .select('avatar_url, hourly_rate, links, preferences, reviewer_signup_status')
+            .select('preferences, reviewer_signup_status')
             .eq('id', user.id)
             .maybeSingle();
             
@@ -165,21 +136,6 @@ export default function FoundingReviewerApplyPage() {
             setSignupStatus(profile.reviewer_signup_status || 'not_started');
             
             // Pre-populate with existing data so they can see what they're changing
-            if (profile.avatar_url && !avatarPreview) {
-              setAvatarPreview(profile.avatar_url);
-            }
-            if (profile.hourly_rate) {
-              setRate(String(profile.hourly_rate));
-            }
-            if (profile.links?.instagram) {
-              setInstagramHandle(profile.links.instagram);
-            }
-            if (profile.links?.tiktok) {
-              setTiktokHandle(profile.links.tiktok);
-            }
-            if (profile.preferences?.phone) {
-              setPhone(profile.preferences.phone);
-            }
             if (profile.preferences?.marketing_consent !== undefined) {
               setMarketingConsent(profile.preferences.marketing_consent);
             }
@@ -261,65 +217,7 @@ export default function FoundingReviewerApplyPage() {
 
   const passwordsMatch = useMemo(() => password && passwordConfirm && password === passwordConfirm, [password, passwordConfirm]);
 
-  const handleAvatarChange = async (f: File | null) => {
-    if (!f) {
-      setAvatarFile(null);
-      setAvatarPreview(null);
-      return;
-    }
-    
-    // Show crop modal
-    try {
-      const url = URL.createObjectURL(f);
-      setImageToCrop(url);
-      setShowCropModal(true);
-    } catch (e) {
-      console.error('Failed to load image:', e);
-    }
-  };
 
-  const handleCropComplete = async (croppedBlob: Blob) => {
-    try {
-      // Convert blob to file
-      const croppedFile = new File([croppedBlob], 'avatar.jpg', { type: 'image/jpeg' });
-      setAvatarFile(croppedFile);
-      
-      // Create preview URL
-      const url = URL.createObjectURL(croppedBlob);
-      setAvatarPreview(url);
-      
-      // Close modal
-      setShowCropModal(false);
-      setImageToCrop(null);
-    } catch (e) {
-      console.error('Failed to process cropped image:', e);
-    }
-  };
-
-  const uploadAvatarViaSignedUrl = async (): Promise<{ url: string; path: string } | null> => {
-    if (!avatarFile) return null;
-    // Ask server for a signed upload URL and then upload with supabase client
-    const contentType = avatarFile.type || 'image/jpeg';
-    const res = await fetch('/api/storage/signed-upload', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ fileName: avatarFile.name || 'avatar.jpg', contentType, category: 'avatar', uploadSessionId: 'reviewer-apply' })
-    });
-    if (!res.ok) throw new Error('Failed to get signed upload URL');
-    const { path, token, bucket } = await res.json();
-    const { error: uploadErr } = await (supabase.storage as any)
-      .from(bucket || 'avatars')
-      .uploadToSignedUrl(path, token, avatarFile, { contentType });
-    if (uploadErr) throw new Error(uploadErr.message);
-    // Sign for immediate preview
-    const signRes = await fetch('/api/storage/signed-upload', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'sign-view', path, expiresIn: 60 * 60 * 24 })
-    });
-    const signJson = await signRes.json();
-    return { url: signJson?.signedUrl || '', path };
-  };
 
   const handleGoogleAuth = async () => {
     setLoading(true);
@@ -418,18 +316,13 @@ export default function FoundingReviewerApplyPage() {
             localStorage.setItem('auro_signup_email', email);
             localStorage.setItem('auro_signup_full_name', fullName);
           } catch {}
-          setStep(4);
+          setStep(6);
         }
       } catch (e: any) {
         setError(e?.message || 'Sign up failed');
       } finally {
         setLoading(false);
       }
-      return;
-    }
-    if (step === 4) {
-      // Profile details step - rate is now optional
-      setStep(5);
       return;
     }
     if (step === 5) {
@@ -453,7 +346,6 @@ export default function FoundingReviewerApplyPage() {
           return;
         }
         
-        const avatar = await uploadAvatarViaSignedUrl();
         const token = session?.access_token as string | undefined;
         let explicitUserId: string | null = userData?.user?.id || null;
         
@@ -461,24 +353,19 @@ export default function FoundingReviewerApplyPage() {
           try { explicitUserId = localStorage.getItem('auro_signup_user_id'); } catch {}
         }
 
-        const socialArray: SocialAccount[] = [];
-        const clean = (h: string) => (h || '').trim().replace(/^@+/, '');
-        if (instagramHandle.trim()) socialArray.push({ provider: 'instagram', username: clean(instagramHandle) });
-        if (tiktokHandle.trim()) socialArray.push({ provider: 'tiktok', username: clean(tiktokHandle) });
-
         const resp = await fetch('/api/reviewers/apply', {
           method: 'POST',
           headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({
             bio: '',
             focusAreas: '',
-            hourlyRate: rate ? Number(rate) : null,
-            avatarUrl: avatar?.url || null,
-            avatarPath: avatar?.path || null,
-            socials: socialArray,
-            instagramHandle: instagramHandle || null,
-            tiktokHandle: tiktokHandle || null,
-            phone: phone || null,
+            hourlyRate: null,
+            avatarUrl: null,
+            avatarPath: null,
+            socials: [],
+            instagramHandle: null,
+            tiktokHandle: null,
+            phone: null,
             marketingConsent,
             userId: explicitUserId || null,
           })
@@ -517,8 +404,6 @@ export default function FoundingReviewerApplyPage() {
       { id: 1, label: 'Intro', shortLabel: 'Intro', icon: Star },
       { id: 2, label: 'Account', shortLabel: 'Account', icon: User },
       { id: 3, label: 'Password', shortLabel: 'Pass', icon: Lock },
-      { id: 4, label: 'Profile', shortLabel: 'Profile', icon: Camera },
-      { id: 5, label: 'Socials', shortLabel: 'Social', icon: Instagram },
       { id: 6, label: 'Done', shortLabel: 'Done', icon: Check }
     ];
 
@@ -797,10 +682,10 @@ export default function FoundingReviewerApplyPage() {
                     Back
                   </Button>
                   <Button
-                    onClick={() => setStep(4)}
+                    onClick={() => setStep(6)}
                     className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
                   >
-                    {signupStatus === 'pending' ? 'Continue Application' : 'Continue to Profile'}
+                    {signupStatus === 'pending' ? 'Continue Application' : 'Complete Signup'}
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
@@ -888,6 +773,22 @@ export default function FoundingReviewerApplyPage() {
                     className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </div>
+
+                {/* Marketing Consent */}
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="marketing-consent"
+                      checked={marketingConsent}
+                      onChange={(e) => setMarketingConsent(e.target.checked)}
+                      className="mt-1 w-4 h-4 text-orange-500 bg-white/10 border-white/20 rounded focus:ring-orange-500 focus:ring-2"
+                    />
+                    <label htmlFor="marketing-consent" className="text-sm text-gray-300 leading-relaxed">
+                      I agree to receive marketing messages by email and SMS about new features, opportunities, and updates
+                    </label>
+                  </div>
+                </div>
               </div>
 
               {/* Actions */}
@@ -941,10 +842,10 @@ export default function FoundingReviewerApplyPage() {
                     Back
                   </Button>
                   <Button
-                    onClick={() => setStep(4)}
+                    onClick={() => setStep(6)}
                     className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
                   >
-                    Continue to Profile
+                    Complete Signup
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
@@ -1067,262 +968,7 @@ export default function FoundingReviewerApplyPage() {
         </div>
       )}
 
-      {step === 4 && (
-        <div className="flex-1 flex items-center justify-center px-4 py-4 md:py-8 min-h-[calc(100vh-120px)]">
-          <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
-            <CardHeader className="text-center space-y-1 md:space-y-2 py-4 md:py-6">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-full flex items-center justify-center mx-auto">
-                <Camera className="w-6 h-6 md:w-8 md:h-8 text-purple-400" />
-              </div>
-              <CardTitle className="text-xl md:text-2xl font-bold text-white">Your Reviewer Profile</CardTitle>
-              <CardDescription className="text-sm md:text-base text-gray-300">
-                Set up your profile and pricing
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent className="space-y-4 md:space-y-6 py-4 md:py-6">
-              {error && (
-                <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-3 py-2 md:px-4 md:py-3 rounded-lg text-xs md:text-sm">
-                  {error}
-                </div>
-              )}
-              
-              <div className="space-y-4 md:space-y-6">
-                {/* Profile Photo */}
-                <div className="space-y-3">
-                  <label className="text-sm font-medium text-gray-300">Profile Photo</label>
-                  <div className="flex justify-center">
-                {avatarPreview ? (
-                      <div className="relative">
-                        <img 
-                          src={avatarPreview} 
-                          alt="Preview" 
-                          className="w-24 h-24 rounded-full object-cover border-2 border-white/20"
-                        />
-                        <button 
-                          type="button" 
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
-                          onClick={() => { setAvatarFile(null); setAvatarPreview(null); }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ) : (
-                      <div 
-                        className="w-24 h-24 border-2 border-dashed border-white/30 rounded-full flex flex-col items-center justify-center cursor-pointer hover:border-orange-500/50 hover:bg-white/5 transition-all duration-200"
-                        onClick={() => avatarInputRef.current?.click()}
-                      >
-                        <Camera className="w-6 h-6 text-gray-400 mb-1" />
-                        <span className="text-xs text-gray-400 text-center px-2">Add Photo</span>
-                      </div>
-                    )}
-                  </div>
-                  <input 
-                    ref={avatarInputRef} 
-                    type="file" 
-                    accept="image/*" 
-                    style={{ display: 'none' }} 
-                    onChange={(e) => handleAvatarChange(e.target.files?.[0] || null)} 
-                  />
-                  <p className="text-xs text-gray-400 text-center">
-                    A good profile photo helps guys trust your reviews
-                  </p>
-                </div>
-                
-                {/* Rate - Now Optional */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">
-                    Rate per Review (USD) <span className="text-gray-500 font-normal">- Optional</span>
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      value={rate}
-                      onChange={(e) => setRate(e.target.value)}
-                      placeholder="25"
-                      className="w-full pl-8 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
-                    <div className="flex items-start gap-2">
-                      <DollarSign className="w-4 h-4 text-blue-400 mt-0.5" />
-                      <div className="text-xs text-blue-200">
-                        <p className="font-medium mb-1">Don't know yet? No problem!</p>
-                        <p>You can set or change your rate anytime in the app. Most reviewers charge $25-50 per review.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              {/* Actions */}
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setStep(3)}
-                  className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
-                <Button
-                  onClick={handleNext}
-                  disabled={loading}
-                  className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
-                >
-                  {loading ? 'Saving...' : 'Continue'}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {step === 5 && (
-        <div className="flex-1 flex items-center justify-center px-4 py-4 md:py-8 min-h-[calc(100vh-120px)]">
-          <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
-            <CardHeader className="text-center space-y-1 md:space-y-2 py-4 md:py-6">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-pink-500/20 to-pink-600/20 rounded-full flex items-center justify-center mx-auto">
-                <Instagram className="w-6 h-6 md:w-8 md:h-8 text-pink-400" />
-              </div>
-              <CardTitle className="text-xl md:text-2xl font-bold text-white">Social Presence</CardTitle>
-              <CardDescription className="text-sm md:text-base text-gray-300">
-                Connect your social accounts (optional but recommended)
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent className="space-y-4 md:space-y-6 py-4 md:py-6">
-              {error && (
-                <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-3 py-2 md:px-4 md:py-3 rounded-lg text-xs md:text-sm space-y-2">
-                  <p>{error}</p>
-                  {(error.toLowerCase().includes('session') || error.toLowerCase().includes('account')) && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={async () => {
-                        await supabase.auth.signOut();
-                        window.location.href = '/reviewers/apply';
-                      }}
-                      className="w-full bg-transparent border-red-400/30 text-red-200 hover:bg-red-500/20 text-xs"
-                    >
-                      Sign Out & Start Fresh
-                    </Button>
-                  )}
-                </div>
-              )}
-              
-              <div className="space-y-3 md:space-y-4">
-                {/* Instagram */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                    <Instagram className="w-4 h-4" />
-                    Instagram Handle
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">@</span>
-                    <input
-                      type="text"
-                      value={instagramHandle}
-                      onChange={(e) => setInstagramHandle(e.target.value.replace('@', ''))}
-                      placeholder="username"
-                      className="w-full pl-8 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-                
-                {/* TikTok */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                    <Smartphone className="w-4 h-4" />
-                    TikTok Handle
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">@</span>
-                    <input
-                      type="text"
-                      value={tiktokHandle}
-                      onChange={(e) => setTiktokHandle(e.target.value.replace('@', ''))}
-                      placeholder="username"
-                      className="w-full pl-8 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-                
-                {/* Phone - Optional */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                    <Smartphone className="w-4 h-4" />
-                    Phone Number <span className="text-gray-500 font-normal text-xs">- Optional</span>
-                  </label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+1 555 123 4567"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-400">We'll use this to notify you about new review requests</p>
-              </div>
-                
-                {/* Marketing Consent */}
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      id="marketing-consent"
-                      checked={marketingConsent}
-                      onChange={(e) => setMarketingConsent(e.target.checked)}
-                      className="mt-1 w-4 h-4 text-orange-500 bg-white/10 border-white/20 rounded focus:ring-orange-500 focus:ring-2"
-                    />
-                    <label htmlFor="marketing-consent" className="text-sm text-gray-300 leading-relaxed">
-                      I agree to receive marketing messages by email and SMS about new features, opportunities, and updates
-                </label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Info Box */}
-              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-                <div className="flex items-start gap-2">
-                  <Users className="w-4 h-4 text-blue-400 mt-0.5" />
-                  <div className="text-xs text-blue-200">
-                    <p className="font-medium mb-1">Why connect social accounts?</p>
-                    <ul className="space-y-1">
-                      <li>• Helps guys verify your credibility</li>
-                      <li>• You can share reviews on your social media</li>
-                      <li>• Build your personal brand as a reviewer</li>
-                      <li>• Get more review requests from your followers</li>
-                    </ul>
-            </div>
-            </div>
-          </div>
-
-              {/* Actions */}
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setStep(4)}
-                  className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
-                <Button
-                  onClick={handleNext}
-                  disabled={loading}
-                  className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
-                >
-                  {loading ? 'Next...' : 'Continue'}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       {step === 6 && (
         <div className="flex-1 flex items-center justify-center px-4 py-8 min-h-[calc(100vh-120px)]">
@@ -1376,17 +1022,6 @@ export default function FoundingReviewerApplyPage() {
         </div>
       )}
 
-      {/* Image Crop Modal */}
-      {showCropModal && imageToCrop && (
-        <ImageCropModal
-          image={imageToCrop}
-          onCropComplete={handleCropComplete}
-          onClose={() => {
-            setShowCropModal(false);
-            setImageToCrop(null);
-          }}
-        />
-      )}
     </div>
   );
 }
