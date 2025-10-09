@@ -2246,7 +2246,7 @@ footer {
 }
 
 .footer__links a:hover {
-  color: var(--text);
+  color: white;
   transform: translateY(-2px);
 }
 

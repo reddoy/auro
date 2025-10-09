@@ -4,7 +4,7 @@ export default function TermsPage() {
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         <h1 className="section-title" style={{ marginBottom: 24 }}>Terms of Service</h1>
         <p style={{ color: 'white', marginBottom: 32, fontSize: '16px' }}>
-          <strong>Last Updated:</strong> January 20, 2025
+          <strong>Last Updated:</strong> October 8, 2025
         </p>
 
         <div style={{ lineHeight: 1.6, color: 'white' }}>
@@ -236,8 +236,8 @@ export default function TermsPage() {
             <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>18. Contact Information</h2>
             <p>If you have any questions about these Terms, please contact us:</p>
             <ul style={{ marginLeft: 20, marginBottom: 16 }}>
-              <li>Email: <a href="mailto:legal@auro.app" style={{ color: 'white' }}>legal@auro.app</a></li>
-              <li>General Support: <a href="mailto:support@auro.app" style={{ color: 'white' }}>support@auro.app</a></li>
+              <li>Email: <a href="mailto:legal@appauro.com" style={{ color: 'white' }}>legal@appauro.com</a></li>
+              <li>General Support: <a href="mailto:support@appauro.com" style={{ color: 'white' }}>support@appauro.com</a></li>
               <li>Website: <a href="https://www.appauro.com" style={{ color: 'white' }}>www.appauro.com</a></li>
             </ul>
           </section>

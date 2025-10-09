@@ -4,7 +4,7 @@ export default function PrivacyPage() {
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         <h1 className="section-title" style={{ marginBottom: 24 }}>Privacy Policy</h1>
         <p style={{ color: 'white', marginBottom: 32, fontSize: '16px' }}>
-          <strong>Last Updated:</strong> January 20, 2025
+          <strong>Last Updated:</strong> October 8, 2025
         </p>
 
         <div style={{ lineHeight: 1.6, color: 'white' }}>
@@ -143,7 +143,7 @@ export default function PrivacyPage() {
             <h3 style={{ color: 'white', marginBottom: 12, fontSize: '20px' }}>6.3 Data Deletion Process</h3>
             <p>To request deletion of your data:</p>
             <ol style={{ marginLeft: 20, marginBottom: 16 }}>
-              <li>Contact us at <a href="mailto:privacy@auro.app" style={{ color: 'var(--text)' }}>privacy@auro.app</a></li>
+              <li>Contact us at <a href="mailto:privacy@appauro.com" style={{ color: 'var(--text)' }}>privacy@appauro.com</a></li>
               <li>We will verify your identity</li>
               <li>We will delete your data within 30 days of verification</li>
               <li>We will confirm deletion in writing</li>
@@ -206,8 +206,8 @@ export default function PrivacyPage() {
             <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>13. Contact Us</h2>
             <p>If you have any questions about this Privacy Policy or our privacy practices, please contact us:</p>
             <ul style={{ marginLeft: 20, marginBottom: 16 }}>
-              <li>Email: <a href="mailto:privacy@auro.app" style={{ color: 'white' }}>privacy@auro.app</a></li>
-              <li>General Support: <a href="mailto:support@auro.app" style={{ color: 'white' }}>support@auro.app</a></li>
+              <li>Email: <a href="mailto:privacy@appauro.com" style={{ color: 'white' }}>privacy@appauro.com</a></li>
+              <li>General Support: <a href="mailto:support@appauro.com" style={{ color: 'white' }}>support@appauro.com</a></li>
               <li>Website: <a href="https://www.appauro.com" style={{ color: 'white' }}>www.appauro.com</a></li>
             </ul>
           </section>
