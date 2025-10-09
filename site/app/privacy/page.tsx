@@ -4,7 +4,7 @@ export default function PrivacyPage() {
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         <h1 className="section-title" style={{ marginBottom: 24 }}>Privacy Policy</h1>
         <p style={{ color: 'white', marginBottom: 32, fontSize: '16px' }}>
-          <strong>Last Updated:</strong> October 8, 2025
+          <strong>Last Updated:</strong> October 9, 2025
         </p>
 
         <div style={{ lineHeight: 1.6, color: 'white' }}>
@@ -151,7 +151,77 @@ export default function PrivacyPage() {
           </section>
 
           <section style={{ marginBottom: 32 }}>
-            <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>7. Cookies and Tracking Technologies</h2>
+            <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>7. Google User Data Policy Compliance</h2>
+            <p>
+              <strong>This section specifically addresses how we handle data from Google OAuth sign-in, in compliance with the Google API Services User Data Policy.</strong>
+            </p>
+            
+            <h3 style={{ color: 'white', marginBottom: 12, fontSize: '20px' }}>7.1 What Google Data We Access</h3>
+            <p>When you sign in with Google, we only request and access the following limited data:</p>
+            <ul style={{ marginLeft: 20, marginBottom: 16 }}>
+              <li><strong>Email address:</strong> Used for account creation and communication</li>
+              <li><strong>Name (first and last):</strong> Used to personalize your profile</li>
+              <li><strong>Profile picture (optional):</strong> Used for your Auro account avatar</li>
+              <li><strong>Google Account ID:</strong> Used solely for authentication purposes</li>
+            </ul>
+            <p><strong>We do NOT access:</strong> Gmail, Google Drive, Google Calendar, Google Photos, Contacts, or any other Google services. We only use basic profile information for authentication.</p>
+
+            <h3 style={{ color: 'white', marginBottom: 12, fontSize: '20px' }}>7.2 How We Use Google Data</h3>
+            <p>Google user data is used exclusively for the following purposes:</p>
+            <ul style={{ marginLeft: 20, marginBottom: 16 }}>
+              <li><strong>Account Creation:</strong> Creating and managing your Auro account</li>
+              <li><strong>Authentication:</strong> Verifying your identity when you sign in</li>
+              <li><strong>Profile Display:</strong> Displaying your name and profile picture in the app</li>
+              <li><strong>Communication:</strong> Sending you service-related emails (order confirmations, reviews, account notifications)</li>
+              <li><strong>Platform Operations:</strong> Providing our core review and matching services</li>
+            </ul>
+            <p><strong>We do NOT use Google data for:</strong> Advertising, marketing to third parties, AI/ML training, or any purpose unrelated to providing our Service.</p>
+
+            <h3 style={{ color: 'white', marginBottom: 12, fontSize: '20px' }}>7.3 How We Share Google Data</h3>
+            <p><strong>We do NOT sell, rent, or trade your Google user data to third parties.</strong></p>
+            <p>Google data is only shared in the following limited circumstances:</p>
+            <ul style={{ marginLeft: 20, marginBottom: 16 }}>
+              <li><strong>Supabase (Authentication Provider):</strong> Handles secure authentication and stores your email/name in our database. Supabase is SOC 2 Type II certified.</li>
+              <li><strong>With Your Consent:</strong> Your name and profile information is visible to reviewers you match with to provide the review service you requested.</li>
+              <li><strong>Legal Compliance:</strong> If required by law, court order, or government request.</li>
+            </ul>
+
+            <h3 style={{ color: 'white', marginBottom: 12, fontSize: '20px' }}>7.4 How We Store and Protect Google Data</h3>
+            <p>Google user data is stored securely using industry-standard practices:</p>
+            <ul style={{ marginLeft: 20, marginBottom: 16 }}>
+              <li><strong>Encryption:</strong> All data is encrypted in transit (TLS 1.3) and at rest (AES-256)</li>
+              <li><strong>Access Controls:</strong> Only authorized personnel can access user data on a need-to-know basis</li>
+              <li><strong>Secure Infrastructure:</strong> Data is stored on Supabase's SOC 2 compliant servers</li>
+              <li><strong>Regular Audits:</strong> We conduct regular security reviews and updates</li>
+              <li><strong>No Third-Party Access:</strong> Google data is never shared with unauthorized third parties</li>
+            </ul>
+
+            <h3 style={{ color: 'white', marginBottom: 12, fontSize: '20px' }}>7.5 How Long We Keep Google Data</h3>
+            <ul style={{ marginLeft: 20, marginBottom: 16 }}>
+              <li><strong>Active Accounts:</strong> Google data (email, name, profile picture) is retained while your account is active</li>
+              <li><strong>After Account Deletion:</strong> All Google data is permanently deleted within 30 days of account deletion</li>
+              <li><strong>Backup Retention:</strong> Backup copies are securely destroyed within 90 days</li>
+            </ul>
+
+            <h3 style={{ color: 'white', marginBottom: 12, fontSize: '20px' }}>7.6 Your Rights Over Your Google Data</h3>
+            <p>You have complete control over your Google data:</p>
+            <ul style={{ marginLeft: 20, marginBottom: 16 }}>
+              <li><strong>Access:</strong> View all Google data we have stored (email, name, profile picture) in your account settings</li>
+              <li><strong>Update:</strong> Change your name and profile picture at any time</li>
+              <li><strong>Delete:</strong> Request complete deletion of your account and all associated Google data</li>
+              <li><strong>Revoke Access:</strong> Disconnect Google sign-in from your Google Account settings at <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" style={{ color: 'white', textDecoration: 'underline' }}>myaccount.google.com/permissions</a></li>
+              <li><strong>Export:</strong> Request a copy of your data in portable format</li>
+            </ul>
+            <p>To exercise these rights, contact us at <a href="mailto:privacy@appauro.com" style={{ color: 'white' }}>privacy@appauro.com</a> or delete your account in app settings.</p>
+
+            <h3 style={{ color: 'white', marginBottom: 12, fontSize: '20px' }}>7.7 Limited Use Disclosure</h3>
+            <p>
+              <strong>Auro's use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" style={{ color: 'white', textDecoration: 'underline' }}>Google API Services User Data Policy</a>, including the Limited Use requirements.</strong>
+            </p>
+          </section>
+
+          <section style={{ marginBottom: 32 }}>
+            <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>8. Cookies and Tracking Technologies</h2>
             <p>We use cookies and similar technologies to:</p>
             <ul style={{ marginLeft: 20, marginBottom: 16 }}>
               <li>Remember your preferences and settings</li>
@@ -163,17 +233,17 @@ export default function PrivacyPage() {
           </section>
 
           <section style={{ marginBottom: 32 }}>
-            <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>8. Children's Privacy</h2>
+            <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>9. Children's Privacy</h2>
             <p>Our Service is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us immediately.</p>
           </section>
 
           <section style={{ marginBottom: 32 }}>
-            <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>9. International Users</h2>
+            <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>10. International Users</h2>
             <p>If you are accessing our Service from outside the United States, please be aware that your information may be transferred to, stored, and processed in the United States where our servers are located. By using our Service, you consent to the transfer of your information to the United States.</p>
           </section>
 
           <section style={{ marginBottom: 32 }}>
-            <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>10. California Privacy Rights</h2>
+            <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>11. California Privacy Rights</h2>
             <p>If you are a California resident, you have additional rights under the California Consumer Privacy Act (CCPA):</p>
             <ul style={{ marginLeft: 20, marginBottom: 16 }}>
               <li>Right to know what personal information is collected</li>
@@ -184,7 +254,7 @@ export default function PrivacyPage() {
           </section>
 
           <section style={{ marginBottom: 32 }}>
-            <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>11. European Union Users</h2>
+            <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>12. European Union Users</h2>
             <p>If you are in the European Union, you have rights under the General Data Protection Regulation (GDPR):</p>
             <ul style={{ marginLeft: 20, marginBottom: 16 }}>
               <li>Right of access to your personal data</li>
@@ -198,12 +268,12 @@ export default function PrivacyPage() {
           </section>
 
           <section style={{ marginBottom: 32 }}>
-            <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>12. Changes to This Privacy Policy</h2>
+            <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>13. Changes to This Privacy Policy</h2>
             <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last Updated" date. We encourage you to review this Privacy Policy periodically for any changes.</p>
           </section>
 
           <section style={{ marginBottom: 32 }}>
-            <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>13. Contact Us</h2>
+            <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>14. Contact Us</h2>
             <p>If you have any questions about this Privacy Policy or our privacy practices, please contact us:</p>
             <ul style={{ marginLeft: 20, marginBottom: 16 }}>
               <li>Email: <a href="mailto:privacy@appauro.com" style={{ color: 'white' }}>privacy@appauro.com</a></li>
