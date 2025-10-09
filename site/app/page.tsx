@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import CountdownTimer from '../components/CountdownTimer';
+import RevieweeWaitlist from '../components/RevieweeWaitlist';
 import { supabase } from '../lib/supabase';
 import { ArrowRight, Star, DollarSign, Clock, Users, TrendingUp, CheckCircle } from 'lucide-react';
 
@@ -713,6 +714,13 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Reviewee Waitlist Section - Small and subtle */}
+      <section className="py-12 bg-[#0c0325]">
+        <div className="container mx-auto px-4">
+          <RevieweeWaitlist />
         </div>
       </section>
 
