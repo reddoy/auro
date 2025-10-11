@@ -7,7 +7,7 @@ import ReviewerCounter from '../../../components/ReviewerCounter';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
-import { ArrowLeft, ArrowRight, Check, Star, DollarSign, Users, Clock, Shield, Mail, Lock, User, FileText, Target } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Star, DollarSign, Users, Clock, Shield, Mail, Lock, User, FileText, Target, Phone } from 'lucide-react';
 
 
 export default function FoundingReviewerApplyPage() {
@@ -17,6 +17,7 @@ export default function FoundingReviewerApplyPage() {
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
   const [marketingConsent, setMarketingConsent] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
@@ -57,8 +58,8 @@ export default function FoundingReviewerApplyPage() {
               if (googleEmail && !state.email) setEmail(googleEmail);
             } catch {}
             
-            // Skip to step 6 (Done) after successful OAuth
-            setStep(6);
+            // Go to step 4 (Phone Number) after successful OAuth - don't skip it!
+            setStep(4);
           }
           localStorage.removeItem('auro_reviewer_signup_state');
         }
@@ -316,10 +317,93 @@ export default function FoundingReviewerApplyPage() {
             localStorage.setItem('auro_signup_email', email);
             localStorage.setItem('auro_signup_full_name', fullName);
           } catch {}
-          setStep(6);
+          setStep(4);
         }
       } catch (e: any) {
         setError(e?.message || 'Sign up failed');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (step === 4) {
+      // Phone number step - submit application with phone
+      if (!phone || phone.trim().length === 0) { 
+        setError('Please enter your phone number'); 
+        return; 
+      }
+      // Basic phone validation (allow various formats)
+      const phoneDigits = phone.replace(/\D/g, '');
+      if (phoneDigits.length < 10) {
+        setError('Please enter a valid phone number');
+        return;
+      }
+      
+      // Submit the application
+      try {
+        setLoading(true);
+        
+        // Verify user session is still valid
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !session) {
+          setError('Your session has expired. Please sign out and try again.');
+          await supabase.auth.signOut();
+          return;
+        }
+        
+        // Verify user still exists
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError || !userData?.user) {
+          setError('Your account is no longer valid. Please sign out and create a new account.');
+          await supabase.auth.signOut();
+          return;
+        }
+        
+        const token = session?.access_token as string | undefined;
+        let explicitUserId: string | null = userData?.user?.id || null;
+        
+        if (!explicitUserId) {
+          try { explicitUserId = localStorage.getItem('auro_signup_user_id'); } catch {}
+        }
+
+        const resp = await fetch('/api/reviewers/apply', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({
+            bio: '',
+            focusAreas: '',
+            hourlyRate: null,
+            avatarUrl: null,
+            avatarPath: null,
+            socials: [],
+            instagramHandle: null,
+            tiktokHandle: null,
+            phone: phone || null,
+            marketingConsent,
+            userId: explicitUserId || null,
+          })
+        });
+        const json = await resp.json();
+        
+        // Handle authentication errors specifically
+        if (resp.status === 401 || resp.status === 403) {
+          setError('Your session is no longer valid. Please sign out and try again.');
+          await supabase.auth.signOut();
+          return;
+        }
+        
+        if (!resp.ok) throw new Error(json?.error || 'Failed to submit');
+        setStep(6);
+      } catch (e: any) {
+        // Check if it's an authentication error
+        if (e?.message?.toLowerCase().includes('token') || 
+            e?.message?.toLowerCase().includes('authentication') ||
+            e?.message?.toLowerCase().includes('unauthorized')) {
+          setError('Your session is no longer valid. Please sign out and try again.');
+          await supabase.auth.signOut();
+        } else {
+          setError(e?.message || 'Failed to submit application');
+        }
       } finally {
         setLoading(false);
       }
@@ -365,7 +449,7 @@ export default function FoundingReviewerApplyPage() {
             socials: [],
             instagramHandle: null,
             tiktokHandle: null,
-            phone: null,
+            phone: phone || null,
             marketingConsent,
             userId: explicitUserId || null,
           })
@@ -404,6 +488,7 @@ export default function FoundingReviewerApplyPage() {
       { id: 1, label: 'Intro', shortLabel: 'Intro', icon: Star },
       { id: 2, label: 'Account', shortLabel: 'Account', icon: User },
       { id: 3, label: 'Password', shortLabel: 'Pass', icon: Lock },
+      { id: 4, label: 'Phone', shortLabel: 'Phone', icon: Phone },
       { id: 6, label: 'Done', shortLabel: 'Done', icon: Check }
     ];
 
@@ -682,10 +767,10 @@ export default function FoundingReviewerApplyPage() {
                     Back
                   </Button>
                   <Button
-                    onClick={() => setStep(6)}
+                    onClick={() => setStep(4)}
                     className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
                   >
-                    {signupStatus === 'pending' ? 'Continue Application' : 'Complete Signup'}
+                    Continue
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
@@ -842,10 +927,10 @@ export default function FoundingReviewerApplyPage() {
                     Back
                   </Button>
                   <Button
-                    onClick={() => setStep(6)}
+                    onClick={() => setStep(4)}
                     className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
                   >
-                    Complete Signup
+                    Continue
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
@@ -968,7 +1053,65 @@ export default function FoundingReviewerApplyPage() {
         </div>
       )}
 
+      {step === 4 && (
+        <div className="flex-1 flex items-center justify-center px-4 py-4 md:py-8 min-h-[calc(100vh-120px)]">
+          <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
+            <CardHeader className="text-center space-y-1 md:space-y-2 py-4 md:py-6">
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-full flex items-center justify-center mx-auto">
+                <Phone className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
+              </div>
+              <CardTitle className="text-xl md:text-2xl font-bold text-white">Phone Number</CardTitle>
+              <CardDescription className="text-sm md:text-base text-gray-300">
+                We need your phone number to contact you about reviews
+              </CardDescription>
+            </CardHeader>
+          
+          <CardContent className="space-y-4 md:space-y-6 py-4 md:py-6">
+            {error && (
+              <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-3 py-2 md:px-4 md:py-3 rounded-lg text-xs md:text-sm">
+                {error}
+              </div>
+            )}
+            
+            <div className="space-y-3 md:space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300">Phone Number</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+1 (555) 123-4567"
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-400">
+                  We'll use this to notify you about new review requests and payment updates.
+                </p>
+              </div>
+            </div>
 
+            {/* Actions */}
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setStep(isGoogleAuthed ? 2 : 3)}
+                className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+              <Button
+                onClick={handleNext}
+                disabled={loading || !phone}
+                className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+              >
+                {loading ? 'Please wait...' : 'Continue'}
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        </div>
+      )}
 
       {step === 6 && (
         <div className="flex-1 flex items-center justify-center px-4 py-8 min-h-[calc(100vh-120px)]">
