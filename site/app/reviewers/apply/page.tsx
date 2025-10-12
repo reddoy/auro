@@ -151,7 +151,13 @@ export default function FoundingReviewerApplyPage() {
     
     checkAuthAndLoadProfile();
     
-    const sub = supabase.auth.onAuthStateChange((_event, session) => {
+    const sub = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || (!session && event === 'TOKEN_REFRESHED')) {
+        // Handle session expiration gracefully
+        setError('Your session has expired. Please sign out and try again.');
+        return;
+      }
+      
       if (session?.user && session.user.app_metadata?.provider === 'google') {
         setIsGoogleAuthed(true);
         if (session.user.email) setEmail(session.user.email);
@@ -343,12 +349,17 @@ export default function FoundingReviewerApplyPage() {
       try {
         setLoading(true);
         
-        // Verify user session is still valid
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // Verify user session is still valid - refresh if needed
+        let { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError || !session) {
-          setError('Your session has expired. Please sign out and try again.');
-          await supabase.auth.signOut();
-          return;
+          // Try to refresh the session before giving up
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          if (refreshError || !refreshData.session) {
+            setError('Your session has expired. Please sign out and try again.');
+            await supabase.auth.signOut();
+            return;
+          }
+          session = refreshData.session;
         }
         
         // Verify user still exists
@@ -414,12 +425,17 @@ export default function FoundingReviewerApplyPage() {
       try {
         setLoading(true);
         
-        // Verify user session is still valid
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // Verify user session is still valid - refresh if needed
+        let { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError || !session) {
-          setError('Your session has expired. Please sign out and try again.');
-          await supabase.auth.signOut();
-          return;
+          // Try to refresh the session before giving up
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          if (refreshError || !refreshData.session) {
+            setError('Your session has expired. Please sign out and try again.');
+            await supabase.auth.signOut();
+            return;
+          }
+          session = refreshData.session;
         }
         
         // Verify user still exists

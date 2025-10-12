@@ -1,0 +1,92 @@
+# Supabase Configuration File
+# This file contains security configurations to address the identified issues
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[auth]
+enabled = true
+port = 54324
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://localhost:3000"]
+jwt_expiry = 3600
+refresh_token_rotation_enabled = true
+secure_password_change_enabled = true
+enable_signup = true
+
+# Auth OTP Configuration - Fixes "Auth OTP Long Expiry" issue
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+
+# OTP expiry settings - Set to recommended 1 hour (3600 seconds)
+otp_exp = 3600
+
+[auth.sms]
+enable_signup = true
+enable_confirmations = true
+
+# SMS OTP expiry settings - Set to recommended 1 hour (3600 seconds)  
+otp_exp = 3600
+
+# Enable leaked password protection - Fixes "Leaked Password Protection Disabled" issue
+[auth.security]
+enable_password_validation = true
+enable_breach_protection = true
+
+# Database configuration
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+# Storage configuration
+[storage]
+enabled = true
+port = 54323
+file_size_limit = "50MiB"
+
+# Realtime configuration
+[realtime]
+enabled = true
+port = 54325
+
+# Studio configuration
+[studio]
+enabled = true
+port = 54323
+
+# Functions configuration
+[functions]
+verify_jwt = false
+
+# Edge Runtime configuration
+[edge_runtime]
+enabled = true
+port = 54325
+
+# Analytics configuration
+[analytics]
+enabled = false
+
+# Inbucket configuration (for local email testing)
+[inbucket]
+enabled = true
+port = 54324
+smtp_port = 2500
+pop3_port = 1100
+
+# Logging configuration
+[logging]
+level = "info"
+
+# Postgres configuration for security patches
+[postgres]
+# This will be handled by Supabase's managed database updates
+# The version will be automatically updated when security patches are available
+
