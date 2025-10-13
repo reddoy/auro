@@ -66,28 +66,22 @@ export default function ConditionalNav() {
     <div className="nav-cta-group desktop-only">
       <a 
         href="https://app.appauro.com" 
-        className="sign-in-btn"
+        className="sign-in-link"
         style={{
-          padding: '10px 20px',
-          marginRight: '12px',
-          borderRadius: '8px',
-          backgroundColor: 'transparent',
-          border: '2px solid rgba(255, 255, 255, 0.3)',
+          marginRight: '24px',
           color: 'white',
           textDecoration: 'none',
-          fontWeight: '600',
-          fontSize: '14px',
-          transition: 'all 0.3s ease',
-          display: 'inline-block',
-          cursor: 'pointer'
+          fontWeight: '500',
+          fontSize: '15px',
+          transition: 'opacity 0.2s ease',
+          cursor: 'pointer',
+          opacity: 0.9
         }}
         onMouseOver={(e) => {
-          e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+          e.currentTarget.style.opacity = '1';
         }}
         onMouseOut={(e) => {
-          e.currentTarget.style.backgroundColor = 'transparent';
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+          e.currentTarget.style.opacity = '0.9';
         }}
       >
         Sign In
