@@ -70,20 +70,20 @@ export default function ShareButton({ slug, displayName }: ShareButtonProps) {
           padding: '10px 20px',
           fontSize: '14px',
           fontWeight: '600',
-          border: '2px solid #667eea',
+          border: '2px solid transparent',
           borderRadius: '25px',
-          background: 'white',
-          color: '#667eea',
+          background: 'linear-gradient(white, white) padding-box, linear-gradient(90deg, #FF6F00 0%, #FF2D55 100%) border-box',
+          color: '#FF2D55',
           cursor: 'pointer',
           transition: 'all 0.3s ease'
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = '#667eea';
+          e.currentTarget.style.background = 'linear-gradient(90deg, #FF6F00 0%, #FF2D55 100%)';
           e.currentTarget.style.color = 'white';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'white';
-          e.currentTarget.style.color = '#667eea';
+          e.currentTarget.style.background = 'linear-gradient(white, white) padding-box, linear-gradient(90deg, #FF6F00 0%, #FF2D55 100%) border-box';
+          e.currentTarget.style.color = '#FF2D55';
         }}
       >
         <Share2 size={16} />

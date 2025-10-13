@@ -113,12 +113,12 @@ export default function ReviewersIndexPage() {
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        background: '#0c0325'
       }}>
         <div style={{ textAlign: 'center' }}>
           <div className="loading-spinner" style={{ 
-            border: '4px solid rgba(255,255,255,0.3)',
-            borderTop: '4px solid white',
+            border: '4px solid rgba(255,111,0,0.2)',
+            borderTop: '4px solid #FF6F00',
             borderRadius: '50%',
             width: '50px',
             height: '50px',
@@ -134,7 +134,7 @@ export default function ReviewersIndexPage() {
   return (
     <div style={{ 
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: '#0c0325',
       paddingBottom: '60px'
     }}>
       {/* Hero Section */}
@@ -254,12 +254,12 @@ export default function ReviewersIndexPage() {
                 fontWeight: '600',
                 border: 'none',
                 borderRadius: '25px',
-                background: selectedFilter === id ? 'white' : 'rgba(255,255,255,0.2)',
-                color: selectedFilter === id ? '#667eea' : 'white',
+                background: selectedFilter === id ? 'linear-gradient(90deg, #FF6F00 0%, #FF2D55 100%)' : 'rgba(255,255,255,0.1)',
+                color: 'white',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
                 whiteSpace: 'nowrap',
-                boxShadow: selectedFilter === id ? '0 4px 15px rgba(0,0,0,0.2)' : 'none'
+                boxShadow: selectedFilter === id ? '0 4px 15px rgba(255, 45, 85, 0.3)' : 'none'
               }}
             >
               <Icon size={16} />
@@ -380,12 +380,13 @@ export default function ReviewersIndexPage() {
                   alignItems: 'center',
                   marginBottom: '16px',
                   padding: '12px',
-                  background: '#f8f9fa',
-                  borderRadius: '12px'
+                  background: 'rgba(255,111,0,0.05)',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,111,0,0.1)'
                 }}>
                   {reviewer.rating_average ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Star fill="#ffc107" stroke="#ffc107" size={18} />
+                      <Star fill="#FF6F00" stroke="#FF6F00" size={18} />
                       <span style={{ fontWeight: '700', fontSize: '16px', color: '#1a1a1a' }}>
                         {reviewer.rating_average.toFixed(1)}
                       </span>
@@ -396,7 +397,7 @@ export default function ReviewersIndexPage() {
                   
                   {reviewer.hourly_rate && (
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: '700', fontSize: '18px', color: '#667eea' }}>
+                      <div style={{ fontWeight: '700', fontSize: '18px', color: '#FF2D55' }}>
                         ${reviewer.hourly_rate}
                       </div>
                       <div style={{ fontSize: '12px', color: '#888' }}>per review</div>
@@ -435,7 +436,7 @@ export default function ReviewersIndexPage() {
                           padding: '6px 12px',
                           fontSize: '12px',
                           fontWeight: '600',
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          background: 'linear-gradient(90deg, #FF6F00 0%, #FF2D55 100%)',
                           color: 'white',
                           borderRadius: '20px'
                         }}

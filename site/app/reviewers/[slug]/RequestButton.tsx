@@ -38,10 +38,11 @@ export default function RequestButton({ slug }: { slug: string }) {
         border: 'none',
         borderRadius: '12px',
         background: 'white',
-        color: '#667eea',
+        color: '#FF2D55',
         cursor: loading ? 'not-allowed' : 'pointer',
         transition: 'all 0.3s ease',
-        opacity: loading ? 0.7 : 1
+        opacity: loading ? 0.7 : 1,
+        boxShadow: '0 4px 20px rgba(255, 255, 255, 0.3)'
       }}
       onMouseEnter={(e) => {
         if (!loading) {

@@ -84,7 +84,7 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
   return (
     <div style={{ 
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: '#0c0325',
       padding: '20px'
     }}>
       <div style={{ 
@@ -122,13 +122,13 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
                   position: 'absolute',
                   bottom: '0',
                   right: '0',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: 'linear-gradient(90deg, #FF6F00 0%, #FF2D55 100%)',
                   color: 'white',
                   padding: '6px 12px',
                   borderRadius: '20px',
                   fontSize: '14px',
                   fontWeight: '700',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                  boxShadow: '0 4px 12px rgba(255, 45, 85, 0.4)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px'
@@ -206,10 +206,10 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
                       padding: '10px 16px',
                       fontSize: '14px',
                       fontWeight: '600',
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      background: 'linear-gradient(90deg, #FF6F00 0%, #FF2D55 100%)',
                       color: 'white',
                       borderRadius: '25px',
-                      boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+                      boxShadow: '0 2px 8px rgba(255, 45, 85, 0.3)'
                     }}
                   >
                     {skill}
@@ -310,7 +310,7 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
           {/* Pricing & CTA */}
           <div style={{ 
             padding: '24px',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'linear-gradient(90deg, #FF6F00 0%, #FF2D55 100%)',
             borderRadius: '16px',
             color: 'white',
             textAlign: 'center'
