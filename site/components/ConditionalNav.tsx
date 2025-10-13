@@ -64,6 +64,34 @@ export default function ConditionalNav() {
   
   return (
     <div className="nav-cta-group desktop-only">
+      <a 
+        href="https://app.appauro.com" 
+        className="sign-in-btn"
+        style={{
+          padding: '10px 20px',
+          marginRight: '12px',
+          borderRadius: '8px',
+          backgroundColor: 'transparent',
+          border: '2px solid rgba(255, 255, 255, 0.3)',
+          color: 'white',
+          textDecoration: 'none',
+          fontWeight: '600',
+          fontSize: '14px',
+          transition: 'all 0.3s ease',
+          display: 'inline-block',
+          cursor: 'pointer'
+        }}
+        onMouseOver={(e) => {
+          e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.backgroundColor = 'transparent';
+          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+        }}
+      >
+        Sign In
+      </a>
       <a className="cta-nav-integrated" href="/reviewers/apply">
         <div className="cta-count-section">
           <span className="cta-count-number">{count}</span>
