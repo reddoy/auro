@@ -154,33 +154,43 @@ export default function ReviewersIndexPage() {
         <p style={{ 
           fontSize: 'clamp(16px, 4vw, 20px)',
           maxWidth: '600px',
-          margin: '0 auto',
+          margin: '0 auto 24px auto',
           opacity: '0.95',
           lineHeight: '1.6'
         }}>
           Get honest feedback from verified reviewers on your style, photos, and more
         </p>
 
-        {/* Stats Row */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          gap: '30px',
-          marginTop: '30px',
-          flexWrap: 'wrap'
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', fontWeight: '700' }}>{reviewers.length}</div>
-            <div style={{ fontSize: '14px', opacity: '0.9' }}>Expert Reviewers</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', fontWeight: '700' }}>4.8</div>
-            <div style={{ fontSize: '14px', opacity: '0.9' }}>Avg Rating</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '32px', fontWeight: '700' }}>24h</div>
-            <div style={{ fontSize: '14px', opacity: '0.9' }}>Response Time</div>
-          </div>
+        {/* Become a Reviewer CTA */}
+        <div style={{ marginTop: '30px' }}>
+          <a 
+            href="/reviewers/apply"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '14px 28px',
+              fontSize: '16px',
+              fontWeight: '600',
+              border: '2px solid white',
+              borderRadius: '30px',
+              background: 'transparent',
+              color: 'white',
+              textDecoration: 'none',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 4px 20px rgba(255, 255, 255, 0.1)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.color = '#0c0325';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'white';
+            }}
+          >
+            ✨ Become a Reviewer
+          </a>
         </div>
       </div>
 
@@ -290,12 +300,13 @@ export default function ReviewersIndexPage() {
 
         {filteredReviewers.length === 0 && !loading && !error && (
           <div style={{ 
-            background: 'white',
+            background: '#2A1B3D',
             padding: '60px 20px',
             borderRadius: '16px',
-            textAlign: 'center'
+            textAlign: 'center',
+            border: '1px solid rgba(255,255,255,0.06)'
           }}>
-            <p style={{ fontSize: '18px', color: '#666', margin: 0 }}>
+            <p style={{ fontSize: '18px', color: '#C7BFD9', margin: 0 }}>
               {searchTerm ? `No reviewers found matching "${searchTerm}"` : 'No reviewers available yet'}
             </p>
           </div>
@@ -314,23 +325,26 @@ export default function ReviewersIndexPage() {
             >
               <div
                 style={{
-                  background: 'white',
+                  background: '#2A1B3D',
                   borderRadius: '20px',
                   padding: '24px',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
                   transition: 'all 0.3s ease',
                   cursor: 'pointer',
                   height: '100%',
                   display: 'flex',
-                  flexDirection: 'column'
+                  flexDirection: 'column',
+                  border: '1px solid rgba(255,255,255,0.06)'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-8px)';
-                  e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.2)';
+                  e.currentTarget.style.boxShadow = '0 12px 40px rgba(255, 45, 85, 0.2)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 111, 0, 0.3)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)';
+                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)';
                 }}
               >
                 {/* Avatar & Basic Info */}
@@ -351,7 +365,7 @@ export default function ReviewersIndexPage() {
                       margin: '0 0 4px 0',
                       fontSize: '20px',
                       fontWeight: '700',
-                      color: '#1a1a1a',
+                      color: '#FFFFFF',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap'
@@ -362,7 +376,7 @@ export default function ReviewersIndexPage() {
                       <p style={{ 
                         margin: 0,
                         fontSize: '14px',
-                        color: '#888',
+                        color: '#C7BFD9',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap'
@@ -380,19 +394,19 @@ export default function ReviewersIndexPage() {
                   alignItems: 'center',
                   marginBottom: '16px',
                   padding: '12px',
-                  background: 'rgba(255,111,0,0.05)',
+                  background: 'rgba(255,111,0,0.1)',
                   borderRadius: '12px',
-                  border: '1px solid rgba(255,111,0,0.1)'
+                  border: '1px solid rgba(255,111,0,0.2)'
                 }}>
                   {reviewer.rating_average ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Star fill="#FF6F00" stroke="#FF6F00" size={18} />
-                      <span style={{ fontWeight: '700', fontSize: '16px', color: '#1a1a1a' }}>
+                      <span style={{ fontWeight: '700', fontSize: '16px', color: '#FFFFFF' }}>
                         {reviewer.rating_average.toFixed(1)}
                       </span>
                     </div>
                   ) : (
-                    <div style={{ color: '#888', fontSize: '14px' }}>New</div>
+                    <div style={{ color: '#C7BFD9', fontSize: '14px' }}>New</div>
                   )}
                   
                   {reviewer.hourly_rate && (
@@ -400,7 +414,7 @@ export default function ReviewersIndexPage() {
                       <div style={{ fontWeight: '700', fontSize: '18px', color: '#FF2D55' }}>
                         ${reviewer.hourly_rate}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#888' }}>per review</div>
+                      <div style={{ fontSize: '12px', color: '#C7BFD9' }}>per review</div>
                     </div>
                   )}
                 </div>
@@ -410,7 +424,7 @@ export default function ReviewersIndexPage() {
                   <p style={{ 
                     margin: '0 0 16px 0',
                     fontSize: '14px',
-                    color: '#555',
+                    color: '#C7BFD9',
                     lineHeight: '1.6',
                     display: '-webkit-box',
                     WebkitLineClamp: 3,
@@ -448,8 +462,8 @@ export default function ReviewersIndexPage() {
                       <span style={{
                         padding: '6px 12px',
                         fontSize: '12px',
-                        color: '#888',
-                        background: '#f0f0f0',
+                        color: '#C7BFD9',
+                        background: 'rgba(255,255,255,0.1)',
                         borderRadius: '20px'
                       }}>
                         +{reviewer.skills.length - 3}
