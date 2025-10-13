@@ -53,7 +53,7 @@ export default function RequestPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [supabase, setSupabase] = useState<any>(null);
 
-  // Scroll to top on step change for better UX
+  // Scroll to top on step change for better UX and bands
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
