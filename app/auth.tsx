@@ -4,11 +4,15 @@ import { supabase } from '@/lib/supabase';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as WebBrowser from 'expo-web-browser';
+import { makeRedirectUri } from 'expo-auth-session';
 
 import { Text, View } from '@/components/Themed';
 import { useLocalSearchParams, router } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { ensureProfileForCurrentUser } from '@/lib/api';
+
+WebBrowser.maybeCompleteAuthSession();
 
 // Password requirement component
 function PasswordRequirement({ met, text }: { met: boolean; text: string }) {
@@ -70,6 +74,50 @@ export default function AuthScreen() {
   const isPasswordValid = (pwd: string) => {
     const reqs = validatePassword(pwd);
     return reqs.length && reqs.uppercase && reqs.lowercase && reqs.number && reqs.special;
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const redirectTo = makeRedirectUri({
+        scheme: 'auro',
+        path: 'auth/callback',
+      });
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          skipBrowserRedirect: Platform.OS !== 'web',
+        },
+      });
+
+      if (error) throw error;
+
+      if (Platform.OS !== 'web' && data?.url) {
+        const result = await WebBrowser.openAuthSessionAsync(
+          data.url,
+          redirectTo
+        );
+
+        if (result.type === 'success') {
+          const url = result.url;
+          const params = new URL(url).searchParams;
+          const access_token = params.get('access_token');
+          const refresh_token = params.get('refresh_token');
+
+          if (access_token && refresh_token) {
+            await supabase.auth.setSession({
+              access_token,
+              refresh_token,
+            });
+            try { await ensureProfileForCurrentUser(); } catch {}
+            router.replace('/(tabs)/requests');
+          }
+        }
+      }
+    } catch (err: any) {
+      Alert.alert('Google Sign-In Error', err?.message || 'Failed to sign in with Google');
+    }
   };
 
   const handleSubmit = async () => {
@@ -363,6 +411,22 @@ export default function AuthScreen() {
           </Text>
         </TouchableOpacity>
 
+        {/* Divider */}
+        <View style={[styles.divider, isCompact && styles.dividerCompact]}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        {/* Google Sign In Button */}
+        <TouchableOpacity
+          style={[styles.googleButton, isCompact && styles.googleButtonCompact]}
+          onPress={handleGoogleSignIn}
+        >
+          <Text style={styles.googleIcon}>G</Text>
+          <Text style={styles.googleButtonText}>Continue with Google</Text>
+        </TouchableOpacity>
+
         {isLogin && !isCompact && (
           <TouchableOpacity style={styles.forgotPassword}>
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
@@ -458,7 +522,7 @@ const styles = StyleSheet.create({
   },
   form: {
     margin: 28,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'rgba(42, 27, 61, 0.95)',
     borderRadius: 32,
     padding: 36,
     shadowColor: Colors.brand.shadow,
@@ -467,7 +531,7 @@ const styles = StyleSheet.create({
     shadowRadius: 30,
     elevation: 20,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: 'rgba(255, 111, 0, 0.2)',
     overflow: 'hidden',
   },
   formCompact: {
@@ -510,7 +574,7 @@ const styles = StyleSheet.create({
   toggleText: {
     fontSize: 15,
     fontWeight: '600',
-    color: Colors.brand.background,
+    color: Colors.brand.textSecondary,
     fontFamily: 'Inter_600SemiBold',
   },
   activeToggleText: {
@@ -526,7 +590,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.brand.background,
+    color: Colors.brand.textOnGradient,
     marginBottom: 10,
     fontFamily: 'Inter_600SemiBold',
   },
@@ -536,13 +600,13 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: 'rgba(26, 11, 46, 0.15)',
+    borderColor: 'rgba(255, 111, 0, 0.3)',
     borderRadius: 18,
     paddingHorizontal: 18,
     paddingVertical: 14,
     fontSize: 15,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    color: Colors.brand.background,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    color: Colors.brand.textOnGradient,
     shadowColor: Colors.brand.shadowLight,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -649,5 +713,69 @@ const styles = StyleSheet.create({
   },
   passwordMatchSuccess: {
     color: Colors.brand.success,
+  },
+  // Google sign-in styles
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+    backgroundColor: 'transparent',
+  },
+  dividerCompact: {
+    marginVertical: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 111, 0, 0.2)',
+  },
+  dividerText: {
+    color: Colors.brand.textSecondary,
+    fontSize: 14,
+    fontWeight: '500',
+    marginHorizontal: 16,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingVertical: 16,
+    borderRadius: 24,
+    marginBottom: 16,
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 111, 0, 0.2)',
+  },
+  googleButtonCompact: {
+    paddingVertical: 14,
+    borderRadius: 22,
+  },
+  googleIcon: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#4285F4',
+    marginRight: 12,
+    backgroundColor: '#FFFFFF',
+    width: 32,
+    height: 32,
+    textAlign: 'center',
+    lineHeight: 32,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  googleButtonText: {
+    color: Colors.brand.background,
+    fontSize: 17,
+    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
   },
 });

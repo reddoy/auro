@@ -3,6 +3,7 @@ import { StyleSheet, TouchableOpacity, Alert, FlatList, Platform, Linking, Switc
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
+import Clipboard from '@react-native-clipboard/clipboard';
 
 import { Text, View } from '@/components/Themed';
 import { supabase } from '@/lib/supabase';
@@ -118,6 +119,24 @@ export default function ProfileScreen() {
       },
     ]);
   };
+
+  const handleCopyReviewerLink = useCallback(async () => {
+    if (!profile?.is_reviewer) {
+      Alert.alert('Not a Reviewer', 'You need to be an active reviewer to copy your link.');
+      return;
+    }
+
+    try {
+      // Use username if available, otherwise fall back to ID
+      const slug = profile.username || profile.id;
+      const reviewerUrl = `https://www.appauro.com/reviewers/${slug}`;
+      
+      await Clipboard.setString(reviewerUrl);
+      Alert.alert('Copied!', 'Your reviewer link has been copied to clipboard. You can now paste it in your social media bios!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to copy link to clipboard');
+    }
+  }, [profile]);
 
   const onRefresh = useCallback(async () => {
     try {
@@ -265,6 +284,21 @@ export default function ProfileScreen() {
               </View>
               {profile?.is_reviewer ? (
                 <>
+                  <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
+                    <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Reviewer Link</Text>
+                    <View style={styles.priceCard}>
+                      <Text style={styles.priceText}>Share your reviewer profile</Text>
+                      <TouchableOpacity onPress={handleCopyReviewerLink} accessibilityLabel="Copy reviewer link" style={styles.copyLinkButton}>
+                        <ExpoLinearGradient
+                          colors={['#10b981', '#059669']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                          style={styles.editRateGradient}
+                        />
+                        <Text style={styles.editRateText}>📋 Copy Link</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
                     <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Price per Review</Text>
                     <View style={styles.priceCard}>
@@ -472,6 +506,7 @@ const styles = StyleSheet.create({
   editRateButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 4 },
   editRateGradient: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 16 },
   editRateText: { color: Colors.brand.textOnGradient, fontWeight: '700', fontSize: 14, zIndex: 1, textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 },
+  copyLinkButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', shadowColor: '#10b981', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 4 },
 });
 
 
