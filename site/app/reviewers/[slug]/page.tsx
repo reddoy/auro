@@ -7,6 +7,7 @@ import type { Metadata } from 'next';
 import Avatar from './Avatar';
 import { getDisplayAvatarUrl } from '../../../lib/avatar';
 import ShareButton from './ShareButton';
+import BackLink from './BackLink';
 export const dynamic = 'force-dynamic';
 
 function isUuidLike(value: string): boolean {
@@ -333,23 +334,7 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
         </div>
 
         {/* Back to Browse Link */}
-        <div style={{ textAlign: 'center', marginTop: '20px' }}>
-          <a 
-            href="/reviewers"
-            style={{
-              color: 'white',
-              textDecoration: 'none',
-              fontSize: '16px',
-              fontWeight: '600',
-              opacity: '0.9',
-              transition: 'opacity 0.3s ease'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-            onMouseLeave={(e) => e.currentTarget.style.opacity = '0.9'}
-          >
-            ← Browse All Reviewers
-          </a>
-        </div>
+        <BackLink />
       </div>
     </div>
   );

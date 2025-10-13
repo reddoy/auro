@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Star, Search, Filter, TrendingUp, Award, Users } from 'lucide-react';
 import Link from 'next/link';
+import BecomeReviewerButton from './BecomeReviewerButton';
 
 type Reviewer = {
   id: string;
@@ -162,36 +163,7 @@ export default function ReviewersIndexPage() {
         </p>
 
         {/* Become a Reviewer CTA */}
-        <div style={{ marginTop: '30px' }}>
-          <a 
-            href="/reviewers/apply"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '14px 28px',
-              fontSize: '16px',
-              fontWeight: '600',
-              border: '2px solid white',
-              borderRadius: '30px',
-              background: 'transparent',
-              color: 'white',
-              textDecoration: 'none',
-              transition: 'all 0.3s ease',
-              boxShadow: '0 4px 20px rgba(255, 255, 255, 0.1)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'white';
-              e.currentTarget.style.color = '#0c0325';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = 'white';
-            }}
-          >
-            ✨ Become a Reviewer
-          </a>
-        </div>
+        <BecomeReviewerButton />
       </div>
 
       {/* Search & Filters Container */}
