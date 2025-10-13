@@ -54,21 +54,16 @@ export default function ConditionalNav() {
     return () => clearInterval(interval);
   }, []);
   
-  if (isOnApplyPage) {
-    return null;
-  }
-  
   const spotsLeft = Math.max(0, 100 - count);
   const isNearFull = spotsLeft <= 10;
   const isFull = spotsLeft === 0;
   
   return (
-    <div className="nav-cta-group desktop-only">
+    <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+      {/* Sign In - Always visible */}
       <a 
         href="https://app.appauro.com" 
-        className="sign-in-link"
         style={{
-          marginRight: '24px',
           color: 'white',
           textDecoration: 'none',
           fontWeight: '500',
@@ -86,23 +81,27 @@ export default function ConditionalNav() {
       >
         Sign In
       </a>
-      <a className="cta-nav-integrated" href="/reviewers/apply">
-        <div className="cta-count-section">
-          <span className="cta-count-number">{count}</span>
-          <span className="cta-count-separator">/</span>
-          <span className="cta-count-max">100</span>
-        </div>
-        <div className="cta-text-section">
-          <span className="cta-main-text">Become Founding Reviewer</span>
-          {isFull ? (
-            <span className="cta-sub-text">Spots Filled! 🎉</span>
-          ) : isNearFull ? (
-            <span className="cta-sub-text">Only {spotsLeft} left! ⚡</span>
-          ) : (
-            <span className="cta-sub-text">Join exclusive founding group</span>
-          )}
-        </div>
-      </a>
+      
+      {/* Become Reviewer button - hidden on apply page */}
+      {!isOnApplyPage && (
+        <a className="cta-nav-integrated" href="/reviewers/apply">
+          <div className="cta-count-section">
+            <span className="cta-count-number">{count}</span>
+            <span className="cta-count-separator">/</span>
+            <span className="cta-count-max">100</span>
+          </div>
+          <div className="cta-text-section">
+            <span className="cta-main-text">Become Founding Reviewer</span>
+            {isFull ? (
+              <span className="cta-sub-text">Spots Filled! 🎉</span>
+            ) : isNearFull ? (
+              <span className="cta-sub-text">Only {spotsLeft} left! ⚡</span>
+            ) : (
+              <span className="cta-sub-text">Join exclusive founding group</span>
+            )}
+          </div>
+        </a>
+      )}
     </div>
   );
 }
