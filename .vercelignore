@@ -1,0 +1,5 @@
+# Ignore marketing site files when building Expo web app
+/site
+/server
+/supabase
+

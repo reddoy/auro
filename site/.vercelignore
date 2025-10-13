@@ -1,0 +1,13 @@
+# Ignore Expo app files when building marketing site
+/app
+/assets
+/components
+/constants
+/lib
+/types
+/scripts
+app.json
+expo-env.d.ts
+vercel.json
+EXPO_WEB_DEPLOYMENT.md
+
