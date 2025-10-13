@@ -152,12 +152,13 @@ export default function FoundingReviewerApplyPage() {
     checkAuthAndLoadProfile();
     
     const sub = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_OUT' || (!session && event === 'TOKEN_REFRESHED')) {
-        // Handle session expiration gracefully
+      // Only show error for actual sign out events, not token refresh
+      if (event === 'SIGNED_OUT') {
         setError('Your session has expired. Please sign out and try again.');
         return;
       }
       
+      // Update user info when session is available
       if (session?.user && session.user.app_metadata?.provider === 'google') {
         setIsGoogleAuthed(true);
         if (session.user.email) setEmail(session.user.email);
