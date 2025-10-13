@@ -41,19 +41,20 @@ export default function RequestButton({ slug }: { slug: string }) {
         color: '#FF2D55',
         cursor: loading ? 'not-allowed' : 'pointer',
         transition: 'all 0.3s ease',
-        opacity: loading ? 0.7 : 1,
-        boxShadow: '0 4px 20px rgba(255, 255, 255, 0.3)'
+        opacity: loading ? 0.7 : 1
       }}
       onMouseEnter={(e) => {
         if (!loading) {
-          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.opacity = '0.9';
         }
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'scale(1)';
+        if (!loading) {
+          e.currentTarget.style.opacity = '1';
+        }
       }}
     >
-      {loading ? '✨ Loading...' : '🎯 Request a Review'}
+      {loading ? 'Loading...' : 'Request a Review'}
     </button>
   );
 }
