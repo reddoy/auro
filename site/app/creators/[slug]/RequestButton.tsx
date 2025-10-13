@@ -27,8 +27,32 @@ export default function RequestButton({ slug }: { slug: string }) {
   };
 
   return (
-    <button onClick={onClick} disabled={loading} style={{ padding: '12px 16px', borderRadius: 8, background: '#A100FF', color: '#fff', fontWeight: 700 }}>
-      {loading ? 'Redirecting…' : 'Request a review'}
+    <button 
+      onClick={onClick} 
+      disabled={loading} 
+      style={{ 
+        width: '100%',
+        padding: '16px 24px',
+        fontSize: '18px',
+        fontWeight: '700',
+        border: 'none',
+        borderRadius: '12px',
+        background: 'white',
+        color: '#667eea',
+        cursor: loading ? 'not-allowed' : 'pointer',
+        transition: 'all 0.3s ease',
+        opacity: loading ? 0.7 : 1
+      }}
+      onMouseEnter={(e) => {
+        if (!loading) {
+          e.currentTarget.style.transform = 'scale(1.05)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'scale(1)';
+      }}
+    >
+      {loading ? '✨ Loading...' : '🎯 Request a Review'}
     </button>
   );
 }
