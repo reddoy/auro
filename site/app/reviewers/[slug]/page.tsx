@@ -95,11 +95,12 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
       }}>
         {/* Main Profile Card */}
         <div style={{ 
-          background: 'white',
+          background: '#2A1B3D',
           borderRadius: '24px',
           padding: 'clamp(20px, 5vw, 40px)',
           boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-          marginBottom: '20px'
+          marginBottom: '20px',
+          border: '1px solid rgba(255,255,255,0.06)'
         }}>
           {/* Header with Avatar */}
           <div style={{ 
@@ -143,7 +144,7 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
               margin: '0 0 8px 0',
               fontSize: 'clamp(28px, 6vw, 40px)',
               fontWeight: '800',
-              color: '#1a1a1a'
+              color: '#FFFFFF'
             }}>
               {reviewer.displayName}
             </h1>
@@ -152,7 +153,7 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
               <p style={{ 
                 margin: '0 0 20px 0',
                 fontSize: '16px',
-                color: '#888'
+                color: '#C7BFD9'
               }}>
                 @{reviewer.slug}
               </p>
@@ -170,14 +171,15 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
             <div style={{ 
               marginBottom: '24px',
               padding: '20px',
-              background: '#f8f9fa',
-              borderRadius: '16px'
+              background: 'rgba(255,111,0,0.1)',
+              borderRadius: '16px',
+              border: '1px solid rgba(255,111,0,0.2)'
             }}>
               <p style={{ 
                 margin: 0,
                 fontSize: '16px',
                 lineHeight: '1.6',
-                color: '#333'
+                color: '#C7BFD9'
               }}>
                 {reviewer.bio}
               </p>
@@ -191,7 +193,7 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
                 fontSize: '18px',
                 fontWeight: '700',
                 marginBottom: '12px',
-                color: '#1a1a1a'
+                color: '#FFFFFF'
               }}>
                 Expertise
               </h3>
@@ -225,14 +227,15 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
             <div style={{ 
               marginBottom: '24px',
               padding: '20px',
-              background: '#f8f9fa',
-              borderRadius: '16px'
+              background: 'rgba(255,111,0,0.1)',
+              borderRadius: '16px',
+              border: '1px solid rgba(255,111,0,0.2)'
             }}>
               <h3 style={{ 
                 fontSize: '18px',
                 fontWeight: '700',
                 marginBottom: '12px',
-                color: '#1a1a1a'
+                color: '#FFFFFF'
               }}>
                 Connect
               </h3>
