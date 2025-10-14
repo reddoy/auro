@@ -8,6 +8,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    // Store session in localStorage for better persistence across page loads
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    // Reduce chance of session expiration issues during long forms
+    storageKey: 'auro-auth-token',
   },
 });
 
