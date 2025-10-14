@@ -109,10 +109,15 @@ export default function AuthScreen() {
 
   const handleGoogleSignIn = async () => {
     try {
-      const redirectTo = makeRedirectUri({
-        scheme: 'auro',
-        path: 'auth/callback',
-      });
+      // For web, use the actual web URL; for native, use custom scheme
+      const redirectTo = Platform.OS === 'web'
+        ? typeof window !== 'undefined' && window.location.origin
+          ? `${window.location.origin}/auth/callback`
+          : 'https://app.appauro.com/auth/callback'
+        : makeRedirectUri({
+            scheme: 'auro',
+            path: 'auth/callback',
+          });
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -146,6 +151,7 @@ export default function AuthScreen() {
           }
         }
       }
+      // For web, the redirect happens automatically via Supabase
     } catch (err: any) {
       Alert.alert('Google Sign-In Error', err?.message || 'Failed to sign in with Google');
     }

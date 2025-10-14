@@ -147,12 +147,17 @@ export async function POST(req: Request) {
       }
     } catch {}
 
-    // Prevent self-reviews (requester and reviewer cannot be the same)
-    if (fallbackUserId && resolvedCreatorId && String(fallbackUserId) === String(resolvedCreatorId)) {
-      return new Response(JSON.stringify({ error: 'You cannot request a review from your own reviewer account.' }), { status: 400 });
+    // Require authenticated user for request creation
+    if (!fallbackUserId) {
+      return new Response(JSON.stringify({ error: 'You must be signed in to request a review. Please sign in and try again.' }), { status: 401 });
     }
 
-    // Ensure resolvedCreatorId is a valid reviewer (profiles.is_reviewer = true)
+    // Prevent self-reviews (requester and reviewer cannot be the same)
+    if (fallbackUserId && resolvedCreatorId && String(fallbackUserId) === String(resolvedCreatorId)) {
+      return new Response(JSON.stringify({ error: 'You cannot request a review from yourself. Please choose a different reviewer.' }), { status: 400 });
+    }
+
+    // Ensure resolvedCreatorId is a valid reviewer with completed profile
     try {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
       const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
@@ -160,14 +165,27 @@ export async function POST(req: Request) {
         const admin = createClient(url, key);
         const { data: reviewerRow } = await admin
           .from('profiles')
-          .select('id, is_reviewer')
+          .select('id, is_reviewer, hourly_rate')
           .eq('id', resolvedCreatorId)
           .maybeSingle();
-        if (!reviewerRow || !(reviewerRow as any)?.is_reviewer) {
+        
+        if (!reviewerRow) {
+          return new Response(JSON.stringify({ error: 'Reviewer not found.' }), { status: 404 });
+        }
+        
+        if (!(reviewerRow as any)?.is_reviewer) {
           return new Response(JSON.stringify({ error: 'Selected user is not a reviewer. Please choose another reviewer.' }), { status: 400 });
         }
+        
+        // Check if reviewer has completed their profile (has a rate set)
+        const hourlyRate = (reviewerRow as any)?.hourly_rate;
+        if (!hourlyRate || hourlyRate <= 0) {
+          return new Response(JSON.stringify({ error: 'This reviewer has not completed their profile yet. They need to set their review price before accepting requests.' }), { status: 400 });
+        }
       }
-    } catch {}
+    } catch (error) {
+      return new Response(JSON.stringify({ error: 'Failed to validate reviewer profile. Please try again.' }), { status: 500 });
+    }
 
     // Create a request record on the server if not provided by client
     let ensuredRequestId: string | undefined = requestId as string | undefined;

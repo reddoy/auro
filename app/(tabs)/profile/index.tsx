@@ -283,40 +283,52 @@ export default function ProfileScreen() {
             <View style={styles.bioSection}>
               <Text style={styles.sectionTitle}>Reviewer Settings</Text>
               <Text style={{ color: Colors.brand.textSecondary }}>Control your reviewer status and price per review.</Text>
-              <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.brand.cardBackground }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.brand.cardBackground }}>
+              
+              {/* Prominent Reviewer Toggle Button */}
+              <TouchableOpacity
+                style={[styles.reviewerToggleButton, profile?.is_reviewer && styles.reviewerToggleButtonActive]}
+                onPress={async () => {
+                  const newValue = !profile?.is_reviewer;
+                  try {
+                    const updated = await updateProfile({ is_reviewer: newValue });
+                    setProfile(updated);
+                    if (newValue) {
+                      Alert.alert('Reviewer enabled', 'Your reviewer profile is now active.');
+                    } else {
+                      Alert.alert('Reviewer disabled', 'You will no longer appear as a reviewer.');
+                    }
+                  } catch (e: any) {
+                    Alert.alert('Error', e?.message || 'Failed to update reviewer status');
+                  }
+                }}
+                accessibilityLabel={profile?.is_reviewer ? 'Disable reviewer mode' : 'Enable reviewer mode'}
+              >
+                <ExpoLinearGradient
+                  colors={profile?.is_reviewer ? ['#10b981', '#059669'] : [Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.reviewerToggleGradient}
+                />
+                <View style={styles.reviewerToggleContent}>
                   <View style={[styles.statusChip, profile?.is_reviewer && styles.statusChipActive]}>
                     <Text style={[styles.statusChipText, profile?.is_reviewer && styles.statusChipTextActive]}>
                       {profile?.is_reviewer ? 'Active' : 'Inactive'}
                     </Text>
                   </View>
+                  <Text style={styles.reviewerToggleText}>
+                    {profile?.is_reviewer ? 'Reviewer Mode Active' : 'Become a Reviewer'}
+                  </Text>
+                  <Text style={styles.reviewerToggleArrow}>→</Text>
                 </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.brand.cardBackground }}>
-                  <Text style={{ color: Colors.brand.textSecondary, marginRight: 10 }}>Reviewer Status</Text>
-                  <Switch
-                    value={!!profile?.is_reviewer}
-                    onValueChange={async (val) => {
-                      try {
-                        const updated = await updateProfile({ is_reviewer: val });
-                        setProfile(updated);
-                        if (val) {
-                          Alert.alert('Reviewer enabled', 'Your reviewer profile is now active.');
-                        } else {
-                          Alert.alert('Reviewer disabled', 'You will no longer appear as a reviewer.');
-                        }
-                      } catch (e: any) {
-                        Alert.alert('Error', e?.message || 'Failed to update reviewer status');
-                      }
-                    }}
-                  />
-                </View>
-              </View>
+              </TouchableOpacity>
               {profile?.is_reviewer ? (
                 <>
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
-                    <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Reviewer Link</Text>
+                    <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Share Your Reviewer Profile</Text>
                     <View style={styles.priceCard}>
-                      <Text style={styles.priceText}>Share your reviewer profile</Text>
+                      <Text style={[styles.priceText, { flex: 1, marginRight: 12, fontSize: 14 }]} numberOfLines={1} ellipsizeMode="middle">
+                        {`appauro.com/reviewers/${profile.username || profile.id}`}
+                      </Text>
                       <TouchableOpacity onPress={handleCopyReviewerLink} accessibilityLabel="Copy reviewer link" style={styles.copyLinkButton}>
                         <ExpoLinearGradient
                           colors={['#10b981', '#059669']}
@@ -324,14 +336,14 @@ export default function ProfileScreen() {
                           end={{ x: 1, y: 0 }}
                           style={styles.editRateGradient}
                         />
-                        <Text style={styles.editRateText}>📋 Copy Link</Text>
+                        <Text style={styles.editRateText}>📋 Copy</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
                     <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Price per Review</Text>
                     <View style={styles.priceCard}>
-                      <Text style={styles.priceText}>{profile?.hourly_rate != null ? `$${profile.hourly_rate}/review` : 'Not set'}</Text>
+                      <Text style={styles.priceText}>{profile?.hourly_rate != null ? `$${profile.hourly_rate}/review` : 'Tap to set your rate →'}</Text>
                       <TouchableOpacity onPress={() => router.push('/(tabs)/profile/reviewer-settings')} accessibilityLabel="Edit rate" style={styles.editRateButton}>
                         <ExpoLinearGradient
                           colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
@@ -380,7 +392,7 @@ export default function ProfileScreen() {
                             style={styles.stripeDashboardGradient}
                           />
                           <Text style={styles.stripeDashboardText}>
-                            {stripePortalUrl ? '🔗 Dashboard' : '⚡ Setup'}
+                            {stripePortalUrl ? '🔗 Dashboard' : '⚡ Setup Stripe'}
                           </Text>
                         </TouchableOpacity>
                       </View>
@@ -402,58 +414,14 @@ export default function ProfileScreen() {
                             end={{ x: 1, y: 1 }}
                             style={styles.earningStatBg}
                           />
-                          <Text style={styles.earningStatNumber}>${earnings.average.toFixed(2)}</Text>
-                          <Text style={styles.earningStatLabel}>Avg/Review</Text>
+                          <Text style={styles.earningStatNumber}>{profile?.hourly_rate ? `$${profile.hourly_rate}` : '-'}</Text>
+                          <Text style={styles.earningStatLabel}>Your Rate</Text>
                         </View>
                       </View>
                     </View>
                   </View>
-                  <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
-                    <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Stripe Connection</Text>
-                    <View style={styles.priceCard}>
-                      <Text style={styles.priceText}>{stripePortalUrl ? 'Stripe connected' : 'Not connected'}</Text>
-                      <TouchableOpacity
-                        onPress={async () => {
-                          try {
-                            if (stripePortalUrl) {
-                              console.log('[stripe-login] Opening', stripePortalUrl);
-                              Linking.openURL(stripePortalUrl);
-                              return;
-                            }
-                            const reviewerId = profile?.id || '';
-                            const url = await createStripeExpressOnboardingLink(reviewerId);
-                            console.log('[stripe-onboarding] reviewerId:', reviewerId, 'url:', url);
-                            if (url) Linking.openURL(url);
-                            else Alert.alert('Stripe', 'Setup link not available. Check env EXPO_PUBLIC_SUPABASE_URL and function URL envs.');
-                          } catch (e: any) {
-                            console.log('[stripe-onboarding] error', e?.message || e);
-                            Alert.alert('Stripe', e?.message || 'Failed to open Stripe');
-                          }
-                        }}
-                        accessibilityLabel={stripePortalUrl ? 'Open Stripe Dashboard' : 'Set up Stripe payouts'}
-                        style={styles.editRateButton}
-                      >
-                        <ExpoLinearGradient
-                          colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 0 }}
-                          style={styles.editRateGradient}
-                        />
-                        <Text style={styles.editRateText}>{stripePortalUrl ? 'Open' : 'Set up'}</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
                 </>
-              ) : (
-                <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
-                  <Text style={{ color: Colors.brand.textSecondary }}>Turn on your reviewer profile to set a price and accept requests.</Text>
-                  <View style={{ marginTop: 12, flexDirection: 'row', backgroundColor: Colors.brand.cardBackground }}>
-                    <TouchableOpacity onPress={() => router.push('/(tabs)/profile/become-reviewer')} style={styles.primaryCta} accessibilityLabel="Become a reviewer">
-                      <Text style={styles.primaryCtaText}>Become a Reviewer</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
+              ) : null}
             </View>
 
             {/* Removed separate payouts banner; consolidated into Reviewer Settings card above */}
@@ -569,6 +537,57 @@ const styles = StyleSheet.create({
   statusChipActive: { backgroundColor: 'rgba(255, 111, 0, 0.15)', borderColor: 'rgba(255, 111, 0, 0.3)' },
   statusChipText: { color: Colors.brand.textSecondary, fontSize: 14, fontWeight: '600' },
   statusChipTextActive: { color: Colors.brand.accentOrange, fontWeight: '700' },
+  
+  // Reviewer toggle button
+  reviewerToggleButton: {
+    marginTop: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    borderRadius: 24,
+    overflow: 'hidden',
+    position: 'relative',
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  reviewerToggleButtonActive: {
+    shadowColor: '#10b981',
+  },
+  reviewerToggleGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 24,
+  },
+  reviewerToggleContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    gap: 12,
+  },
+  reviewerToggleText: {
+    flex: 1,
+    color: Colors.brand.textOnGradient,
+    fontSize: 18,
+    fontWeight: '700',
+    zIndex: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  reviewerToggleArrow: {
+    color: Colors.brand.textOnGradient,
+    fontSize: 24,
+    fontWeight: '700',
+    zIndex: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
   
   priceCard: { backgroundColor: Colors.brand.cardBackgroundLight, borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.08)' },
   priceText: { color: Colors.brand.textPrimary, fontWeight: '700', fontSize: 16 },

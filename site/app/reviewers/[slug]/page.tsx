@@ -319,20 +319,31 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
             color: 'white',
             textAlign: 'center'
           }}>
-            {reviewer.pricePerReview != null && (
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ fontSize: '14px', opacity: '0.9', marginBottom: '4px' }}>
-                  Starting at
+            {reviewer.pricePerReview != null && reviewer.pricePerReview > 0 ? (
+              <>
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ fontSize: '14px', opacity: '0.9', marginBottom: '4px' }}>
+                    Starting at
+                  </div>
+                  <div style={{ fontSize: 'clamp(32px, 8vw, 48px)', fontWeight: '800' }}>
+                    ${reviewer.pricePerReview}
+                  </div>
+                  <div style={{ fontSize: '14px', opacity: '0.9' }}>
+                    per review
+                  </div>
                 </div>
-                <div style={{ fontSize: 'clamp(32px, 8vw, 48px)', fontWeight: '800' }}>
-                  ${reviewer.pricePerReview}
+                <RequestButton slug={reviewer.slug} reviewerId={reviewer.id} />
+              </>
+            ) : (
+              <div>
+                <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>
+                  Profile Incomplete
                 </div>
                 <div style={{ fontSize: '14px', opacity: '0.9' }}>
-                  per review
+                  This reviewer hasn&apos;t set their review price yet. Please check back later.
                 </div>
               </div>
             )}
-            <RequestButton slug={reviewer.slug} />
           </div>
         </div>
 

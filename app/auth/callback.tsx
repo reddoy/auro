@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
+import { ensureProfileForCurrentUser } from '@/lib/api';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 
@@ -30,6 +31,10 @@ export default function AuthCallback() {
           setMessage(error.message);
         } else {
           setStatus('success');
+          // Ensure user profile exists after OAuth login
+          try { await ensureProfileForCurrentUser(); } catch {}
+          // Redirect to app after successful OAuth login
+          setTimeout(() => router.replace('/(tabs)/requests'), 800);
         }
       } else {
         // Fallback for web links that deliver tokens or errors in the URL hash
@@ -66,6 +71,10 @@ export default function AuthCallback() {
                 setMessage(setError.message);
               } else {
                 setStatus('success');
+                // Ensure user profile exists after OAuth login
+                try { await ensureProfileForCurrentUser(); } catch {}
+                // Redirect to app after successful OAuth login
+                setTimeout(() => router.replace('/(tabs)/requests'), 800);
               }
             } catch (e: any) {
               setStatus('error');
