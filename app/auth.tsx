@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
+import { AntDesign } from '@expo/vector-icons';
 
 import { Text, View } from '@/components/Themed';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -13,6 +14,34 @@ import Colors from '@/constants/Colors';
 import { ensureProfileForCurrentUser } from '@/lib/api';
 
 WebBrowser.maybeCompleteAuthSession();
+
+// Google Logo SVG Component
+function GoogleLogo() {
+  const Svg = require('react-native-svg').Svg;
+  const Path = require('react-native-svg').Path;
+  
+  return (
+    <Svg width="20" height="20" viewBox="0 0 48 48">
+      <Path
+        fill="#EA4335"
+        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+      />
+      <Path
+        fill="#4285F4"
+        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+      />
+      <Path
+        fill="#FBBC05"
+        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+      />
+      <Path
+        fill="#34A853"
+        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+      />
+      <Path fill="none" d="M0 0h48v48H0z" />
+    </Svg>
+  );
+}
 
 // Password requirement component
 function PasswordRequirement({ met, text }: { met: boolean; text: string }) {
@@ -75,6 +104,8 @@ export default function AuthScreen() {
     const reqs = validatePassword(pwd);
     return reqs.length && reqs.uppercase && reqs.lowercase && reqs.number && reqs.special;
   };
+
+  const [isGoogleHovered, setIsGoogleHovered] = useState(false);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -429,10 +460,20 @@ export default function AuthScreen() {
 
         {/* Google Sign In Button */}
         <TouchableOpacity
-          style={[styles.googleButton, isCompact && styles.googleButtonCompact]}
+          style={[
+            styles.googleButton, 
+            isCompact && styles.googleButtonCompact,
+            isGoogleHovered && Platform.OS === 'web' && styles.googleButtonHover
+          ]}
           onPress={handleGoogleSignIn}
+          {...(Platform.OS === 'web' && {
+            onMouseEnter: () => setIsGoogleHovered(true),
+            onMouseLeave: () => setIsGoogleHovered(false),
+          } as any)}
         >
-          <Text style={styles.googleIcon}>G</Text>
+          <View style={styles.googleIconContainer}>
+            <GoogleLogo />
+          </View>
           <Text style={styles.googleButtonText}>Continue with Google</Text>
         </TouchableOpacity>
 
@@ -781,43 +822,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    paddingVertical: 16,
-    borderRadius: 24,
-    marginBottom: 16,
-    shadowColor: Colors.brand.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 111, 0, 0.2)',
-  },
-  googleButtonCompact: {
-    paddingVertical: 14,
-    borderRadius: 22,
-  },
-  googleIcon: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#4285F4',
-    marginRight: 12,
     backgroundColor: '#FFFFFF',
-    width: 32,
-    height: 32,
-    textAlign: 'center',
-    lineHeight: 32,
-    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#DADCE0',
+    cursor: 'pointer' as any,
+    transition: 'all 0.2s ease' as any,
+  },
+  googleButtonCompact: {
+    paddingVertical: 12,
+    borderRadius: 6,
+  },
+  googleButtonHover: {
+    backgroundColor: '#F8F9FA',
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    borderColor: '#C6C9CC',
+  },
+  googleIconContainer: {
+    marginRight: 12,
+    backgroundColor: 'transparent',
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   googleButtonText: {
-    color: Colors.brand.background,
-    fontSize: 17,
-    fontWeight: '600',
-    fontFamily: 'Inter_600SemiBold',
+    color: '#3C4043',
+    fontSize: 16,
+    fontWeight: '500',
+    fontFamily: Platform.select({
+      ios: 'System',
+      android: 'Roboto-Medium',
+      default: 'Inter_600SemiBold',
+    }),
+    letterSpacing: 0.25,
   },
 });
