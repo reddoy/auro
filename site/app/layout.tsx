@@ -5,6 +5,7 @@ import '../styles.css';
 import CountdownTimer from '../components/CountdownTimer';
 import ReviewerCounter from '../components/ReviewerCounter';
 import ConditionalNav from '../components/ConditionalNav';
+import GoogleAnalytics from '../components/GoogleAnalytics';
 
 // Fonts must be initialized at module scope
 const poppins = Poppins({ subsets: ['latin'], weight: ['400', '600', '700'] });
@@ -31,12 +32,15 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+
   return (
     <html lang="en">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
       </head>
       <body className={`${poppins.className} snap-y`}>
+        {GA_MEASUREMENT_ID && <GoogleAnalytics GA_MEASUREMENT_ID={GA_MEASUREMENT_ID} />}
         <header className="nav">
           <div className="container">
             <div className="nav-content">
