@@ -233,11 +233,18 @@ export default function AuthScreen() {
       <StatusBar style="light" translucent />
       <ExpoLinearGradient
         colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-        style={styles.backgroundGradient}
+        style={[styles.backgroundGradient, Platform.OS === 'web' && styles.backgroundGradientWeb]}
       />
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={{ flexGrow: 1, justifyContent: isCompact ? 'center' : 'flex-start', paddingBottom: isCompact ? insets.bottom : 0 }}
+        contentContainerStyle={[
+          { 
+            flexGrow: 1, 
+            justifyContent: isCompact ? 'center' : 'flex-start', 
+            paddingBottom: isCompact ? insets.bottom : 0 
+          },
+          Platform.OS === 'web' && styles.scrollContentWeb
+        ]}
         bounces={false}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -248,6 +255,7 @@ export default function AuthScreen() {
         style={[
           styles.headerPlain,
           isCompact && styles.headerPlainCompact,
+          Platform.OS === 'web' && styles.headerWeb,
           { paddingTop: 16 },
         ]}
       >
@@ -259,6 +267,7 @@ export default function AuthScreen() {
       <View style={[
         styles.form,
         isCompact && styles.formCompact,
+        Platform.OS === 'web' && styles.formWeb,
         { marginBottom: isCompact ? 8 : (16 + insets.bottom) },
       ] }>
         <View style={[styles.toggleContainer, isCompact && styles.toggleContainerCompact]}>
@@ -435,7 +444,7 @@ export default function AuthScreen() {
       </View>
 
       {!isCompact && (
-        <View style={[styles.footer, { marginBottom: insets.bottom + 6 }]}>
+        <View style={[styles.footer, Platform.OS === 'web' && styles.footerWeb, { marginBottom: insets.bottom + 6 }]}>
           <Text style={styles.footerText}>
             By continuing, you agree to our Terms of Service and Privacy Policy
           </Text>
@@ -460,9 +469,16 @@ const styles = StyleSheet.create({
     bottom: 0,
     opacity: 0,
   },
+  backgroundGradientWeb: {
+    opacity: 0.15,
+  },
   scrollView: {
     flex: 1,
     backgroundColor: 'transparent',
+  },
+  scrollContentWeb: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
   header: {
     paddingTop: 80,
@@ -485,6 +501,11 @@ const styles = StyleSheet.create({
   },
   headerPlainCompact: {
     paddingBottom: 8,
+  },
+  headerWeb: {
+    maxWidth: 480,
+    alignSelf: 'center',
+    width: '100%',
   },
   headerContent: {
     alignItems: 'center',
@@ -538,6 +559,21 @@ const styles = StyleSheet.create({
     margin: 12,
     padding: 14,
     borderRadius: 20,
+  },
+  formWeb: {
+    maxWidth: 480,
+    alignSelf: 'center',
+    marginHorizontal: 'auto' as any,
+    width: '100%',
+    marginVertical: 40,
+    paddingHorizontal: 48,
+    paddingVertical: 48,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.35,
+    shadowRadius: 40,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 111, 0, 0.25)',
   },
   toggleContainer: {
     flexDirection: 'row',
@@ -655,6 +691,12 @@ const styles = StyleSheet.create({
   },
   footerCompact: {
     margin: 8,
+  },
+  footerWeb: {
+    maxWidth: 480,
+    alignSelf: 'center',
+    marginHorizontal: 'auto' as any,
+    width: '100%',
   },
   footerText: {
     fontSize: 12,

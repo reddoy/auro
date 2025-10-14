@@ -71,6 +71,22 @@ export default function IntroStep({ onNext }: Props) {
             </p>
           </div>
 
+          {/* Quick Benefits - Mobile */}
+          <div className="mobile-quick-benefits mobile-text-reveal" style={{ animationDelay: '0.5s' }}>
+            <div className="quick-benefit">
+              <div className="benefit-icon-sm">👩</div>
+              <span>Real women<br/>reviewers</span>
+            </div>
+            <div className="quick-benefit">
+              <div className="benefit-icon-sm">🎥</div>
+              <span>Video<br/>feedback</span>
+            </div>
+            <div className="quick-benefit">
+              <div className="benefit-icon-sm">💝</div>
+              <span>More<br/>matches</span>
+            </div>
+          </div>
+
           {/* CTA Button */}
           <div className="intro-cta mobile-text-reveal" style={{ animationDelay: '0.6s' }}>
             <button 
@@ -319,6 +335,43 @@ export default function IntroStep({ onNext }: Props) {
           width: 1rem;
           height: 1rem;
           color: #10b981;
+        }
+
+        /* Mobile Quick Benefits */
+        .mobile-quick-benefits {
+          display: flex;
+          justify-content: space-around;
+          gap: 1rem;
+          padding: 1.5rem 0;
+        }
+
+        .quick-benefit {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          flex: 1;
+        }
+
+        .benefit-icon-sm {
+          font-size: 2rem;
+          margin-bottom: 0.5rem;
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 50%;
+          width: 60px;
+          height: 60px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .quick-benefit span {
+          font-size: 0.875rem;
+          color: rgba(255, 255, 255, 0.9);
+          font-weight: 500;
+          line-height: 1.3;
         }
 
         /* Desktop Styles */
