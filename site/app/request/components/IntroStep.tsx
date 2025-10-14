@@ -71,28 +71,8 @@ export default function IntroStep({ onNext }: Props) {
             </p>
           </div>
 
-          {/* Benefits List */}
-          <div className="intro-benefits mobile-text-reveal" style={{ animationDelay: '0.6s' }}>
-            <div className="benefit-item">
-              <CheckCircle className="benefit-icon" />
-              <span>Get feedback from real women reviewers</span>
-            </div>
-            <div className="benefit-item">
-              <CheckCircle className="benefit-icon" />
-              <span>Personalized video reviews of your profile</span>
-            </div>
-            <div className="benefit-item">
-              <CheckCircle className="benefit-icon" />
-              <span>Improve your photos and bio</span>
-            </div>
-            <div className="benefit-item">
-              <CheckCircle className="benefit-icon" />
-              <span>Get more matches and dates</span>
-            </div>
-          </div>
-
           {/* CTA Button */}
-          <div className="intro-cta mobile-text-reveal" style={{ animationDelay: '0.8s' }}>
+          <div className="intro-cta mobile-text-reveal" style={{ animationDelay: '0.6s' }}>
             <button 
               onClick={onNext}
               className="cta-button mobile-gradient-border mobile-touch-feedback mobile-optimized"
@@ -100,48 +80,6 @@ export default function IntroStep({ onNext }: Props) {
               <span>Get Started</span>
               <ArrowRight className="cta-arrow" />
             </button>
-          </div>
-
-          {/* Mobile iPhone Video */}
-          <div className="mobile-iphone-wrapper mobile-text-reveal" style={{ animationDelay: '1s' }}>
-            <div className="mobile-iphone-container">
-              <div className="mobile-iphone-glow"></div>
-              <div className="mobile-iphone-shadow"></div>
-              <div className="mobile-iphone-frame">
-                <video 
-                  ref={mobileVideoRef}
-                  className="mobile-iphone-video"
-                  src="/katie_demo.mov" 
-                  autoPlay 
-                  muted 
-                  playsInline
-                  loop
-                  aria-label="Demo video showing how Auro app works"
-                />
-                <div ref={mobileOverlayRef} className="mobile-iphone-overlay">
-                  <div className="overlay-content">
-                    <h3>Review & Get Paid</h3>
-                    <p>See how easy it is to earn money</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Trust Indicators */}
-          <div className="intro-trust mobile-text-reveal" style={{ animationDelay: '1.2s' }}>
-            <div className="trust-item">
-              <Clock className="trust-icon" />
-              <span>5-10 min per review</span>
-            </div>
-            <div className="trust-item">
-              <DollarSign className="trust-icon" />
-              <span>Instant payouts</span>
-            </div>
-            <div className="trust-item">
-              <Star className="trust-icon" />
-              <span>Build your brand</span>
-            </div>
           </div>
         </div>
       </div>
@@ -208,22 +146,6 @@ export default function IntroStep({ onNext }: Props) {
                 <span>🚀 Request a Review Now</span>
                 <ArrowRight className="cta-arrow" />
               </button>
-            </div>
-
-            {/* Trust Indicators */}
-            <div className="desktop-trust">
-              <div className="trust-item">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Expert women reviewers</span>
-              </div>
-              <div className="trust-item">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Video feedback included</span>
-              </div>
-              <div className="trust-item">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Get more matches</span>
-              </div>
             </div>
           </div>
           
