@@ -134,17 +134,10 @@ export async function createStripeExpressLoginLink(reviewerId: string): Promise<
     if (supabaseUrl) {
       const projectRef = (supabaseUrl.match(/^https?:\/\/([a-z0-9-]+)\.supabase\.co/i) || [])[1];
       if (projectRef) {
-        // Use actual function name deployed in supabase/functions
         const base = `https://${projectRef}.functions.supabase.co`;
-        const primary = `${base}/connect-express-login`;
-        let resp = await fetch(primary, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
+        const endpoint = `${base}/connect-express-login`;
+        const resp = await fetch(endpoint, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
         if (resp.ok) { const json = await resp.json(); return json?.url || null; }
-        // Fallback: legacy/custom slug
-        const fallback = `${base}/bright-worker`;
-        try {
-          resp = await fetch(fallback, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
-          if (resp.ok) { const json = await resp.json(); return json?.url || null; }
-        } catch {}
       }
     }
 
@@ -193,17 +186,10 @@ export async function createStripeExpressOnboardingLink(reviewerId: string): Pro
     if (supabaseUrl) {
       const projectRef = (supabaseUrl.match(/^https?:\/\/([a-z0-9-]+)\.supabase\.co/i) || [])[1];
       if (projectRef) {
-        // Prefer your current slug first
         const base = `https://${projectRef}.functions.supabase.co`;
-        const preferred = `${base}/super-task`;
-        let resp = await fetch(preferred, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
+        const endpoint = `${base}/connect-express-onboarding`;
+        const resp = await fetch(endpoint, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
         if (resp.ok) { const json = await resp.json(); return json?.url || null; }
-        // Fallback to repo default if present
-        const fallback = `${base}/connect-express-onboarding`;
-        try {
-          resp = await fetch(fallback, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
-          if (resp.ok) { const json = await resp.json(); return json?.url || null; }
-        } catch {}
       }
     }
 

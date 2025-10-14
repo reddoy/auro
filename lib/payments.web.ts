@@ -93,21 +93,21 @@ export async function createStripeExpressOnboardingLink(reviewerId: string): Pro
     } else if (anonKey) {
       fnHeaders['Authorization'] = `Bearer ${anonKey}`;
     }
-    // 1) Build candidate URLs in order; prefer explicit and your 'super-task' slug
+    // 1) Build candidate URLs in order
     const attemptUrls: string[] = [];
     const explicit = process.env.EXPO_PUBLIC_SUPABASE_FN_ONBOARDING_URL || process.env.NEXT_PUBLIC_SUPABASE_FN_ONBOARDING_URL;
     if (explicit) attemptUrls.push(explicit);
 
-    // 2) Derive from Supabase project ref and prefer 'super-task'
+    // 2) Derive from Supabase project ref
     const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const projectRef = (supabaseUrl.match(/^https?:\/\/([a-z0-9-]+)\.supabase\.co/i) || [])[1];
     if (projectRef) {
       const base = `https://${projectRef}.functions.supabase.co`;
-      attemptUrls.push(`${base}/super-task`);
+      attemptUrls.push(`${base}/connect-express-onboarding`);
     }
 
-    // 2b) Hardcoded project fallback (your current project + slug)
-    attemptUrls.push('https://zxazjbduiistnfstnwka.supabase.co/functions/v1/super-task');
+    // 2b) Hardcoded project fallback
+    attemptUrls.push('https://zxazjbduiistnfstnwka.supabase.co/functions/v1/connect-express-onboarding');
 
     // Try all candidates with logging
     for (const url of attemptUrls) {

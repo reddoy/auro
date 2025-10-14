@@ -284,43 +284,35 @@ export default function ProfileScreen() {
               <Text style={styles.sectionTitle}>Reviewer Settings</Text>
               <Text style={{ color: Colors.brand.textSecondary }}>Control your reviewer status and price per review.</Text>
               
-              {/* Prominent Reviewer Toggle Button */}
-              <TouchableOpacity
-                style={[styles.reviewerToggleButton, profile?.is_reviewer && styles.reviewerToggleButtonActive]}
-                onPress={async () => {
-                  const newValue = !profile?.is_reviewer;
-                  try {
-                    const updated = await updateProfile({ is_reviewer: newValue });
-                    setProfile(updated);
-                    if (newValue) {
-                      Alert.alert('Reviewer enabled', 'Your reviewer profile is now active.');
-                    } else {
-                      Alert.alert('Reviewer disabled', 'You will no longer appear as a reviewer.');
-                    }
-                  } catch (e: any) {
-                    Alert.alert('Error', e?.message || 'Failed to update reviewer status');
-                  }
-                }}
-                accessibilityLabel={profile?.is_reviewer ? 'Disable reviewer mode' : 'Enable reviewer mode'}
-              >
-                <ExpoLinearGradient
-                  colors={profile?.is_reviewer ? ['#10b981', '#059669'] : [Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.reviewerToggleGradient}
-                />
-                <View style={styles.reviewerToggleContent}>
-                  <View style={[styles.statusChip, profile?.is_reviewer && styles.statusChipActive]}>
-                    <Text style={[styles.statusChipText, profile?.is_reviewer && styles.statusChipTextActive]}>
-                      {profile?.is_reviewer ? 'Active' : 'Inactive'}
+              {/* Reviewer Status Toggle */}
+              <View style={styles.reviewerStatusRow}>
+                <Text style={styles.reviewerStatusLabel}>Reviewer Status</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'transparent' }}>
+                  <View style={[styles.statusIndicator, profile?.is_reviewer && styles.statusIndicatorActive]}>
+                    <Text style={[styles.statusIndicatorText, profile?.is_reviewer && styles.statusIndicatorTextActive]}>
+                      {profile?.is_reviewer ? '● Active' : '● Inactive'}
                     </Text>
                   </View>
-                  <Text style={styles.reviewerToggleText}>
-                    {profile?.is_reviewer ? 'Reviewer Mode Active' : 'Become a Reviewer'}
-                  </Text>
-                  <Text style={styles.reviewerToggleArrow}>→</Text>
+                  <Switch
+                    value={!!profile?.is_reviewer}
+                    onValueChange={async (val) => {
+                      try {
+                        const updated = await updateProfile({ is_reviewer: val });
+                        setProfile(updated);
+                        if (val) {
+                          Alert.alert('Reviewer enabled', 'Your reviewer profile is now active.');
+                        } else {
+                          Alert.alert('Reviewer disabled', 'You will no longer appear as a reviewer.');
+                        }
+                      } catch (e: any) {
+                        Alert.alert('Error', e?.message || 'Failed to update reviewer status');
+                      }
+                    }}
+                    trackColor={{ false: '#3e3e3e', true: '#10b981' }}
+                    thumbColor={profile?.is_reviewer ? '#ffffff' : '#f4f3f4'}
+                  />
                 </View>
-              </TouchableOpacity>
+              </View>
               {profile?.is_reviewer ? (
                 <>
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
@@ -359,8 +351,8 @@ export default function ProfileScreen() {
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
                     <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>💰 Earnings Overview</Text>
                     <View style={styles.earningsCard}>
-                      <View style={styles.earningsHeader}>
-                        <View style={{ backgroundColor: 'transparent' }}>
+                      <View style={styles.earningsHeaderMobile}>
+                        <View style={{ backgroundColor: 'transparent', marginBottom: 16 }}>
                           <Text style={styles.earningsLabel}>Total Earned</Text>
                           <Text style={styles.earningsTotal}>${earnings.total.toFixed(2)}</Text>
                         </View>
@@ -383,7 +375,7 @@ export default function ProfileScreen() {
                             }
                           }}
                           accessibilityLabel={stripePortalUrl ? 'Open Stripe Dashboard' : 'Set up Stripe payouts'}
-                          style={styles.stripeDashboardButton}
+                          style={styles.stripeDashboardButtonMobile}
                         >
                           <ExpoLinearGradient
                             colors={['#635BFF', '#4F46E5']}
@@ -538,55 +530,43 @@ const styles = StyleSheet.create({
   statusChipText: { color: Colors.brand.textSecondary, fontSize: 14, fontWeight: '600' },
   statusChipTextActive: { color: Colors.brand.accentOrange, fontWeight: '700' },
   
-  // Reviewer toggle button
-  reviewerToggleButton: {
+  // Reviewer status row
+  reviewerStatusRow: {
     marginTop: 16,
-    paddingVertical: 18,
-    paddingHorizontal: 24,
-    borderRadius: 24,
-    overflow: 'hidden',
-    position: 'relative',
-    shadowColor: Colors.brand.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  reviewerToggleButtonActive: {
-    shadowColor: '#10b981',
-  },
-  reviewerToggleGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    borderRadius: 24,
-  },
-  reviewerToggleContent: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'transparent',
-    gap: 12,
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
-  reviewerToggleText: {
-    flex: 1,
-    color: Colors.brand.textOnGradient,
-    fontSize: 18,
-    fontWeight: '700',
-    zIndex: 1,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+  reviewerStatusLabel: {
+    color: Colors.brand.textPrimary,
+    fontSize: 16,
+    fontWeight: '600',
   },
-  reviewerToggleArrow: {
-    color: Colors.brand.textOnGradient,
-    fontSize: 24,
+  statusIndicator: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+  },
+  statusIndicatorActive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  statusIndicatorText: {
+    color: '#ef4444',
+    fontSize: 13,
     fontWeight: '700',
-    zIndex: 1,
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+  },
+  statusIndicatorTextActive: {
+    color: '#10b981',
   },
   
   priceCard: { backgroundColor: Colors.brand.cardBackgroundLight, borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.08)' },
@@ -641,6 +621,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     backgroundColor: 'transparent',
   },
+  earningsHeaderMobile: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    backgroundColor: 'transparent',
+  },
   earningsLabel: {
     fontSize: 14,
     color: Colors.brand.textSecondary,
@@ -670,6 +655,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 10,
     elevation: 8,
+  },
+  stripeDashboardButtonMobile: {
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
+    shadowColor: '#635BFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+    width: '100%',
   },
   stripeDashboardGradient: {
     position: 'absolute',
