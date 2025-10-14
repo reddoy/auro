@@ -12,6 +12,7 @@ import AvatarUploader from '@/components/AvatarUploader';
 import { getCurrentProfile, updateProfile, getSignedAvatarUrl } from '@/lib/profile';
 import type { Profile } from '@/types';
 import { createStripeExpressLoginLink, createStripeExpressOnboardingLink } from '@/lib/payments';
+import { getRequestsByReviewer } from '@/lib/api';
 
 const socialIcons = {
   instagram: require('../../../Instagram_icon-removebg-preview.png'),
@@ -25,6 +26,7 @@ export default function ProfileScreen() {
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
   const [stripePortalUrl, setStripePortalUrl] = useState<string | null>(null);
+  const [earnings, setEarnings] = useState({ total: 0, count: 0, average: 0 });
 
   useEffect(() => {
     const run = async () => {
@@ -36,8 +38,20 @@ export default function ProfileScreen() {
             const link = await createStripeExpressLoginLink(p.id);
             setStripePortalUrl(link);
           } catch {}
+          // Fetch earnings data
+          try {
+            const requests = await getRequestsByReviewer(p.id);
+            const completedRequests = requests.filter(r => r.status === 'completed' && r.net_amount_cents);
+            const totalEarnings = completedRequests.reduce((sum, r) => sum + (r.net_amount_cents || 0), 0);
+            const count = completedRequests.length;
+            const average = count > 0 ? totalEarnings / count : 0;
+            setEarnings({ total: totalEarnings / 100, count, average: average / 100 }); // Convert cents to dollars
+          } catch (e) {
+            console.log('[earnings] error fetching', e);
+          }
         } else {
           setStripePortalUrl(null);
+          setEarnings({ total: 0, count: 0, average: 0 });
         }
       } finally {
       }
@@ -143,6 +157,21 @@ export default function ProfileScreen() {
       setRefreshing(true);
       const p = await getCurrentProfile();
       setProfile(p);
+      if (p?.id && p?.is_reviewer) {
+        try {
+          const link = await createStripeExpressLoginLink(p.id);
+          setStripePortalUrl(link);
+        } catch {}
+        // Refresh earnings data
+        try {
+          const requests = await getRequestsByReviewer(p.id);
+          const completedRequests = requests.filter(r => r.status === 'completed' && r.net_amount_cents);
+          const totalEarnings = completedRequests.reduce((sum, r) => sum + (r.net_amount_cents || 0), 0);
+          const count = completedRequests.length;
+          const average = count > 0 ? totalEarnings / count : 0;
+          setEarnings({ total: totalEarnings / 100, count, average: average / 100 });
+        } catch {}
+      }
     } finally {
       setRefreshing(false);
     }
@@ -314,8 +343,73 @@ export default function ProfileScreen() {
                       </TouchableOpacity>
                     </View>
                   </View>
+                  {/* Earnings Tracker */}
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
-                    <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Payouts</Text>
+                    <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>💰 Earnings Overview</Text>
+                    <View style={styles.earningsCard}>
+                      <View style={styles.earningsHeader}>
+                        <View style={{ backgroundColor: 'transparent' }}>
+                          <Text style={styles.earningsLabel}>Total Earned</Text>
+                          <Text style={styles.earningsTotal}>${earnings.total.toFixed(2)}</Text>
+                        </View>
+                        <TouchableOpacity
+                          onPress={async () => {
+                            try {
+                              if (stripePortalUrl) {
+                                console.log('[stripe-login] Opening', stripePortalUrl);
+                                Linking.openURL(stripePortalUrl);
+                                return;
+                              }
+                              const reviewerId = profile?.id || '';
+                              const url = await createStripeExpressOnboardingLink(reviewerId);
+                              console.log('[stripe-onboarding] reviewerId:', reviewerId, 'url:', url);
+                              if (url) Linking.openURL(url);
+                              else Alert.alert('Stripe', 'Setup link not available. Check env EXPO_PUBLIC_SUPABASE_URL and function URL envs.');
+                            } catch (e: any) {
+                              console.log('[stripe-onboarding] error', e?.message || e);
+                              Alert.alert('Stripe', e?.message || 'Failed to open Stripe');
+                            }
+                          }}
+                          accessibilityLabel={stripePortalUrl ? 'Open Stripe Dashboard' : 'Set up Stripe payouts'}
+                          style={styles.stripeDashboardButton}
+                        >
+                          <ExpoLinearGradient
+                            colors={['#635BFF', '#4F46E5']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.stripeDashboardGradient}
+                          />
+                          <Text style={styles.stripeDashboardText}>
+                            {stripePortalUrl ? '🔗 Dashboard' : '⚡ Setup'}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                      <View style={styles.earningsStats}>
+                        <View style={styles.earningStat}>
+                          <ExpoLinearGradient
+                            colors={['rgba(16, 185, 129, 0.15)', 'rgba(5, 150, 105, 0.15)']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.earningStatBg}
+                          />
+                          <Text style={styles.earningStatNumber}>{earnings.count}</Text>
+                          <Text style={styles.earningStatLabel}>Completed</Text>
+                        </View>
+                        <View style={styles.earningStat}>
+                          <ExpoLinearGradient
+                            colors={['rgba(139, 92, 246, 0.15)', 'rgba(124, 58, 237, 0.15)']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.earningStatBg}
+                          />
+                          <Text style={styles.earningStatNumber}>${earnings.average.toFixed(2)}</Text>
+                          <Text style={styles.earningStatLabel}>Avg/Review</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                  <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
+                    <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Stripe Connection</Text>
                     <View style={styles.priceCard}>
                       <Text style={styles.priceText}>{stripePortalUrl ? 'Stripe connected' : 'Not connected'}</Text>
                       <TouchableOpacity
@@ -507,6 +601,117 @@ const styles = StyleSheet.create({
   editRateGradient: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 16 },
   editRateText: { color: Colors.brand.textOnGradient, fontWeight: '700', fontSize: 14, zIndex: 1, textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 },
   copyLinkButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', shadowColor: '#10b981', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 4 },
+  
+  // Earnings tracker styles
+  earningsCard: { 
+    backgroundColor: 'rgba(32, 21, 50, 0.8)', 
+    borderRadius: 24, 
+    padding: 20, 
+    borderWidth: 1.5, 
+    borderColor: 'rgba(255, 111, 0, 0.2)',
+    shadowColor: Colors.brand.accentOrange,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  earningsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    backgroundColor: 'transparent',
+  },
+  earningsLabel: {
+    fontSize: 14,
+    color: Colors.brand.textSecondary,
+    fontWeight: '600',
+    marginBottom: 6,
+    letterSpacing: 0.5,
+  },
+  earningsTotal: {
+    fontSize: 40,
+    fontWeight: '800',
+    color: Colors.brand.textPrimary,
+    fontFamily: 'Poppins_700Bold',
+    textShadowColor: 'rgba(255, 111, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+  },
+  stripeDashboardButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
+    shadowColor: '#635BFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  stripeDashboardGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 20,
+  },
+  stripeDashboardText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 15,
+    zIndex: 1,
+    letterSpacing: 0.5,
+  },
+  earningsStats: {
+    flexDirection: 'row',
+    gap: 12,
+    backgroundColor: 'transparent',
+  },
+  earningStat: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 18,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    position: 'relative',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  earningStatBg: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 18,
+  },
+  earningStatNumber: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: Colors.brand.textPrimary,
+    marginBottom: 4,
+    zIndex: 1,
+    fontFamily: 'Poppins_700Bold',
+  },
+  earningStatLabel: {
+    fontSize: 12,
+    color: Colors.brand.textSecondary,
+    fontWeight: '600',
+    zIndex: 1,
+    letterSpacing: 0.5,
+  },
 });
 
 

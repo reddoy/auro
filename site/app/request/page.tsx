@@ -288,61 +288,81 @@ export default function RequestPage() {
     }
   };
 
-  return (
-    <div className="request-page">
-      <div className="container">
-        <div className="request-header">
-          <h1>Become a Founding Reviewer</h1>
-          {/* Debug: Clear auth session button */}
-          {isAuthenticated && (
-            <button 
-              onClick={async () => {
-                if (supabase) {
-                  await supabase.auth.signOut();
-                  localStorage.clear();
-                  window.location.reload();
-                }
-              }}
-              style={{ 
-                position: 'absolute', 
-                top: 10, 
-                right: 10, 
-                padding: '4px 8px', 
-                fontSize: '12px', 
-                background: '#ff4444', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Clear Auth (Debug)
-            </button>
-          )}
-          <div className="progress-bar">
-            {STEPS.map((step, index) => (
-              <div
-                key={step}
-                className={`progress-step ${
-                  STEPS.indexOf(currentStep) >= index ? 'active' : ''
-                } ${STEPS.indexOf(currentStep) === index ? 'current' : ''}`}
-                onClick={() => {
-                  // Allow going back to previous steps
-                  if (STEPS.indexOf(currentStep) > index) {
-                    goToStep(step);
-                  }
-                }}
-              >
-                <div className="step-number">{index + 1}</div>
-                <div className="step-title">{getStepTitle(step)}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+  // Modern Stepper Component
+  const Stepper = () => {
+    const stepConfigs = [
+      { id: 'intro', label: 'Intro', icon: '🎯' },
+      { id: 'creator-selection', label: 'Reviewer', icon: '👤' },
+      { id: 'photo-upload', label: 'Photos', icon: '📸' },
+      { id: 'prompt-answers', label: 'Details', icon: '✍️' },
+      { id: 'consent', label: 'Terms', icon: '📋' },
+      { id: 'auth', label: 'Account', icon: '🔐' },
+      { id: 'payment', label: 'Payment', icon: '💳' },
+      { id: 'download-app', label: 'Done', icon: '✅' }
+    ];
 
-        <div className="request-content">
-          {renderStep()}
+    const currentIndex = STEPS.indexOf(currentStep);
+
+    return (
+      <div className="w-full px-2 py-3 md:px-4 md:py-6 bg-gradient-to-b from-[#0c0325]/50 to-transparent">
+        <div className="flex items-center justify-between relative max-w-6xl mx-auto">
+          {/* Progress line */}
+          <div className="absolute top-4 md:top-6 left-0 right-0 h-0.5 bg-white/10">
+            <div 
+              className="h-full bg-gradient-to-r from-orange-500 to-purple-600 transition-all duration-500 ease-out shadow-sm shadow-orange-500/50"
+              style={{ width: `${(currentIndex / (stepConfigs.length - 1)) * 100}%` }}
+            />
+          </div>
+          
+          {stepConfigs.map((stepItem, idx) => {
+            const isCompleted = currentIndex > idx;
+            const isCurrent = currentIndex === idx;
+            const isClickable = currentIndex > idx;
+            
+            return (
+              <div
+                key={stepItem.id}
+                className="flex flex-col items-center relative z-10 flex-1"
+                onClick={isClickable ? () => goToStep(stepItem.id as Step) : undefined}
+                style={{ cursor: isClickable ? 'pointer' : 'default' }}
+              >
+                <div
+                  className={`
+                    w-7 h-7 md:w-12 md:h-12 rounded-full flex items-center justify-center text-xs md:text-base font-semibold
+                    transition-all duration-300 ease-out
+                    ${isCompleted 
+                      ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-lg shadow-orange-500/30' 
+                      : isCurrent 
+                        ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-xl shadow-orange-500/50 scale-110' 
+                        : 'bg-white/10 border border-white/20 text-gray-400'
+                    }
+                  `}
+                >
+                  {isCompleted ? '✓' : stepItem.icon}
+                </div>
+                <span className={`
+                  mt-1 md:mt-2 text-[10px] md:text-xs font-medium text-center px-0.5
+                  hidden sm:block
+                  ${isCurrent ? 'text-orange-400 font-bold' : isCompleted ? 'text-white' : 'text-gray-500'}
+                `}>
+                  {stepItem.label}
+                </span>
+              </div>
+            );
+          })}
         </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#0c0325] via-[#1a0b3d] to-[#0c0325] text-white">
+      <div className="w-full">
+        <Stepper />
+      </div>
+
+      <div className="request-content px-4 max-w-6xl mx-auto">
+        {renderStep()}
       </div>
     </div>
   );

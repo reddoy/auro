@@ -25,8 +25,6 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
     roomTourPhotos: string[];
     datingProfileScreenshots: string[];
   }>({ outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] });
-  const outfitsInputRef = useRef<HTMLInputElement>(null);
-  const roomInputRef = useRef<HTMLInputElement>(null);
   const datingInputRef = useRef<HTMLInputElement>(null);
   const isHeicLike = (file: File) => {
     const name = (file.name || '').toLowerCase();
@@ -223,153 +221,16 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
   return (
     <div className="photo-upload">
       <div className="step-header">
-        <h2>Upload Your Photos</h2>
-        <p>All photo uploads are optional. Your profile picture will be used in reviews. Add up to 3 outfit photos, 3 room photos, and 10 dating profile screenshots.</p>
+        <h2>Upload Your Dating Profile Photos</h2>
+        <p>Upload up to 10 photos from your dating profile (Hinge, Bumble, Tinder, etc.) for personalized feedback and recommendations.</p>
       </div>
 
       <div className="upload-sections">
-
-        {/* Outfits Section */}
-        <div className="upload-section">
-          <div className="section-header">
-            <h3>Outfit Photos</h3>
-            <p>Up to 3 full-body photos showing your style (optional)</p>
-          </div>
-          
-          <div className="photo-grid">
-            {photos.outfits.map((outfit, index) => (
-              <div key={index} className="photo-item">
-                <img src={outfit} alt={`Outfit ${index + 1}`} />
-                <button
-                  type="button"
-                  className="remove-photo"
-                  onClick={() => removePhoto('outfits', index)}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-            {localPreviews.outfits.map((preview, index) => (
-              <div key={`preview-outfit-${index}`} className="photo-item">
-                <img src={preview} alt={`Uploading outfit ${index + 1}`} />
-                <div className="upload-progress" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)', color: '#fff', borderRadius: 12 }}>
-                  <div className="spinner"></div>
-                </div>
-              </div>
-            ))}
-            
-            {photos.outfits.length < 3 && (
-              <div 
-                className={`upload-placeholder ${uploading.outfits ? 'uploading' : ''}`}
-                onClick={() => outfitsInputRef.current?.click()}
-              >
-              {uploading.outfits ? (
-                <div className="upload-progress">
-                  <div className="spinner"></div>
-                  <span>Uploading...</span>
-                </div>
-              ) : (
-                <>
-                  <div className="upload-icon">👔</div>
-                  <span>Add outfit photo ({3 - photos.outfits.length} left)</span>
-                </>
-              )}
-              </div>
-            )}
-          </div>
-          
-          <input
-            ref={outfitsInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            style={{ display: 'none' }}
-            onChange={(e) => {
-              const files = e.target.files;
-              if (!files) return;
-              const remaining = 3 - photos.outfits.length;
-              const limited = Array.from(files).slice(0, Math.max(0, remaining));
-              const dataTransfer = new DataTransfer();
-              limited.forEach(f => dataTransfer.items.add(f));
-              handleFileUpload(dataTransfer.files, 'outfits', true);
-              e.currentTarget.value = '';
-            }}
-          />
-        </div>
-
-        {/* Room Tour Section */}
-        <div className="upload-section">
-          <div className="section-header">
-            <h3>Room Tour Photos</h3>
-            <p>Up to 3 photos of your living space (optional)</p>
-          </div>
-          
-          <div className="photo-grid">
-            {photos.roomTourPhotos.map((room, index) => (
-              <div key={index} className="photo-item">
-                <img src={room} alt={`Room ${index + 1}`} />
-                <button
-                  type="button"
-                  className="remove-photo"
-                  onClick={() => removePhoto('roomTourPhotos', index)}
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-            {localPreviews.roomTourPhotos.map((preview, index) => (
-              <div key={`preview-room-${index}`} className="photo-item">
-                <img src={preview} alt={`Uploading room ${index + 1}`} />
-                <div className="upload-progress" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)', color: '#fff', borderRadius: 12 }}>
-                  <div className="spinner"></div>
-                </div>
-              </div>
-            ))}
-            
-            {photos.roomTourPhotos.length < 3 && (
-              <div 
-                className={`upload-placeholder ${uploading.roomTourPhotos ? 'uploading' : ''}`}
-                onClick={() => roomInputRef.current?.click()}
-              >
-              {uploading.roomTourPhotos ? (
-                <div className="upload-progress">
-                  <div className="spinner"></div>
-                  <span>Uploading...</span>
-                </div>
-              ) : (
-                <>
-                  <div className="upload-icon">🏠</div>
-                  <span>Add room photo ({3 - photos.roomTourPhotos.length} left)</span>
-                </>
-              )}
-              </div>
-            )}
-          </div>
-          
-          <input
-            ref={roomInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            style={{ display: 'none' }}
-            onChange={(e) => {
-              const files = e.target.files;
-              if (!files) return;
-              const remaining = 3 - photos.roomTourPhotos.length;
-              const limited = Array.from(files).slice(0, Math.max(0, remaining));
-              const dataTransfer = new DataTransfer();
-              limited.forEach(f => dataTransfer.items.add(f));
-              handleFileUpload(dataTransfer.files, 'roomTourPhotos', true);
-              e.currentTarget.value = '';
-            }}
-          />
-        </div>
-
         {/* Dating Profile Screenshots Section */}
         <div className="upload-section">
           <div className="section-header">
-            <h3>Dating Profile Screenshots</h3>
-            <p>Up to 10 screenshots from your dating profile (optional)</p>
+            <h3>Dating Profile Photos</h3>
+            <p>Upload your dating profile photos - up to 10 photos</p>
           </div>
           
           <div className="photo-grid">

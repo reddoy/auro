@@ -62,12 +62,12 @@ export default function IntroStep({ onNext }: Props) {
           <div className="intro-headline">
             <h1 className="intro-title mobile-text-reveal" style={{ animationDelay: '0.2s' }}>
               <span className="block text-white">
-                Become a <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-pink-500 bg-clip-text text-transparent">Founding Reviewer</span>
+                Get Expert <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-pink-500 bg-clip-text text-transparent">Dating Profile Feedback</span>
               </span>
             </h1>
             
             <p className="intro-subtitle mobile-text-reveal" style={{ animationDelay: '0.4s' }}>
-              Get paid to review men's profiles, style, and dating photos
+              Receive honest, personalized reviews from women on your dating profile to maximize your matches
             </p>
           </div>
 
@@ -75,19 +75,19 @@ export default function IntroStep({ onNext }: Props) {
           <div className="intro-benefits mobile-text-reveal" style={{ animationDelay: '0.6s' }}>
             <div className="benefit-item">
               <CheckCircle className="benefit-icon" />
-              <span>85% earnings forever as founding member</span>
+              <span>Get feedback from real women reviewers</span>
             </div>
             <div className="benefit-item">
               <CheckCircle className="benefit-icon" />
-              <span>Set your own rates</span>
+              <span>Personalized video reviews of your profile</span>
             </div>
             <div className="benefit-item">
               <CheckCircle className="benefit-icon" />
-              <span>Work when you want</span>
+              <span>Improve your photos and bio</span>
             </div>
             <div className="benefit-item">
               <CheckCircle className="benefit-icon" />
-              <span>Only 100 founding spots available</span>
+              <span>Get more matches and dates</span>
             </div>
           </div>
 
@@ -154,14 +154,14 @@ export default function IntroStep({ onNext }: Props) {
             <div className="intro-headline">
               <h1 className="intro-title-desktop">
                 <span className="block text-white pb-2">
-                  Become a <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-pink-500 bg-clip-text text-transparent">Founding Reviewer</span>
+                  Get Expert <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-pink-500 bg-clip-text text-transparent">Dating Profile Feedback</span>
                 </span>
               </h1>
               
               <p className="intro-subtitle-desktop">
-                Get paid to review men's profiles, style, and dating photos.
+                Receive honest, personalized reviews from women on your dating profile to maximize your matches.
                 <span className="block mt-3 text-lg text-white/80">
-                  Join the first 100 reviewers and lock in exclusive benefits forever.
+                  Our expert reviewers will help you stand out and get more dates.
                 </span>
               </p>
             </div>
@@ -170,21 +170,11 @@ export default function IntroStep({ onNext }: Props) {
             <div className="desktop-benefits">
               <div className="desktop-benefit-card">
                 <div className="benefit-icon-circle">
-                  <DollarSign className="w-6 h-6 text-green-400" />
-                </div>
-                <div>
-                  <h3 className="benefit-title">85% Earnings</h3>
-                  <p className="benefit-desc">Keep more as a founding member</p>
-                </div>
-              </div>
-              
-              <div className="desktop-benefit-card">
-                <div className="benefit-icon-circle">
                   <Star className="w-6 h-6 text-orange-400" />
                 </div>
                 <div>
-                  <h3 className="benefit-title">Set Your Rates</h3>
-                  <p className="benefit-desc">You decide what to charge</p>
+                  <h3 className="benefit-title">Real Feedback</h3>
+                  <p className="benefit-desc">Get honest reviews from women</p>
                 </div>
               </div>
               
@@ -193,8 +183,18 @@ export default function IntroStep({ onNext }: Props) {
                   <Clock className="w-6 h-6 text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="benefit-title">Work Flexibly</h3>
-                  <p className="benefit-desc">Review on your schedule</p>
+                  <h3 className="benefit-title">Video Reviews</h3>
+                  <p className="benefit-desc">Personalized video feedback</p>
+                </div>
+              </div>
+              
+              <div className="desktop-benefit-card">
+                <div className="benefit-icon-circle">
+                  <DollarSign className="w-6 h-6 text-green-400" />
+                </div>
+                <div>
+                  <h3 className="benefit-title">Better Results</h3>
+                  <p className="benefit-desc">Improve your match rate</p>
                 </div>
               </div>
             </div>
@@ -205,7 +205,7 @@ export default function IntroStep({ onNext }: Props) {
                 onClick={onNext}
                 className="cta-button-desktop"
               >
-                <span>🚀 Apply Now - Limited Spots</span>
+                <span>🚀 Request a Review Now</span>
                 <ArrowRight className="cta-arrow" />
               </button>
             </div>
@@ -214,15 +214,15 @@ export default function IntroStep({ onNext }: Props) {
             <div className="desktop-trust">
               <div className="trust-item">
                 <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>No commitment required</span>
+                <span>Expert women reviewers</span>
               </div>
               <div className="trust-item">
                 <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>85% earnings forever</span>
+                <span>Video feedback included</span>
               </div>
               <div className="trust-item">
                 <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Launch January 15th</span>
+                <span>Get more matches</span>
               </div>
             </div>
           </div>
@@ -251,13 +251,13 @@ export default function IntroStep({ onNext }: Props) {
               
               {/* Floating Benefit Callouts */}
               <div className="floating-callout floating-callout-top">
-                <DollarSign className="w-4 h-4 text-green-500" />
-                <span>Set your own rates</span>
+                <Star className="w-4 h-4 text-orange-500" />
+                <span>Honest feedback from women</span>
               </div>
               
               <div className="floating-callout floating-callout-bottom">
-                <Star className="w-4 h-4 text-orange-500" />
-                <span>85% earnings forever</span>
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span>Video reviews included</span>
               </div>
             </div>
           </div>
