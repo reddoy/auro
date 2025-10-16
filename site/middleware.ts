@@ -15,6 +15,15 @@ function buildCorsHeaders(req: NextRequest): Headers {
 
 export function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname || '';
+  
+  // Handle redirects from old /reviewers/[slug] URLs to new /[username] URLs
+  if (pathname.startsWith('/reviewers/') && pathname !== '/reviewers' && pathname !== '/reviewers/apply' && pathname !== '/reviewers/thanks') {
+    const slug = pathname.replace('/reviewers/', '');
+    const url = req.nextUrl.clone();
+    url.pathname = `/${slug}`;
+    return NextResponse.redirect(url, 301); // Permanent redirect
+  }
+  
   // Enforce CORS only for storage API endpoints
   if (!pathname.startsWith('/api/storage/')) {
     return NextResponse.next();
@@ -34,7 +43,7 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/api/storage/:path*'],
+  matcher: ['/api/storage/:path*', '/reviewers/:path*'],
 };
 
 

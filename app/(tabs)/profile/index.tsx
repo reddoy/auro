@@ -26,7 +26,7 @@ export default function ProfileScreen() {
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
   const [stripePortalUrl, setStripePortalUrl] = useState<string | null>(null);
-  const [earnings, setEarnings] = useState({ total: 0, count: 0, average: 0 });
+  const [earnings, setEarnings] = useState({ total: 0, count: 0, average: 0, pendingAmount: 0, pendingCount: 0 });
 
   useEffect(() => {
     const run = async () => {
@@ -42,16 +42,25 @@ export default function ProfileScreen() {
           try {
             const requests = await getRequestsByReviewer(p.id);
             const completedRequests = requests.filter(r => r.status === 'completed' && r.net_amount_cents);
+            const pendingRequests = requests.filter(r => r.status === 'pending' && r.amount_cents);
             const totalEarnings = completedRequests.reduce((sum, r) => sum + (r.net_amount_cents || 0), 0);
+            const pendingAmount = pendingRequests.reduce((sum, r) => sum + (r.amount_cents || 0), 0);
             const count = completedRequests.length;
+            const pendingCount = pendingRequests.length;
             const average = count > 0 ? totalEarnings / count : 0;
-            setEarnings({ total: totalEarnings / 100, count, average: average / 100 }); // Convert cents to dollars
+            setEarnings({ 
+              total: totalEarnings / 100, 
+              count, 
+              average: average / 100, 
+              pendingAmount: pendingAmount / 100, 
+              pendingCount 
+            }); // Convert cents to dollars
           } catch (e) {
             console.log('[earnings] error fetching', e);
           }
         } else {
           setStripePortalUrl(null);
-          setEarnings({ total: 0, count: 0, average: 0 });
+          setEarnings({ total: 0, count: 0, average: 0, pendingAmount: 0, pendingCount: 0 });
         }
       } finally {
       }
@@ -143,7 +152,7 @@ export default function ProfileScreen() {
     try {
       // Use username if available, otherwise fall back to ID
       const slug = profile.username || profile.id;
-      const reviewerUrl = `https://www.appauro.com/reviewers/${slug}`;
+      const reviewerUrl = `https://www.appauro.com/${slug}`;
       
       await Clipboard.setString(reviewerUrl);
       Alert.alert('Copied!', 'Your reviewer link has been copied to clipboard. You can now paste it in your social media bios!');
@@ -166,10 +175,19 @@ export default function ProfileScreen() {
         try {
           const requests = await getRequestsByReviewer(p.id);
           const completedRequests = requests.filter(r => r.status === 'completed' && r.net_amount_cents);
+          const pendingRequests = requests.filter(r => r.status === 'pending' && r.amount_cents);
           const totalEarnings = completedRequests.reduce((sum, r) => sum + (r.net_amount_cents || 0), 0);
+          const pendingAmount = pendingRequests.reduce((sum, r) => sum + (r.amount_cents || 0), 0);
           const count = completedRequests.length;
+          const pendingCount = pendingRequests.length;
           const average = count > 0 ? totalEarnings / count : 0;
-          setEarnings({ total: totalEarnings / 100, count, average: average / 100 });
+          setEarnings({ 
+            total: totalEarnings / 100, 
+            count, 
+            average: average / 100, 
+            pendingAmount: pendingAmount / 100, 
+            pendingCount 
+          });
         } catch {}
       }
     } finally {
@@ -249,105 +267,13 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            {profile?.bio && (
-              <View style={styles.bioSection}>
-                <Text style={styles.sectionTitle}>Bio</Text>
-                <Text style={styles.bioText}>{profile.bio}</Text>
-              </View>
-            )}
-
-            {!!profile?.links && (
-              <View style={styles.bioSection}>
-                <Text style={styles.sectionTitle}>Socials</Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', backgroundColor: Colors.brand.cardBackground }}>
-                  {(() => {
-                    const items: { label: string; url: string; key: 'instagram' | 'tiktok' | 'linktree' }[] = [];
-                    const l: any = profile?.links || {};
-                    const ig = (l.instagram || '').trim();
-                    const tt = (l.tiktok || '').trim();
-                    const lt = (l.linktree || '').trim();
-                    if (ig) items.push({ label: 'Instagram', url: `https://instagram.com/${ig.replace(/^@+/, '')}`, key: 'instagram' });
-                    if (tt) items.push({ label: 'TikTok', url: `https://www.tiktok.com/@${tt.replace(/^@+/, '')}`, key: 'tiktok' });
-                    if (lt) items.push({ label: 'Linktree', url: `https://linktr.ee/${lt.replace(/^@+/, '')}`, key: 'linktree' });
-                    return items.map((it, idx) => (
-                      <TouchableOpacity key={`${it.label}-${idx}`} onPress={() => Linking.openURL(it.url)} style={styles.socialLinkBtn}>
-                        <Image source={socialIcons[it.key]} style={styles.socialIcon} resizeMode="contain" />
-                        <Text style={styles.socialLinkText}>{it.label}</Text>
-                      </TouchableOpacity>
-                    ));
-                  })()}
-                </View>
-              </View>
-            )}
-
             <View style={styles.bioSection}>
               <Text style={styles.sectionTitle}>Reviewer Settings</Text>
               <Text style={{ color: Colors.brand.textSecondary }}>Control your reviewer status and price per review.</Text>
               
-              {/* Reviewer Status Toggle */}
-              <View style={styles.reviewerStatusRow}>
-                <Text style={styles.reviewerStatusLabel}>Reviewer Status</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'transparent' }}>
-                  <View style={[styles.statusIndicator, profile?.is_reviewer && styles.statusIndicatorActive]}>
-                    <Text style={[styles.statusIndicatorText, profile?.is_reviewer && styles.statusIndicatorTextActive]}>
-                      {profile?.is_reviewer ? '● Active' : '● Inactive'}
-                    </Text>
-                  </View>
-                  <Switch
-                    value={!!profile?.is_reviewer}
-                    onValueChange={async (val) => {
-                      try {
-                        const updated = await updateProfile({ is_reviewer: val });
-                        setProfile(updated);
-                        if (val) {
-                          Alert.alert('Reviewer enabled', 'Your reviewer profile is now active.');
-                        } else {
-                          Alert.alert('Reviewer disabled', 'You will no longer appear as a reviewer.');
-                        }
-                      } catch (e: any) {
-                        Alert.alert('Error', e?.message || 'Failed to update reviewer status');
-                      }
-                    }}
-                    trackColor={{ false: '#3e3e3e', true: '#10b981' }}
-                    thumbColor={profile?.is_reviewer ? '#ffffff' : '#f4f3f4'}
-                  />
-                </View>
-              </View>
               {profile?.is_reviewer ? (
                 <>
-                  <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
-                    <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Share Your Reviewer Profile</Text>
-                    <View style={styles.priceCard}>
-                      <Text style={[styles.priceText, { flex: 1, marginRight: 12, fontSize: 14 }]} numberOfLines={1} ellipsizeMode="middle">
-                        {`appauro.com/reviewers/${profile.username || profile.id}`}
-                      </Text>
-                      <TouchableOpacity onPress={handleCopyReviewerLink} accessibilityLabel="Copy reviewer link" style={styles.copyLinkButton}>
-                        <ExpoLinearGradient
-                          colors={['#10b981', '#059669']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 0 }}
-                          style={styles.editRateGradient}
-                        />
-                        <Text style={styles.editRateText}>📋 Copy</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                  <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
-                    <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Price per Review</Text>
-                    <View style={styles.priceCard}>
-                      <Text style={styles.priceText}>{profile?.hourly_rate != null ? `$${profile.hourly_rate}/review` : 'Tap to set your rate →'}</Text>
-                      <TouchableOpacity onPress={() => router.push('/(tabs)/profile/reviewer-settings')} accessibilityLabel="Edit rate" style={styles.editRateButton}>
-                        <ExpoLinearGradient
-                          colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 0 }}
-                          style={styles.editRateGradient}
-                        />
-                        <Text style={styles.editRateText}>Edit</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                  {/* Earnings Tracker */}
+                  {/* Earnings Tracker - Moved to top */}
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
                     <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>💰 Earnings Overview</Text>
                     <View style={styles.earningsCard}>
@@ -397,24 +323,121 @@ export default function ProfileScreen() {
                             style={styles.earningStatBg}
                           />
                           <Text style={styles.earningStatNumber}>{earnings.count}</Text>
-                          <Text style={styles.earningStatLabel}>Completed</Text>
+                          <Text style={styles.earningStatLabel}>Completed Reviews</Text>
                         </View>
                         <View style={styles.earningStat}>
                           <ExpoLinearGradient
-                            colors={['rgba(139, 92, 246, 0.15)', 'rgba(124, 58, 237, 0.15)']}
+                            colors={['rgba(255, 193, 7, 0.15)', 'rgba(255, 152, 0, 0.15)']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 1 }}
                             style={styles.earningStatBg}
                           />
-                          <Text style={styles.earningStatNumber}>{profile?.hourly_rate ? `$${profile.hourly_rate}` : '-'}</Text>
-                          <Text style={styles.earningStatLabel}>Your Rate</Text>
+                          <Text style={styles.earningStatNumber}>${earnings.pendingAmount.toFixed(2)}</Text>
+                          <Text style={styles.earningStatLabel}>Pending Requests</Text>
                         </View>
                       </View>
                     </View>
                   </View>
                 </>
               ) : null}
+              
+              {/* Reviewer Status Toggle */}
+              <View style={styles.reviewerStatusRow}>
+                <Text style={styles.reviewerStatusLabel}>Reviewer Status</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'transparent' }}>
+                  <View style={[styles.statusIndicator, profile?.is_reviewer && styles.statusIndicatorActive]}>
+                    <Text style={[styles.statusIndicatorText, profile?.is_reviewer && styles.statusIndicatorTextActive]}>
+                      {profile?.is_reviewer ? '● Active' : '● Inactive'}
+                    </Text>
+                  </View>
+                  <Switch
+                    value={!!profile?.is_reviewer}
+                    onValueChange={async (val) => {
+                      try {
+                        const updated = await updateProfile({ is_reviewer: val });
+                        setProfile(updated);
+                        if (val) {
+                          Alert.alert('Reviewer enabled', 'Your reviewer profile is now active.');
+                        } else {
+                          Alert.alert('Reviewer disabled', 'You will no longer appear as a reviewer.');
+                        }
+                      } catch (e: any) {
+                        Alert.alert('Error', e?.message || 'Failed to update reviewer status');
+                      }
+                    }}
+                    trackColor={{ false: '#3e3e3e', true: '#10b981' }}
+                    thumbColor={profile?.is_reviewer ? '#ffffff' : '#f4f3f4'}
+                  />
+                </View>
+              </View>
+              {profile?.is_reviewer ? (
+                <>
+                  <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
+                    <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Share Your Reviewer Profile</Text>
+                    <View style={styles.priceCard}>
+                      <Text style={[styles.priceText, { flex: 1, marginRight: 12, fontSize: 14 }]} numberOfLines={1} ellipsizeMode="middle">
+                        {`appauro.com/${profile.username || profile.id}`}
+                      </Text>
+                      <TouchableOpacity onPress={handleCopyReviewerLink} accessibilityLabel="Copy reviewer link" style={styles.copyLinkButton}>
+                        <ExpoLinearGradient
+                          colors={['#10b981', '#059669']}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                          style={styles.editRateGradient}
+                        />
+                        <Text style={styles.editRateText}>📋 Copy</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
+                    <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Price per Review</Text>
+                    <View style={styles.priceCard}>
+                      <Text style={styles.priceText}>{profile?.hourly_rate != null ? `$${profile.hourly_rate}/review` : 'Tap to set your rate →'}</Text>
+                      <TouchableOpacity onPress={() => router.push('/(tabs)/profile/reviewer-settings')} accessibilityLabel="Edit rate" style={styles.editRateButton}>
+                        <ExpoLinearGradient
+                          colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                          style={styles.editRateGradient}
+                        />
+                        <Text style={styles.editRateText}>Edit</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </>
+              ) : null}
             </View>
+
+            {profile?.bio && (
+              <View style={styles.bioSection}>
+                <Text style={styles.sectionTitle}>Bio</Text>
+                <Text style={styles.bioText}>{profile.bio}</Text>
+              </View>
+            )}
+
+            {!!profile?.links && (
+              <View style={styles.bioSection}>
+                <Text style={styles.sectionTitle}>Socials</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', backgroundColor: Colors.brand.cardBackground }}>
+                  {(() => {
+                    const items: { label: string; url: string; key: 'instagram' | 'tiktok' | 'linktree' }[] = [];
+                    const l: any = profile?.links || {};
+                    const ig = (l.instagram || '').trim();
+                    const tt = (l.tiktok || '').trim();
+                    const lt = (l.linktree || '').trim();
+                    if (ig) items.push({ label: 'Instagram', url: `https://instagram.com/${ig.replace(/^@+/, '')}`, key: 'instagram' });
+                    if (tt) items.push({ label: 'TikTok', url: `https://www.tiktok.com/@${tt.replace(/^@+/, '')}`, key: 'tiktok' });
+                    if (lt) items.push({ label: 'Linktree', url: `https://linktr.ee/${lt.replace(/^@+/, '')}`, key: 'linktree' });
+                    return items.map((it, idx) => (
+                      <TouchableOpacity key={`${it.label}-${idx}`} onPress={() => Linking.openURL(it.url)} style={styles.socialLinkBtn}>
+                        <Image source={socialIcons[it.key]} style={styles.socialIcon} resizeMode="contain" />
+                        <Text style={styles.socialLinkText}>{it.label}</Text>
+                      </TouchableOpacity>
+                    ));
+                  })()}
+                </View>
+              </View>
+            )}
 
             {/* Removed separate payouts banner; consolidated into Reviewer Settings card above */}
 
@@ -475,6 +498,20 @@ export default function ProfileScreen() {
                   <Text style={styles.actionIcon}>🎥</Text>
                 </View>
                 <Text style={styles.actionText}>Video Review Demo</Text>
+                <Text style={styles.actionArrow}>›</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/hinge-clone')} accessibilityLabel="Open Hinge profile clone">
+                <View style={styles.actionIconContainer}>
+                  <ExpoLinearGradient
+                    colors={['#FF6B6B', '#FF8E8E']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.actionIconGradient}
+                  />
+                  <Text style={styles.actionIcon}>💕</Text>
+                </View>
+                <Text style={styles.actionText}>Hinge Profile Clone</Text>
                 <Text style={styles.actionArrow}>›</Text>
               </TouchableOpacity>
             </View>

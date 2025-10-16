@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity, Linking, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
@@ -49,9 +50,17 @@ export default function ReviewSubmittedScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Back button in top left */}
+      <TouchableOpacity 
+        style={[styles.backButton, { top: insets.top + 12 }]} 
+        onPress={() => router.replace('/(tabs)/profile')}
+      >
+        <Ionicons name="arrow-back" size={24} color={Colors.brand.textPrimary} />
+      </TouchableOpacity>
+
       <View style={[styles.card, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24 }] }>
-        <Text style={styles.title}>Video Review Complete! 🎉</Text>
-        <Text style={styles.subtitle}>Great job! Your video review has been submitted successfully. You can optionally share it to social media.</Text>
+        <Text style={styles.title}>Thank you for submitting your review!</Text>
+        <Text style={styles.subtitle}>You can post straight to TikTok or IG</Text>
 
         {!!mediaUri && (
           <Text style={styles.hint}>Attached media ready: {mediaUri.split('/').pop()}</Text>
@@ -65,10 +74,6 @@ export default function ReviewSubmittedScreen() {
             <Text style={styles.buttonText}>Post to Instagram Reels</Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={[styles.secondaryButton]} onPress={() => router.replace('/(tabs)/requests')}>
-          <Text style={[styles.secondaryText]}>Back to Requests</Text>
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -77,6 +82,22 @@ export default function ReviewSubmittedScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
   card: { flex: 1, paddingHorizontal: 16, justifyContent: 'center' },
+  backButton: { 
+    position: 'absolute', 
+    left: 16, 
+    zIndex: 10, 
+    width: 40, 
+    height: 40, 
+    borderRadius: 20, 
+    backgroundColor: Colors.brand.cardBackground, 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3
+  },
   title: { fontSize: 24, fontWeight: '900', color: Colors.brand.textPrimary, textAlign: 'center', marginBottom: 8 },
   subtitle: { fontSize: 14, color: Colors.brand.textSecondary, textAlign: 'center', marginBottom: 20 },
   hint: { fontSize: 12, color: Colors.brand.textSecondary, textAlign: 'center', marginBottom: 14 },

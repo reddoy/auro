@@ -292,7 +292,7 @@ export default function ReviewersIndexPage() {
           {filteredReviewers.map((reviewer) => (
             <Link
               key={reviewer.id}
-              href={`/reviewers/${reviewer.username || reviewer.id}`}
+              href={`/${reviewer.username || reviewer.id}`}
               style={{ textDecoration: 'none' }}
             >
               <div

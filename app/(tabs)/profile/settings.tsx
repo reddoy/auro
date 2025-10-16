@@ -25,7 +25,6 @@ export default function ProfileSettingsScreen() {
   const [instagram, setInstagram] = useState('');
   const [tiktok, setTiktok] = useState('');
   const [linktree, setLinktree] = useState('');
-  const [isReviewer, setIsReviewer] = useState(false);
   
   
   const [emailNotif, setEmailNotif] = useState(true);
@@ -80,7 +79,6 @@ export default function ProfileSettingsScreen() {
           setInstagram(normalizeHandle((p.links as any)?.instagram || ''));
           setTiktok(normalizeHandle((p.links as any)?.tiktok || ''));
           setLinktree(normalizeHandle((p.links as any)?.linktree || ''));
-          setIsReviewer(!!p.is_reviewer);
           // Resolve avatar to a displayable URL if it's a storage path
           let initialAvatar: string | null = p.avatar_url || null;
           if (initialAvatar && !/^https?:\/\//i.test(initialAvatar)) {
@@ -150,7 +148,6 @@ export default function ProfileSettingsScreen() {
         username: username || null,
         bio: bio || null,
         links,
-        is_reviewer: isReviewer,
         preferences: { email_notifications: emailNotif, push_notifications: pushNotif },
         avatar_url: avatarUrl || null,
       };
@@ -221,18 +218,6 @@ export default function ProfileSettingsScreen() {
         <Text style={styles.hint}>Enter handles only. We’ll build profile links automatically.</Text>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Reviewer</Text>
-        <LabeledSwitch label="Become a reviewer" value={isReviewer} onValueChange={setIsReviewer} />
-        {isReviewer && (
-          <TouchableOpacity 
-            style={styles.reviewerSettingsButton} 
-            onPress={() => router.push('/profile/reviewer-settings')}
-          >
-            <Text style={styles.reviewerSettingsButtonText}>Reviewer Settings</Text>
-          </TouchableOpacity>
-        )}
-      </View>
 
       {/* SMS 2FA disabled: hide Security card */}
 
@@ -393,21 +378,6 @@ const styles = StyleSheet.create({
   },
   nameField: {
     flex: 1
-  },
-  reviewerSettingsButton: {
-    backgroundColor: 'rgba(255, 111, 0, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 111, 0, 0.3)',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginTop: 12,
-    alignItems: 'center'
-  },
-  reviewerSettingsButtonText: {
-    color: Colors.brand.accentMagenta,
-    fontSize: 16,
-    fontWeight: '600'
   },
   securityRow: { 
     flexDirection: 'row', 
