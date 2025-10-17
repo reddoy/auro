@@ -25,8 +25,8 @@ export default function RequestButton({ slug, reviewerId }: { slug: string; revi
       disabled={loading} 
       style={{ 
         width: '100%',
-        padding: '18px 32px',
-        fontSize: '20px',
+        padding: 'clamp(16px, 4vw, 20px) clamp(24px, 6vw, 32px)',
+        fontSize: 'clamp(18px, 4vw, 22px)',
         fontWeight: '800',
         border: 'none',
         borderRadius: '16px',
@@ -37,7 +37,12 @@ export default function RequestButton({ slug, reviewerId }: { slug: string; revi
         opacity: loading ? 0.7 : 1,
         boxShadow: '0 4px 20px rgba(255, 255, 255, 0.3)',
         textTransform: 'none',
-        letterSpacing: '0.5px'
+        letterSpacing: '0.5px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        minHeight: '56px'
       }}
       onMouseEnter={(e) => {
         if (!loading) {
@@ -54,7 +59,24 @@ export default function RequestButton({ slug, reviewerId }: { slug: string; revi
         }
       }}
     >
-      {loading ? '✨ Loading...' : '🎯 Request a Review'}
+      {loading ? (
+        <>
+          <div style={{
+            width: '20px',
+            height: '20px',
+            border: '2px solid rgba(255, 45, 85, 0.3)',
+            borderTop: '2px solid #FF2D55',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }} />
+          Loading...
+        </>
+      ) : (
+        <>
+          <span style={{ fontSize: '20px' }}>🎯</span>
+          Request a Review
+        </>
+      )}
     </button>
   );
 }

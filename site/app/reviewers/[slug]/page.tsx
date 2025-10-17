@@ -268,7 +268,16 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
                       gap: '6px'
                     }}
                   >
-                    📸 Instagram
+                    <img 
+                      src="/Instagram_icon-removebg-preview.png" 
+                      alt="Instagram" 
+                      style={{ 
+                        width: '16px', 
+                        height: '16px', 
+                        objectFit: 'contain' 
+                      }} 
+                    />
+                    Instagram
                   </a>
                 )}
                 {reviewer.links.tiktok && (
@@ -289,7 +298,16 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
                       gap: '6px'
                     }}
                   >
-                    🎵 TikTok
+                    <img 
+                      src="/tiktok-icon-free-png-removebg-preview.png" 
+                      alt="TikTok" 
+                      style={{ 
+                        width: '16px', 
+                        height: '16px', 
+                        objectFit: 'contain' 
+                      }} 
+                    />
+                    TikTok
                   </a>
                 )}
                 {reviewer.links.youtube && (
@@ -328,9 +346,6 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
             {reviewer.pricePerReview != null && reviewer.pricePerReview > 0 ? (
               <>
                 <div style={{ marginBottom: '16px' }}>
-                  <div style={{ fontSize: '14px', opacity: '0.9', marginBottom: '4px' }}>
-                    Starting at
-                  </div>
                   <div style={{ fontSize: 'clamp(32px, 8vw, 48px)', fontWeight: '800' }}>
                     ${reviewer.pricePerReview}
                   </div>
