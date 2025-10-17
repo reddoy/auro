@@ -1,125 +1,68 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, Platform } from 'react-native';
+import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, Platform, TextInput, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'expo-image';
 
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import VideoReviewSection from '@/components/VideoReviewSection';
-import PaginationDots from '@/components/PaginationDots';
-import SectionSlideCard from '@/components/SectionSlideCard';
-import MediaRecorder from '@/components/MediaRecorder';
 import AvatarUploader from '@/components/AvatarUploader';
-import { uploadRequestMedia } from '@/lib/uploads';
 import * as ImagePicker from 'expo-image-picker';
 
-type PhotoSection = {
-  title: string;
-  subtitle?: string;
-  photos: string[];
-  category: string;
+type DatingProfileData = {
+  profilePhoto: string | null;
+  reviewerNote: string;
+  isSubmitted: boolean;
 };
 
-const DEMO_SECTIONS: PhotoSection[] = [
-  {
-    title: "Outfit Photos",
-    subtitle: "Share your best outfits and style choices",
-    photos: [],
-    category: "outfits"
-  },
-  {
-    title: "Room Tour",
-    subtitle: "Show us your space and environment",
-    photos: [],
-    category: "room"
-  },
-  {
-    title: "Dating Profile",
-    subtitle: "Share screenshots from your dating profiles",
-    photos: [],
-    category: "dating"
-  }
-];
-
-export default function VideoReviewDemoScreen() {
+export default function DatingProfileUploadScreen() {
   const insets = useSafeAreaInsets();
-  const [sections, setSections] = useState<PhotoSection[]>(DEMO_SECTIONS);
-  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-  const [videoUri, setVideoUri] = useState<string | null>(null);
-  const [isVideoReviewMode, setIsVideoReviewMode] = useState(false);
-  const [recordingModeOpen, setRecordingModeOpen] = useState(false);
-  const [galleryOpen, setGalleryOpen] = useState(false);
-  const [galleryUris, setGalleryUris] = useState<string[]>([]);
-  const [galleryIndex, setGalleryIndex] = useState(0);
+  const [profileData, setProfileData] = useState<DatingProfileData>({
+    profilePhoto: null,
+    reviewerNote: '',
+    isSubmitted: false
+  });
+  const [revieweeName] = useState('Sarah'); // Demo reviewee name
 
-  const handlePhotoPress = (photos: string[], index: number) => {
-    setGalleryUris(photos);
-    setGalleryIndex(index);
-    setGalleryOpen(true);
-  };
-
-  const addPhotoToSection = async (sectionIndex: number) => {
+  const handlePhotoUpload = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [4, 5],
+        aspect: [1, 1],
         quality: 0.8,
       });
 
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0];
-        const newPhotoUri = asset.uri;
-        
-        setSections(prev => prev.map((section, index) => 
-          index === sectionIndex 
-            ? { ...section, photos: [...section.photos, newPhotoUri] }
-            : section
-        ));
-        
-        Alert.alert('Photo Added', 'Photo has been added to this section for demo purposes.');
+        setProfileData(prev => ({ ...prev, profilePhoto: asset.uri }));
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to add photo. Please try again.');
+      Alert.alert('Error', 'Failed to upload photo. Please try again.');
     }
   };
 
-  const removePhotoFromSection = (sectionIndex: number, photoIndex: number) => {
-    setSections(prev => prev.map((section, index) => 
-      index === sectionIndex 
-        ? { 
-            ...section, 
-            photos: section.photos.filter((_, idx) => idx !== photoIndex) 
-          }
-        : section
-    ));
-  };
-
-  const startVideoReview = () => {
-    const totalPhotos = sections.reduce((acc, section) => acc + section.photos.length, 0);
-    if (totalPhotos === 0) {
-      Alert.alert('No Photos', 'Please add some photos first before starting the video review demo.');
+  const handleSubmit = () => {
+    if (!profileData.profilePhoto) {
+      Alert.alert('Missing Photo', 'Please upload a profile photo before submitting.');
       return;
     }
-    setIsVideoReviewMode(true);
-    setRecordingModeOpen(true);
+    if (!profileData.reviewerNote.trim()) {
+      Alert.alert('Missing Note', 'Please add a note for the reviewer before submitting.');
+      return;
+    }
+    
+    setProfileData(prev => ({ ...prev, isSubmitted: true }));
   };
 
-  const finishVideoReview = () => {
-    Alert.alert(
-      'Demo Complete', 
-      'This is just a demo! In the real app, this would submit your video review.',
-      [{ text: 'OK', onPress: () => {
-        setIsVideoReviewMode(false);
-        setVideoUri(null);
-        setRecordingModeOpen(false);
-      }}]
-    );
+  const handleShareToTikTok = () => {
+    Alert.alert('Share to TikTok', 'This would open TikTok to share the review!');
   };
 
-  const canSubmit = sections.every(section => section.photos.length > 0);
+  const handleShareToInstagram = () => {
+    Alert.alert('Share to Instagram', 'This would open Instagram to share the review!');
+  };
 
   return (
     <View style={styles.container}>
@@ -130,206 +73,124 @@ export default function VideoReviewDemoScreen() {
         >
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Video Review Demo</Text>
+        <Text style={styles.headerTitle}>Dating Profile Upload</Text>
         <View style={styles.placeholder} />
       </View>
 
-      {!isVideoReviewMode ? (
+      {!profileData.isSubmitted ? (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.demoInfo}>
-            <Text style={styles.demoTitle}>🎥 Video Review Demo</Text>
+            <Text style={styles.demoTitle}>💕 Dating Profile Review</Text>
             <Text style={styles.demoDescription}>
-              This demo lets you experience the video review interface. Add photos to each section, then start recording a video review!
+              Upload your dating profile photo and add a note for the reviewer to get feedback on your profile.
             </Text>
           </View>
 
-          {sections.map((section, sectionIndex) => (
-            <View key={section.category} style={styles.sectionContainer}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>{section.title}</Text>
-                <Text style={styles.sectionSubtitle}>{section.subtitle}</Text>
-              </View>
-
-              {section.photos.length > 0 ? (
-                <VideoReviewSection
-                  sections={[section]}
-                  onPhotoPress={(photos, index) => handlePhotoPress(photos, index)}
-                  currentSectionIndex={0}
-                  currentPhotoIndex={0}
-                />
-              ) : (
-                <View style={styles.emptySection}>
-                  <Text style={styles.emptyText}>No photos added yet</Text>
-                </View>
-              )}
-
-              <View style={styles.sectionActions}>
-                <TouchableOpacity
-                  style={styles.addPhotoButton}
-                  onPress={() => addPhotoToSection(sectionIndex)}
-                >
-                  <Text style={styles.addPhotoButtonText}>
-                    {section.photos.length > 0 ? '+ Add More Photos' : '+ Add Photos'}
-                  </Text>
-                </TouchableOpacity>
-
-                {section.photos.length > 0 && (
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Profile Photo</Text>
+            <Text style={styles.sectionSubtitle}>Upload your best dating profile photo</Text>
+            
+            <View style={styles.photoUploadContainer}>
+              {profileData.profilePhoto ? (
+                <View style={styles.photoPreview}>
+                  <Image 
+                    source={{ uri: profileData.profilePhoto }} 
+                    style={styles.uploadedPhoto}
+                    contentFit="cover"
+                  />
                   <TouchableOpacity
-                    style={styles.clearButton}
-                    onPress={() => {
-                      Alert.alert(
-                        'Clear Photos',
-                        `Remove all photos from ${section.title}?`,
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          { 
-                            text: 'Clear', 
-                            style: 'destructive',
-                            onPress: () => setSections(prev => prev.map((s, idx) => 
-                              idx === sectionIndex ? { ...s, photos: [] } : s
-                            ))
-                          }
-                        ]
-                      );
-                    }}
+                    style={styles.changePhotoButton}
+                    onPress={handlePhotoUpload}
                   >
-                    <Text style={styles.clearButtonText}>Clear All</Text>
+                    <Text style={styles.changePhotoButtonText}>Change Photo</Text>
                   </TouchableOpacity>
-                )}
-              </View>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.uploadButton}
+                  onPress={handlePhotoUpload}
+                >
+                  <Text style={styles.uploadButtonText}>📷 Upload Photo</Text>
+                </TouchableOpacity>
+              )}
             </View>
-          ))}
+          </View>
 
-          <View style={styles.startReviewContainer}>
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Note for Reviewer</Text>
+            <Text style={styles.sectionSubtitle}>Tell the reviewer what you'd like feedback on</Text>
+            
+            <TextInput
+              style={styles.noteInput}
+              placeholder="e.g., 'Please review my profile photo and suggest improvements for better matches'"
+              placeholderTextColor={Colors.brand.textSecondary}
+              value={profileData.reviewerNote}
+              onChangeText={(text) => setProfileData(prev => ({ ...prev, reviewerNote: text }))}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+          </View>
+
+          <View style={styles.submitContainer}>
             <TouchableOpacity
-              style={[styles.startReviewButton, !canSubmit && styles.disabledButton]}
-              onPress={startVideoReview}
-              disabled={!canSubmit}
+              style={[styles.submitButton, (!profileData.profilePhoto || !profileData.reviewerNote.trim()) && styles.disabledButton]}
+              onPress={handleSubmit}
+              disabled={!profileData.profilePhoto || !profileData.reviewerNote.trim()}
             >
               <LinearGradient
-                colors={canSubmit ? [Colors.brand.accentOrange, Colors.brand.primary] : ['#ccc', '#999']}
-                style={styles.startReviewGradient}
+                colors={(!profileData.profilePhoto || !profileData.reviewerNote.trim()) ? ['#ccc', '#999'] : [Colors.brand.accentOrange, Colors.brand.primary]}
+                style={styles.submitGradient}
               >
-                <Text style={styles.startReviewButtonText}>
-                  🎬 Start Video Review Demo
+                <Text style={styles.submitButtonText}>
+                  Submit for Review
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
             
-            {!canSubmit && (
+            {(!profileData.profilePhoto || !profileData.reviewerNote.trim()) && (
               <Text style={styles.helpText}>
-                Add at least one photo to each section to start the demo
+                Please upload a photo and add a note before submitting
               </Text>
             )}
           </View>
         </ScrollView>
       ) : (
-        <RNView style={styles.videoReviewContainer}>
-          <ScrollView 
-            style={styles.videoReviewScroll}
-            showsVerticalScrollIndicator={false}
-            pagingEnabled
-            decelerationRate="fast"
-            onMomentumScrollEnd={(event) => {
-              const contentOffset = event.nativeEvent.contentOffset;
-              const viewSize = event.nativeEvent.layoutMeasurement;
-              const pageNum = Math.floor(contentOffset.y / viewSize.height);
-              setCurrentSectionIndex(pageNum);
-            }}
-          >
-            {sections.map((section, sectionIndex) => (
-              <RNView key={section.category} style={styles.videoReviewPage}>
-                <ScrollView style={styles.videoReviewContent} showsVerticalScrollIndicator={false}>
-                  {/* Section Title Card */}
-                  <SectionSlideCard
-                    title={section.title}
-                    subtitle={section.subtitle || ''}
-                    revieweeName="Demo User"
-                    style={{ marginTop: 20 }}
-                  />
-
-                  {/* Photo Carousel */}
-                  {section.photos.length > 0 && (
-                    <View style={styles.photoSection}>
-                      <VideoReviewSection
-                        sections={[section]}
-                        onPhotoPress={(photos, index) => handlePhotoPress(photos, index)}
-                        currentSectionIndex={0}
-                        currentPhotoIndex={0}
-                      />
-                    </View>
-                  )}
-
-                  {/* Pagination Dots */}
-                  <View style={styles.paginationContainer}>
-                    <PaginationDots 
-                      totalItems={sections.length} 
-                      currentIndex={sectionIndex}
-                      orientation="horizontal"
-                    />
-                  </View>
-
-                  {/* Finish Video Review Button */}
-                  <TouchableOpacity
-                    onPress={finishVideoReview}
-                    style={[
-                      styles.actionButton, 
-                      styles.acceptButton, 
-                      { marginTop: 24 },
-                    ]}
-                  >
-                    <Text style={styles.actionButtonText}>
-                      Finish Video Review Demo
-                    </Text>
-                  </TouchableOpacity>
-                </ScrollView>
-              </RNView>
-            ))}
-          </ScrollView>
-
-          {/* Circular video recorder centered at top-middle */}
-          <RNView style={{ position: 'absolute', top: insets.top + 20, left: 0, right: 0, alignItems: 'center', zIndex: 10, elevation: 10 }}>
-            <MediaRecorder
-              onRecorded={(uri) => {
-                setVideoUri(uri);
-                setRecordingModeOpen(false);
-                setIsVideoReviewMode(false);
-                Alert.alert('Demo Complete', 'Video recorded! This is just a demo - in the real app, this would be submitted as your review.');
-              }}
-              variant="centered"
-              circleSize={140}
-            />
-          </RNView>
-        </RNView>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.thankYouContainer}>
+            <Text style={styles.thankYouTitle}>🎉 Thank You!</Text>
+            <Text style={styles.thankYouMessage}>
+              Thank you for submitting {revieweeName}'s review! {revieweeName} said you can share this review!
+            </Text>
+            
+            <View style={styles.shareButtonsContainer}>
+              <TouchableOpacity
+                style={styles.shareButton}
+                onPress={handleShareToTikTok}
+              >
+                <LinearGradient
+                  colors={['#000000', '#333333']}
+                  style={styles.shareButtonGradient}
+                >
+                  <Text style={styles.shareButtonText}>🎵 Share to TikTok</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.shareButton}
+                onPress={handleShareToInstagram}
+              >
+                <LinearGradient
+                  colors={['#E4405F', '#C13584']}
+                  style={styles.shareButtonGradient}
+                >
+                  <Text style={styles.shareButtonText}>📸 Share to Instagram</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
       )}
-
-      {/* Gallery Modal */}
-      <Modal
-        visible={galleryOpen}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setGalleryOpen(false)}
-      >
-        <RNView style={styles.modalOverlay}>
-          <RNView style={styles.modalContent}>
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setGalleryOpen(false)}
-            >
-              <Text style={styles.modalCloseText}>✕</Text>
-            </TouchableOpacity>
-            <ScrollView horizontal pagingEnabled style={styles.galleryScroll}>
-              {galleryUris.map((uri, index) => (
-                <RNView key={index} style={styles.galleryItem}>
-                  <RNView style={styles.galleryImageContainer}>
-                    <RNView style={styles.galleryImage} />
-                  </RNView>
-                </RNView>
-              ))}
-            </ScrollView>
-          </RNView>
-        </RNView>
-      </Modal>
     </View>
   );
 }
@@ -407,9 +268,6 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 8,
   },
-  sectionHeader: {
-    marginBottom: 16,
-  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '700',
@@ -419,54 +277,57 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     fontSize: 14,
     color: Colors.brand.textSecondary,
-  },
-  emptySection: {
-    backgroundColor: Colors.brand.background,
-    borderRadius: 12,
-    padding: 40,
-    alignItems: 'center',
     marginBottom: 16,
   },
-  emptyText: {
-    fontSize: 16,
-    color: Colors.brand.textSecondary,
-    fontStyle: 'italic',
-  },
-  sectionActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  photoUploadContainer: {
     alignItems: 'center',
   },
-  addPhotoButton: {
+  photoPreview: {
+    alignItems: 'center',
+  },
+  uploadedPhoto: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    marginBottom: 16,
+  },
+  changePhotoButton: {
     backgroundColor: Colors.brand.accentOrange,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 20,
-    flex: 1,
-    marginRight: 12,
   },
-  addPhotoButtonText: {
+  changePhotoButtonText: {
     color: Colors.brand.textOnGradient,
     fontWeight: '600',
-    textAlign: 'center',
   },
-  clearButton: {
-    backgroundColor: 'transparent',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  uploadButton: {
+    backgroundColor: Colors.brand.accentOrange,
+    paddingHorizontal: 30,
+    paddingVertical: 20,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.brand.status.rejected,
+    alignItems: 'center',
   },
-  clearButtonText: {
-    color: Colors.brand.status.rejected,
+  uploadButtonText: {
+    color: Colors.brand.textOnGradient,
     fontWeight: '600',
+    fontSize: 16,
   },
-  startReviewContainer: {
+  noteInput: {
+    backgroundColor: Colors.brand.background,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: Colors.brand.textPrimary,
+    borderWidth: 1,
+    borderColor: Colors.brand.divider,
+    minHeight: 100,
+  },
+  submitContainer: {
     alignItems: 'center',
     marginVertical: 40,
   },
-  startReviewButton: {
+  submitButton: {
     borderRadius: 28,
     overflow: 'hidden',
     shadowColor: Colors.brand.shadow,
@@ -475,12 +336,12 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 8,
   },
-  startReviewGradient: {
+  submitGradient: {
     paddingVertical: 18,
     paddingHorizontal: 32,
     alignItems: 'center',
   },
-  startReviewButtonText: {
+  submitButtonText: {
     color: Colors.brand.textOnGradient,
     fontSize: 18,
     fontWeight: '700',
@@ -494,94 +355,53 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
   },
-  videoReviewContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  videoReviewScroll: {
-    flex: 1,
-  },
-  videoReviewPage: {
-    height: '100%',
-  },
-  videoReviewContent: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  photoSection: {
+  thankYouContainer: {
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 20,
+    padding: 24,
     marginVertical: 20,
-  },
-  paginationContainer: {
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  actionButton: {
-    borderRadius: 28,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
     alignItems: 'center',
     shadowColor: Colors.brand.shadow,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
     elevation: 8,
   },
-  acceptButton: {
-    backgroundColor: Colors.brand.status.completed,
+  thankYouTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: Colors.brand.textPrimary,
+    marginBottom: 16,
   },
-  actionButtonText: {
+  thankYouMessage: {
+    fontSize: 16,
+    color: Colors.brand.textSecondary,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+  },
+  shareButtonsContainer: {
+    width: '100%',
+    gap: 16,
+  },
+  shareButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  shareButtonGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  shareButtonText: {
     color: Colors.brand.textOnGradient,
     fontSize: 16,
     fontWeight: '700',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '90%',
-    height: '70%',
-    backgroundColor: Colors.brand.cardBackground,
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  modalCloseButton: {
-    position: 'absolute',
-    top: 20,
-    right: 20,
-    zIndex: 10,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalCloseText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  galleryScroll: {
-    flex: 1,
-  },
-  galleryItem: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  galleryImageContainer: {
-    width: '90%',
-    height: '90%',
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  galleryImage: {
-    flex: 1,
-    backgroundColor: Colors.brand.background,
   },
 });
 

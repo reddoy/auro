@@ -3,7 +3,7 @@ import { StyleSheet, TouchableOpacity, Alert, FlatList, Platform, Linking, Switc
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
-import Clipboard from '@react-native-clipboard/clipboard';
+import { copyToClipboard } from '@/lib/clipboard';
 
 import { Text, View } from '@/components/Themed';
 import { supabase } from '@/lib/supabase';
@@ -154,7 +154,7 @@ export default function ProfileScreen() {
       const slug = profile.username || profile.id;
       const reviewerUrl = `https://www.appauro.com/${slug}`;
       
-      await Clipboard.setString(reviewerUrl);
+      await copyToClipboard(reviewerUrl);
       Alert.alert('Copied!', 'Your reviewer link has been copied to clipboard. You can now paste it in your social media bios!');
     } catch (error) {
       Alert.alert('Error', 'Failed to copy link to clipboard');
@@ -256,12 +256,6 @@ export default function ProfileScreen() {
                 </View>
 
                 <TouchableOpacity style={styles.editButton} onPress={() => router.push('/(tabs)/profile/settings')} accessibilityLabel="Edit profile">
-                  <ExpoLinearGradient
-                    colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.editButtonGradient}
-                  />
                   <Text style={styles.editButtonText}>Edit Profile</Text>
                 </TouchableOpacity>
               </View>
@@ -303,14 +297,8 @@ export default function ProfileScreen() {
                           accessibilityLabel={stripePortalUrl ? 'Open Stripe Dashboard' : 'Set up Stripe payouts'}
                           style={styles.stripeDashboardButtonMobile}
                         >
-                          <ExpoLinearGradient
-                            colors={['#635BFF', '#4F46E5']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.stripeDashboardGradient}
-                          />
                           <Text style={styles.stripeDashboardText}>
-                            {stripePortalUrl ? '🔗 Dashboard' : '⚡ Setup Stripe'}
+                            {stripePortalUrl ? '💰 See Payouts' : '⚡ Setup Stripe'}
                           </Text>
                         </TouchableOpacity>
                       </View>
@@ -379,13 +367,7 @@ export default function ProfileScreen() {
                         {`appauro.com/${profile.username || profile.id}`}
                       </Text>
                       <TouchableOpacity onPress={handleCopyReviewerLink} accessibilityLabel="Copy reviewer link" style={styles.copyLinkButton}>
-                        <ExpoLinearGradient
-                          colors={['#10b981', '#059669']}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 0 }}
-                          style={styles.editRateGradient}
-                        />
-                        <Text style={styles.editRateText}>📋 Copy</Text>
+                        <Text style={styles.copyLinkButtonText}>📋 Copy</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -394,13 +376,7 @@ export default function ProfileScreen() {
                     <View style={styles.priceCard}>
                       <Text style={styles.priceText}>{profile?.hourly_rate != null ? `$${profile.hourly_rate}/review` : 'Tap to set your rate →'}</Text>
                       <TouchableOpacity onPress={() => router.push('/(tabs)/profile/reviewer-settings')} accessibilityLabel="Edit rate" style={styles.editRateButton}>
-                        <ExpoLinearGradient
-                          colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-                          start={{ x: 0, y: 0 }}
-                          end={{ x: 1, y: 0 }}
-                          style={styles.editRateGradient}
-                        />
-                        <Text style={styles.editRateText}>Edit</Text>
+                        <Text style={styles.editRateButtonText}>Edit</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -487,7 +463,7 @@ export default function ProfileScreen() {
                 <Text style={styles.actionArrow}>›</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/profile/video-review-demo' as any)} accessibilityLabel="Open video review demo">
+              <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/profile/video-review-demo' as any)} accessibilityLabel="Open dating profile upload">
                 <View style={styles.actionIconContainer}>
                   <ExpoLinearGradient
                     colors={[Colors.brand.accentOrange, Colors.brand.primary]}
@@ -495,9 +471,9 @@ export default function ProfileScreen() {
                     end={{ x: 1, y: 0 }}
                     style={styles.actionIconGradient}
                   />
-                  <Text style={styles.actionIcon}>🎥</Text>
+                  <Text style={styles.actionIcon}>💕</Text>
                 </View>
-                <Text style={styles.actionText}>Video Review Demo</Text>
+                <Text style={styles.actionText}>Dating Profile Upload</Text>
                 <Text style={styles.actionArrow}>›</Text>
               </TouchableOpacity>
 
@@ -539,9 +515,24 @@ const styles = StyleSheet.create({
   userInfo: { flex: 1, backgroundColor: 'transparent' },
   userName: { fontSize: 32, fontWeight: '700', fontFamily: 'Poppins_700Bold', color: Colors.brand.textPrimary, marginBottom: 4 },
   userEmail: { fontSize: 18, color: Colors.brand.textSecondary, marginBottom: 4, fontWeight: '500' },
-  editButton: { paddingVertical: 16, paddingHorizontal: 36, borderRadius: 28, alignItems: 'center', justifyContent: 'center', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 8, overflow: 'hidden', position: 'relative' },
-  editButtonGradient: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 28 },
-  editButtonText: { color: Colors.brand.textOnGradient, fontSize: 18, fontWeight: '700', zIndex: 1, textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
+  editButton: { 
+    paddingVertical: 16, 
+    paddingHorizontal: 36, 
+    borderRadius: 28, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    backgroundColor: Colors.brand.accentOrange,
+    shadowColor: Colors.brand.shadow, 
+    shadowOffset: { width: 0, height: 6 }, 
+    shadowOpacity: 0.25, 
+    shadowRadius: 12, 
+    elevation: 8 
+  },
+  editButtonText: { 
+    color: Colors.brand.textOnGradient, 
+    fontSize: 18, 
+    fontWeight: '700' 
+  },
   statsSection: { margin: 24, marginTop: 32, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, padding: 28, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 8, borderWidth: 0, overflow: 'hidden' },
   sectionTitle: { fontSize: 28, fontWeight: 'bold', fontFamily: 'Poppins_700Bold', color: Colors.brand.textPrimary, marginBottom: 18 },
   statsGrid: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: 'transparent' },
@@ -633,10 +624,42 @@ const styles = StyleSheet.create({
   primaryCtaText: { color: '#fff', fontWeight: '700' },
   linkBtn: { backgroundColor: Colors.brand.cardBackgroundLight, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, marginRight: 8 },
   linkText: { color: Colors.brand.textPrimary, fontWeight: '600' },
-  editRateButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 4 },
-  editRateGradient: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 16 },
-  editRateText: { color: Colors.brand.textOnGradient, fontWeight: '700', fontSize: 14, zIndex: 1, textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 1 },
-  copyLinkButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', shadowColor: '#10b981', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 4 },
+  editRateButton: { 
+    paddingVertical: 8, 
+    paddingHorizontal: 16, 
+    borderRadius: 16, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    backgroundColor: Colors.brand.accentOrange,
+    shadowColor: Colors.brand.shadow, 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.15, 
+    shadowRadius: 6, 
+    elevation: 4 
+  },
+  editRateButtonText: { 
+    color: Colors.brand.textOnGradient, 
+    fontWeight: '700', 
+    fontSize: 14 
+  },
+  copyLinkButton: { 
+    paddingVertical: 8, 
+    paddingHorizontal: 16, 
+    borderRadius: 16, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    backgroundColor: '#10b981',
+    shadowColor: '#10b981', 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.15, 
+    shadowRadius: 6, 
+    elevation: 4 
+  },
+  copyLinkButtonText: {
+    color: '#ffffff',
+    fontWeight: '700',
+    fontSize: 14
+  },
   
   // Earnings tracker styles
   earningsCard: { 
@@ -699,8 +722,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
-    position: 'relative',
+    backgroundColor: '#635BFF',
     shadowColor: '#635BFF',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -708,19 +730,10 @@ const styles = StyleSheet.create({
     elevation: 8,
     width: '100%',
   },
-  stripeDashboardGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    borderRadius: 20,
-  },
   stripeDashboardText: {
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 15,
-    zIndex: 1,
     letterSpacing: 0.5,
   },
   earningsStats: {
