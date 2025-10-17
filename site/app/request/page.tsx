@@ -261,6 +261,9 @@ export default function RequestPage() {
             onMessageChange={(message) => updateRequestData({ message })}
             onNext={nextStep}
             onBack={previousStep}
+            creatorId={requestData.creatorId}
+            creatorSlug={requestData.creatorSlug}
+            supabase={supabase}
           />
         );
       case 'consent':

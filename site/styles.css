@@ -4935,7 +4935,7 @@ footer {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: var(--card);
+  background: rgba(43, 23, 75, 0.8);
   color: var(--text-2);
   text-align: center;
   padding: 16px;
@@ -4943,13 +4943,13 @@ footer {
 
 .upload-placeholder:hover {
   border-color: var(--grad-start);
-  background: rgba(255, 111, 0, 0.05);
+  background: rgba(43, 23, 75, 1);
   color: var(--text);
 }
 
 .upload-placeholder.uploading {
   border-color: var(--grad-start);
-  background: rgba(255, 111, 0, 0.05);
+  background: rgba(43, 23, 75, 0.9);
   cursor: not-allowed;
 }
 
@@ -5001,7 +5001,7 @@ footer {
 .message-textarea {
   width: 100%;
   background: var(--bg);
-  color: var(--text);
+  color: #ffffff;
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px;
@@ -5016,6 +5016,10 @@ footer {
 
 .message-textarea:focus {
   border-color: var(--grad-start);
+}
+
+.message-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .char-counter {

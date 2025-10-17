@@ -254,7 +254,7 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
                 </div>
               </div>
             ))}
-            {photos.datingProfileScreenshots.length < 10 && (
+            {photos.datingProfileScreenshots.length < 10 && localPreviews.datingProfileScreenshots.length === 0 && (
               <div 
                 className={`upload-placeholder ${uploading.datingProfileScreenshots ? 'uploading' : ''}`}
                 onClick={() => datingInputRef.current?.click()}
