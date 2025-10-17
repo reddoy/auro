@@ -175,6 +175,14 @@ export default async function ReviewerPage({ params }: { params: { username: str
               borderRadius: '16px',
               border: '1px solid rgba(255,111,0,0.2)'
             }}>
+              <h3 style={{ 
+                fontSize: '18px',
+                fontWeight: '700',
+                marginBottom: '12px',
+                color: '#FFFFFF'
+              }}>
+                About {reviewer.displayName.split(' ')[0]}
+              </h3>
               <p style={{ 
                 margin: 0,
                 fontSize: '16px',
@@ -223,7 +231,7 @@ export default async function ReviewerPage({ params }: { params: { username: str
           )}
 
           {/* Social Links */}
-          {reviewer.links && Object.keys(reviewer.links).length > 0 && (
+          {reviewer.links && Object.keys(reviewer.links).some(key => reviewer.links[key]) && (
             <div style={{ 
               marginBottom: '24px',
               padding: '20px',
@@ -237,7 +245,7 @@ export default async function ReviewerPage({ params }: { params: { username: str
                 marginBottom: '12px',
                 color: '#FFFFFF'
               }}>
-                Connect
+                Follow {reviewer.displayName}
               </h3>
               <div style={{ 
                 display: 'flex',

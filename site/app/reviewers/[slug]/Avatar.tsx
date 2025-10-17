@@ -5,14 +5,16 @@ export default function Avatar({ src, alt, size = 48 }: { src?: string; alt: str
     width: size,
     height: size,
     borderRadius: '50%',
-    backgroundColor: 'var(--border)',
+    backgroundColor: 'rgba(255, 111, 0, 0.2)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: size * 0.4,
-    fontWeight: 'bold',
-    color: 'var(--text-2)',
+    fontWeight: '800',
+    color: '#FF6F00',
     overflow: 'hidden',
+    border: '2px solid rgba(255, 111, 0, 0.3)',
+    boxShadow: '0 4px 12px rgba(255, 111, 0, 0.2)',
   };
 
   if (src) {

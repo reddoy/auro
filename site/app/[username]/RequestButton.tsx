@@ -55,29 +55,36 @@ export default function RequestButton({ slug, reviewerId }: { slug: string; revi
       disabled={loading} 
       style={{ 
         width: '100%',
-        padding: '16px 24px',
-        fontSize: '18px',
-        fontWeight: '700',
+        padding: '18px 32px',
+        fontSize: '20px',
+        fontWeight: '800',
         border: 'none',
-        borderRadius: '12px',
+        borderRadius: '16px',
         background: 'white',
         color: '#FF2D55',
         cursor: loading ? 'not-allowed' : 'pointer',
         transition: 'all 0.3s ease',
-        opacity: loading ? 0.7 : 1
+        opacity: loading ? 0.7 : 1,
+        boxShadow: '0 4px 20px rgba(255, 255, 255, 0.3)',
+        textTransform: 'none',
+        letterSpacing: '0.5px'
       }}
       onMouseEnter={(e) => {
         if (!loading) {
           e.currentTarget.style.opacity = '0.9';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+          e.currentTarget.style.boxShadow = '0 6px 25px rgba(255, 255, 255, 0.4)';
         }
       }}
       onMouseLeave={(e) => {
         if (!loading) {
           e.currentTarget.style.opacity = '1';
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 4px 20px rgba(255, 255, 255, 0.3)';
         }
       }}
     >
-      {loading ? 'Loading...' : 'Request a Review'}
+      {loading ? '✨ Loading...' : '🎯 Request a Review'}
     </button>
   );
 }
