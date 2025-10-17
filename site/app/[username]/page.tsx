@@ -4,7 +4,7 @@ import RequestButton from './RequestButton';
 import { notFound } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import type { Metadata } from 'next';
-import AsyncAvatar from '../../request/components/AsyncAvatar';
+import AsyncAvatar from '../request/components/AsyncAvatar';
 import ShareButton from './ShareButton';
 import BackLink from './BackLink';
 export const dynamic = 'force-dynamic';
