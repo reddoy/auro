@@ -4,8 +4,7 @@ import RequestButton from './RequestButton';
 import { notFound } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import type { Metadata } from 'next';
-import Avatar from './Avatar';
-import { getDisplayAvatarUrl } from '../../lib/avatar';
+import AsyncAvatar from '../../request/components/AsyncAvatar';
 import ShareButton from './ShareButton';
 import BackLink from './BackLink';
 export const dynamic = 'force-dynamic';
@@ -80,7 +79,6 @@ export async function generateMetadata({ params }: { params: { username: string 
 export default async function ReviewerPage({ params }: { params: { username: string } }) {
   const reviewer = await getReviewer(params.username);
   if (!reviewer) return notFound();
-  const avatarUrl = await getDisplayAvatarUrl(reviewer.avatarUrl);
   
   return (
     <div style={{ 
@@ -114,8 +112,8 @@ export default async function ReviewerPage({ params }: { params: { username: str
               position: 'relative',
               marginBottom: '20px'
             }}>
-              <Avatar 
-                src={avatarUrl || undefined} 
+              <AsyncAvatar 
+                avatarPathOrUrl={reviewer.avatarUrl} 
                 alt={reviewer.displayName} 
                 size={120} 
               />

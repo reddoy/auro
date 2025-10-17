@@ -9,9 +9,6 @@ export default function Avatar({ src, alt, size = 48 }: { src?: string; alt: str
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: size * 0.4,
-    fontWeight: '800',
-    color: '#FF6F00',
     overflow: 'hidden',
     border: '2px solid rgba(255, 111, 0, 0.3)',
     boxShadow: '0 4px 12px rgba(255, 111, 0, 0.2)',
@@ -21,14 +18,19 @@ export default function Avatar({ src, alt, size = 48 }: { src?: string; alt: str
     return <img src={src} alt={alt} style={{ ...style, objectFit: 'cover' }} />;
   }
 
-  // Fallback to initials
-  const initials = alt
-    .split(' ')
-    .map(name => name[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-
-  return <div style={style}>{initials}</div>;
+  // Fallback to Auro logo
+  return (
+    <div style={style}>
+      <img 
+        src="/auro_aura_logo_nobg.png" 
+        alt="Auro Logo" 
+        style={{ 
+          width: size * 0.6, 
+          height: size * 0.6, 
+          objectFit: 'contain' 
+        }} 
+      />
+    </div>
+  );
 }
 

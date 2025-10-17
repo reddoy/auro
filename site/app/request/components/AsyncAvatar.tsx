@@ -55,13 +55,12 @@ export default function AsyncAvatar({ avatarPathOrUrl, alt, size = 64 }: Props) 
         height: dimension,
         borderRadius: '50%',
         overflow: 'hidden',
-        background: 'var(--border)',
+        background: 'rgba(255, 111, 0, 0.2)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: size * 0.4,
-        fontWeight: 'bold',
-        color: 'var(--text-2)'
+        border: '2px solid rgba(255, 111, 0, 0.3)',
+        boxShadow: '0 4px 12px rgba(255, 111, 0, 0.2)'
       }}
     >
       {showImage ? (
@@ -75,7 +74,15 @@ export default function AsyncAvatar({ avatarPathOrUrl, alt, size = 64 }: Props) 
           onError={() => setError(true)}
         />
       ) : (
-        <span>{initials}</span>
+        <img 
+          src="/auro_aura_logo_nobg.png" 
+          alt="Auro Logo" 
+          style={{ 
+            width: size * 0.6, 
+            height: size * 0.6, 
+            objectFit: 'contain' 
+          }} 
+        />
       )}
     </div>
   );
