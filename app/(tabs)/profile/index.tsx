@@ -314,7 +314,7 @@ export default function ProfileScreen() {
                           </Text>
                         </TouchableOpacity>
                       </View>
-                      <View style={styles.earningsStats}>
+                      <View style={[styles.earningsStats, { marginTop: 16 }]}>
                         <View style={styles.earningStat}>
                           <ExpoLinearGradient
                             colors={['rgba(16, 185, 129, 0.15)', 'rgba(5, 150, 105, 0.15)']}

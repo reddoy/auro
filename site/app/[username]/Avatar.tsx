@@ -29,3 +29,4 @@ export default function Avatar({ src, alt, size = 48 }: { src?: string; alt: str
 
   return <div style={style}>{initials}</div>;
 }
+
