@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 
 // Web-compatible clipboard implementation
 const copyToClipboardWeb = async (text: string): Promise<void> => {
@@ -19,16 +20,11 @@ const copyToClipboardWeb = async (text: string): Promise<void> => {
   }
 };
 
-// Native clipboard implementation
-const copyToClipboardNative = async (text: string): Promise<void> => {
-  const Clipboard = require('@react-native-clipboard/clipboard').default;
-  await Clipboard.setString(text);
-};
-
 export const copyToClipboard = async (text: string): Promise<void> => {
   if (Platform.OS === 'web') {
     await copyToClipboardWeb(text);
   } else {
-    await copyToClipboardNative(text);
+    // Use Expo's clipboard for native platforms (iOS/Android)
+    await Clipboard.setStringAsync(text);
   }
 };

@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, TouchableOpacity, Alert, FlatList, Platform, Linking, Switch, View as RNView, Image } from 'react-native';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
+import { StyleSheet, TouchableOpacity, Alert, FlatList, Platform, Linking, Switch, View as RNView, Image, Modal, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -27,6 +27,11 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [stripePortalUrl, setStripePortalUrl] = useState<string | null>(null);
   const [earnings, setEarnings] = useState({ total: 0, count: 0, average: 0, pendingAmount: 0, pendingCount: 0 });
+  
+  // Rate editing modal state
+  const [showRateModal, setShowRateModal] = useState(false);
+  const [editingRate, setEditingRate] = useState('');
+  const [savingRate, setSavingRate] = useState(false);
 
   useEffect(() => {
     const run = async () => {
@@ -160,6 +165,46 @@ export default function ProfileScreen() {
       Alert.alert('Error', 'Failed to copy link to clipboard');
     }
   }, [profile]);
+
+  const handleEditRate = useCallback(() => {
+    setEditingRate(profile?.hourly_rate != null ? String(profile.hourly_rate) : '');
+    setShowRateModal(true);
+  }, [profile]);
+
+  const handleSaveRate = useCallback(async () => {
+    try {
+      setSavingRate(true);
+      const rate = editingRate.trim();
+      const rateNumber = rate ? Number(rate) : null;
+      
+      if (rate && (isNaN(rateNumber) || rateNumber <= 0)) {
+        Alert.alert('Invalid Rate', 'Please enter a valid positive number.');
+        return;
+      }
+
+      const updated = await updateProfile({ hourly_rate: rateNumber });
+      setProfile(updated);
+      setShowRateModal(false);
+      
+      // Show confirmation with take-home calculation
+      if (rateNumber) {
+        const auroFee = rateNumber * 0.15;
+        const stripeFee = Math.max(0, rateNumber * 0.029 + 0.3);
+        const net = Math.max(0, rateNumber - auroFee - stripeFee);
+        
+        Alert.alert(
+          'Rate Updated!', 
+          `Your rate is now $${rateNumber}/review.\n\nEstimated take-home: $${net.toFixed(2)}\n(After Auro fee: $${auroFee.toFixed(2)} and Stripe fee: $${stripeFee.toFixed(2)})`
+        );
+      } else {
+        Alert.alert('Rate Updated!', 'Your rate has been cleared.');
+      }
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Failed to update rate');
+    } finally {
+      setSavingRate(false);
+    }
+  }, [editingRate, profile]);
 
   const onRefresh = useCallback(async () => {
     try {
@@ -375,7 +420,7 @@ export default function ProfileScreen() {
                     <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Price per Review</Text>
                     <View style={styles.priceCard}>
                       <Text style={styles.priceText}>{profile?.hourly_rate != null ? `$${profile.hourly_rate}/review` : 'Tap to set your rate →'}</Text>
-                      <TouchableOpacity onPress={() => router.push('/(tabs)/profile/reviewer-settings')} accessibilityLabel="Edit rate" style={styles.editRateButton}>
+                      <TouchableOpacity onPress={handleEditRate} accessibilityLabel="Edit rate" style={styles.editRateButton}>
                         <Text style={styles.editRateButtonText}>Edit</Text>
                       </TouchableOpacity>
                     </View>
@@ -501,6 +546,82 @@ export default function ProfileScreen() {
           </>
         )}
       />
+      
+      {/* Rate Editing Modal */}
+      <Modal
+        visible={showRateModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowRateModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Set Your Rate</Text>
+            <Text style={styles.modalSubtitle}>Enter your price per review</Text>
+            
+            <TextInput
+              style={styles.rateInput}
+              value={editingRate}
+              onChangeText={setEditingRate}
+              placeholder="e.g. 42"
+              keyboardType="numeric"
+              autoFocus={true}
+              placeholderTextColor={Colors.brand.textSecondary}
+            />
+            
+            {!!editingRate && !isNaN(Number(editingRate)) && Number(editingRate) > 0 && (
+              <View style={styles.breakdownContainer}>
+                {(() => {
+                  const price = Number(editingRate);
+                  const auroFee = price * 0.15;
+                  const stripeFee = Math.max(0, price * 0.029 + 0.3);
+                  const net = Math.max(0, price - auroFee - stripeFee);
+                  return (
+                    <>
+                      <Text style={styles.breakdownTitle}>Fee Breakdown:</Text>
+                      <View style={styles.breakdownRow}>
+                        <Text style={styles.breakdownLabel}>Your price</Text>
+                        <Text style={styles.breakdownValue}>${price.toFixed(2)}</Text>
+                      </View>
+                      <View style={styles.breakdownRow}>
+                        <Text style={styles.breakdownLabel}>Auro fee (15%)</Text>
+                        <Text style={[styles.breakdownValue, styles.breakdownFee]}>-${auroFee.toFixed(2)}</Text>
+                      </View>
+                      <View style={styles.breakdownRow}>
+                        <Text style={styles.breakdownLabel}>Stripe fee (est.)</Text>
+                        <Text style={[styles.breakdownValue, styles.breakdownFee]}>-${stripeFee.toFixed(2)}</Text>
+                      </View>
+                      <View style={[styles.breakdownRow, styles.breakdownTotal]}>
+                        <Text style={styles.breakdownTotalLabel}>Take-home</Text>
+                        <Text style={styles.breakdownTotalValue}>${net.toFixed(2)}</Text>
+                      </View>
+                    </>
+                  );
+                })()}
+              </View>
+            )}
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.modalButtonCancel]} 
+                onPress={() => setShowRateModal(false)}
+              >
+                <Text style={styles.modalButtonCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.modalButtonSave, savingRate && styles.modalButtonDisabled]} 
+                onPress={handleSaveRate}
+                disabled={savingRate}
+              >
+                <Text style={styles.modalButtonSaveText}>
+                  {savingRate ? 'Saving...' : 'Save'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -780,6 +901,141 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     zIndex: 1,
     letterSpacing: 0.5,
+  },
+
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    borderWidth: 2,
+    borderColor: Colors.brand.accentOrange,
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 16,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    color: Colors.brand.textSecondary,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  rateInput: {
+    borderWidth: 2,
+    borderColor: Colors.brand.accentOrange,
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    fontSize: 18,
+    color: Colors.brand.textPrimary,
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    textAlign: 'center',
+    marginBottom: 16,
+    fontWeight: '600',
+  },
+  breakdownContainer: {
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  breakdownTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.brand.textPrimary,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  breakdownRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  breakdownLabel: {
+    fontSize: 14,
+    color: Colors.brand.textSecondary,
+  },
+  breakdownValue: {
+    fontSize: 14,
+    color: Colors.brand.textPrimary,
+    fontWeight: '500',
+  },
+  breakdownFee: {
+    color: Colors.brand.error,
+  },
+  breakdownTotal: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    marginTop: 8,
+    paddingTop: 12,
+  },
+  breakdownTotalLabel: {
+    fontSize: 16,
+    color: Colors.brand.textPrimary,
+    fontWeight: '600',
+  },
+  breakdownTotalValue: {
+    fontSize: 16,
+    color: '#10b981',
+    fontWeight: '700',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalButtonCancel: {
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    borderWidth: 2,
+    borderColor: Colors.brand.border,
+  },
+  modalButtonSave: {
+    backgroundColor: Colors.brand.accentOrange,
+    shadowColor: Colors.brand.accentOrange,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  modalButtonDisabled: {
+    opacity: 0.6,
+  },
+  modalButtonCancelText: {
+    color: Colors.brand.textPrimary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalButtonSaveText: {
+    color: Colors.brand.textOnGradient,
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
 
