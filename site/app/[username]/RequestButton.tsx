@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { supabase } from '../../lib/supabase';
 
 export default function RequestButton({ slug, reviewerId }: { slug: string; reviewerId: string }) {
   const [loading, setLoading] = React.useState(false);
@@ -10,38 +9,9 @@ export default function RequestButton({ slug, reviewerId }: { slug: string; revi
     if (loading) return;
     setLoading(true);
     try {
-      // Check if user is authenticated
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        // Redirect to sign in page
-        alert('Please sign in to request a review.');
-        window.location.href = '/auth/signin';
-        return;
-      }
-
-      // Check if user is trying to request from themselves
-      if (user.id === reviewerId) {
-        alert('You cannot request a review from yourself.');
-        setLoading(false);
-        return;
-      }
-
-      const res = await fetch('/api/checkout/create-session', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ 
-          creatorSlug: slug,
-          fallbackUserId: user.id,
-          fallbackEmail: user.email
-        }),
-      });
-      const json = await res.json();
-      if (res.ok && json?.url) {
-        window.location.href = json.url as string;
-      } else {
-        alert(json?.error || 'Failed to start checkout');
-      }
+      // Redirect to the request flow instead of checking authentication
+      // This allows anonymous users to start the process
+      window.location.href = `/request?creatorSlug=${encodeURIComponent(slug)}`;
     } catch (e: any) {
       alert(e?.message || 'Something went wrong');
     } finally {

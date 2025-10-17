@@ -8,17 +8,9 @@ export default function RequestButton({ slug }: { slug: string }) {
     if (loading) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/checkout/create-session', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ creatorSlug: slug }),
-      });
-      const json = await res.json();
-      if (res.ok && json?.url) {
-        window.location.href = json.url as string;
-      } else {
-        alert(json?.error || 'Failed to start checkout');
-      }
+      // Redirect to the request flow instead of calling API directly
+      // This allows anonymous users to start the process
+      window.location.href = `/request?creatorSlug=${encodeURIComponent(slug)}`;
     } catch (e: any) {
       alert(e?.message || 'Something went wrong');
     } finally {

@@ -92,9 +92,10 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
       const fallbackUserId = await getFallbackUserId();
       const fallbackEmail = await getFallbackEmail();
       const fallbackFullName = await getFallbackFullName();
-      if (!fallbackUserId) {
-        throw new Error('Please sign up or sign in before paying.');
-      }
+      // Allow payment to proceed even without authenticated user - they can authenticate during payment flow
+      // if (!fallbackUserId) {
+      //   throw new Error('Please sign up or sign in before paying.');
+      // }
 
       // Create Stripe checkout session
       const response = await fetch('/api/checkout/create-session', {

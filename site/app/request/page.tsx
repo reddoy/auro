@@ -53,6 +53,20 @@ export default function RequestPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [supabase, setSupabase] = useState<any>(null);
 
+  // Handle URL parameters to pre-populate creator selection
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const creatorSlug = urlParams.get('creatorSlug');
+      
+      if (creatorSlug) {
+        // Set the creator slug and skip to creator selection step
+        setRequestData(prev => ({ ...prev, creatorSlug }));
+        setCurrentStep('creator-selection');
+      }
+    }
+  }, []);
+
   // Scroll to top on step change for better UX and bands
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -224,6 +238,7 @@ export default function RequestPage() {
               nextStep();
             }}
             supabase={supabase}
+            preselectedCreatorSlug={requestData.creatorSlug}
           />
         );
       case 'photo-upload':

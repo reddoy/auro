@@ -147,10 +147,10 @@ export async function POST(req: Request) {
       }
     } catch {}
 
-    // Require authenticated user for request creation
-    if (!fallbackUserId) {
-      return new Response(JSON.stringify({ error: 'You must be signed in to request a review. Please sign in and try again.' }), { status: 401 });
-    }
+    // Allow anonymous users to create requests - they will authenticate during the flow
+    // if (!fallbackUserId) {
+    //   return new Response(JSON.stringify({ error: 'You must be signed in to request a review. Please sign in and try again.' }), { status: 401 });
+    // }
 
     // Prevent self-reviews (requester and reviewer cannot be the same)
     if (fallbackUserId && resolvedCreatorId && String(fallbackUserId) === String(resolvedCreatorId)) {

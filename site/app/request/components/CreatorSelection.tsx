@@ -19,9 +19,10 @@ type Props = {
   selectedCreator?: string;
   onSelect: (creatorId: string, creatorSlug: string) => void;
   supabase: any;
+  preselectedCreatorSlug?: string;
 };
 
-export default function CreatorSelection({ selectedCreator, onSelect, supabase }: Props) {
+export default function CreatorSelection({ selectedCreator, onSelect, supabase, preselectedCreatorSlug }: Props) {
   const [creators, setCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -67,6 +68,14 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
         }));
 
         setCreators(normalized);
+        
+        // Auto-select creator if preselectedCreatorSlug is provided
+        if (preselectedCreatorSlug && normalized.length > 0) {
+          const preselectedCreator = normalized.find(c => c.username === preselectedCreatorSlug);
+          if (preselectedCreator) {
+            onSelect(preselectedCreator.id, preselectedCreator.username);
+          }
+        }
       } catch (error: any) {
         console.error('Error fetching creators:', error);
         setError(error.message || 'Failed to fetch reviewers');
@@ -78,7 +87,7 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase }
     if (supabase) {
       fetchCreators();
     }
-  }, [supabase]);
+  }, [supabase, preselectedCreatorSlug, onSelect]);
 
   const filteredCreators = creators.filter(creator => {
     const searchLower = searchTerm.toLowerCase();
