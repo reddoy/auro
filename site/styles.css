@@ -1711,6 +1711,11 @@ body {
     text-align: center;
     padding: 14px 24px;
     font-size: 16px;
+    white-space: normal !important;
+    line-height: 1.3;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
   }
 
   .cta-secondary-container {
@@ -5988,6 +5993,39 @@ footer {
     min-height: 44px;
     min-width: 44px;
     padding: 12px 20px;
+  }
+  
+  /* Fix button text overflow on mobile */
+  .cta-primary,
+  .cta-primary * {
+    white-space: normal !important;
+    text-align: center;
+    line-height: 1.3;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+  
+  .cta-primary a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+  }
+  
+  /* Override button component whitespace-nowrap on mobile */
+  button[class*="gradient"] {
+    white-space: normal !important;
+  }
+  
+  button[class*="gradient"] a {
+    white-space: normal !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
   }
   
   .benefit-tag,

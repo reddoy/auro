@@ -40,6 +40,10 @@ export default function FoundingReviewerApplyPage() {
       const verifyOAuthSession = async () => {
         try {
           console.log('[ReviewerApply] Resuming from OAuth, verifying session...');
+          
+          // Wait a moment for session to be established
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
           const { data: { session }, error } = await supabase.auth.getSession();
           
           if (error || !session) {
@@ -175,21 +179,10 @@ export default function FoundingReviewerApplyPage() {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('[ReviewerApply] Auth state change:', event, !!session);
       
-      // Don't show error for token refresh events or initial null session
-      // Only show error if user explicitly signs out while on this page
-      if (event === 'SIGNED_OUT') {
-        // Check if this is an intentional sign out (not just a session cleanup)
-        // We'll only show error if they were previously authenticated on this page
-        if (isGoogleAuthed || email) {
-          console.warn('[ReviewerApply] User signed out during application');
-          setError('Your session was ended. Please refresh and sign in again.');
-        }
-        return;
-      }
-      
       // Handle successful sign in or token refresh
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
         if (session?.user) {
+          console.log('[ReviewerApply] Valid session established:', session.user.id);
           // Update user info when session is available
           if (session.user.app_metadata?.provider === 'google') {
             setIsGoogleAuthed(true);
@@ -198,11 +191,23 @@ export default function FoundingReviewerApplyPage() {
           if (session.user.user_metadata?.given_name) setFirstName(session.user.user_metadata.given_name);
           if (session.user.user_metadata?.family_name) setLastName(session.user.user_metadata.family_name);
           
-          // Clear any previous errors when we have a valid session
-          if (error.includes('session')) {
+          // Clear any previous session-related errors when we have a valid session
+          if (error.includes('session') || error.includes('expired')) {
             setError('');
           }
         }
+      }
+      
+      // Only show error for SIGNED_OUT if user was actually authenticated and this is intentional
+      if (event === 'SIGNED_OUT') {
+        // Only show error if they were previously authenticated on this page AND had started the flow
+        if ((isGoogleAuthed || email) && (step > 1)) {
+          console.warn('[ReviewerApply] User signed out during application at step:', step);
+          setError('Your session was ended. Please refresh and sign in again.');
+        } else {
+          console.log('[ReviewerApply] SIGNED_OUT event ignored - user not in active flow');
+        }
+        return;
       }
     });
     
@@ -416,12 +421,14 @@ export default function FoundingReviewerApplyPage() {
             } else {
               setError('Your session expired. Please refresh the page and try again.');
             }
+            setLoading(false);
             return;
           }
           
           if (!refreshData.session) {
             console.error('[ReviewerApply] Session refresh returned no session');
             setError('Unable to verify your session. Please refresh the page and try again.');
+            setLoading(false);
             return;
           }
           
@@ -435,6 +442,7 @@ export default function FoundingReviewerApplyPage() {
         if (userError || !userData?.user) {
           console.error('[ReviewerApply] User verification failed:', userError);
           setError('Unable to verify your account. Please refresh the page and try again.');
+          setLoading(false);
           return;
         }
         

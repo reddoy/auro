@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../../../lib/supabase';
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -13,21 +13,9 @@ function AuthCallbackContent() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON;
+        console.log('[AuthCallback] Starting OAuth callback handling...');
         
-        if (!supabaseUrl || !supabaseKey) {
-          throw new Error('Supabase configuration missing');
-        }
-
-        const supabase = createClient(supabaseUrl, supabaseKey, {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true,
-          },
-        });
-
+        // Use the shared Supabase client instance
         // Handle the OAuth callback
         const { data, error } = await supabase.auth.getSession();
         
@@ -36,6 +24,7 @@ function AuthCallbackContent() {
         }
 
         if (data.session) {
+          console.log('[AuthCallback] Session found, user:', data.session.user.id);
           setStatus('success');
           setMessage('Successfully signed in!');
           
@@ -70,15 +59,17 @@ function AuthCallbackContent() {
               });
             }
           } catch (e) {
-            console.error('Failed to store user info:', e);
+            console.error('[AuthCallback] Failed to store user info:', e);
           }
           
           // Redirect to the intended destination or default page
           const redirectTo = searchParams.get('redirect_to') || '/request';
+          console.log('[AuthCallback] Redirecting to:', redirectTo);
           setTimeout(() => {
             router.push(redirectTo);
           }, 1500);
         } else {
+          console.error('[AuthCallback] No session found after authentication');
           throw new Error('No session found after authentication');
         }
       } catch (error: any) {
