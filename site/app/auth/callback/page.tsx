@@ -15,11 +15,15 @@ function AuthCallbackContent() {
       try {
         console.log('[AuthCallback] Starting OAuth callback handling...');
         
-        // Use the shared Supabase client instance
-        // Handle the OAuth callback
+        // Wait for Supabase to process the OAuth callback
+        // The session should be automatically extracted from URL params
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Get the session after OAuth processing
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
+          console.error('[AuthCallback] Session error:', error);
           throw error;
         }
 

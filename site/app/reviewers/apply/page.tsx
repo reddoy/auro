@@ -216,6 +216,24 @@ export default function FoundingReviewerApplyPage() {
     };
   }, []);
 
+  // Validate session when reaching step 4
+  useEffect(() => {
+    if (step === 4 && isGoogleAuthed) {
+      const validateSession = async () => {
+        try {
+          const { data: { session }, error } = await supabase.auth.getSession();
+          if (error || !session) {
+            console.error('[ReviewerApply] Session validation failed at step 4:', error);
+            setError('Authentication incomplete. Please click "Continue with Google" above to complete sign-in.');
+          }
+        } catch (e) {
+          console.error('[ReviewerApply] Session validation error:', e);
+        }
+      };
+      validateSession();
+    }
+  }, [step, isGoogleAuthed]);
+
   // Fetch reviewer count - only count completed reviewers
   useEffect(() => {
     const fetchReviewerCount = async () => {
@@ -391,6 +409,14 @@ export default function FoundingReviewerApplyPage() {
         return;
       }
       
+      // Validate session before submission
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        console.error('[ReviewerApply] No valid session at step 4:', sessionError);
+        setError('Authentication required. Please sign in again.');
+        return;
+      }
+      
       // Submit the application
       try {
         setLoading(true);
@@ -411,6 +437,20 @@ export default function FoundingReviewerApplyPage() {
         // If no session or error, try to refresh
         if (sessionError || !session) {
           console.log('[ReviewerApply] No valid session, attempting refresh...');
+          
+          // First, try to get user to see if we have any auth state
+          const { data: userData, error: userError } = await supabase.auth.getUser();
+          console.log('[ReviewerApply] User check:', { hasUser: !!userData?.user, userError: userError?.message });
+          
+          if (userData?.user) {
+            // We have a user but no session - this is the OAuth issue
+            console.log('[ReviewerApply] User exists but no session - OAuth callback issue');
+            setError('Authentication incomplete. Please click "Continue with Google" above to complete sign-in.');
+            setLoading(false);
+            return;
+          }
+          
+          // Try to refresh session
           const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
           
           if (refreshError) {
