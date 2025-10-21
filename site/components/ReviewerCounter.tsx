@@ -41,7 +41,7 @@ export default function ReviewerCounter({ maxReviewers = 100, className = '' }: 
             setCount(profileData?.length || 0);
           }
         } else {
-          setCount(data || 0);
+          setCount(data?.length || 0);
         }
       } catch (err) {
         console.error('Error fetching reviewer count:', err);
