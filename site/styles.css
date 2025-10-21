@@ -6017,15 +6017,48 @@ footer {
   /* Override button component whitespace-nowrap on mobile */
   button[class*="gradient"] {
     white-space: normal !important;
+    min-height: auto !important;
+    padding: 16px 20px !important;
   }
   
   button[class*="gradient"] a {
     white-space: normal !important;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    text-align: center;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 8px !important;
+    text-align: center !important;
+    width: 100% !important;
+  }
+  
+  button[class*="gradient"] a span {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    line-height: 1.4 !important;
+    display: block !important;
+  }
+  
+  /* Specific fix for the main CTA button */
+  .mobile-text-reveal button[class*="gradient"] {
+    min-height: auto !important;
+    padding: 20px 16px !important;
+  }
+  
+  .mobile-text-reveal button[class*="gradient"] a {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+  
+  /* Specific styling for mobile button text */
+  .mobile-button-text {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    line-height: 1.4 !important;
+    text-align: center !important;
+    display: block !important;
+    max-width: 100% !important;
   }
   
   .benefit-tag,
