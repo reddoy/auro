@@ -115,6 +115,11 @@ export default function FoundingReviewerApplyPage() {
     // Check if user is already authenticated and load existing profile data
     const checkAuthAndLoadProfile = async () => {
       try {
+        if (!supabase?.auth) {
+          console.error('[ReviewerApply] Supabase client or auth is null');
+          setError('Authentication service is not available. Please refresh the page.');
+          return;
+        }
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           // User is authenticated
@@ -236,6 +241,11 @@ export default function FoundingReviewerApplyPage() {
     if (step === 4 && isGoogleAuthed) {
       const validateSession = async () => {
         try {
+          if (!supabase?.auth) {
+            console.error('[ReviewerApply] Supabase client or auth is null');
+            setError('Authentication service is not available. Please refresh the page.');
+            return;
+          }
           const { data: { session }, error } = await supabase.auth.getSession();
           if (error || !session) {
             console.error('[ReviewerApply] Session validation failed at step 4:', error);
@@ -253,6 +263,10 @@ export default function FoundingReviewerApplyPage() {
   useEffect(() => {
     const fetchReviewerCount = async () => {
       try {
+        if (!supabase) {
+          console.error('[ReviewerApply] Supabase client is not available');
+          return;
+        }
         // Count only completed reviewers from profiles table
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -358,6 +372,11 @@ export default function FoundingReviewerApplyPage() {
       // Set status to pending when they start filling out the form
       if (signupStatus === 'not_started') {
         try {
+          if (!supabase?.auth) {
+            console.error('[ReviewerApply] Supabase client or auth is null');
+            setError('Authentication service is not available. Please refresh the page.');
+            return;
+          }
           const { data: { session } } = await supabase.auth.getSession();
           const token = session?.access_token;
           
@@ -443,6 +462,11 @@ export default function FoundingReviewerApplyPage() {
       // Profile picture and social handles step - submit application
       
       // Validate session before submission
+      if (!supabase?.auth) {
+        console.error('[ReviewerApply] Supabase client or auth is null');
+        setError('Authentication service is not available. Please refresh the page.');
+        return;
+      }
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !session) {
         console.error('[ReviewerApply] No valid session at step 4:', sessionError);

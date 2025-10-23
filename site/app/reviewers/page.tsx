@@ -31,6 +31,11 @@ export default function ReviewersIndexPage() {
     const fetchReviewers = async () => {
       try {
         setError('');
+        if (!supabase) {
+          console.error('Supabase client is not available');
+          setError('Unable to load reviewers. Please refresh the page.');
+          return;
+        }
         const { data, error } = await supabase
           .from('profiles')
           .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, bio, links')

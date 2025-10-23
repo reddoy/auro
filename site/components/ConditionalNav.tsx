@@ -17,6 +17,12 @@ export default function ConditionalNav() {
       try {
         setLoading(true);
         
+        if (!supabase) {
+          console.error('Supabase client is not available');
+          setLoading(false);
+          return;
+        }
+        
         // Try profiles table first since creators might not exist yet
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')

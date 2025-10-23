@@ -18,6 +18,11 @@ export default function ReviewerCounter({ maxReviewers = 100, className = '' }: 
       try {
         setError(null);
         
+        if (!supabase) {
+          console.error('Supabase client is not available');
+          return;
+        }
+        
         // Count reviewers including those who haven't verified email yet
         // This counts all profiles where is_reviewer = true OR reviewer_signup_status is not null
         const { data, error } = await supabase
