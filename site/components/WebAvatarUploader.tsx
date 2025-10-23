@@ -22,6 +22,54 @@ export default function WebAvatarUploader({
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatarUrl || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Function to crop image to square
+  const cropImageToSquare = useCallback((file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+
+        // Calculate square dimensions
+        const size = Math.min(img.width, img.height);
+        canvas.width = size;
+        canvas.height = size;
+
+        // Draw cropped image centered
+        ctx.drawImage(
+          img,
+          (img.width - size) / 2,
+          (img.height - size) / 2,
+          size,
+          size,
+          0,
+          0,
+          size,
+          size
+        );
+
+        // Convert to blob
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            reject(new Error('Could not create blob'));
+            return;
+          }
+          
+          const croppedFile = new File([blob], file.name, { type: file.type });
+          resolve(croppedFile);
+        }, file.type, 0.9);
+      };
+      
+      img.onerror = () => reject(new Error('Could not load image'));
+      img.src = URL.createObjectURL(file);
+    });
+  }, []);
+
   const handleFileSelect = useCallback(async (file: File) => {
     if (!file) return;
 
@@ -40,39 +88,47 @@ export default function WebAvatarUploader({
     try {
       setUploading(true);
 
-      // Create preview URL
-      const preview = URL.createObjectURL(file);
+      // Crop image to square for better circular display
+      const croppedFile = await cropImageToSquare(file);
+
+      // Create preview URL from cropped file
+      const preview = URL.createObjectURL(croppedFile);
       setPreviewUrl(preview);
 
-      // Upload to Supabase storage
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('category', 'avatar');
-      formData.append('uploadSessionId', `reviewer-signup-${Date.now()}`);
-
+      // Get signed upload URL
+      const uploadSessionId = `reviewer-signup-${Date.now()}`;
       const response = await fetch('/api/storage/signed-upload', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          contentType: file.type,
+          category: 'avatar',
+          uploadSessionId: uploadSessionId,
+        }),
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || 'Failed to get upload URL');
       }
 
       const { signedUrl, path, token } = await response.json();
 
-      // Upload file to signed URL
+      // Upload cropped file to signed URL
       const uploadResponse = await fetch(signedUrl, {
         method: 'PUT',
-        body: file,
+        body: croppedFile,
         headers: {
-          'Content-Type': file.type,
+          'Content-Type': croppedFile.type,
           'Authorization': `Bearer ${token}`,
         },
       });
 
       if (!uploadResponse.ok) {
-        throw new Error('File upload failed');
+        throw new Error(`Upload failed with status: ${uploadResponse.status}`);
       }
 
       // Generate display URL
@@ -81,12 +137,12 @@ export default function WebAvatarUploader({
       onAvatarChange(displayUrl, path);
     } catch (error) {
       console.error('Avatar upload error:', error);
-      alert('Failed to upload image. Please try again.');
+      alert(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setPreviewUrl(currentAvatarUrl || null);
     } finally {
       setUploading(false);
     }
-  }, [currentAvatarUrl, onAvatarChange]);
+  }, [currentAvatarUrl, onAvatarChange, cropImageToSquare]);
 
   const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -118,17 +174,27 @@ export default function WebAvatarUploader({
         >
           <CardContent className="p-0">
             <div 
-              className="relative overflow-hidden rounded-lg bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-dashed border-gray-600 hover:border-orange-500 transition-colors"
-              style={{ width: size, height: size }}
+              className="relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-dashed border-gray-600 hover:border-orange-500 transition-colors"
+              style={{ 
+                width: size, 
+                height: size,
+                borderRadius: '50%', // Make it circular
+                clipPath: 'circle(50%)' // Ensure perfect circle
+              }}
             >
               {previewUrl ? (
                 <img
                   src={previewUrl}
                   alt="Profile preview"
                   className="w-full h-full object-cover"
+                  style={{
+                    borderRadius: '50%', // Ensure the image is circular
+                    objectFit: 'cover',
+                    objectPosition: 'center'
+                  }}
                 />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400" style={{ borderRadius: '50%' }}>
                   <Camera className="w-8 h-8 mb-2" />
                   <span className="text-sm font-medium">Add Photo</span>
                 </div>

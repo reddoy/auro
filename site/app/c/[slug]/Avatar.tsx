@@ -7,7 +7,7 @@ export default function Avatar({ src, alt, size = 64 }: { src?: string | null; a
   const dimension = `${size}px`;
   const showImage = !!src && !error;
   return (
-    <div style={{ width: dimension, height: dimension, borderRadius: 12, overflow: 'hidden', background: '#780882' }}>
+    <div style={{ width: dimension, height: dimension, borderRadius: '50%', overflow: 'hidden', background: '#780882' }}>
       {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
