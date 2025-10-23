@@ -203,10 +203,9 @@ export default function CircularCropModal({
                     height: imageSize.height * scale,
                     left: `calc(50% + ${position.x}px)`,
                     top: `calc(50% + ${position.y}px)`,
-                    transform: 'translate(-50%, -50%)',
+                    transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
                     cursor: isDragging ? 'grabbing' : 'grab',
                     transformOrigin: 'center',
-                    transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
                     display: imageLoaded ? 'block' : 'none'
                   }}
                   onLoad={handleImageLoad}
