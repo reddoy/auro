@@ -127,7 +127,7 @@ export default function RequestPage() {
           checkAuth();
 
           // Listen for auth changes
-          const { data: { subscription } } = client.auth.onAuthStateChange((event: any, session) => {
+          const { data: { subscription } } = client.auth.onAuthStateChange((event: any, session: any) => {
             const isRealUser = !!session?.user && (session.user as any)?.app_metadata?.provider !== 'anon';
             setIsAuthenticated(isRealUser);
             if (isRealUser && currentStep === 'auth') {
