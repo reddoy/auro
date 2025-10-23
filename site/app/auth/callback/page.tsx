@@ -20,6 +20,12 @@ function AuthCallbackContent() {
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Get the session after OAuth processing
+        if (!supabase?.auth) {
+          console.error('[AuthCallback] Supabase client or auth is null');
+          setStatus('error');
+          setMessage('Authentication service is not available. Please refresh the page.');
+          return;
+        }
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {

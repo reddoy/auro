@@ -24,6 +24,11 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
       return;
     }
 
+    if (!supabase?.auth) {
+      setError('Authentication service is not available. Please refresh the page.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -85,6 +90,11 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
       return;
     }
 
+    if (!supabase?.auth) {
+      setError('Authentication service is not available. Please refresh the page.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -118,6 +128,11 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
   };
 
   const handleGoogleAuth = async () => {
+    if (!supabase?.auth) {
+      setError('Authentication service is not available. Please refresh the page.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 

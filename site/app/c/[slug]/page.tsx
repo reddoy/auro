@@ -13,6 +13,11 @@ function isUuidLike(value: string): boolean {
 }
 
 async function getCreator(slug: string) {
+  if (!supabase) {
+    console.error('Supabase client is not available');
+    return null;
+  }
+  
   // Try by username first
   let { data, error } = await supabase
     .from('profiles')

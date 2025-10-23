@@ -90,6 +90,11 @@ export default function RequestPage() {
         try {
           // Use the existing supabase client from lib instead of creating a new one
           const client = supabase;
+          if (!client) {
+            console.error('Supabase client is null - check environment variables');
+            setSupabase(null);
+            return;
+          }
           setSupabase(client);
           // Generate or reuse a local upload session id for temp storage grouping
           try {
@@ -105,6 +110,11 @@ export default function RequestPage() {
           // Check if user is already authenticated
           const checkAuth = async () => {
             try {
+              if (!client?.auth) {
+                console.error('Supabase client or auth is null');
+                setIsAuthenticated(false);
+                return;
+              }
               const { data: { user } } = await client.auth.getUser();
               
               
@@ -127,6 +137,10 @@ export default function RequestPage() {
           checkAuth();
 
           // Listen for auth changes
+          if (!client?.auth) {
+            console.error('Cannot set up auth listener - Supabase client or auth is null');
+            return;
+          }
           const { data: { subscription } } = client.auth.onAuthStateChange((event: any, session: any) => {
             const isRealUser = !!session?.user && (session.user as any)?.app_metadata?.provider !== 'anon';
             setIsAuthenticated(isRealUser);

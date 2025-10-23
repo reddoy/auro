@@ -49,6 +49,11 @@ export default function FoundingReviewerApplyPage() {
           // Wait a moment for session to be established
           await new Promise(resolve => setTimeout(resolve, 500));
           
+          if (!supabase?.auth) {
+            console.error('[ReviewerApply] Supabase client or auth is null');
+            setError('Authentication service is not available. Please refresh the page.');
+            return;
+          }
           const { data: { session }, error } = await supabase.auth.getSession();
           
           if (error || !session) {
@@ -181,6 +186,11 @@ export default function FoundingReviewerApplyPage() {
     
     checkAuthAndLoadProfile();
     
+    if (!supabase?.auth) {
+      console.error('[ReviewerApply] Cannot set up auth listener - Supabase client or auth is null');
+      return;
+    }
+    
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('[ReviewerApply] Auth state change:', event, !!session);
       
@@ -311,6 +321,11 @@ export default function FoundingReviewerApplyPage() {
         }));
       } catch {}
 
+      if (!supabase?.auth) {
+        setError('Authentication service is not available. Please refresh the page.');
+        return;
+      }
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -372,6 +387,13 @@ export default function FoundingReviewerApplyPage() {
       if (!passwordsMatch) { setError('Passwords do not match'); return; }
       try {
         setLoading(true);
+        
+        if (!supabase?.auth) {
+          setError('Authentication service is not available. Please refresh the page.');
+          setLoading(false);
+          return;
+        }
+        
         const fullName = `${firstName} ${lastName}`.trim();
         const { data, error } = await supabase.auth.signUp({
           email,
