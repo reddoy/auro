@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../../lib/supabase';
 
 // Step components
 import IntroStep from './components/IntroStep';
@@ -88,7 +88,8 @@ export default function RequestPage() {
       
       if (supabaseUrl && supabaseKey) {
         try {
-          const client = createClient(supabaseUrl, supabaseKey);
+          // Use the existing supabase client from lib instead of creating a new one
+          const client = supabase;
           setSupabase(client);
           // Generate or reuse a local upload session id for temp storage grouping
           try {

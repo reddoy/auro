@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Image, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePathname } from 'expo-router';
 import Colors from '@/constants/Colors';
 
 interface LogoHeaderProps {
@@ -13,11 +14,15 @@ export default function LogoHeader({
   showLogo = true 
 }: LogoHeaderProps) {
   const insets = useSafeAreaInsets();
+  const pathname = usePathname();
+
+  // Don't render anything on auth pages
+  if (pathname?.startsWith('/auth')) {
+    return null;
+  }
 
   if (!showLogo) {
-    return (
-      <View style={[styles.safeAreaSpacer, { height: insets.top, backgroundColor }]} />
-    );
+    return null;
   }
 
   return (

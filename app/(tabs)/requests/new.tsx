@@ -47,8 +47,7 @@ export default function DiscoverReviewersScreen() {
     const q = search.trim().toLowerCase();
     if (!q) return reviewers;
     return reviewers.filter((r) =>
-      (r.displayName || r.username || '').toLowerCase().includes(q) ||
-      (r.skills || []).join(',').toLowerCase().includes(q)
+      (r.displayName || r.username || '').toLowerCase().includes(q)
     );
   }, [reviewers, search]);
 
@@ -61,27 +60,24 @@ export default function DiscoverReviewersScreen() {
       <RNView style={styles.avatarWrap}>
         <Avatar uri={avatarMap[item.id] || item.avatarUrl || undefined} name={item.displayName} size={56} />
       </RNView>
-      <View style={styles.rowInfo}>
+      <RNView style={styles.rowInfo}>
         <TouchableOpacity onPress={() => openReviewerProfile(item)} accessibilityRole="link" accessibilityLabel={`Open ${item.displayName || item.username} profile`}>
           <Text style={styles.rowName}>{item.displayName || item.username || 'Reviewer'}</Text>
         </TouchableOpacity>
-        {!!item.skills?.length && (
-          <Text style={styles.rowSkills} numberOfLines={1}>{item.skills.join(', ')}</Text>
-        )}
-      </View>
+      </RNView>
     </RNView>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 20 }]}> 
+    <View style={[styles.container, { paddingTop: 0 }]}>
+      <View style={[styles.header, { paddingTop: 20 }]}> 
         <Text style={styles.title}>Discover Reviewers</Text>
       </View>
       <RNView style={styles.searchWrap}>
         <TextInput
           value={search}
           onChangeText={setSearch}
-          placeholder="Search by name, username, or skills"
+          placeholder="Search by name or username"
           placeholderTextColor={Colors.brand.textSecondary}
           style={styles.searchInput}
           accessibilityLabel="Search reviewers"
@@ -91,14 +87,14 @@ export default function DiscoverReviewersScreen() {
         data={filtered}
         keyExtractor={(it) => it.id}
         renderItem={renderItem}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 24 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyText}>{loading ? 'Loading…' : 'No reviewers found'}</Text>
           </View>
         }
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

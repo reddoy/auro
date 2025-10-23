@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { StyleSheet, TouchableOpacity, Alert, View as RNView, FlatList, Platform } from 'react-native';
+import { StyleSheet, TouchableOpacity, Alert, View as RNView, FlatList, Platform, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -298,15 +298,22 @@ export default function RequestsScreen() {
   const renderItem = renderReceivedItem;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: 0 }]}>
       <FlatList
         data={data}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        refreshing={loading}
-        onRefresh={refreshData}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={refreshData}
+            tintColor={Colors.brand.textPrimary}
+            colors={[Colors.brand.accentMagenta]}
+            progressBackgroundColor={Colors.brand.background}
+          />
+        }
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: 0, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24, paddingHorizontal: 16, paddingTop: 0 }}
         ListHeaderComponent={(
           <>
             <View style={styles.headerPlain}>
@@ -357,7 +364,7 @@ export default function RequestsScreen() {
           </View>
         )}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -383,8 +390,8 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   headerPlain: {
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingTop: 8,
+    paddingBottom: 16,
     paddingHorizontal: 0,
     backgroundColor: 'transparent',
   },
@@ -512,7 +519,7 @@ const styles = StyleSheet.create({
   },
   discoverButtonContainer: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 8,
     marginBottom: 16,
     alignItems: 'center',
     justifyContent: 'center',

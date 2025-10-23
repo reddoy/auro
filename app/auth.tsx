@@ -268,16 +268,12 @@ export default function AuthScreen() {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={12}>
       <View style={styles.container}>
       <StatusBar style="light" translucent />
-      <ExpoLinearGradient
-        colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-        style={[styles.backgroundGradient, Platform.OS === 'web' && styles.backgroundGradientWeb]}
-      />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
           { 
             flexGrow: 1, 
-            justifyContent: isCompact ? 'center' : 'flex-start', 
+            justifyContent: 'center', 
             paddingBottom: isCompact ? insets.bottom : 0 
           },
           Platform.OS === 'web' && styles.scrollContentWeb
@@ -288,18 +284,6 @@ export default function AuthScreen() {
         keyboardDismissMode={Platform.select({ ios: 'interactive', default: 'on-drag' })}
         contentInsetAdjustmentBehavior="never"
       >
-      <View
-        style={[
-          styles.headerPlain,
-          isCompact && styles.headerPlainCompact,
-          Platform.OS === 'web' && styles.headerWeb,
-          { paddingTop: 16 },
-        ]}
-      >
-        <View style={styles.headerContent}>
-          <Text style={[styles.tagline, isCompact && styles.taglineCompact]}>Your Aura, Amplified</Text>
-        </View>
-      </View>
 
       <View style={[
         styles.form,
@@ -508,17 +492,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.brand.background,
   },
-  backgroundGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    opacity: 0,
-  },
-  backgroundGradientWeb: {
-    opacity: 0.15,
-  },
   scrollView: {
     flex: 1,
     backgroundColor: 'transparent',
@@ -542,23 +515,6 @@ const styles = StyleSheet.create({
     paddingTop: 28,
     paddingBottom: 12,
   },
-  headerPlain: {
-    paddingBottom: 12,
-    backgroundColor: 'transparent',
-  },
-  headerPlainCompact: {
-    paddingBottom: 8,
-  },
-  headerWeb: {
-    maxWidth: 480,
-    alignSelf: 'center',
-    width: '100%',
-  },
-  headerContent: {
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    width: '100%',
-  },
   logoImage: {
     width: 260,
     height: 104,
@@ -573,20 +529,6 @@ const styles = StyleSheet.create({
     width: 180,
     height: 72,
     marginBottom: 10,
-  },
-  tagline: {
-    fontSize: 22,
-    color: Colors.brand.textOnGradient,
-    textAlign: 'center',
-    opacity: 0.9,
-    fontWeight: '500',
-    fontFamily: 'Inter_600SemiBold',
-    textShadowColor: 'rgba(0, 0, 0, 0.1)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  taglineCompact: {
-    fontSize: 18,
   },
   form: {
     margin: 28,

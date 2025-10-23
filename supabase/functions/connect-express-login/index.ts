@@ -45,6 +45,7 @@ serve(async (req) => {
       .from("profiles")
       .select("stripe_connect_account_id")
       .eq("id", reviewerId)
+      .eq("is_reviewer", true)
       .maybeSingle();
     if (profErr) return json({ error: profErr.message }, 400);
     const connectAccountId = (profile as any)?.stripe_connect_account_id as string | undefined;

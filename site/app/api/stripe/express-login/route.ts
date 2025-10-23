@@ -12,12 +12,13 @@ export async function POST(req: Request) {
     if (!url || !key) return new Response(JSON.stringify({ error: 'Server misconfigured' }), { status: 500 });
     const admin = createClient(url, key);
 
-    const { data: creator } = await admin
-      .from('creators')
+    const { data: profile } = await admin
+      .from('profiles')
       .select('stripe_connect_account_id')
-      .eq('profile_id', reviewerId)
+      .eq('id', reviewerId)
+      .eq('is_reviewer', true)
       .maybeSingle();
-    const connectAccountId = (creator as any)?.stripe_connect_account_id as string | undefined;
+    const connectAccountId = (profile as any)?.stripe_connect_account_id as string | undefined;
     if (!connectAccountId) {
       return new Response(JSON.stringify({ error: 'Reviewer is not connected to Stripe' }), { status: 400 });
     }

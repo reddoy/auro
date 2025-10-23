@@ -35,35 +35,42 @@ serve(async (req) => {
       .eq("id", reviewerId)
       .maybeSingle();
 
-    // Ensure creators row exists
-    let creatorsRow: any = null;
+    // Check if profile exists and is a reviewer
+    let profileRow: any = null;
     try {
       const existing = await admin
-        .from("creators")
-        .select("id, profile_id, slug, stripe_connect_account_id")
-        .eq("profile_id", reviewerId)
+        .from("profiles")
+        .select("id, username, stripe_connect_account_id, is_reviewer")
+        .eq("id", reviewerId)
         .maybeSingle();
-      creatorsRow = existing.data || null;
-      if (!creatorsRow) {
-        const slug = (profile as any)?.username || reviewerId;
-        const insert = await admin
-          .from("creators")
-          .insert([{ profile_id: reviewerId, slug }])
-          .select("id, profile_id, slug, stripe_connect_account_id")
-          .single();
-        creatorsRow = insert.data || null;
+      profileRow = existing.data || null;
+      if (!profileRow) {
+        return json({ error: "Profile not found" }, 404);
+      }
+      if (!(profileRow as any)?.is_reviewer) {
+        return json({ error: "User is not a reviewer" }, 400);
       }
     } catch {}
 
-    let connectAccountId = creatorsRow?.stripe_connect_account_id as string | undefined;
+    let connectAccountId = profileRow?.stripe_connect_account_id as string | undefined;
     if (!connectAccountId) {
       const acct = await stripe.accounts.create({
         type: "express",
         email: (profile as any)?.email || undefined,
-        capabilities: { transfers: { requested: true } },
+        capabilities: {
+          transfers: { requested: true },
+          card_payments: { requested: true },
+        },
+        settings: {
+          payouts: {
+            schedule: {
+              interval: "daily",
+            },
+          },
+        },
       });
       connectAccountId = acct.id;
-      await admin.from("creators").update({ stripe_connect_account_id: connectAccountId }).eq("profile_id", reviewerId);
+      await admin.from("profiles").update({ stripe_connect_account_id: connectAccountId }).eq("id", reviewerId);
     }
 
     const siteUrl = Deno.env.get("NEXT_PUBLIC_SITE_URL") || "https://www.appauro.com";

@@ -192,7 +192,7 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
 
       {error && (
         <div className="error-state">
-          <p style={{ color: 'red' }}>Error: {error}</p>
+          <p style={{ color: '#ff6b6b' }}>Error: {error}</p>
           <p>Please check the console for more details.</p>
         </div>
       )}
@@ -205,7 +205,7 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
       )}
 
       {creators.length > 0 && (
-        <div className="debug-info" style={{ fontSize: '12px', color: '#888', marginTop: '10px' }}>
+        <div className="debug-info" style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginTop: '10px' }}>
           Debug: {creators.length} total reviewers, {filteredCreators.length} filtered
           {searchTerm && ` (searching for: "${searchTerm}")`}
           <br />

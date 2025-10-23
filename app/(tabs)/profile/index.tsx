@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { StyleSheet, TouchableOpacity, Alert, FlatList, Platform, Linking, Switch, View as RNView, Image, Modal, TextInput } from 'react-native';
+import { StyleSheet, TouchableOpacity, Alert, FlatList, Platform, Linking, Switch, View as RNView, Image, Modal, TextInput, RefreshControl, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -25,6 +25,7 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [stripePortalUrl, setStripePortalUrl] = useState<string | null>(null);
   const [earnings, setEarnings] = useState({ total: 0, count: 0, average: 0, pendingAmount: 0, pendingCount: 0 });
   
@@ -73,7 +74,7 @@ export default function ProfileScreen() {
     run();
   }, []);
 
-  // Generate a signed URL for private bucket avatars (always attempt to re-sign even if https)
+  // Generate a signed URL for private bucket avatars (only reload if URL actually changed)
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
@@ -82,17 +83,20 @@ export default function ProfileScreen() {
         if (!cancelled) setAvatarUri(undefined);
         return;
       }
-      // Always try to re-sign (handles stored public/signed Supabase URLs and bucket paths)
-      let finalUri: string | undefined = raw;
-      try {
-        const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
-        if (signed) finalUri = signed;
-      } catch {}
-      if (!cancelled) setAvatarUri(finalUri || undefined);
+      // Only reload avatar if we don't have one yet or if the URL actually changed
+      if (!avatarUri || !avatarUri.includes(raw.split('/').pop() || '')) {
+        // Always try to re-sign (handles stored public/signed Supabase URLs and bucket paths)
+        let finalUri: string | undefined = raw;
+        try {
+          const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
+          if (signed) finalUri = signed;
+        } catch {}
+        if (!cancelled) setAvatarUri(finalUri || undefined);
+      }
     };
     run();
     return () => { cancelled = true; };
-  }, [profile?.avatar_url]);
+  }, [profile?.avatar_url, avatarUri]);
 
   // Debug: expose the current access token and user id when the profile tab loads
   useEffect(() => {
@@ -237,26 +241,41 @@ export default function ProfileScreen() {
       }
     } finally {
       setRefreshing(false);
+      setInitialLoad(false);
     }
   }, []);
 
   // Refresh profile when screen gains focus so recent changes (e.g., become reviewer) show up
   useFocusEffect(
     useCallback(() => {
-      onRefresh();
-    }, [onRefresh])
+      // Only refresh if not initial load to prevent spacing issues
+      if (!initialLoad) {
+        onRefresh();
+      }
+    }, [onRefresh, initialLoad])
   );
 
   
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: 0 }]}>
       <FlatList
         data={[]}
         keyExtractor={(item) => String(item)}
         renderItem={() => null}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
+        refreshControl={
+          !initialLoad && !refreshing ? (
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={Colors.brand.textPrimary}
+              colors={[Colors.brand.accentMagenta]}
+              progressBackgroundColor={Colors.brand.background}
+            />
+          ) : undefined
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24, paddingHorizontal: 16, paddingTop: 0 }}
         ListHeaderComponent={(
           <>
             <View style={styles.header}>
@@ -293,7 +312,9 @@ export default function ProfileScreen() {
                     />
                   </View>
                   <View style={styles.userInfo}>
-                    <Text style={styles.userName}>{profile?.full_name || profile?.username || 'User'}</Text>
+                    <Text style={styles.userName}>
+                      {profile ? (profile.full_name || profile.username || 'User') : 'Loading...'}
+                    </Text>
                     {!!profile?.created_at && (
                       <Text style={styles.userEmail}>Joined {new Date(profile.created_at).toLocaleDateString()}</Text>
                     )}
@@ -629,7 +650,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
   scrollView: { flex: 1, backgroundColor: 'transparent' },
-  header: { paddingTop: 60, paddingBottom: 40, paddingHorizontal: 0, backgroundColor: Colors.brand.cardBackground, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 24, elevation: 12 },
+  header: { paddingTop: 20, paddingBottom: 40, paddingHorizontal: 0, backgroundColor: Colors.brand.cardBackground, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 24, elevation: 12 },
   headerContent: { paddingHorizontal: 20, backgroundColor: 'transparent', width: '100%' },
   profileSection: { flexDirection: 'row', alignItems: 'center', marginBottom: 24, backgroundColor: 'transparent' },
   avatarContainer: { position: 'relative', marginRight: 20, backgroundColor: 'transparent' },

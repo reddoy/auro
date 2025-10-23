@@ -44,98 +44,78 @@ export async function POST(req: Request) {
       const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
       if (url && key) {
         const admin = createClient(url, key);
-        // Try creators_public.price_cents by slug first, and fetch connect account id
+        // Try profiles table by slug first, and fetch connect account id
         if (creatorSlug) {
-          const { data: cp } = await admin
-            .from('creators_public')
-            .select('price_cents, stripe_connect_account_id, profile_id')
-            .eq('slug', creatorSlug)
+          const { data: profile } = await admin
+            .from('profiles')
+            .select('id, hourly_rate, stripe_connect_account_id, created_at')
+            .eq('username', creatorSlug)
+            .eq('is_reviewer', true)
             .maybeSingle();
-          const pc = (cp as any)?.price_cents;
-          if (typeof pc === 'number' && pc > 0) {
-            priceCents = pc;
-          }
-          connectAccountId = (cp as any)?.stripe_connect_account_id || undefined;
-          // Compute founders discount eligibility: first 100 creators by created_at
-          try {
-            const { data: creatorRow } = await admin
-              .from('creators')
-              .select('created_at')
-              .eq('profile_id', (cp as any)?.profile_id)
-              .maybeSingle();
-            if (creatorRow && (creatorRow as any)?.created_at) {
-              const createdAt = (creatorRow as any).created_at;
-              const { count } = await admin
-                .from('creators')
-                .select('id', { count: 'exact', head: true })
-                .lte('created_at', createdAt);
-              auroFeeBps = typeof count === 'number' && count <= 100 ? 1500 : 2000;
+          if (profile) {
+            const hr = Number((profile as any)?.hourly_rate);
+            if (!isNaN(hr) && hr > 0) {
+              priceCents = Math.round(hr * 100); // Convert dollars to cents
             }
-          } catch {}
+            connectAccountId = (profile as any)?.stripe_connect_account_id || undefined;
+            // Compute founders discount eligibility: first 100 reviewers by created_at
+            try {
+              if ((profile as any)?.created_at) {
+                const createdAt = (profile as any).created_at;
+                const { count } = await admin
+                  .from('profiles')
+                  .select('id', { count: 'exact', head: true })
+                  .eq('is_reviewer', true)
+                  .lte('created_at', createdAt);
+                auroFeeBps = typeof count === 'number' && count <= 100 ? 1500 : 2000;
+              }
+            } catch {}
+          }
         }
-        // If still default, try creators_public by profile_id
+        // If still default, try profiles by profile_id
         if (priceCents === 1000 && resolvedCreatorId) {
-          const { data: cp2 } = await admin
-            .from('creators_public')
-            .select('price_cents, stripe_connect_account_id')
-            .eq('profile_id', resolvedCreatorId)
+          const { data: profile2 } = await admin
+            .from('profiles')
+            .select('hourly_rate, stripe_connect_account_id, created_at')
+            .eq('id', resolvedCreatorId)
+            .eq('is_reviewer', true)
             .maybeSingle();
-          const pc2 = (cp2 as any)?.price_cents;
-          if (typeof pc2 === 'number' && pc2 > 0) {
-            priceCents = pc2;
-          }
-          connectAccountId = (cp2 as any)?.stripe_connect_account_id || undefined;
-          // Fallback founders eligibility if we did not compute above
-          try {
-            const { data: creatorRow } = await admin
-              .from('creators')
-              .select('created_at')
-              .eq('profile_id', resolvedCreatorId)
-              .maybeSingle();
-            if (!auroFeeBps && creatorRow && (creatorRow as any)?.created_at) {
-              const createdAt = (creatorRow as any).created_at;
-              const { count } = await admin
-                .from('creators')
-                .select('id', { count: 'exact', head: true })
-                .lte('created_at', createdAt);
-              auroFeeBps = typeof count === 'number' && count <= 100 ? 1500 : 2000;
+          if (profile2) {
+            const hr2 = Number((profile2 as any)?.hourly_rate);
+            if (!isNaN(hr2) && hr2 > 0) {
+              priceCents = Math.round(hr2 * 100); // Convert dollars to cents
             }
-          } catch {}
-        }
-        // Fallback to profiles.hourly_rate (dollars) → cents
-        if (priceCents === 1000) {
-          if (resolvedCreatorId) {
-            const { data: profById } = await admin
-              .from('profiles')
-              .select('hourly_rate')
-              .eq('id', resolvedCreatorId)
-              .maybeSingle();
-            const hr = Number((profById as any)?.hourly_rate);
-            if (!isNaN(hr) && hr > 0) priceCents = Math.round(hr * 100);
-          } else if (creatorSlug) {
-            const { data: profBySlug } = await admin
-              .from('profiles')
-              .select('hourly_rate')
-              .eq('username', creatorSlug)
-              .maybeSingle();
-            const hr2 = Number((profBySlug as any)?.hourly_rate);
-            if (!isNaN(hr2) && hr2 > 0) priceCents = Math.round(hr2 * 100);
+            connectAccountId = (profile2 as any)?.stripe_connect_account_id || undefined;
+            // Fallback founders eligibility if we did not compute above
+            try {
+              if (!auroFeeBps && (profile2 as any)?.created_at) {
+                const createdAt = (profile2 as any).created_at;
+                const { count } = await admin
+                  .from('profiles')
+                  .select('id', { count: 'exact', head: true })
+                  .eq('is_reviewer', true)
+                  .lte('created_at', createdAt);
+                auroFeeBps = typeof count === 'number' && count <= 100 ? 1500 : 2000;
+              }
+            } catch {}
           }
         }
-        // If connect account not found yet, try creators table by profile id
+        // If connect account not found yet, try profiles table by profile id
         if (!connectAccountId && resolvedCreatorId) {
           try {
-            const { data: c } = await admin
-              .from('creators')
+            const { data: profile } = await admin
+              .from('profiles')
               .select('stripe_connect_account_id, created_at')
-              .eq('profile_id', resolvedCreatorId)
+              .eq('id', resolvedCreatorId)
+              .eq('is_reviewer', true)
               .maybeSingle();
-            connectAccountId = (c as any)?.stripe_connect_account_id || undefined;
-            if (!auroFeeBps && c && (c as any)?.created_at) {
+            connectAccountId = (profile as any)?.stripe_connect_account_id || undefined;
+            if (!auroFeeBps && profile && (profile as any)?.created_at) {
               const { count } = await admin
-                .from('creators')
+                .from('profiles')
                 .select('id', { count: 'exact', head: true })
-                .lte('created_at', (c as any).created_at);
+                .eq('is_reviewer', true)
+                .lte('created_at', (profile as any).created_at);
               auroFeeBps = typeof count === 'number' && count <= 100 ? 1500 : 2000;
             }
           } catch {}
@@ -265,6 +245,9 @@ export async function POST(req: Request) {
 
     // Compute application fee from auroFeeBps
     const applicationFeeCents = Math.floor((priceCents * (auroFeeBps || 2000)) / 10000);
+    
+    // Ensure application fee doesn't exceed the total amount
+    const finalApplicationFeeCents = Math.min(applicationFeeCents, priceCents - 50); // Leave at least 50 cents for the creator
 
     // If we have a connected account, create a Direct Charge (session created on connected account)
     // so Stripe fees are charged to the connected account and the platform collects the application fee.
@@ -284,7 +267,10 @@ export async function POST(req: Request) {
       ],
       payment_intent_data: connectAccountId
         ? {
-            application_fee_amount: applicationFeeCents,
+            application_fee_amount: finalApplicationFeeCents,
+            transfer_data: {
+              destination: connectAccountId,
+            },
           }
         : undefined,
       metadata: {
@@ -292,6 +278,8 @@ export async function POST(req: Request) {
         creator_id: resolvedCreatorId || '',
         creator_slug: creatorSlug || '',
         upload_session_id: uploadSessionId || '',
+        auro_fee_cents: finalApplicationFeeCents.toString(),
+        auro_fee_bps: (auroFeeBps || 2000).toString(),
       },
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com'}/checkout/success?rid={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com'}/checkout/cancel`,
@@ -311,7 +299,7 @@ export async function POST(req: Request) {
           .from('requests')
           .update({
             amount_cents: priceCents,
-            application_fee_cents: applicationFeeCents,
+            application_fee_cents: finalApplicationFeeCents,
             auro_fee_bps: auroFeeBps || 2000,
             stripe_connect_account_id: connectAccountId || null,
           })

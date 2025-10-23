@@ -23,6 +23,7 @@ export async function POST(req: Request) {
           let stripeFeeCents: number | undefined = undefined;
           let netAmountCents: number | undefined = undefined;
           let amountCents: number | undefined = undefined;
+          let applicationFeeCents: number | undefined = undefined;
           try {
             const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : (session.payment_intent as any)?.id;
             if (paymentIntentId) {
@@ -30,6 +31,9 @@ export async function POST(req: Request) {
                 ? await stripe.paymentIntents.retrieve(paymentIntentId, { stripeAccount: stripeAccountId })
                 : await stripe.paymentIntents.retrieve(paymentIntentId);
               amountCents = typeof pi.amount === 'number' ? pi.amount : undefined;
+              applicationFeeCents = typeof pi.application_fee_amount === 'number' ? pi.application_fee_amount : undefined;
+              
+              console.log(`[stripe-webhook] PaymentIntent ${paymentIntentId}: amount=${amountCents}, application_fee=${applicationFeeCents}, stripeAccount=${stripeAccountId}`);
               // List charges by payment_intent instead of reading from pi.charges (more stable types)
               const chargeList = stripeAccountId
                 ? await stripe.charges.list({ payment_intent: paymentIntentId, limit: 1 }, { stripeAccount: stripeAccountId })
@@ -47,6 +51,8 @@ export async function POST(req: Request) {
                   // balance transaction amounts are in the smallest currency unit
                   stripeFeeCents = typeof balTx.fee === 'number' ? balTx.fee : undefined;
                   netAmountCents = typeof balTx.net === 'number' ? balTx.net : undefined;
+                  
+                  console.log(`[stripe-webhook] Balance transaction ${balTxId}: fee=${stripeFeeCents}, net=${netAmountCents}`);
                 }
               }
             }
@@ -69,6 +75,7 @@ export async function POST(req: Request) {
                   stripe_fee_cents: typeof stripeFeeCents === 'number' ? stripeFeeCents : null,
                   net_amount_cents: typeof netAmountCents === 'number' ? netAmountCents : null,
                   amount_cents: typeof amountCents === 'number' ? amountCents : undefined,
+                  application_fee_cents: typeof applicationFeeCents === 'number' ? applicationFeeCents : null,
                 })
                 .eq('id', requestId);
 

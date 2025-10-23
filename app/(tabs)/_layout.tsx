@@ -1,7 +1,7 @@
 import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs, useRouter, usePathname } from 'expo-router';
-import { Pressable, View, Platform } from 'react-native';
+import { Tabs } from 'expo-router';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 
@@ -21,16 +21,6 @@ function TabBarIcon(props: {
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  // Web-specific navigation handling
-  const handleTabPress = (tabName: string) => {
-    if (Platform.OS === 'web') {
-      // Force navigation on web to ensure it works
-      router.push(`/(tabs)/${tabName}` as any);
-    }
-  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -90,15 +80,6 @@ export default function TabLayout() {
           title: 'My Reviews',
           headerShown: false,
           tabBarIcon: ({ color }) => <TabBarIcon name="star" color={color} />,
-          tabBarButton: Platform.OS === 'web' ? (props) => (
-            <Pressable
-              {...props}
-              onPress={() => handleTabPress('requests')}
-              style={props.style}
-            >
-              {props.children}
-            </Pressable>
-          ) : undefined,
         }}
       />
       <Tabs.Screen
@@ -106,15 +87,6 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
-          tabBarButton: Platform.OS === 'web' ? (props) => (
-            <Pressable
-              {...props}
-              onPress={() => handleTabPress('profile')}
-              style={props.style}
-            >
-              {props.children}
-            </Pressable>
-          ) : undefined,
         }}
         />
       </Tabs>

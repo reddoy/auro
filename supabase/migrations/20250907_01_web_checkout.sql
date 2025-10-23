@@ -72,4 +72,16 @@ join public.profiles p on p.id = c.profile_id;
 
 -- Ensure RLS permissions are handled at table level as in existing project
 
+-- Enable RLS on creators table
+ALTER TABLE public.creators ENABLE ROW LEVEL SECURITY;
 
+-- RLS policies for creators table
+CREATE POLICY "Creators can view all creators" ON public.creators FOR SELECT USING (true);
+CREATE POLICY "Users can insert their own creator profile" ON public.creators FOR INSERT WITH CHECK (auth.uid() = profile_id);
+CREATE POLICY "Users can update their own creator profile" ON public.creators FOR UPDATE USING (auth.uid() = profile_id);
+CREATE POLICY "Users can delete their own creator profile" ON public.creators FOR DELETE USING (auth.uid() = profile_id);
+
+-- Grant necessary permissions
+GRANT SELECT ON public.creators TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON public.creators TO authenticated;
+GRANT SELECT ON public.creators_public TO anon, authenticated;

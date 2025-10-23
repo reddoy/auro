@@ -172,7 +172,7 @@ export default function ProfileSettingsScreen() {
   return (
     <View style={styles.container}>
       {/* Custom Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+      <View style={[styles.header, { paddingTop: 12 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backButtonText}>‹</Text>
         </TouchableOpacity>
