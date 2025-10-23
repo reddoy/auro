@@ -398,7 +398,7 @@ export default function ProfileScreen() {
               {/* Reviewer Status Toggle */}
               <View style={styles.reviewerStatusRow}>
                 <Text style={styles.reviewerStatusLabel}>Reviewer Status</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'transparent' }}>
+                <View style={styles.reviewerStatusControls}>
                   <View style={[styles.statusIndicator, profile?.is_reviewer && styles.statusIndicatorActive]}>
                     <Text style={[styles.statusIndicatorText, profile?.is_reviewer && styles.statusIndicatorTextActive]}>
                       {profile?.is_reviewer ? '● Active' : '● Inactive'}
@@ -421,6 +421,7 @@ export default function ProfileScreen() {
                     }}
                     trackColor={{ false: '#3e3e3e', true: '#10b981' }}
                     thumbColor={profile?.is_reviewer ? '#ffffff' : '#f4f3f4'}
+                    style={styles.reviewerSwitch}
                   />
                 </View>
               </View>
@@ -429,7 +430,7 @@ export default function ProfileScreen() {
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
                     <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Share Your Reviewer Profile</Text>
                     <View style={styles.priceCard}>
-                      <Text style={[styles.priceText, { flex: 1, marginRight: 12, fontSize: 14 }]} numberOfLines={1} ellipsizeMode="middle">
+                      <Text style={styles.priceText} numberOfLines={1} ellipsizeMode="middle">
                         {`appauro.com/${profile.username || profile.id}`}
                       </Text>
                       <TouchableOpacity onPress={handleCopyReviewerLink} accessibilityLabel="Copy reviewer link" style={styles.copyLinkButton}>
@@ -681,16 +682,16 @@ const styles = StyleSheet.create({
   statCard: { alignItems: 'center', flex: 1, backgroundColor: 'transparent' },
   statNumber: { fontSize: 26, fontWeight: 'bold', color: Colors.brand.accentMagenta, marginBottom: 6 },
   statLabel: { fontSize: 13, color: Colors.brand.textSecondary, textAlign: 'center', fontWeight: '500' },
-  bioSection: { margin: 24, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, padding: 28, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 12, borderWidth: 2, borderColor: Colors.brand.accentOrange, overflow: 'hidden' },
+  bioSection: { margin: 16, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, padding: 20, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 12, borderWidth: 2, borderColor: Colors.brand.accentOrange, overflow: 'hidden' },
   bioText: { fontSize: 18, color: Colors.brand.textSecondary, lineHeight: 26 },
-  actionsSection: { margin: 24, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 8, borderWidth: 2, borderColor: Colors.brand.accentOrange, overflow: 'hidden' },
+  actionsSection: { margin: 16, backgroundColor: Colors.brand.cardBackground, borderRadius: 28, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 8, borderWidth: 2, borderColor: Colors.brand.accentOrange, overflow: 'hidden' },
   actionItem: { flexDirection: 'row', alignItems: 'center', padding: 24, borderBottomWidth: 1, borderBottomColor: Colors.brand.divider, marginHorizontal: 4 },
   actionIconContainer: { width: 44, height: 44, borderRadius: 22, marginRight: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 4 },
   actionIconGradient: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 22 },
   actionIcon: { fontSize: 20, zIndex: 1 },
   actionText: { flex: 1, fontSize: 18, color: Colors.brand.textPrimary, fontWeight: '500' },
   actionArrow: { fontSize: 22, color: Colors.brand.textLight },
-  dangerSection: { margin: 24, marginBottom: 120 },
+  dangerSection: { margin: 16, marginBottom: 120 },
   logoutButtonDark: { backgroundColor: Colors.brand.cardBackground, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 6, overflow: 'hidden', position: 'relative', borderWidth: 2, borderColor: Colors.brand.accentOrange },
   logoutButtonBorder: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 26, borderWidth: 2, borderColor: Colors.brand.accentOrange },
   logoutText: { color: Colors.brand.textPrimary, fontSize: 18, fontWeight: 'bold', zIndex: 1 },
@@ -712,11 +713,25 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
+    minHeight: 60,
+    flexWrap: 'wrap',
   },
   reviewerStatusLabel: {
     color: Colors.brand.textPrimary,
     fontSize: 16,
     fontWeight: '600',
+    flex: 1,
+    marginRight: 12,
+  },
+  reviewerStatusControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: 'transparent',
+    flexShrink: 0,
+  },
+  reviewerSwitch: {
+    transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }],
   },
   statusIndicator: {
     paddingHorizontal: 12,
@@ -739,8 +754,8 @@ const styles = StyleSheet.create({
     color: '#10b981',
   },
   
-  priceCard: { backgroundColor: Colors.brand.cardBackgroundLight, borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.08)' },
-  priceText: { color: Colors.brand.textPrimary, fontWeight: '700', fontSize: 16 },
+  priceCard: { backgroundColor: Colors.brand.cardBackgroundLight, borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.08)', minHeight: 60 },
+  priceText: { color: Colors.brand.textPrimary, fontWeight: '700', fontSize: 16, flex: 1, marginRight: 12 },
   
   skillChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: Colors.brand.cardBackgroundLight, marginRight: 8, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(255, 111, 0, 0.1)' },
   skillChipText: { color: Colors.brand.textPrimary, fontSize: 14, fontWeight: '500' },

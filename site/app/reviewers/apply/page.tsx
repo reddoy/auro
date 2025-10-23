@@ -7,7 +7,8 @@ import ReviewerCounter from '../../../components/ReviewerCounter';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
-import { ArrowLeft, ArrowRight, Check, Star, DollarSign, Users, Clock, Shield, Mail, Lock, User, FileText, Target, Phone } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Star, DollarSign, Users, Clock, Shield, Mail, Lock, User, FileText, Target, Phone, Camera, Instagram, Music } from 'lucide-react';
+import WebAvatarUploader from '../../../components/WebAvatarUploader';
 
 
 export default function FoundingReviewerApplyPage() {
@@ -19,6 +20,10 @@ export default function FoundingReviewerApplyPage() {
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [marketingConsent, setMarketingConsent] = useState<boolean>(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarPath, setAvatarPath] = useState<string | null>(null);
+  const [instagramHandle, setInstagramHandle] = useState('');
+  const [tiktokHandle, setTiktokHandle] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
@@ -397,7 +402,7 @@ export default function FoundingReviewerApplyPage() {
       return;
     }
     if (step === 4) {
-      // Phone number step - submit application with phone
+      // Phone number step - go to profile picture step
       if (!phone || phone.trim().length === 0) { 
         setError('Please enter your phone number'); 
         return; 
@@ -408,6 +413,12 @@ export default function FoundingReviewerApplyPage() {
         setError('Please enter a valid phone number');
         return;
       }
+      
+      setStep(5);
+      return;
+    }
+    if (step === 5) {
+      // Profile picture and social handles step - submit application
       
       // Validate session before submission
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -503,11 +514,11 @@ export default function FoundingReviewerApplyPage() {
             bio: '',
             focusAreas: '',
             hourlyRate: null,
-            avatarUrl: null,
-            avatarPath: null,
+            avatarUrl: avatarUrl,
+            avatarPath: avatarPath,
             socials: [],
-            instagramHandle: null,
-            tiktokHandle: null,
+            instagramHandle: instagramHandle || null,
+            tiktokHandle: tiktokHandle || null,
             phone: phone || null,
             marketingConsent,
             userId: userId,
@@ -548,6 +559,7 @@ export default function FoundingReviewerApplyPage() {
       { id: 2, label: 'Account', shortLabel: 'Account', icon: User },
       { id: 3, label: 'Password', shortLabel: 'Pass', icon: Lock },
       { id: 4, label: 'Phone', shortLabel: 'Phone', icon: Phone },
+      { id: 5, label: 'Profile', shortLabel: 'Profile', icon: Camera },
       { id: 6, label: 'Done', shortLabel: 'Done', icon: Check }
     ];
 
@@ -1164,6 +1176,105 @@ export default function FoundingReviewerApplyPage() {
                 className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
               >
                 {loading ? 'Please wait...' : 'Continue'}
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        </div>
+      )}
+
+      {step === 5 && (
+        <div className="flex-1 flex items-center justify-center px-4 py-4 md:py-8 min-h-[calc(100vh-120px)]">
+          <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
+            <CardHeader className="text-center space-y-1 md:space-y-2 py-4 md:py-6">
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-full flex items-center justify-center mx-auto">
+                <Camera className="w-6 h-6 md:w-8 md:h-8 text-purple-400" />
+              </div>
+              <CardTitle className="text-xl md:text-2xl font-bold text-white">Complete Your Profile</CardTitle>
+              <CardDescription className="text-sm md:text-base text-gray-300">
+                Add a profile picture and social media handles to help guys connect with you
+              </CardDescription>
+            </CardHeader>
+          
+          <CardContent className="space-y-6 py-4 md:py-6">
+            {error && (
+              <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-3 py-2 md:px-4 md:py-3 rounded-lg text-xs md:text-sm">
+                {error}
+              </div>
+            )}
+            
+            <div className="space-y-6">
+              {/* Profile Picture Upload */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-gray-300">Profile Picture</label>
+                <WebAvatarUploader
+                  currentAvatarUrl={avatarUrl}
+                  onAvatarChange={(url, path) => {
+                    setAvatarUrl(url);
+                    setAvatarPath(path);
+                  }}
+                  size={120}
+                />
+                <p className="text-xs text-gray-400 text-center">
+                  Optional: A clear photo helps guys feel more comfortable requesting reviews
+                </p>
+              </div>
+
+              {/* Social Media Handles */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                    <Instagram className="w-4 h-4 text-pink-400" />
+                    Instagram Handle
+                  </label>
+                  <input
+                    type="text"
+                    value={instagramHandle}
+                    onChange={(e) => setInstagramHandle(e.target.value)}
+                    placeholder="@yourusername"
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-400">
+                    Optional: Your Instagram handle (without the @ symbol)
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                    <Music className="w-4 h-4 text-gray-400" />
+                    TikTok Handle
+                  </label>
+                  <input
+                    type="text"
+                    value={tiktokHandle}
+                    onChange={(e) => setTiktokHandle(e.target.value)}
+                    placeholder="@yourusername"
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-400">
+                    Optional: Your TikTok handle (without the @ symbol)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setStep(4)}
+                className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+              <Button
+                onClick={handleNext}
+                disabled={loading}
+                className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+              >
+                {loading ? 'Submitting...' : 'Complete Application'}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
