@@ -25,6 +25,11 @@ export default function HomePage() {
         // Only run on client side
         if (typeof window === 'undefined') return;
         
+        if (!supabase) {
+          console.error('Supabase client is not available');
+          return;
+        }
+        
         const { data, error } = await supabase
           .from('creators')
           .select('id', { count: 'exact' })
