@@ -11,7 +11,7 @@ import Colors from '@/constants/Colors';
 import AvatarUploader from '@/components/AvatarUploader';
 import { getCurrentProfile, updateProfile, getSignedAvatarUrl } from '@/lib/profile';
 import type { Profile } from '@/types';
-import { createStripeExpressLoginLink, createStripeExpressOnboardingLink } from '@/lib/payments';
+import { createStripeExpressLoginLink, createStripeExpressOnboardingLink, getPendingPayments } from '@/lib/payments';
 import { getRequestsByReviewer } from '@/lib/api';
 
 const socialIcons = {
@@ -27,7 +27,7 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
   const [stripePortalUrl, setStripePortalUrl] = useState<string | null>(null);
-  const [earnings, setEarnings] = useState({ total: 0, count: 0, average: 0, pendingAmount: 0, pendingCount: 0 });
+  const [earnings, setEarnings] = useState({ total: 0, count: 0, average: 0, pendingAmount: 0, pendingCount: 0, stripePendingAmount: 0 });
   
   // Rate editing modal state
   const [showRateModal, setShowRateModal] = useState(false);
@@ -54,19 +54,32 @@ export default function ProfileScreen() {
             const count = completedRequests.length;
             const pendingCount = pendingRequests.length;
             const average = count > 0 ? totalEarnings / count : 0;
+            
+            // Fetch Stripe pending payments
+            let stripePendingAmount = 0;
+            try {
+              const stripeData = await getPendingPayments(p.id);
+              if (stripeData) {
+                stripePendingAmount = stripeData.pendingAmountDollars;
+              }
+            } catch (e) {
+              console.log('[stripe-pending] error fetching', e);
+            }
+            
             setEarnings({ 
               total: totalEarnings / 100, 
               count, 
               average: average / 100, 
               pendingAmount: pendingAmount / 100, 
-              pendingCount 
+              pendingCount,
+              stripePendingAmount
             }); // Convert cents to dollars
           } catch (e) {
             console.log('[earnings] error fetching', e);
           }
         } else {
           setStripePortalUrl(null);
-          setEarnings({ total: 0, count: 0, average: 0, pendingAmount: 0, pendingCount: 0 });
+          setEarnings({ total: 0, count: 0, average: 0, pendingAmount: 0, pendingCount: 0, stripePendingAmount: 0 });
         }
       } finally {
       }
@@ -230,12 +243,25 @@ export default function ProfileScreen() {
           const count = completedRequests.length;
           const pendingCount = pendingRequests.length;
           const average = count > 0 ? totalEarnings / count : 0;
+          
+          // Fetch Stripe pending payments
+          let stripePendingAmount = 0;
+          try {
+            const stripeData = await getPendingPayments(p.id);
+            if (stripeData) {
+              stripePendingAmount = stripeData.pendingAmountDollars;
+            }
+          } catch (e) {
+            console.log('[stripe-pending] error fetching', e);
+          }
+          
           setEarnings({ 
             total: totalEarnings / 100, 
             count, 
             average: average / 100, 
             pendingAmount: pendingAmount / 100, 
-            pendingCount 
+            pendingCount,
+            stripePendingAmount
           });
         } catch {}
       }
@@ -388,6 +414,16 @@ export default function ProfileScreen() {
                           />
                           <Text style={styles.earningStatNumber}>${earnings.pendingAmount.toFixed(2)}</Text>
                           <Text style={styles.earningStatLabel}>Pending Requests</Text>
+                        </View>
+                        <View style={styles.earningStat}>
+                          <ExpoLinearGradient
+                            colors={['rgba(99, 91, 255, 0.15)', 'rgba(139, 69, 19, 0.15)']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={styles.earningStatBg}
+                          />
+                          <Text style={styles.earningStatNumber}>${earnings.stripePendingAmount.toFixed(2)}</Text>
+                          <Text style={styles.earningStatLabel}>Pending Payout</Text>
                         </View>
                       </View>
                     </View>
@@ -895,11 +931,13 @@ const styles = StyleSheet.create({
   },
   earningsStats: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
     backgroundColor: 'transparent',
+    flexWrap: 'wrap',
   },
   earningStat: {
     flex: 1,
+    minWidth: '30%',
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderRadius: 18,
     padding: 16,
