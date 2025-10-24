@@ -5499,6 +5499,28 @@ footer {
     grid-template-columns: 1fr;
     gap: 24px;
   }
+  
+  .security-badges {
+    gap: 16px;
+  }
+  
+  .security-badge {
+    padding: 12px;
+    gap: 10px;
+  }
+  
+  .security-badge strong {
+    font-size: 14px;
+  }
+  
+  .security-badge p {
+    font-size: 12px;
+  }
+  
+  .payment-note {
+    font-size: 13px;
+    padding: 0 8px;
+  }
 }
 
 .order-summary {
@@ -5622,7 +5644,7 @@ footer {
 
 .security-badge {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   padding: 16px;
   background: var(--bg);
@@ -5633,18 +5655,24 @@ footer {
 .security-icon {
   font-size: 24px;
   flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .security-badge strong {
   color: var(--text);
   display: block;
   margin-bottom: 4px;
+  font-size: 15px;
+  line-height: 1.3;
 }
 
 .security-badge p {
   color: var(--text-2);
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  hyphens: auto;
 }
 
 .payment-button {
@@ -5682,11 +5710,14 @@ footer {
   text-align: center;
   color: var(--text-2);
   font-size: 14px;
-  line-height: 1.4;
+  line-height: 1.5;
+  margin-top: 16px;
 }
 
 .payment-note p {
   margin: 8px 0;
+  word-wrap: break-word;
+  hyphens: auto;
 }
 
 /* Download App */

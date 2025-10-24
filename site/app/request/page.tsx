@@ -162,10 +162,13 @@ export default function RequestPage() {
           const { data: { subscription } } = client.auth.onAuthStateChange((event: any, session: any) => {
             const isRealUser = !!session?.user && (session.user as any)?.app_metadata?.provider !== 'anon';
             setIsAuthenticated(isRealUser);
-            if (isRealUser && currentStep === 'auth') {
+            
+            // Only auto-advance if user just completed authentication (not if they were already authenticated)
+            if (isRealUser && currentStep === 'auth' && event === 'SIGNED_IN') {
               setRequestData(prev => ({ ...prev, userId: session!.user!.id }));
               setCurrentStep('payment');
             }
+            
             // Ensure profile exists server-side whenever we get a real session
             if (isRealUser && session?.user) {
               try {

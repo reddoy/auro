@@ -9,6 +9,42 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'Missing creatorId or creatorSlug' }), { status: 400 });
     }
 
+    // Check if user is trying to buy from themselves (prevent self-purchase)
+    if (fallbackUserId) {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
+      if (url && key) {
+        const admin = createClient(url, key);
+        
+        // Get the reviewer's ID we're trying to buy from
+        let targetReviewerId = creatorId;
+        if (!targetReviewerId && creatorSlug) {
+          const { data: profile } = await admin
+            .from('profiles')
+            .select('id')
+            .eq('username', creatorSlug)
+            .eq('is_reviewer', true)
+            .maybeSingle();
+          targetReviewerId = (profile as any)?.id;
+        }
+        
+        // Check if the current user is a reviewer trying to buy from themselves
+        if (targetReviewerId === fallbackUserId) {
+          const { data: userProfile } = await admin
+            .from('profiles')
+            .select('is_reviewer')
+            .eq('id', fallbackUserId)
+            .maybeSingle();
+          
+          if ((userProfile as any)?.is_reviewer) {
+            return new Response(JSON.stringify({ 
+              error: 'Reviewers cannot purchase reviews for their own account. Please select a different reviewer.' 
+            }), { status: 400 });
+          }
+        }
+      }
+    }
+
     const secret = process.env.STRIPE_SECRET_KEY || '';
     if (!secret) {
       return new Response(JSON.stringify({ error: 'Missing STRIPE_SECRET_KEY' }), { status: 500 });
@@ -265,14 +301,9 @@ export async function POST(req: Request) {
           quantity: 1,
         },
       ],
-      payment_intent_data: connectAccountId
-        ? {
-            application_fee_amount: finalApplicationFeeCents,
-            transfer_data: {
-              destination: connectAccountId,
-            },
-          }
-        : undefined,
+      // Payment held in escrow until review completion
+      // No immediate transfer - funds will be distributed when review is completed
+      payment_intent_data: undefined,
       metadata: {
         request_id: ensuredRequestId || '',
         creator_id: resolvedCreatorId || '',
@@ -285,9 +316,9 @@ export async function POST(req: Request) {
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com'}/checkout/cancel`,
     };
 
-    const session = connectAccountId
-      ? await stripe.checkout.sessions.create(sessionParams, { stripeAccount: connectAccountId })
-      : await stripe.checkout.sessions.create(sessionParams);
+    // For now, create session without Connect to avoid platform requirement
+    // TODO: Set up proper Stripe Connect platform in dashboard
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     // Store computed financial fields on the request for later UI
     try {

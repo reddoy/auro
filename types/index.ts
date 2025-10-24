@@ -119,6 +119,11 @@ export interface DbRequestSummary {
   stripe_fee_cents?: number | null;
   net_amount_cents?: number | null;
   auro_fee_bps?: number | null;
+  // Payment distribution tracking
+  payment_distributed?: boolean | null;
+  payment_distributed_at?: string | null;
+  stripe_transfer_id?: string | null;
+  reviewer_amount_cents?: number | null;
 }
 
 export interface DbUserProfile {

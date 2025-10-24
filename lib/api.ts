@@ -235,7 +235,24 @@ export async function submitRequestReview(params: {
     .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps')
     .maybeSingle();
   if (error) throw error;
-  if (data) return mapRequestRow(data);
+  if (data) {
+    const result = mapRequestRow(data);
+    
+    // Trigger payment distribution to reviewer
+    try {
+      await fetch('/api/payments/distribute-reviewer-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId })
+      });
+    } catch (paymentError) {
+      console.error('Failed to distribute payment to reviewer:', paymentError);
+      // Don't fail the review submission if payment distribution fails
+      // The payment can be distributed manually later
+    }
+    
+    return result;
+  }
   const refetched = await getRequestById(requestId);
   if (!refetched) throw new Error('Request not found after submitting review');
   return refetched;

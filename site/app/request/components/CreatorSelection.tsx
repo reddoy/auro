@@ -27,6 +27,7 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string>('');
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCreators = async () => {
@@ -46,6 +47,17 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
 
       try {
         setError('');
+        
+        // Get current user ID to filter out self
+        let currentUser: any = null;
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          currentUser = user;
+          setCurrentUserId(user?.id || null);
+        } catch (authError) {
+          console.log('No authenticated user, proceeding without filtering');
+        }
+
         const { data, error } = await supabase
           .from('profiles')
           .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, bio, links')
@@ -67,11 +79,16 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
           links: c.links ?? undefined,
         }));
 
-        setCreators(normalized);
+        // Filter out current user if they're a reviewer
+        const filteredCreators = currentUser?.id 
+          ? normalized.filter(creator => creator.id !== currentUser.id)
+          : normalized;
+
+        setCreators(filteredCreators);
         
         // Auto-select creator if preselectedCreatorSlug is provided
-        if (preselectedCreatorSlug && normalized.length > 0) {
-          const preselectedCreator = normalized.find(c => c.username === preselectedCreatorSlug);
+        if (preselectedCreatorSlug && filteredCreators.length > 0) {
+          const preselectedCreator = filteredCreators.find(c => c.username === preselectedCreatorSlug);
           if (preselectedCreator) {
             onSelect(preselectedCreator.id, preselectedCreator.username);
           }

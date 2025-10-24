@@ -18,6 +18,42 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
   const [error, setError] = useState('');
   // SMS 2FA removed
 
+  // If user is already authenticated, show a confirmation screen
+  if (isAuthenticated) {
+    return (
+      <div className="step-container">
+        <div className="step-header">
+          <h2>Account Verified</h2>
+          <p>You're already signed in! Ready to proceed to payment?</p>
+        </div>
+        
+        <div className="step-content">
+          <div className="success-message">
+            <div className="success-icon">✓</div>
+            <p>Your account is ready to go!</p>
+          </div>
+          
+          <div className="step-actions">
+            <button 
+              type="button"
+              onClick={onBack}
+              className="btn-secondary"
+            >
+              Back
+            </button>
+            <button 
+              type="button"
+              onClick={onNext}
+              className="btn-primary"
+            >
+              Continue to Payment
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const handleSignUp = async () => {
     if (!email || !password || !fullName) {
       setError('Please fill in all fields');
