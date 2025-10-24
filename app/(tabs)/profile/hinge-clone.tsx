@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, TouchableOpacity, Alert, FlatList, Image, TextInput, Modal, ScrollView, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -35,24 +35,17 @@ const { width: screenWidth } = Dimensions.get('window');
 
 export default function HingeCloneScreen() {
   const insets = useSafeAreaInsets();
-  const [photos, setPhotos] = useState<HingePhoto[]>([
-    {
-      id: '1',
-      uri: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face',
-      isMain: true,
-    },
-    {
-      id: '2', 
-      uri: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop&crop=face',
-      isMain: false,
-    },
-    {
-      id: '3',
-      uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop&crop=face',
-      isMain: false,
-      caption: 'Me in the wild'
-    }
-  ]);
+  const [photos, setPhotos] = useState<HingePhoto[]>([]);
+  
+  // Hide tab bar when this screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      // This will be handled by the parent tab navigator
+      return () => {
+        // Cleanup when screen loses focus
+      };
+    }, [])
+  );
   
   const [prompts, setPrompts] = useState<HingePrompt[]>([
     {
@@ -151,23 +144,10 @@ export default function HingeCloneScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Status Bar */}
-      <View style={[styles.statusBar, { paddingTop: insets.top }]}>
-        <Text style={styles.statusTime}>11:53</Text>
-        <View style={styles.batteryIcon}>
-          <Text style={styles.batteryText}>🔋</Text>
-        </View>
-      </View>
-
-      {/* Search Icon */}
-      <View style={styles.searchContainer}>
-        <Text style={styles.searchIcon}>🔍</Text>
-      </View>
-
       {/* Main Navigation */}
-      <View style={styles.mainNav}>
+      <View style={[styles.mainNav, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.navButton}>
-          <Text style={styles.navButtonText}>Cancel</Text>
+          <Text style={styles.navButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.profileName}>Maya</Text>
         <TouchableOpacity style={styles.navButton}>
@@ -193,43 +173,64 @@ export default function HingeCloneScreen() {
 
       {/* Content based on active tab */}
       {activeTab === 'View' ? (
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
           <View style={styles.profileContainer}>
-            {/* Photo 1 with Prompt */}
-            <View style={styles.photoSection}>
-              <Image source={{ uri: photos[0]?.uri }} style={styles.profilePhoto} />
-              <View style={styles.promptSection}>
-                <Text style={styles.promptQuestion}>{prompts[0]?.question}</Text>
-                <Text style={styles.promptAnswer}>{prompts[0]?.answer}</Text>
+            {photos.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>Add photos to see your profile</Text>
+                <TouchableOpacity style={styles.addFirstPhotoBtn} onPress={addPhoto}>
+                  <Text style={styles.addFirstPhotoText}>+ Add Your First Photo</Text>
+                </TouchableOpacity>
               </View>
-            </View>
+            ) : (
+              <>
+                {/* Photo 1 with Prompt */}
+                {photos[0] && (
+                  <View style={styles.photoSection}>
+                    <Image source={{ uri: photos[0].uri }} style={styles.profilePhoto} />
+                    {prompts[0] && (
+                      <View style={styles.promptSection}>
+                        <Text style={styles.promptQuestion}>{prompts[0].question}</Text>
+                        <Text style={styles.promptAnswer}>{prompts[0].answer}</Text>
+                      </View>
+                    )}
+                  </View>
+                )}
 
-            {/* Photo 2 with Details */}
-            <View style={styles.photoSection}>
-              <Image source={{ uri: photos[1]?.uri }} style={styles.profilePhoto} />
-              <View style={styles.detailsSection}>
-                <Text style={styles.ageText}>{profileDetails.age}</Text>
-                {renderProfileDetail('📏', 'Height', profileDetails.height)}
-                {renderProfileDetail('📍', 'Location', profileDetails.location)}
-                {renderProfileDetail('🎓', 'Education', profileDetails.education)}
-                {renderProfileDetail('🏠', 'Hometown', profileDetails.hometown)}
-                {renderProfileDetail('🏛️', 'Political Leaning', profileDetails.politicalLeaning)}
-              </View>
-            </View>
+                {/* Photo 2 with Details */}
+                {photos[1] && (
+                  <View style={styles.photoSection}>
+                    <Image source={{ uri: photos[1].uri }} style={styles.profilePhoto} />
+                    <View style={styles.detailsSection}>
+                      <Text style={styles.ageText}>{profileDetails.age}</Text>
+                      {renderProfileDetail('📏', 'Height', profileDetails.height)}
+                      {renderProfileDetail('📍', 'Location', profileDetails.location)}
+                      {renderProfileDetail('🎓', 'Education', profileDetails.education)}
+                      {renderProfileDetail('🏠', 'Hometown', profileDetails.hometown)}
+                      {renderProfileDetail('🏛️', 'Political Leaning', profileDetails.politicalLeaning)}
+                    </View>
+                  </View>
+                )}
 
-            {/* Photo 3 with Caption and Prompt */}
-            <View style={styles.photoSection}>
-              <Text style={styles.photoCaption}>{photos[2]?.caption}</Text>
-              <Image source={{ uri: photos[2]?.uri }} style={styles.profilePhoto} />
-              <View style={styles.promptSection}>
-                <Text style={styles.promptQuestion}>{prompts[1]?.question}</Text>
-                <Text style={styles.promptAnswer}>{prompts[1]?.answer}</Text>
-              </View>
-            </View>
+                {/* Photo 3 with Caption and Prompt */}
+                {photos[2] && (
+                  <View style={styles.photoSection}>
+                    {photos[2].caption && <Text style={styles.photoCaption}>{photos[2].caption}</Text>}
+                    <Image source={{ uri: photos[2].uri }} style={styles.profilePhoto} />
+                    {prompts[1] && (
+                      <View style={styles.promptSection}>
+                        <Text style={styles.promptQuestion}>{prompts[1].question}</Text>
+                        <Text style={styles.promptAnswer}>{prompts[1].answer}</Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </>
+            )}
           </View>
         </ScrollView>
       ) : (
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
           <View style={styles.editContainer}>
             {/* My Photos & Videos Section */}
             <View style={styles.editSection}>
@@ -357,40 +358,42 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  statusBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  emptyState: {
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-    backgroundColor: '#FFFFFF',
-  },
-  statusTime: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000000',
-    fontFamily: 'ModernEra-Regular',
-  },
-  batteryIcon: {
+    justifyContent: 'center',
+    paddingVertical: 60,
     backgroundColor: 'transparent',
   },
-  batteryText: {
+  emptyStateText: {
+    fontSize: 18,
+    color: '#666666',
+    marginBottom: 20,
+    textAlign: 'center',
+    fontFamily: 'ModernEra-Regular',
+  },
+  addFirstPhotoBtn: {
+    backgroundColor: '#8B5CF6',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    shadowColor: '#8B5CF6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  addFirstPhotoText: {
+    color: '#FFFFFF',
     fontSize: 16,
-  },
-  searchContainer: {
-    alignItems: 'center',
-    paddingVertical: 10,
-    backgroundColor: '#FFFFFF',
-  },
-  searchIcon: {
-    fontSize: 20,
+    fontWeight: '600',
+    fontFamily: 'ModernEra-Medium',
   },
   mainNav: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 15,
+    paddingBottom: 15,
     backgroundColor: '#FFFFFF',
   },
   navButton: {

@@ -1,6 +1,6 @@
 import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Tabs } from 'expo-router';
+import { Tabs, usePathname } from 'expo-router';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -21,6 +21,10 @@ function TabBarIcon(props: {
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
+  const pathname = usePathname();
+  
+  // Hide tab bar for hinge-clone screen
+  const shouldHideTabBar = pathname?.includes('hinge-clone');
 
   return (
     <View style={{ flex: 1 }}>
@@ -28,7 +32,7 @@ export default function TabLayout() {
         screenOptions={{
           tabBarActiveTintColor: Colors.brand.textPrimary,
           tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.7)',
-          tabBarStyle: {
+          tabBarStyle: shouldHideTabBar ? { display: 'none' } : {
             backgroundColor: 'transparent',
             borderTopWidth: 0,
             paddingBottom: Math.max(12, 12 + insets.bottom),
