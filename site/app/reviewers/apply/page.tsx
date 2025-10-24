@@ -1340,7 +1340,7 @@ export default function FoundingReviewerApplyPage() {
               <div className="space-y-3">
                 <h3 className="text-2xl font-bold text-white">Welcome to the Founding Team! 🎉</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  You're now one of the exclusive 100 founding reviewers. We've sent a verification email to confirm your account.
+                  You're now one of the exclusive 35 founding reviewers. We've sent a verification email to confirm your account.
                 </p>
               </div>
 

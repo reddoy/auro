@@ -3254,6 +3254,7 @@ footer {
   align-items: center;
   min-width: 60px;
   gap: 4px;
+  padding: 8px 0;
 }
 
 .countdown-number {
@@ -3763,6 +3764,7 @@ footer {
   
   .countdown-item {
     min-width: 50px;
+    padding: 12px 0;
   }
   
   .countdown-number {
@@ -3783,6 +3785,7 @@ footer {
   
   .main-countdown .countdown-item {
     min-width: 60px;
+    padding: 12px 0;
   }
   
   .main-countdown .countdown-number {
@@ -3819,6 +3822,7 @@ footer {
   
   .countdown-item {
     min-width: 45px;
+    padding: 10px 0;
   }
   
   .countdown-number {
@@ -3840,6 +3844,7 @@ footer {
   
   .main-countdown .countdown-item {
     min-width: 50px;
+    padding: 10px 0;
   }
   
   .main-countdown .countdown-number {
@@ -6121,9 +6126,9 @@ footer {
   
   /* Specific styling for mobile button text */
   .mobile-button-text {
-    white-space: normal !important;
-    word-wrap: break-word !important;
-    overflow-wrap: break-word !important;
+    white-space: nowrap !important;
+    word-wrap: normal !important;
+    overflow-wrap: normal !important;
     line-height: 1.4 !important;
     text-align: center !important;
     display: block !important;

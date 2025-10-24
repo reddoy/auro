@@ -302,7 +302,7 @@ export default function HomePage() {
                     asChild
                   >
                     <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
-                      <span className="mobile-button-text">🚀 Start Earning Today ({isLoadingCount ? 'Loading...' : `${reviewerCount}/100 spots taken`})</span>
+                      <span className="mobile-button-text">🚀 Start Earning Today ({isLoadingCount ? 'Loading...' : `${reviewerCount}/35 spots taken`})</span>
                       <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                     </a>
                   </Button>
@@ -654,7 +654,7 @@ export default function HomePage() {
                 </p>
                 <p className="text-xl font-bold leading-relaxed">
                   <span className="bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
-                    Join the first 100 founding reviewers and lock in 85% earnings forever.
+                    Join the first 35 founding reviewers and lock in 85% earnings forever.
                   </span>
                 </p>
               </div>
@@ -673,7 +673,7 @@ export default function HomePage() {
                 Ready to Start Earning?
               </h2>
               <p className="text-xl md:text-2xl text-white/90 leading-relaxed mobile-text-reveal" style={{ animationDelay: '0.4s' }}>
-                Join the first 100 founding reviewers and lock in exclusive benefits forever
+                Join the first 35 founding reviewers and lock in exclusive benefits forever
               </p>
             </div>
             
@@ -685,7 +685,7 @@ export default function HomePage() {
                 asChild
               >
                 <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
-                  <span className="mobile-button-text">🚀 Start Earning Today ({isLoadingCount ? 'Loading...' : `${reviewerCount}/100 spots taken`})</span>
+                  <span className="mobile-button-text">🚀 Start Earning Today ({isLoadingCount ? 'Loading...' : `${reviewerCount}/35 spots taken`})</span>
                   <ArrowRight className="ml-1 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                 </a>
               </Button>

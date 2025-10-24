@@ -69,7 +69,6 @@ export async function GET(req: Request) {
         amount: transfer.amount,
         amountDollars: transfer.amount / 100,
         currency: transfer.currency,
-        status: transfer.status,
         created: transfer.created,
         description: transfer.description
       }))
