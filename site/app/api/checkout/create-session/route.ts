@@ -318,7 +318,15 @@ export async function POST(req: Request) {
 
     // For now, create session without Connect to avoid platform requirement
     // TODO: Set up proper Stripe Connect platform in dashboard
+    console.log('[create-session] ===== CREATING STRIPE CHECKOUT SESSION =====');
+    console.log('[create-session] Session params:', JSON.stringify(sessionParams, null, 2));
+    
     const session = await stripe.checkout.sessions.create(sessionParams);
+    
+    console.log('[create-session] Session created successfully');
+    console.log('[create-session] Session ID:', session.id);
+    console.log('[create-session] Session URL:', session.url);
+    console.log('[create-session] Request ID:', ensuredRequestId);
 
     // Store computed financial fields on the request for later UI
     try {
