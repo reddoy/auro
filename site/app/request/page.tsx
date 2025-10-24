@@ -85,17 +85,15 @@ export default function RequestPage() {
     }
   }, []);
 
-  // Scroll to top on step change for better UX and bands
+  // Scroll to top on step change for better UX
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      const headerEl = document.querySelector('.request-header');
-      if (headerEl && 'scrollIntoView' in headerEl) {
-        (headerEl as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    } catch {}
+      // Scroll to the very top of the page when step changes
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+      console.warn('Scroll to top failed:', error);
+    }
   }, [currentStep]);
 
   useEffect(() => {

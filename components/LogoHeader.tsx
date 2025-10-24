@@ -27,7 +27,7 @@ export default function LogoHeader({
 
   return (
     <View style={[styles.container, { backgroundColor }]}>
-      <View style={[styles.safeAreaSpacer, { height: insets.top }]} />
+      <View style={[styles.safeAreaSpacer, { height: Platform.OS === 'web' ? 0 : insets.top }]} />
       <View style={styles.logoContainer}>
         <Image 
           source={require('../Auro_side_side_no_bg.png')} 

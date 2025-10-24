@@ -185,7 +185,7 @@ export default function ReviewDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: Platform.OS === 'web' ? 24 : insets.bottom + 24, paddingHorizontal: 16 }}>
         <View style={styles.header}>
           <RNView style={styles.influencerImageWrapper}>
             <Avatar uri={influencerAvatar} name={influencerName} size={60} />

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, View as RNView, ActivityIndicator } from 'react-native';
+import { StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert, View as RNView, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 
@@ -138,7 +138,7 @@ export default function ReviewerSubmitScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: Platform.OS === 'web' ? 24 : insets.bottom + 24, paddingHorizontal: 16 }}>
       <Text style={styles.title}>Write Review</Text>
 
       {!!request && (

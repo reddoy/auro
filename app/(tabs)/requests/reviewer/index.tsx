@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, View as RNView, RefreshControl } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, View as RNView, RefreshControl, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
@@ -50,8 +50,8 @@ export default function ReviewerDashboardScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView 
         contentContainerStyle={{ 
-          paddingTop: insets.top + 12, 
-          paddingBottom: insets.bottom + 24, 
+          paddingTop: 12, 
+          paddingBottom: Platform.OS === 'web' ? 24 : insets.bottom + 24, 
           paddingHorizontal: 16 
         }}
         refreshControl={

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, View as RNView, Linking, Image } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, View as RNView, Linking, Image, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 
@@ -73,7 +73,7 @@ export default function ReviewerProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom + 24, paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: Platform.OS === 'web' ? 24 : insets.bottom + 24, paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
         <RNView style={styles.card}>
           <RNView style={{ alignItems: 'center' }}>
             <Avatar uri={avatarUri} name={reviewer?.displayName} size={96} />

@@ -1,7 +1,7 @@
 import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Tabs, usePathname } from 'expo-router';
-import { View } from 'react-native';
+import { Tabs, usePathname, useRouter } from 'expo-router';
+import { View, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 
@@ -22,9 +22,22 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
+  const router = useRouter();
   
   // Hide tab bar for hinge-clone screen
   const shouldHideTabBar = pathname?.includes('hinge-clone');
+
+  // Handle tab press for web navigation
+  const handleTabPress = (tabName: string) => {
+    if (Platform.OS === 'web') {
+      if (tabName === 'requests' && pathname?.startsWith('/requests') && pathname !== '/requests') {
+        // If we're on a sub-page of requests, navigate back to the main requests page
+        router.push('/requests');
+        return false; // Prevent default tab behavior
+      }
+    }
+    return true; // Allow default tab behavior
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -85,12 +98,26 @@ export default function TabLayout() {
           headerShown: false,
           tabBarIcon: ({ color }) => <TabBarIcon name="star" color={color} />,
         }}
+        listeners={{
+          tabPress: (e) => {
+            if (!handleTabPress('requests')) {
+              e.preventDefault();
+            }
+          },
+        }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
           tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
+        }}
+        listeners={{
+          tabPress: (e) => {
+            if (!handleTabPress('profile')) {
+              e.preventDefault();
+            }
+          },
         }}
         />
       </Tabs>
