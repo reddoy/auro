@@ -340,7 +340,7 @@ export async function POST(req: Request) {
     if (false && connectAccountId) {
       sessionParams.payment_intent_data = {
         transfer_data: {
-          destination: connectAccountId,
+          destination: connectAccountId as string,
         },
         application_fee_amount: finalApplicationFeeCents,
       };
