@@ -5630,6 +5630,53 @@ footer {
   font-size: 14px;
 }
 
+.escrow-protection {
+  background: rgba(34, 197, 94, 0.05);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.protection-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.protection-icon {
+  font-size: 20px;
+}
+
+.protection-header h4 {
+  color: var(--text);
+  margin: 0;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.protection-details p {
+  color: var(--text);
+  margin: 0 0 8px 0;
+  font-weight: 500;
+}
+
+.protection-details ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.protection-details li {
+  color: var(--text-2);
+  margin-bottom: 6px;
+  font-size: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
 .payment-info {
   display: flex;
   flex-direction: column;

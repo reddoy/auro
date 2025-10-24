@@ -50,6 +50,29 @@ export default function CheckoutSuccessPage() {
       <div style={{ marginTop: 24 }}>
         <h2 style={{ marginBottom: 8 }}>Download our app to see your review</h2>
         <p style={{ marginBottom: 12 }}>Install the app to track progress and get notified when your review is ready.</p>
+        
+        {/* Escrow Protection Info */}
+        <div style={{ 
+          background: 'rgba(34, 197, 94, 0.05)', 
+          border: '1px solid rgba(34, 197, 94, 0.2)', 
+          borderRadius: '12px', 
+          padding: '16px', 
+          marginBottom: '16px' 
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <span style={{ fontSize: '20px' }}>🛡️</span>
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>Your Payment is Protected</h3>
+          </div>
+          <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#666' }}>
+            <strong>Escrow System:</strong> Your payment is held securely until your review is completed. 
+            The reviewer only gets paid after delivering your review, ensuring quality service.
+          </p>
+          <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', color: '#666' }}>
+            <li>Payment held until review completion</li>
+            <li>Full refund if review not delivered within 30 days</li>
+            <li>Automatic payment to reviewer upon completion</li>
+          </ul>
+        </div>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <button
             onClick={() => window.open('https://apps.apple.com/app/auro', '_blank')}
