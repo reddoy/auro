@@ -196,7 +196,7 @@ export default function FoundingReviewerApplyPage() {
       return;
     }
     
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event: any, session: any) => {
       console.log('[ReviewerApply] Auth state change:', event, !!session);
       
       // Handle successful sign in or token refresh
