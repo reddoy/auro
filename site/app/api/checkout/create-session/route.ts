@@ -3,9 +3,23 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: Request) {
   try {
+    console.log('🚀 [CHECKOUT] Starting checkout session creation...');
+    
     const body = await req.json();
     const { creatorId, creatorSlug, reviewPayload, requestId, uploadSessionId, fallbackUserId, fallbackEmail, fallbackFullName } = body || {};
+    
+    console.log('📋 [CHECKOUT] Request data:', {
+      creatorId,
+      creatorSlug,
+      fallbackUserId,
+      fallbackEmail,
+      fallbackFullName,
+      uploadSessionId,
+      hasReviewPayload: !!reviewPayload
+    });
+    
     if (!creatorId && !creatorSlug) {
+      console.error('❌ [CHECKOUT] Missing creatorId or creatorSlug');
       return new Response(JSON.stringify({ error: 'Missing creatorId or creatorSlug' }), { status: 400 });
     }
 
@@ -47,8 +61,10 @@ export async function POST(req: Request) {
 
     const secret = process.env.STRIPE_SECRET_KEY || '';
     if (!secret) {
+      console.error('❌ [CHECKOUT] Missing STRIPE_SECRET_KEY');
       return new Response(JSON.stringify({ error: 'Missing STRIPE_SECRET_KEY' }), { status: 500 });
     }
+    console.log('✅ [CHECKOUT] Stripe secret key found');
     const stripe = new Stripe(secret);
     // Optionally resolve creatorId from slug
     let resolvedCreatorId = creatorId as string | undefined;
@@ -68,8 +84,11 @@ export async function POST(req: Request) {
 
     // Require a valid reviewer id
     if (!resolvedCreatorId) {
+      console.error('❌ [CHECKOUT] Reviewer not found');
       return new Response(JSON.stringify({ error: 'Reviewer not found. Please select a valid reviewer.' }), { status: 400 });
     }
+    
+    console.log('✅ [CHECKOUT] Resolved creator ID:', resolvedCreatorId);
 
     // Determine price (in cents) from creators_public or profiles.hourly_rate
     let priceCents = 1000; // default $10 fallback

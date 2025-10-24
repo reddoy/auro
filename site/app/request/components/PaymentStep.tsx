@@ -89,14 +89,29 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
     setError('');
 
     try {
+      console.log('🚀 Starting payment process...');
+      
       const fallbackUserId = await getFallbackUserId();
       const fallbackEmail = await getFallbackEmail();
       const fallbackFullName = await getFallbackFullName();
+      
+      console.log('📋 Payment data:', {
+        creatorId: requestData.creatorId,
+        creatorSlug: requestData.creatorSlug,
+        fallbackUserId,
+        fallbackEmail,
+        fallbackFullName,
+        uploadSessionId: requestData.uploadSessionId,
+        price: price
+      });
+
       // Allow payment to proceed even without authenticated user - they can authenticate during payment flow
       // if (!fallbackUserId) {
       //   throw new Error('Please sign up or sign in before paying.');
       // }
 
+      console.log('💳 Creating Stripe checkout session...');
+      
       // Create Stripe checkout session
       const response = await fetch('/api/checkout/create-session', {
         method: 'POST',
@@ -119,21 +134,30 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
         }),
       });
 
+      console.log('📡 Checkout session response status:', response.status);
+      console.log('📡 Checkout session response ok:', response.ok);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('❌ Checkout session error:', errorData);
         throw new Error(errorData.error || 'Failed to create checkout session');
       }
 
-      const { url } = await response.json();
+      const responseData = await response.json();
+      console.log('✅ Checkout session created successfully:', responseData);
+      
+      const { url } = responseData;
       
       if (url) {
+        console.log('🔗 Redirecting to Stripe Checkout:', url);
         // Redirect to Stripe Checkout
         window.location.href = url;
       } else {
+        console.error('❌ No checkout URL received');
         throw new Error('No checkout URL received');
       }
     } catch (error: any) {
-      console.error('Payment error:', error);
+      console.error('❌ Payment error:', error);
       setError(error.message || 'Payment failed. Please try again.');
     } finally {
       setLoading(false);

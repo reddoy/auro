@@ -8,22 +8,50 @@ export default function CheckoutSuccessPage() {
 
   useEffect(() => {
     try {
+      console.log('🎉 [SUCCESS] Payment success page loaded');
+      
       const url = new URL(window.location.href);
       const csId = url.searchParams.get('rid');
+      
+      console.log('📋 [SUCCESS] URL params:', {
+        rid: csId,
+        fullUrl: window.location.href
+      });
+      
       if (csId) {
         setMessage('Payment confirmed. Your review request is being prepared.');
+        console.log('✅ [SUCCESS] Payment confirmed for session:', csId);
+        
         // Idempotent server-side confirmation in case webhook hasn't run yet
+        console.log('🔄 [SUCCESS] Calling checkout confirm API...');
         fetch('/api/checkout/confirm', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId: csId }),
-        }).catch(() => {});
+        })
+        .then(response => {
+          console.log('📡 [SUCCESS] Confirm API response status:', response.status);
+          return response.json();
+        })
+        .then(data => {
+          console.log('✅ [SUCCESS] Confirm API response:', data);
+        })
+        .catch(error => {
+          console.error('❌ [SUCCESS] Confirm API error:', error);
+        });
       } else {
         setMessage('Payment confirmed.');
+        console.log('⚠️ [SUCCESS] No session ID found in URL');
       }
+      
       const storedEmail = localStorage.getItem('auro_signup_email') || '';
-      if (storedEmail) setEmail(storedEmail);
-    } catch {}
+      if (storedEmail) {
+        setEmail(storedEmail);
+        console.log('📧 [SUCCESS] Found stored email:', storedEmail);
+      }
+    } catch (error) {
+      console.error('❌ [SUCCESS] Error in success page:', error);
+    }
   }, []);
 
   const handleResendVerification = async () => {
