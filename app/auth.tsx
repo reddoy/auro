@@ -199,7 +199,7 @@ export default function AuthScreen() {
         const origin =
           typeof window !== 'undefined' && (window as any).location?.origin
             ? (window as any).location.origin
-            : 'https://yourdomain.com';
+            : 'https://www.appauro.com';
 
         const redirectTo = Platform.select({
           web: `${origin}/auth/confirm`,
