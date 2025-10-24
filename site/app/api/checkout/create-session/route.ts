@@ -335,8 +335,20 @@ export async function POST(req: Request) {
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com'}/checkout/cancel`,
     };
 
-    // For now, create session without Connect to avoid platform requirement
-    // TODO: Set up proper Stripe Connect platform in dashboard
+    // Use destination charges - payments go to platform account first, then we transfer to reviewers
+    // This allows us to hold money in escrow until review completion
+    if (connectAccountId) {
+      sessionParams.payment_intent_data = {
+        transfer_data: {
+          destination: connectAccountId,
+        },
+        application_fee_amount: finalApplicationFeeCents,
+      };
+      console.log('[create-session] Using destination charge with Connect account:', connectAccountId);
+    } else {
+      console.log('[create-session] No Connect account found, using regular checkout');
+    }
+    
     console.log('[create-session] ===== CREATING STRIPE CHECKOUT SESSION =====');
     console.log('[create-session] Session params:', JSON.stringify(sessionParams, null, 2));
     
@@ -346,6 +358,20 @@ export async function POST(req: Request) {
     console.log('[create-session] Session ID:', session.id);
     console.log('[create-session] Session URL:', session.url);
     console.log('[create-session] Request ID:', ensuredRequestId);
+    console.log('[create-session] Session details:', {
+      id: session.id,
+      payment_status: session.payment_status,
+      amount_total: session.amount_total,
+      currency: session.currency,
+      mode: session.mode,
+      payment_intent: session.payment_intent,
+      customer_email: session.customer_email,
+      success_url: session.success_url,
+      cancel_url: session.cancel_url
+    });
+    
+    // Log the Stripe secret key type to verify we're using test keys
+    console.log('[create-session] Stripe key type:', secret.startsWith('sk_test_') ? 'TEST' : 'LIVE');
 
     // Store computed financial fields on the request for later UI
     try {
