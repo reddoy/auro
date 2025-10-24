@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
+import { supabase as supabaseClient } from '../../lib/supabase';
 
 // Step components
 import IntroStep from './components/IntroStep';
@@ -53,6 +53,24 @@ export default function RequestPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [supabase, setSupabase] = useState<any>(null);
 
+  // Check if Supabase client is properly configured
+  if (!supabaseClient) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-md w-full text-center">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h1 className="text-2xl font-bold text-white mb-4">Configuration Error</h1>
+          <p className="text-white/80 mb-6">
+            The application is missing required environment variables for database connection.
+          </p>
+          <p className="text-white/60 text-sm">
+            Please ensure <code className="bg-white/20 px-2 py-1 rounded">NEXT_PUBLIC_SUPABASE_URL</code> and <code className="bg-white/20 px-2 py-1 rounded">NEXT_PUBLIC_SUPABASE_ANON</code> are configured.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Handle URL parameters to pre-populate creator selection
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -89,7 +107,7 @@ export default function RequestPage() {
       if (supabaseUrl && supabaseKey) {
         try {
           // Use the existing supabase client from lib instead of creating a new one
-          const client = supabase;
+          const client = supabaseClient;
           if (!client) {
             console.error('Supabase client is null - check environment variables');
             setSupabase(null);

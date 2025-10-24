@@ -4,22 +4,48 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+// Debug logging for environment variables
+console.log('🔍 Supabase Environment Check:', {
+  url: supabaseUrl ? 'Present' : 'Missing',
+  key: supabaseAnonKey ? 'Present' : 'Missing',
+  urlValue: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'undefined',
+  keyValue: supabaseAnonKey ? supabaseAnonKey.substring(0, 20) + '...' : 'undefined'
+});
+
 // Validate environment variables
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('⚠️ Supabase configuration missing. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON environment variables.');
+  console.error('Current env vars:', {
+    NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON: !!process.env.NEXT_PUBLIC_SUPABASE_ANON,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  });
 }
 
-// Only create client if we have valid credentials
-export const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    // Store session in localStorage for better persistence across page loads
-    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    // Reduce chance of session expiration issues during long forms
-    storageKey: 'auro-auth-token',
-  },
-}) : null;
+// Create client with better error handling
+let supabase: any = null;
+
+try {
+  if (supabaseUrl && supabaseAnonKey) {
+    supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        // Store session in localStorage for better persistence across page loads
+        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+        // Reduce chance of session expiration issues during long forms
+        storageKey: 'auro-auth-token',
+      },
+    });
+    console.log('✅ Supabase client created successfully');
+  } else {
+    console.error('❌ Cannot create Supabase client - missing environment variables');
+  }
+} catch (error) {
+  console.error('❌ Error creating Supabase client:', error);
+}
+
+export { supabase };
 
 
