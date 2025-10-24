@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     }
     const admin = createClient(url, key);
     // send magic link/verification email
-    const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/request`;
+    const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/auth/confirm`;
     const { error } = await (admin.auth as any).resend({
       type: 'signup',
       email,

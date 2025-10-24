@@ -7,15 +7,44 @@ import Colors from '@/constants/Colors';
 import { supabase } from '@/lib/supabase';
 
 export default function ConfirmEmailScreen() {
-  const { email } = useLocalSearchParams<{ email?: string }>();
+  const { email, token_hash, type } = useLocalSearchParams<{ email?: string; token_hash?: string; type?: string }>();
   const [sending, setSending] = useState(false);
   const [cooldownSec, setCooldownSec] = useState(0);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [confirmationStatus, setConfirmationStatus] = useState<'pending' | 'success' | 'error'>('pending');
 
   useEffect(() => {
     if (cooldownSec <= 0) return;
     const t = setInterval(() => setCooldownSec((s) => (s > 0 ? s - 1 : 0)), 1000);
     return () => clearInterval(t);
   }, [cooldownSec]);
+
+  // Handle email confirmation when user comes from email link
+  useEffect(() => {
+    if (token_hash && type === 'signup') {
+      setIsConfirming(true);
+      const confirmEmail = async () => {
+        try {
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash,
+            type: 'signup',
+          });
+          if (error) {
+            setConfirmationStatus('error');
+          } else {
+            setConfirmationStatus('success');
+            // Redirect to auth page after successful confirmation
+            setTimeout(() => router.replace('/auth'), 2000);
+          }
+        } catch (err) {
+          setConfirmationStatus('error');
+        } finally {
+          setIsConfirming(false);
+        }
+      };
+      confirmEmail();
+    }
+  }, [token_hash, type]);
 
   const handleResend = async () => {
     if (!email || typeof email !== 'string') {
@@ -63,21 +92,51 @@ export default function ConfirmEmailScreen() {
 
         <View style={styles.card}>
           <Image source={require('@/Auro_side_side_no_bg.png')} style={styles.logo} resizeMode="contain" />
-          <Text style={styles.title}>Please confirm your email</Text>
-          {!!email && <Text style={styles.body}>We sent a link to {email}.</Text>}
-          {!email && <Text style={styles.body}>We sent a confirmation link to your inbox.</Text>}
+          
+          {isConfirming && (
+            <>
+              <ActivityIndicator color={Colors.brand.accentMagenta} size="large" />
+              <Text style={styles.title}>Confirming your email...</Text>
+              <Text style={styles.body}>Please wait while we verify your email address.</Text>
+            </>
+          )}
 
-          <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/auth')}>
-            <Text style={styles.primaryBtnText}>Back to Sign In</Text>
-          </TouchableOpacity>
+          {confirmationStatus === 'success' && !isConfirming && (
+            <>
+              <Text style={styles.title}>Email confirmed! 🎉</Text>
+              <Text style={styles.body}>Your email has been successfully verified. Redirecting you to sign in...</Text>
+            </>
+          )}
 
-          <TouchableOpacity style={[styles.secondaryBtn, (sending || cooldownSec > 0) && { opacity: 0.7 }]} disabled={sending || cooldownSec > 0} onPress={handleResend}>
-            {sending ? (
-              <ActivityIndicator color={Colors.brand.textOnGradient} />
-            ) : (
-              <Text style={styles.secondaryBtnText}>{cooldownSec > 0 ? `Resend in ${cooldownSec}s` : 'Resend verification email'}</Text>
-            )}
-          </TouchableOpacity>
+          {confirmationStatus === 'error' && !isConfirming && (
+            <>
+              <Text style={styles.title}>Confirmation failed</Text>
+              <Text style={styles.body}>We couldn't verify your email. The link may have expired or been used already.</Text>
+              <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/auth')}>
+                <Text style={styles.primaryBtnText}>Back to Sign In</Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {confirmationStatus === 'pending' && !isConfirming && (
+            <>
+              <Text style={styles.title}>Please confirm your email</Text>
+              {!!email && <Text style={styles.body}>We sent a link to {email}.</Text>}
+              {!email && <Text style={styles.body}>We sent a confirmation link to your inbox.</Text>}
+
+              <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/auth')}>
+                <Text style={styles.primaryBtnText}>Back to Sign In</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={[styles.secondaryBtn, (sending || cooldownSec > 0) && { opacity: 0.7 }]} disabled={sending || cooldownSec > 0} onPress={handleResend}>
+                {sending ? (
+                  <ActivityIndicator color={Colors.brand.textOnGradient} />
+                ) : (
+                  <Text style={styles.secondaryBtnText}>{cooldownSec > 0 ? `Resend in ${cooldownSec}s` : 'Resend verification email'}</Text>
+                )}
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </ScrollView>
     </View>

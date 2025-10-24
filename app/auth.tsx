@@ -202,8 +202,8 @@ export default function AuthScreen() {
             : 'https://yourdomain.com';
 
         const redirectTo = Platform.select({
-          web: `${origin}/auth/callback`,
-          default: 'auro://auth/callback',
+          web: `${origin}/auth/confirm`,
+          default: 'auro://auth/confirm',
         });
 
         const { data: signUpData, error } = await supabase.auth.signUp({

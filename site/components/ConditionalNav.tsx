@@ -92,7 +92,7 @@ export default function ConditionalNav() {
       {!isOnApplyPage && (
         <a className="cta-nav-integrated" href="/reviewers/apply">
           <div className="cta-count-section">
-            <span className="cta-count-number">{count}</span>
+            <span className="cta-count-number">{loading ? '...' : count}</span>
             <span className="cta-count-separator">/</span>
             <span className="cta-count-max">100</span>
           </div>

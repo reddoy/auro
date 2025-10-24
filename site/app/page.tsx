@@ -302,7 +302,7 @@ export default function HomePage() {
                     asChild
                   >
                     <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
-                      <span className="mobile-button-text">🚀 Start Earning Today ({reviewerCount}/100 spots taken)</span>
+                      <span className="mobile-button-text">🚀 Start Earning Today ({isLoadingCount ? 'Loading...' : `${reviewerCount}/100 spots taken`})</span>
                       <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                     </a>
                   </Button>
@@ -685,14 +685,14 @@ export default function HomePage() {
                 asChild
               >
                 <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
-                  <span className="mobile-button-text">🚀 Start Earning Today ({reviewerCount}/100 spots taken)</span>
+                  <span className="mobile-button-text">🚀 Start Earning Today ({isLoadingCount ? 'Loading...' : `${reviewerCount}/100 spots taken`})</span>
                   <ArrowRight className="ml-1 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                 </a>
               </Button>
               
               <div className="text-center sm:text-left">
                 <p className="text-sm text-white/80 font-semibold">
-                  {spotsLeft > 0 ? `${spotsLeft} spots remaining` : 'Spots filled!'}
+                  {isLoadingCount ? 'Loading...' : (spotsLeft > 0 ? `${spotsLeft} spots remaining` : 'Spots filled!')}
                 </p>
                 <p className="text-xs text-white/80">
                   Benefits end December 1st, 2025

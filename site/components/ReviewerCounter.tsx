@@ -10,16 +10,18 @@ interface ReviewerCounterProps {
 
 export default function ReviewerCounter({ maxReviewers = 100, className = '' }: ReviewerCounterProps) {
   const [count, setCount] = useState<number>(0); // Start with 0 instead of null
-  const [loading, setLoading] = useState(false); // Don't show loading initially
+  const [loading, setLoading] = useState(true); // Show loading initially
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchReviewerCount = async () => {
       try {
         setError(null);
+        setLoading(true);
         
         if (!supabase) {
           console.error('Supabase client is not available');
+          setLoading(false);
           return;
         }
         
@@ -52,6 +54,8 @@ export default function ReviewerCounter({ maxReviewers = 100, className = '' }: 
         console.error('Error fetching reviewer count:', err);
         setError('Connection failed');
         // Keep current count instead of resetting to 0
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -73,7 +77,7 @@ export default function ReviewerCounter({ maxReviewers = 100, className = '' }: 
   return (
     <div className={`reviewer-counter ${className} ${isNearFull ? 'near-full' : ''} ${isFull ? 'full' : ''}`}>
       <div className="counter-display">
-        <span className="counter-current">{currentCount}</span>
+        <span className="counter-current">{loading ? '...' : currentCount}</span>
         <span className="counter-separator">/</span>
         <span className="counter-max">{maxReviewers}</span>
       </div>

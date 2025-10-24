@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
+import Cropper from 'react-easy-crop';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { X, RotateCw, ZoomIn, ZoomOut, Move } from 'lucide-react';
+import { X, RotateCw } from 'lucide-react';
 
 interface CircularCropModalProps {
   imageFile: File;
@@ -18,156 +19,105 @@ export default function CircularCropModal({
   onCancel, 
   isOpen 
 }: CircularCropModalProps) {
-  const [scale, setScale] = useState(1);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
-  const [imageLoaded, setImageLoaded] = useState(false);
-  
-  const imageRef = useRef<HTMLImageElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
-  const CROP_SIZE = 200; // Size of the circular crop area
-  const MIN_SCALE = 0.5;
-  const MAX_SCALE = 3;
+  const onCropChange = (location: { x: number; y: number }) => {
+    setCrop(location);
+  };
 
-  // Reset position and scale when new image is loaded
-  useEffect(() => {
-    if (imageFile) {
-      setScale(1);
-      setPosition({ x: 0, y: 0 });
-      setRotation(0);
-      setImageLoaded(false);
-    }
-  }, [imageFile]);
-
-  // Handle image load
-  const handleImageLoad = useCallback(() => {
-    if (imageRef.current) {
-      const { naturalWidth, naturalHeight } = imageRef.current;
-      setImageSize({ width: naturalWidth, height: naturalHeight });
-      setImageLoaded(true);
-    }
+  const onCropAreaChange = useCallback((croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
-  // Handle mouse/touch events for dragging
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
-    e.preventDefault();
-  }, [position]);
+  const createImage = (url: string): Promise<HTMLImageElement> =>
+    new Promise((resolve, reject) => {
+      const image = new Image();
+      image.addEventListener('load', () => resolve(image));
+      image.addEventListener('error', (error) => reject(error));
+      image.src = url;
+    });
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging) return;
-    
-    const newPosition = {
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y
-    };
-    
-    setPosition(newPosition);
-    e.preventDefault();
-  }, [isDragging, dragStart]);
-
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
-  // Handle zoom
-  const handleZoomIn = useCallback(() => {
-    setScale(prev => Math.min(prev + 0.1, MAX_SCALE));
-  }, []);
-
-  const handleZoomOut = useCallback(() => {
-    setScale(prev => Math.max(prev - 0.1, MIN_SCALE));
-  }, []);
-
-  // Handle rotation
-  const handleRotate = useCallback(() => {
-    setRotation(prev => (prev + 90) % 360);
-  }, []);
-
-  // Generate cropped image
-  const handleCrop = useCallback(() => {
-    if (!imageRef.current || !canvasRef.current) return;
-
-    const canvas = canvasRef.current;
+  const getCroppedImg = async (
+    imageSrc: string,
+    pixelCrop: any,
+    rotation = 0
+  ): Promise<Blob> => {
+    const image = await createImage(imageSrc);
+    const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
 
-    canvas.width = CROP_SIZE;
-    canvas.height = CROP_SIZE;
-
-    // Clear canvas
-    ctx.clearRect(0, 0, CROP_SIZE, CROP_SIZE);
-
-    // Create circular clipping path
-    ctx.beginPath();
-    ctx.arc(CROP_SIZE / 2, CROP_SIZE / 2, CROP_SIZE / 2, 0, Math.PI * 2);
-    ctx.clip();
-
-    // Calculate image position and size for cropping
-    const image = imageRef.current;
-    const containerRect = containerRef.current?.getBoundingClientRect();
-    if (!containerRect) return;
-
-    // Calculate the actual image dimensions after scaling
-    const scaledWidth = image.naturalWidth * scale;
-    const scaledHeight = image.naturalHeight * scale;
-
-    // Calculate the offset from the container center
-    const containerCenterX = containerRect.width / 2;
-    const containerCenterY = containerRect.height / 2;
-    const imageCenterX = containerCenterX + position.x;
-    const imageCenterY = containerCenterY + position.y;
-
-    // Calculate the source rectangle in the original image
-    const sourceX = (imageCenterX - CROP_SIZE / 2 - (containerCenterX - scaledWidth / 2)) / scale;
-    const sourceY = (imageCenterY - CROP_SIZE / 2 - (containerCenterY - scaledHeight / 2)) / scale;
-    const sourceWidth = CROP_SIZE / scale;
-    const sourceHeight = CROP_SIZE / scale;
-
-    // Apply rotation
-    if (rotation !== 0) {
-      ctx.translate(CROP_SIZE / 2, CROP_SIZE / 2);
-      ctx.rotate((rotation * Math.PI) / 180);
-      ctx.translate(-CROP_SIZE / 2, -CROP_SIZE / 2);
+    if (!ctx) {
+      throw new Error('No 2d context');
     }
 
-    // Draw the cropped portion
+    const maxSize = Math.max(image.width, image.height);
+    const safeArea = 2 * ((maxSize / 2) * Math.sqrt(2));
+
+    canvas.width = safeArea;
+    canvas.height = safeArea;
+
+    ctx.translate(safeArea / 2, safeArea / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.translate(-safeArea / 2, -safeArea / 2);
+
     ctx.drawImage(
       image,
-      sourceX, sourceY, sourceWidth, sourceHeight,
-      0, 0, CROP_SIZE, CROP_SIZE
+      safeArea / 2 - image.width * 0.5,
+      safeArea / 2 - image.height * 0.5
     );
 
-    // Convert canvas to blob and create file
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const croppedFile = new File([blob], imageFile.name, { 
-          type: imageFile.type,
-          lastModified: Date.now()
-        });
-        onCrop(croppedFile);
-      }
-    }, imageFile.type, 0.9);
-  }, [imageFile, scale, position, rotation, onCrop]);
+    const data = ctx.getImageData(0, 0, safeArea, safeArea);
+
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+
+    ctx.putImageData(
+      data,
+      Math.round(0 - safeArea / 2 + image.width * 0.5 - pixelCrop.x),
+      Math.round(0 - safeArea / 2 + image.height * 0.5 - pixelCrop.y)
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        resolve(blob as Blob);
+      }, 'image/jpeg', 0.95);
+    });
+  };
+
+  const handleCrop = async () => {
+    if (!croppedAreaPixels || !imageFile) return;
+
+    try {
+      const imageSrc = URL.createObjectURL(imageFile);
+      const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels, rotation);
+      
+      const croppedFile = new File([croppedImage], imageFile.name, { 
+        type: 'image/jpeg',
+        lastModified: Date.now()
+      });
+      
+      onCrop(croppedFile);
+      URL.revokeObjectURL(imageSrc);
+    } catch (error) {
+      console.error('Error cropping image:', error);
+    }
+  };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md bg-gradient-to-br from-[#0c0325] to-[#1a0b3d] border-white/20">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="text-lg font-semibold">Crop Your Photo</CardTitle>
+          <CardTitle className="text-lg font-semibold text-white">Crop Your Photo</CardTitle>
           <Button
             variant="ghost"
             size="sm"
             onClick={onCancel}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 text-white hover:bg-white/10"
           >
             <X className="h-4 w-4" />
           </Button>
@@ -175,92 +125,79 @@ export default function CircularCropModal({
         
         <CardContent className="space-y-4">
           {/* Crop Area */}
-          <div className="relative">
-            <div
-              ref={containerRef}
-              className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden"
-              style={{ width: CROP_SIZE, height: CROP_SIZE, margin: '0 auto' }}
-            >
-              {/* Circular crop overlay */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: `radial-gradient(circle at center, transparent 0%, transparent ${CROP_SIZE/2 - 2}px, rgba(0,0,0,0.5) ${CROP_SIZE/2}px)`,
-                  borderRadius: '50%',
-                  border: '2px solid #fff'
-                }}
-              />
-              
-              {/* Image */}
-              {imageFile && (
-                <img
-                  ref={imageRef}
-                  src={URL.createObjectURL(imageFile)}
-                  alt="Crop preview"
-                  className="absolute"
-                  style={{
-                    width: imageSize.width * scale,
-                    height: imageSize.height * scale,
-                    left: `calc(50% + ${position.x}px)`,
-                    top: `calc(50% + ${position.y}px)`,
-                    transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
-                    cursor: isDragging ? 'grabbing' : 'grab',
-                    transformOrigin: 'center',
-                    display: imageLoaded ? 'block' : 'none'
-                  }}
-                  onLoad={handleImageLoad}
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={handleMouseUp}
-                />
-              )}
-              
-              {/* Loading indicator */}
-              {!imageLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-8 h-8 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></div>
-                </div>
-              )}
-            </div>
+          <div className="relative h-64 bg-black/50 rounded-lg overflow-hidden">
+            <Cropper
+              image={URL.createObjectURL(imageFile)}
+              crop={crop}
+              zoom={zoom}
+              rotation={rotation}
+              aspect={1}
+              cropShape="round"
+              showGrid={false}
+              onCropChange={onCropChange}
+              onCropComplete={onCropAreaChange}
+              onZoomChange={setZoom}
+              onRotationChange={setRotation}
+              style={{
+                containerStyle: {
+                  width: '100%',
+                  height: '100%',
+                  position: 'relative',
+                },
+                cropAreaStyle: {
+                  border: '3px solid #fff',
+                  boxShadow: '0 0 0 1px rgba(0,0,0,0.3)',
+                },
+                mediaStyle: {
+                  maxWidth: 'none',
+                },
+              }}
+            />
           </div>
 
           {/* Controls */}
-          <div className="flex items-center justify-center space-x-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleZoomOut}
-              disabled={scale <= MIN_SCALE}
-            >
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRotate}
-            >
-              <RotateCw className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleZoomIn}
-              disabled={scale >= MAX_SCALE}
-            >
-              <ZoomIn className="h-4 w-4" />
-            </Button>
+          <div className="space-y-4">
+            {/* Zoom Slider */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">Zoom</label>
+              <input
+                type="range"
+                value={zoom}
+                min={1}
+                max={3}
+                step={0.1}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider"
+              />
+            </div>
+
+            {/* Rotation */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-gray-300">Rotation</label>
+                <button
+                  onClick={() => setRotation((prev) => (prev + 90) % 360)}
+                  className="flex items-center gap-2 text-xs text-orange-400 hover:text-orange-300"
+                >
+                  <RotateCw className="w-4 h-4" />
+                  Rotate 90°
+                </button>
+              </div>
+              <input
+                type="range"
+                value={rotation}
+                min={0}
+                max={360}
+                step={1}
+                onChange={(e) => setRotation(Number(e.target.value))}
+                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider"
+              />
+            </div>
           </div>
 
           {/* Instructions */}
-          <div className="text-center text-sm text-gray-600">
-            <p className="flex items-center justify-center gap-2 mb-2">
-              <Move className="h-4 w-4" />
-              Drag to position
-            </p>
-            <p>Use zoom and rotate to adjust your photo</p>
+          <div className="text-center text-sm text-gray-300">
+            <p>Drag to position, use zoom and rotate to adjust your photo</p>
           </div>
 
           {/* Action Buttons */}
@@ -268,26 +205,49 @@ export default function CircularCropModal({
             <Button
               variant="outline"
               onClick={onCancel}
-              className="flex-1"
+              className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
             >
               Cancel
             </Button>
             <Button
               onClick={handleCrop}
-              className="flex-1"
-              disabled={!imageLoaded}
+              className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
             >
               Use Photo
             </Button>
           </div>
         </CardContent>
       </Card>
-      
-      {/* Hidden canvas for cropping */}
-      <canvas
-        ref={canvasRef}
-        style={{ display: 'none' }}
-      />
+
+      <style jsx>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #ff6f00, #9333ea);
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(255, 111, 0, 0.4);
+        }
+
+        .slider::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #ff6f00, #9333ea);
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 2px 8px rgba(255, 111, 0, 0.4);
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+          box-shadow: 0 2px 12px rgba(255, 111, 0, 0.6);
+        }
+
+        .slider::-moz-range-thumb:hover {
+          box-shadow: 0 2px 12px rgba(255, 111, 0, 0.6);
+        }
+      `}</style>
     </div>
   );
 }
