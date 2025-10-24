@@ -372,6 +372,17 @@ export async function POST(req: Request) {
     
     // Log the Stripe secret key type to verify we're using test keys
     console.log('[create-session] Stripe key type:', secret.startsWith('sk_test_') ? 'TEST' : 'LIVE');
+    console.log('[create-session] Stripe key prefix:', secret.substring(0, 20) + '...');
+    
+    // Get the account ID from the Stripe key to see which account we're using
+    try {
+      const account = await stripe.accounts.retrieve();
+      console.log('[create-session] Stripe account ID:', account.id);
+      console.log('[create-session] Stripe account type:', account.type);
+      console.log('[create-session] Stripe account country:', account.country);
+    } catch (accountError) {
+      console.log('[create-session] Could not retrieve account info:', accountError);
+    }
 
     // Store computed financial fields on the request for later UI
     try {
