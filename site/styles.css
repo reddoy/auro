@@ -728,7 +728,7 @@ body {
 }
 
 .brand:hover {
-  transform: scale(1.02);
+  /* Removed scale animation to prevent weird right movement */
 }
 
 .brand img {
@@ -4663,13 +4663,14 @@ footer {
 
 .btn-secondary {
   background: var(--card);
-  color: var(--text);
+  color: #333;
   border: 1px solid var(--border);
 }
 
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: var(--divider);
+  color: #333;
 }
 
 .btn-outline {
@@ -5787,6 +5788,9 @@ footer {
 .success-icon {
   font-size: 48px;
   margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .success-card h3 {

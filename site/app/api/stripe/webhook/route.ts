@@ -9,7 +9,6 @@ export async function POST(req: Request) {
   const sig = (req.headers.get('stripe-signature') || '') as string;
   
   console.log('[stripe-webhook] ===== WEBHOOK RECEIVED =====');
-  console.log('[stripe-webhook] Headers:', Object.fromEntries(req.headers.entries()));
   console.log('[stripe-webhook] Body length:', body.length);
   console.log('[stripe-webhook] Signature present:', !!sig);
   
