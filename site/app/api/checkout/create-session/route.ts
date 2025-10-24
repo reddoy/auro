@@ -335,9 +335,9 @@ export async function POST(req: Request) {
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com'}/checkout/cancel`,
     };
 
-    // Use destination charges - payments go to platform account first, then we transfer to reviewers
-    // This allows us to hold money in escrow until review completion
-    if (connectAccountId) {
+    // Temporarily disable Connect for testing - payments go to platform account
+    // TODO: Re-enable Connect once connected accounts are properly onboarded
+    if (false && connectAccountId) {
       sessionParams.payment_intent_data = {
         transfer_data: {
           destination: connectAccountId,
@@ -346,7 +346,7 @@ export async function POST(req: Request) {
       };
       console.log('[create-session] Using destination charge with Connect account:', connectAccountId);
     } else {
-      console.log('[create-session] No Connect account found, using regular checkout');
+      console.log('[create-session] Using regular checkout (Connect disabled for testing)');
     }
     
     console.log('[create-session] ===== CREATING STRIPE CHECKOUT SESSION =====');
