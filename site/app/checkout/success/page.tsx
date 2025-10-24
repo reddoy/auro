@@ -181,6 +181,9 @@ export default function CheckoutSuccessPage() {
         .success-icon {
           margin-bottom: 24px;
           animation: successPulse 2s ease-in-out infinite;
+          display: flex;
+          justify-content: center;
+          align-items: center;
         }
 
         @keyframes successPulse {
@@ -453,6 +456,35 @@ export default function CheckoutSuccessPage() {
           .email-info {
             min-width: auto;
             justify-content: center;
+          }
+
+          /* Center text content on mobile */
+          .protection-card {
+            text-align: center;
+          }
+
+          .protection-header {
+            justify-content: center;
+          }
+
+          .protection-features {
+            align-items: center;
+          }
+
+          .feature-item {
+            justify-content: center;
+          }
+
+          .email-section {
+            text-align: center;
+          }
+
+          .email-header {
+            text-align: center;
+          }
+
+          .email-actions {
+            align-items: center;
           }
         }
       `}</style>
