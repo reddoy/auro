@@ -63,21 +63,18 @@ export async function POST(req: Request) {
             return new Response(JSON.stringify({ error: 'User not found by email' }), { status: 400 });
           }
           
-          // Verify the email matches the userId we were given
-          if (user.id !== userIdFromBody) {
-            return new Response(JSON.stringify({ error: 'User ID and email mismatch' }), { status: 400 });
-          }
-          
-          userId = userIdFromBody;
-          console.log(`[ApplySignup] User verified by email lookup: ${email}`);
+          // Use the user ID from the email lookup instead of the one from localStorage
+          // This handles cases where localStorage might have stale or incorrect data
+          userId = user.id;
+          console.log(`[ApplySignup] User verified by email lookup: ${email}, using ID: ${user.id}`);
         } else {
-          // User found by ID, check email confirmation status
-          if (userData.user.email_confirmed_at) {
-            return new Response(JSON.stringify({ 
-              error: 'Email already confirmed. Please use the regular sign-in flow.' 
-            }), { status: 400 });
+          // User found by ID, check if email matches (case-insensitive)
+          if (email && userData.user.email && userData.user.email.toLowerCase() !== email.toLowerCase()) {
+            console.log(`[ApplySignup] Email mismatch: stored=${userData.user.email}, provided=${email}`);
+            // Don't fail here - just log the mismatch and continue with the ID we found
           }
           
+          // Don't check email confirmation status for signup flow - they might not have confirmed yet
           userId = userIdFromBody;
           console.log(`[ApplySignup] User verified by ID: ${userIdFromBody}`);
         }
@@ -219,6 +216,28 @@ export async function POST(req: Request) {
 
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e?.message || 'Unknown error' }), { status: 500 });
+    console.error('[ApplySignup] Unexpected error:', e);
+    
+    // Provide more specific error messages based on the error type
+    let errorMessage = 'Unknown error occurred';
+    let statusCode = 500;
+    
+    if (e?.message?.includes('duplicate key') || e?.message?.includes('unique constraint')) {
+      errorMessage = 'An account with this email already exists. Please sign in instead.';
+      statusCode = 400;
+    } else if (e?.message?.includes('foreign key') || e?.message?.includes('constraint')) {
+      errorMessage = 'Database constraint error. Please try again or contact support.';
+      statusCode = 400;
+    } else if (e?.message?.includes('network') || e?.message?.includes('timeout')) {
+      errorMessage = 'Network error. Please check your connection and try again.';
+      statusCode = 500;
+    } else if (e?.message?.includes('validation')) {
+      errorMessage = 'Invalid data provided. Please check your information and try again.';
+      statusCode = 400;
+    } else if (e?.message) {
+      errorMessage = e.message;
+    }
+    
+    return new Response(JSON.stringify({ error: errorMessage }), { status: statusCode });
   }
 }

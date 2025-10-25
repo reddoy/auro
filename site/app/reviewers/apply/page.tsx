@@ -659,204 +659,88 @@ export default function FoundingReviewerApplyPage() {
         
         console.log('[ReviewerApply] Submitting application at step 5');
         
-        if (!supabase?.auth) {
-          console.error('[ReviewerApply] Supabase client or auth is null');
-          setError('Authentication service is not available. Please refresh the page.');
-          setLoading(false);
-          return;
-        }
+        // Always use the signup endpoint for simplicity - it handles both authenticated and unauthenticated cases
+        const signupUserId = localStorage.getItem('auro_signup_user_id');
+        const signupEmail = localStorage.getItem('auro_signup_email');
+        const signupFullName = localStorage.getItem('auro_signup_full_name') || '';
         
-        // Get current session and verify it's valid
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        console.log('[ReviewerApply] Initial session check:', {
-          hasSession: !!session,
-          sessionError: sessionError?.message,
-          expiresAt: session?.expires_at,
-          now: Math.floor(Date.now() / 1000)
-        });
-        
-        // Check if session exists and is valid
-        if (!session) {
-          console.log('[ReviewerApply] No session found');
-          
-          // Try to get user to see if we have any auth state
-          const { data: userData, error: userError } = await supabase.auth.getUser();
-          console.log('[ReviewerApply] User check:', { hasUser: !!userData?.user, userError: userError?.message });
-          
-          // If we have a user but no session, this is likely an OAuth callback issue
-          if (userData?.user && !userError) {
-            console.log('[ReviewerApply] User exists but no session - OAuth callback likely incomplete');
-            setError('Your session is being restored. Please wait a moment and try again, or refresh the page.');
-            setLoading(false);
-            
-            // Automatically retry after a short delay
-            setTimeout(() => {
-              window.location.reload();
-            }, 3000);
-            return;
-          }
-          
-          // No user and no session - this means they haven't completed the signup process yet
-          // Check if they have signup data in localStorage from step 3
-          const signupUserId = localStorage.getItem('auro_signup_user_id');
-          const signupEmail = localStorage.getItem('auro_signup_email');
-          
-          if (signupUserId && signupEmail) {
-            console.log('[ReviewerApply] Found signup data in localStorage, but no session - using signup endpoint');
-            
-            // Use the signup endpoint that doesn't require authentication
-            const signupFullName = localStorage.getItem('auro_signup_full_name') || '';
-            
-            try {
-              const requestData = {
-                bio: '',
-                focusAreas: '',
-                hourlyRate: null,
-                avatarUrl: avatarUrl,
-                avatarPath: avatarPath,
-                socials: [],
-                instagramHandle: instagramHandle || null,
-                tiktokHandle: tiktokHandle || null,
-                phone: phone || null,
-                marketingConsent,
-                userId: signupUserId,
-                email: signupEmail,
-                fullName: signupFullName,
-                firstName: firstName,
-                lastName: lastName
-              };
-              
-              console.log('[ReviewerApply] Sending signup request with data:', {
-                userId: signupUserId,
-                email: signupEmail,
-                fullName: signupFullName
-              });
-              
-              const resp = await withRetry(async () => {
-                return fetch('/api/reviewers/apply-signup', {
-                  method: 'POST',
-                  headers: { 
-                    'content-type': 'application/json'
-                  },
-                  body: JSON.stringify(requestData)
-                });
-              }, 2, 1000);
-              
-              const json = await resp.json();
-              
-              if (!resp.ok) {
-                console.error('[ReviewerApply] Signup API error:', json);
-                throw new Error(json?.error || 'Failed to submit');
-              }
-              
-              console.log('[ReviewerApply] Application submitted successfully via signup endpoint');
-              
-              // Send confirmation email
-              try {
-                console.log('[ReviewerApply] Sending confirmation email...');
-                await fetch('/api/auth/resend-verification', {
-                  method: 'POST',
-                  headers: { 'content-type': 'application/json' },
-                  body: JSON.stringify({ email: signupEmail })
-                });
-                console.log('[ReviewerApply] Confirmation email sent successfully');
-              } catch (emailError) {
-                console.warn('[ReviewerApply] Failed to send confirmation email:', emailError);
-              }
-              
-              clearFormData(); // Clear saved data on successful submission
-              setStep(6);
-              setLoading(false);
-              return;
-              
-            } catch (signupError: any) {
-              console.error('[ReviewerApply] Error submitting via signup endpoint:', signupError);
-              setError('Failed to submit application. Please try again or contact support if the problem persists.');
-              setLoading(false);
-              return;
-            }
-          }
-          
-          // No signup data either - they need to start the process
+        if (!signupEmail) {
           setError('Please complete the signup process first. Go back to step 2 and create your account.');
           setLoading(false);
-          setStep(2); // Go back to account creation step
+          setStep(2);
           return;
         }
         
-        // Session exists - verify user
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-        
-        if (userError || !userData?.user) {
-          console.error('[ReviewerApply] User verification failed:', userError);
-          setError('Unable to verify your account. Please refresh the page and try again.');
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(signupEmail)) {
+          setError('Invalid email format. Please go back to step 2 and enter a valid email address.');
           setLoading(false);
+          setStep(2);
           return;
         }
         
-        console.log('[ReviewerApply] Session and user verified:', userData.user.id);
+        const requestData = {
+          bio: '',
+          focusAreas: '',
+          hourlyRate: null,
+          avatarUrl: avatarUrl,
+          avatarPath: avatarPath,
+          socials: [],
+          instagramHandle: instagramHandle || null,
+          tiktokHandle: tiktokHandle || null,
+          phone: phone || null,
+          marketingConsent,
+          userId: signupUserId, // May be null, that's OK
+          email: signupEmail,
+          fullName: signupFullName,
+          firstName: firstName,
+          lastName: lastName
+        };
         
-        const token = session.access_token;
-        const userId = userData.user.id;
+        console.log('[ReviewerApply] Sending signup request with data:', {
+          userId: signupUserId,
+          email: signupEmail,
+          fullName: signupFullName
+        });
         
-        // Submit to API with retry logic
-        console.log('[ReviewerApply] Submitting to API...');
         const resp = await withRetry(async () => {
-          return fetch('/api/reviewers/apply', {
+          return fetch('/api/reviewers/apply-signup', {
             method: 'POST',
             headers: { 
-              'content-type': 'application/json', 
-              'authorization': `Bearer ${token}`
+              'content-type': 'application/json'
             },
-            body: JSON.stringify({
-              bio: '',
-              focusAreas: '',
-              hourlyRate: null,
-              avatarUrl: avatarUrl,
-              avatarPath: avatarPath,
-              socials: [],
-              instagramHandle: instagramHandle || null,
-              tiktokHandle: tiktokHandle || null,
-              phone: phone || null,
-              marketingConsent,
-              userId: userId,
-            })
+            body: JSON.stringify(requestData)
           });
         }, 2, 1000);
         
         const json = await resp.json();
         
-        // Handle authentication errors specifically
-        if (resp.status === 401 || resp.status === 403) {
-          console.error('[ReviewerApply] API returned auth error:', resp.status);
-          setError('Session verification failed. Please refresh the page and try again.');
-          return;
-        }
-        
         if (!resp.ok) {
-          console.error('[ReviewerApply] API error:', json);
+          console.error('[ReviewerApply] Signup API error:', json);
           throw new Error(json?.error || 'Failed to submit');
         }
         
         console.log('[ReviewerApply] Application submitted successfully');
         
-        // Send confirmation email now that the full signup is complete
+        // Send confirmation email
         try {
           console.log('[ReviewerApply] Sending confirmation email...');
           await fetch('/api/auth/resend-verification', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ email: email })
+            body: JSON.stringify({ email: signupEmail })
           });
           console.log('[ReviewerApply] Confirmation email sent successfully');
         } catch (emailError) {
           console.warn('[ReviewerApply] Failed to send confirmation email:', emailError);
-          // Don't fail the entire flow for email issues - just log the warning
         }
         
         clearFormData(); // Clear saved data on successful submission
         setStep(6);
+        setLoading(false);
+        return;
+        
       } catch (e: any) {
         console.error('[ReviewerApply] Error submitting application:', e);
         if (e?.message?.includes('already completed')) {
@@ -870,7 +754,6 @@ export default function FoundingReviewerApplyPage() {
         } else {
           setError('Failed to submit application. Please try again or contact support if the problem persists.');
         }
-      } finally {
         setLoading(false);
       }
       return;

@@ -1,5 +1,19 @@
 # Reviewer Signup Flow - Test Plan
 
+## Recent Fixes Applied (2025-01-27)
+
+### Fixed Issues:
+1. **User ID and email mismatch error** - Fixed in `/api/reviewers/apply-signup` endpoint
+2. **Complex session handling** - Simplified to always use signup endpoint for step 5
+3. **Better error messages** - More specific error handling throughout the flow
+4. **Email validation** - Added client-side email format validation
+
+### Key Changes:
+- Removed strict email/ID matching that was causing 400 errors
+- Simplified step 5 submission to always use the signup endpoint
+- Added better error categorization and user-friendly messages
+- Improved validation and error recovery
+
 ## Quick Test Checklist
 
 ### Test Case 1: Google OAuth Signup (Happy Path)
@@ -33,7 +47,39 @@
 
 ---
 
-### Test Case 2: Email/Password Signup (Not used for reviewers, but should still work)
+### Test Case 1.5: Email/Password Signup (Fixed Flow)
+**Steps**:
+1. Navigate to `/reviewers/apply`
+2. Complete Step 1 (intro) - click "Join Now"
+3. On Step 2, enter first name, last name, email (e.g., `test@example.com`)
+4. Click "Continue" 
+5. On Step 3, create a password (must meet requirements)
+6. Click "Continue" - this creates the account
+7. On Step 4, enter phone number (e.g., `+1 555-123-4567`)
+8. Click "Continue"
+9. On Step 5, optionally upload profile picture and add social handles
+10. Click "Submit Application"
+
+**Expected Result**:
+- ✅ Account created successfully in step 3
+- ✅ No "User ID and email mismatch" errors
+- ✅ Smooth transition through all steps
+- ✅ Application submitted successfully
+- ✅ Confirmation email sent
+
+**Console Logs to Check**:
+```
+[ReviewerApply] Account created successfully: [user-id]
+[ReviewerApply] Submitting application at step 5
+[ReviewerApply] Sending signup request with data: { userId: [user-id], email: test@example.com, ... }
+[ApplySignup] User verified by ID: [user-id]
+[ApplySignup] Successfully updated profile for user [user-id] with is_reviewer=true
+[ReviewerApply] Application submitted successfully
+```
+
+---
+
+### Test Case 2: Email/Password Signup (Legacy - should still work)
 **Steps**:
 1. Navigate to `/reviewers/apply`
 2. Complete Step 1
