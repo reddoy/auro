@@ -11,6 +11,7 @@ import GoogleAnalytics from '../components/GoogleAnalytics';
 const poppins = Poppins({ subsets: ['latin'], weight: ['400', '600', '700'] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://auro.app'),
   title: 'Auro - Rate Guys, Get Paid',
   description: 'Join content creators and influencers earning $200+ daily reviewing guys\' profiles. Set your own rates, work on your schedule, and monetize your eye for style.',
   keywords: 'content creators, style reviewer, profile reviewer, monetize expertise, influencer income, fashion advice, dating coach, women entrepreneurs',

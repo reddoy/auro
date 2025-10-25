@@ -84,7 +84,7 @@ function AuthCallbackContent() {
           // No session yet - set up auth state listener to wait for it
           console.log('[AuthCallback] No session yet, setting up auth listener...');
           
-          const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
             console.log('[AuthCallback] Auth state change:', event, !!session);
             
             if (event === 'SIGNED_IN' && session) {

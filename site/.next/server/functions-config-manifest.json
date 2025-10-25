@@ -1,1 +1,1 @@
-{"version":1,"functions":{"/[username]":{},"/c/[slug]":{},"/reviewers/[slug]":{}}}
+{"version":1,"functions":{"/api/stripe/pending-payments":{},"/[username]":{},"/c/[slug]":{},"/reviewers/[slug]":{}}}
