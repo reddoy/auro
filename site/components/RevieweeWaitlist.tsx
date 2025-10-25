@@ -149,9 +149,36 @@ export default function RevieweeWaitlist() {
         }
 
         .submit-button {
+          background: linear-gradient(135deg, #FF6F00, #FF8A00, #9333EA, #A855F7);
+          background-size: 200% 200%;
+          color: white;
           padding: 12px 24px;
           font-weight: 600;
           white-space: nowrap;
+          border: 0;
+          border-radius: 12px;
+          box-shadow: 0 4px 20px rgba(255, 111, 0, 0.3);
+          transition: all 0.3s ease;
+          animation: gradientShift 3s ease infinite;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .submit-button:hover {
+          transform: translateY(-2px) scale(1.02);
+          box-shadow: 0 8px 30px rgba(255, 111, 0, 0.4);
+        }
+
+        .submit-button:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
         }
 
         .success-message {

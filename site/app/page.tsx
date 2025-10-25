@@ -235,7 +235,7 @@ export default function HomePage() {
               </div>
 
               {/* Mobile App Launch Countdown */}
-              <div className="text-center mobile-text-reveal bg-white/5 backdrop-blur-sm rounded-xl p-4 mx-4" style={{ animationDelay: '1.4s' }}>
+              <div className="text-center mobile-text-reveal bg-white/5 backdrop-blur-sm rounded-xl p-6 mx-4" style={{ animationDelay: '1.4s' }}>
                 <p className="text-white/90 text-base font-semibold mb-3">🚀 App launches in:</p>
                 <CountdownTimer 
                   targetDate={new Date('2025-12-01T21:00:00-08:00')}
@@ -244,7 +244,7 @@ export default function HomePage() {
               </div>
 
               {/* Stats */}
-              <div className="mobile-text-reveal mobile-stats" style={{ animationDelay: '1.6s' }}>
+              <div className="mobile-text-reveal mobile-stats px-6" style={{ animationDelay: '1.6s' }}>
                 <div className="flex flex-col gap-3 text-sm text-white">
                   <div className="flex items-center justify-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
