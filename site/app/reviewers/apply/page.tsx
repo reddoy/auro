@@ -248,12 +248,22 @@ export default function FoundingReviewerApplyPage() {
           return;
         }
 
-        // Get current user and session
+        // Get current user and session - handle gracefully for unauthenticated users
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-        if (userError || sessionError) {
-          console.error('[ReviewerApply] Auth check errors:', { userError, sessionError });
+        // Only treat as error if it's not a missing session (which is normal for new users)
+        if (userError && !userError.message?.includes('session missing') && !userError.message?.includes('AuthSessionMissingError')) {
+          console.error('[ReviewerApply] User check error:', userError);
+          if (isMounted) {
+            setError('Unable to verify authentication. Please refresh the page and try again.');
+            setIsCheckingStatus(false);
+          }
+          return;
+        }
+
+        if (sessionError && !sessionError.message?.includes('session missing') && !sessionError.message?.includes('AuthSessionMissingError')) {
+          console.error('[ReviewerApply] Session check error:', sessionError);
           if (isMounted) {
             setError('Unable to verify authentication. Please refresh the page and try again.');
             setIsCheckingStatus(false);
@@ -312,6 +322,12 @@ export default function FoundingReviewerApplyPage() {
             console.error('[ReviewerApply] Failed to check signup status after retries:', statusError);
             // Don't fail the entire flow for this - just log the error
           }
+        } else {
+          // No user/session - this is normal for new users starting the signup process
+          console.log('[ReviewerApply] No authenticated user - normal for new signups');
+          
+          // Try to load any saved form data for returning users
+          loadFormData();
         }
       } catch (e) {
         console.error('[ReviewerApply] Failed to check auth and load profile:', e);
@@ -561,7 +577,10 @@ export default function FoundingReviewerApplyPage() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: fullName, first_name: firstName, last_name: lastName } }
+          options: { 
+            data: { full_name: fullName, first_name: firstName, last_name: lastName },
+            emailRedirectTo: null // Don't send confirmation email yet - we'll send it after full signup
+          }
         });
         if (error) throw error;
         if (data?.user) {
@@ -616,17 +635,26 @@ export default function FoundingReviewerApplyPage() {
     if (step === 5) {
       // Profile picture and social handles step - submit application
       
-      // Validate session before submission
+      // Validate session before submission - but handle gracefully for users in signup process
       if (!supabase?.auth) {
         console.error('[ReviewerApply] Supabase client or auth is null');
         setError('Authentication service is not available. Please refresh the page.');
         return;
       }
+      
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
-        console.error('[ReviewerApply] No valid session at step 4:', sessionError);
-        setError('Authentication required. Please sign in again.');
+      
+      // Only treat as error if it's not a missing session (which is normal for users in signup process)
+      if (sessionError && !sessionError.message?.includes('session missing') && !sessionError.message?.includes('AuthSessionMissingError')) {
+        console.error('[ReviewerApply] Session error at step 5:', sessionError);
+        setError('Authentication error. Please refresh the page and try again.');
         return;
+      }
+      
+      if (!session) {
+        console.log('[ReviewerApply] No session at step 5 - user may be in signup process');
+        // Don't show error immediately - try to proceed with the application submission
+        // The API will handle authentication requirements
       }
       
       // Submit the application
@@ -646,13 +674,21 @@ export default function FoundingReviewerApplyPage() {
           now: Math.floor(Date.now() / 1000)
         });
         
-        // If no session or error, try to refresh
+        // If no session or error, try to refresh - but handle gracefully for signup process
         if (sessionError || !session) {
           console.log('[ReviewerApply] No valid session, attempting refresh...');
           
           // First, try to get user to see if we have any auth state
           const { data: userData, error: userError } = await supabase.auth.getUser();
           console.log('[ReviewerApply] User check:', { hasUser: !!userData?.user, userError: userError?.message });
+          
+          // Only treat as error if it's not a missing session (normal for signup process)
+          if (userError && !userError.message?.includes('session missing') && !userError.message?.includes('AuthSessionMissingError')) {
+            console.error('[ReviewerApply] User check error:', userError);
+            setError('Authentication error. Please refresh the page and try again.');
+            setLoading(false);
+            return;
+          }
           
           if (userData?.user) {
             // We have a user but no session - this is the OAuth issue
@@ -743,6 +779,21 @@ export default function FoundingReviewerApplyPage() {
         }
         
         console.log('[ReviewerApply] Application submitted successfully');
+        
+        // Send confirmation email now that the full signup is complete
+        try {
+          console.log('[ReviewerApply] Sending confirmation email...');
+          await fetch('/api/auth/resend-verification', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ email: email })
+          });
+          console.log('[ReviewerApply] Confirmation email sent successfully');
+        } catch (emailError) {
+          console.warn('[ReviewerApply] Failed to send confirmation email:', emailError);
+          // Don't fail the entire flow for email issues - just log the warning
+        }
+        
         clearFormData(); // Clear saved data on successful submission
         setStep(6);
       } catch (e: any) {
