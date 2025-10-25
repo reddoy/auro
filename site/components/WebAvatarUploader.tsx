@@ -20,10 +20,31 @@ export default function WebAvatarUploader({
   className = ''
 }: WebAvatarUploaderProps) {
   const [uploading, setUploading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatarUrl || null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showCropModal, setShowCropModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Update preview URL when currentAvatarUrl changes (e.g., after page refresh)
+  React.useEffect(() => {
+    if (currentAvatarUrl) {
+      // Only set preview URL if it's not a blob URL (blob URLs don't persist across refreshes)
+      if (!currentAvatarUrl.startsWith('blob:')) {
+        setPreviewUrl(currentAvatarUrl);
+      }
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [currentAvatarUrl]);
+
+  // Cleanup blob URLs on unmount to prevent memory leaks
+  React.useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
 
   const handleFileSelect = useCallback((file: File) => {
@@ -51,9 +72,9 @@ export default function WebAvatarUploader({
       setUploading(true);
       setShowCropModal(false);
 
-      // Create preview URL from cropped file
-      const preview = URL.createObjectURL(croppedFile);
-      setPreviewUrl(preview);
+      // Create temporary preview URL from cropped file (for immediate feedback)
+      const tempPreview = URL.createObjectURL(croppedFile);
+      setPreviewUrl(tempPreview);
 
       // Get signed upload URL
       const uploadSessionId = `reviewer-signup-${Date.now()}`;
@@ -91,8 +112,14 @@ export default function WebAvatarUploader({
         throw new Error(`Upload failed with status: ${uploadResponse.status}`);
       }
 
-      // Generate display URL
+      // Generate display URL that will persist across page refreshes
       const displayUrl = `/api/storage/signed-view?path=${encodeURIComponent(path)}`;
+      
+      // Update preview to use the persistent URL
+      setPreviewUrl(displayUrl);
+      
+      // Clean up the temporary blob URL
+      URL.revokeObjectURL(tempPreview);
       
       onAvatarChange(displayUrl, path);
     } catch (error) {

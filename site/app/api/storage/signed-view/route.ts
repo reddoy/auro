@@ -1,60 +1,49 @@
-import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-
-function corsHeaders(req: NextRequest): HeadersInit {
-  const origin = req.headers.get('origin') || '*';
-  const requestedHeaders = req.headers.get('access-control-request-headers');
-  return {
-    'Access-Control-Allow-Origin': origin,
-    'Vary': 'Origin',
-    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Access-Control-Allow-Headers': requestedHeaders || 'content-type, authorization, accept',
-    'Access-Control-Max-Age': '86400',
-    'Access-Control-Allow-Credentials': 'true',
-  };
-}
-
-export async function OPTIONS(req: NextRequest) {
-  return new Response(null, { status: 204, headers: corsHeaders(req) });
-}
+import { NextRequest } from 'next/server';
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const path = searchParams.get('path') || '';
-    const bucketParam = searchParams.get('bucket') || '';
-    const expiresInParam = searchParams.get('expiresIn') || '';
-
+    const path = searchParams.get('path');
+    
     if (!path) {
-      return new Response(JSON.stringify({ error: 'Missing path' }), { status: 400, headers: { ...corsHeaders(req), 'content-type': 'application/json' } });
+      return new Response('Missing path parameter', { status: 400 });
     }
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
-    const defaultAvatarBucket = process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET || 'avatars';
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    
     if (!url || !key) {
-      return new Response(JSON.stringify({ error: 'Server misconfigured' }), { status: 500, headers: { ...corsHeaders(req), 'content-type': 'application/json' } });
+      return new Response('Server not configured', { status: 500 });
     }
 
-    const admin = createClient(url, key);
-    const seconds = Number(expiresInParam || 3600);
-    // Choose bucket: explicit param wins; otherwise default to avatars for safety
-    const bucket = bucketParam || defaultAvatarBucket;
-
-    const { data, error } = await (admin.storage as any).from(bucket).createSignedUrl(path, seconds);
+    const supabase = createClient(url, key);
+    
+    // Determine bucket based on path
+    const requestMediaBucket = process.env.NEXT_PUBLIC_SUPABASE_REQUEST_MEDIA_BUCKET || 'request-media';
+    const avatarBucket = process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET || 'avatars';
+    
+    const bucket = (path.includes('/avatar/') || path.includes('/selfie/')) ? avatarBucket : requestMediaBucket;
+    
+    // Create signed URL that expires in 24 hours
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, 60 * 60 * 24);
+    
     if (error) {
-      return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders(req), 'content-type': 'application/json' } });
+      console.error('Error creating signed URL:', error);
+      return new Response('Failed to create signed URL', { status: 500 });
     }
-
-    return new Response(JSON.stringify({ url: data?.signedUrl || null }), {
-      headers: { ...corsHeaders(req), 'content-type': 'application/json' },
-    });
-  } catch (e: any) {
-    return new Response(
-      JSON.stringify({ error: e?.message || 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders(req), 'content-type': 'application/json' } }
-    );
+    
+    if (!data?.signedUrl) {
+      return new Response('No signed URL generated', { status: 500 });
+    }
+    
+    // Redirect to the signed URL
+    return Response.redirect(data.signedUrl, 302);
+    
+  } catch (error) {
+    console.error('Signed view error:', error);
+    return new Response('Internal server error', { status: 500 });
   }
 }
-
-
