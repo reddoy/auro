@@ -31,9 +31,105 @@ export default function FoundingReviewerApplyPage() {
   const [isGoogleAuthed, setIsGoogleAuthed] = useState(false);
   const [signupStatus, setSignupStatus] = useState<'not_started' | 'pending' | 'completed' | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
   const router = useRouter();
 
-  // Check if resuming from OAuth
+  // Retry utility function
+  const withRetry = useCallback(async <T>(
+    operation: () => Promise<T>,
+    maxRetries: number = 3,
+    delay: number = 1000
+  ): Promise<T> => {
+    let lastError: any;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error;
+        console.warn(`[ReviewerApply] Operation failed (attempt ${attempt + 1}/${maxRetries + 1}):`, error);
+        
+        if (attempt < maxRetries) {
+          const waitTime = delay * Math.pow(2, attempt); // Exponential backoff
+          console.log(`[ReviewerApply] Retrying in ${waitTime}ms...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+      }
+    }
+    
+    throw lastError;
+  }, []);
+
+  // Data persistence utilities
+  const saveFormData = useCallback(() => {
+    try {
+      const formData = {
+        step,
+        firstName,
+        lastName,
+        email,
+        phone,
+        marketingConsent,
+        avatarUrl,
+        avatarPath,
+        instagramHandle,
+        tiktokHandle,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('auro_reviewer_form_data', JSON.stringify(formData));
+    } catch (error) {
+      console.warn('[ReviewerApply] Failed to save form data:', error);
+    }
+  }, [step, firstName, lastName, email, phone, marketingConsent, avatarUrl, avatarPath, instagramHandle, tiktokHandle]);
+
+  const loadFormData = useCallback(() => {
+    try {
+      const saved = localStorage.getItem('auro_reviewer_form_data');
+      if (saved) {
+        const formData = JSON.parse(saved);
+        // Only restore if saved within last 2 hours
+        if (Date.now() - formData.timestamp < 2 * 60 * 60 * 1000) {
+          setStep(formData.step || 1);
+          setFirstName(formData.firstName || '');
+          setLastName(formData.lastName || '');
+          setEmail(formData.email || '');
+          setPhone(formData.phone || '');
+          setMarketingConsent(formData.marketingConsent || false);
+          setAvatarUrl(formData.avatarUrl || null);
+          setAvatarPath(formData.avatarPath || null);
+          setInstagramHandle(formData.instagramHandle || '');
+          setTiktokHandle(formData.tiktokHandle || '');
+          console.log('[ReviewerApply] Restored form data from localStorage');
+          return true;
+        } else {
+          // Clean up expired data
+          localStorage.removeItem('auro_reviewer_form_data');
+        }
+      }
+    } catch (error) {
+      console.warn('[ReviewerApply] Failed to load form data:', error);
+      localStorage.removeItem('auro_reviewer_form_data');
+    }
+    return false;
+  }, []);
+
+  const clearFormData = useCallback(() => {
+    try {
+      localStorage.removeItem('auro_reviewer_form_data');
+      localStorage.removeItem('auro_reviewer_signup_state');
+    } catch (error) {
+      console.warn('[ReviewerApply] Failed to clear form data:', error);
+    }
+  }, []);
+
+  // Auto-save form data when it changes
+  useEffect(() => {
+    if (step > 1) {
+      saveFormData();
+    }
+  }, [step, firstName, lastName, email, phone, marketingConsent, avatarUrl, avatarPath, instagramHandle, tiktokHandle, saveFormData]);
+
+  // Check if resuming from OAuth - improved with retry logic
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
@@ -41,53 +137,74 @@ export default function FoundingReviewerApplyPage() {
     const shouldResume = urlParams.get('resume') === 'true';
     
     if (shouldResume) {
-      // Verify we have a valid session after OAuth redirect
-      const verifyOAuthSession = async () => {
+      // Verify we have a valid session after OAuth redirect with retry logic
+      const verifyOAuthSession = async (retryCount = 0) => {
         try {
-          console.log('[ReviewerApply] Resuming from OAuth, verifying session...');
-          
-          // Wait a moment for session to be established
-          await new Promise(resolve => setTimeout(resolve, 500));
+          console.log(`[ReviewerApply] Resuming from OAuth, verifying session... (attempt ${retryCount + 1})`);
           
           if (!supabase?.auth) {
             console.error('[ReviewerApply] Supabase client or auth is null');
-            setError('Authentication service is not available. Please refresh the page.');
+            setError('Authentication service is not available. Please refresh the page and try again.');
             return;
           }
+
+          // Progressive delay: 500ms, 1s, 2s for retries
+          const delay = Math.min(500 * Math.pow(2, retryCount), 2000);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          
           const { data: { session }, error } = await supabase.auth.getSession();
           
-          if (error || !session) {
-            console.error('[ReviewerApply] No valid session after OAuth:', error);
-            setError('Authentication failed. Please try signing in again.');
+          if (error) {
+            console.error('[ReviewerApply] Session error:', error);
+            if (retryCount < 3) {
+              console.log('[ReviewerApply] Retrying session verification...');
+              return verifyOAuthSession(retryCount + 1);
+            }
+            setError('Authentication failed. Please try signing in again or refresh the page.');
+            return;
+          }
+
+          if (!session) {
+            if (retryCount < 3) {
+              console.log('[ReviewerApply] No session found, retrying...');
+              return verifyOAuthSession(retryCount + 1);
+            }
+            setError('No active session found. Please complete the sign-in process again.');
             return;
           }
           
           console.log('[ReviewerApply] Session verified, user:', session.user.id);
           
-          // Restore saved state
-          const saved = localStorage.getItem('auro_reviewer_signup_state');
-          if (saved) {
-            const state = JSON.parse(saved);
-            // Only restore if saved within last 30 minutes
-            if (Date.now() - state.timestamp < 30 * 60 * 1000) {
-              // Restore what they entered before OAuth
-              setFirstName(state.firstName || '');
-              setLastName(state.lastName || '');
-              setEmail(state.email || '');
+          // Restore saved state with better error handling
+          try {
+            const saved = localStorage.getItem('auro_reviewer_signup_state');
+            if (saved) {
+              const state = JSON.parse(saved);
+              // Only restore if saved within last 30 minutes
+              if (Date.now() - state.timestamp < 30 * 60 * 1000) {
+                setFirstName(state.firstName || '');
+                setLastName(state.lastName || '');
+                setEmail(state.email || '');
+                console.log('[ReviewerApply] Restored saved state');
+              }
+              localStorage.removeItem('auro_reviewer_signup_state');
             }
-            localStorage.removeItem('auro_reviewer_signup_state');
+          } catch (stateError) {
+            console.warn('[ReviewerApply] Failed to restore saved state:', stateError);
           }
           
-          // Also try to get info from Google OAuth if available
+          // Get info from Google OAuth metadata
           try {
-            const googleFirstName = localStorage.getItem('auro_signup_first_name');
-            const googleLastName = localStorage.getItem('auro_signup_last_name');
-            const googleEmail = localStorage.getItem('auro_signup_email');
-            
-            if (googleFirstName) setFirstName(googleFirstName);
-            if (googleLastName) setLastName(googleLastName);
-            if (googleEmail) setEmail(googleEmail);
-          } catch {}
+            const user = session.user;
+            if (user.user_metadata) {
+              const { given_name, family_name, email } = user.user_metadata;
+              if (given_name) setFirstName(given_name);
+              if (family_name) setLastName(family_name);
+              if (email) setEmail(email);
+            }
+          } catch (metadataError) {
+            console.warn('[ReviewerApply] Failed to extract OAuth metadata:', metadataError);
+          }
           
           // Mark as Google authenticated
           setIsGoogleAuthed(true);
@@ -99,7 +216,11 @@ export default function FoundingReviewerApplyPage() {
           window.history.replaceState({}, '', '/reviewers/apply');
         } catch (e) {
           console.error('[ReviewerApply] Failed to verify OAuth session:', e);
-          setError('Failed to complete authentication. Please try again.');
+          if (retryCount < 2) {
+            console.log('[ReviewerApply] Retrying due to exception...');
+            return verifyOAuthSession(retryCount + 1);
+          }
+          setError('Authentication verification failed. Please refresh the page and try signing in again.');
         }
       };
       
@@ -111,39 +232,64 @@ export default function FoundingReviewerApplyPage() {
     return false;
   }, []);
 
+  // Consolidated authentication check - prevents race conditions
   useEffect(() => {
-    // Check if user is already authenticated and load existing profile data
+    let isMounted = true;
+    let authListener: any = null;
+
     const checkAuthAndLoadProfile = async () => {
       try {
         if (!supabase?.auth) {
           console.error('[ReviewerApply] Supabase client or auth is null');
-          setError('Authentication service is not available. Please refresh the page.');
+          if (isMounted) {
+            setError('Authentication service is not available. Please refresh the page and try again.');
+            setIsCheckingStatus(false);
+          }
           return;
         }
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          // User is authenticated
+
+        // Get current user and session
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (userError || sessionError) {
+          console.error('[ReviewerApply] Auth check errors:', { userError, sessionError });
+          if (isMounted) {
+            setError('Unable to verify authentication. Please refresh the page and try again.');
+            setIsCheckingStatus(false);
+          }
+          return;
+        }
+
+        if (user && session) {
+          console.log('[ReviewerApply] User authenticated:', user.id);
+          
+          // Set authentication state
           if (user.app_metadata?.provider === 'google') {
             setIsGoogleAuthed(true);
           }
           
-          // Auto-fill from auth data
-          if (user.email) setEmail(user.email);
-          if (user.user_metadata?.given_name) setFirstName(user.user_metadata.given_name);
-          if (user.user_metadata?.family_name) setLastName(user.user_metadata.family_name);
+          // Try to load saved form data first, then fall back to auth data
+          const hasRestoredData = loadFormData();
           
-          // Check signup status first
-          const { data: { session } } = await supabase.auth.getSession();
-          const token = session?.access_token;
+          if (!hasRestoredData) {
+            // Auto-fill from auth data only if no saved data
+            if (user.email) setEmail(user.email);
+            if (user.user_metadata?.given_name) setFirstName(user.user_metadata.given_name);
+            if (user.user_metadata?.family_name) setLastName(user.user_metadata.family_name);
+          }
           
-          if (token) {
-            try {
-              const response = await fetch('/api/reviewers/signup-status', {
-                headers: { authorization: `Bearer ${token}` }
+          // Check signup status with retry
+          try {
+            const response = await withRetry(async () => {
+              return fetch('/api/reviewers/signup-status', {
+                headers: { authorization: `Bearer ${session.access_token}` }
               });
-              
-              if (response.ok) {
-                const data = await response.json();
+            }, 2, 500);
+            
+            if (response.ok) {
+              const data = await response.json();
+              if (isMounted) {
                 setSignupStatus(data.status);
                 
                 // If they already completed signup, show completion message
@@ -161,78 +307,71 @@ export default function FoundingReviewerApplyPage() {
                   }
                 }
               }
-            } catch (statusError) {
-              console.error('Failed to check signup status:', statusError);
             }
-          }
-          
-          // Fallback: Load existing profile data if they already have one (legacy)
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('preferences, reviewer_signup_status')
-            .eq('id', user.id)
-            .maybeSingle();
-            
-          if (profile && !signupStatus) {
-            setSignupStatus(profile.reviewer_signup_status || 'not_started');
-            
-            // Pre-populate with existing data so they can see what they're changing
-            if (profile.preferences?.marketing_consent !== undefined) {
-              setMarketingConsent(profile.preferences.marketing_consent);
-            }
+          } catch (statusError) {
+            console.error('[ReviewerApply] Failed to check signup status after retries:', statusError);
+            // Don't fail the entire flow for this - just log the error
           }
         }
       } catch (e) {
-        console.error('Failed to check auth and load profile:', e);
+        console.error('[ReviewerApply] Failed to check auth and load profile:', e);
+        if (isMounted) {
+          setError('Failed to load your account information. Please refresh the page and try again.');
+        }
       } finally {
-        setIsCheckingStatus(false);
+        if (isMounted) {
+          setIsCheckingStatus(false);
+        }
       }
     };
     
-    checkAuthAndLoadProfile();
-    
-    if (!supabase?.auth) {
-      console.error('[ReviewerApply] Cannot set up auth listener - Supabase client or auth is null');
-      return;
+    // Set up auth state listener
+    if (supabase?.auth) {
+      authListener = supabase.auth.onAuthStateChange((event: any, session: any) => {
+        console.log('[ReviewerApply] Auth state change:', event, !!session);
+        
+        if (!isMounted) return;
+        
+        // Handle successful sign in or token refresh
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+          if (session?.user) {
+            console.log('[ReviewerApply] Valid session established:', session.user.id);
+            // Update user info when session is available
+            if (session.user.app_metadata?.provider === 'google') {
+              setIsGoogleAuthed(true);
+            }
+            if (session.user.email) setEmail(session.user.email);
+            if (session.user.user_metadata?.given_name) setFirstName(session.user.user_metadata.given_name);
+            if (session.user.user_metadata?.family_name) setLastName(session.user.user_metadata.family_name);
+            
+            // Clear any previous session-related errors when we have a valid session
+            if (error.includes('session') || error.includes('expired') || error.includes('authentication')) {
+              setError('');
+            }
+          }
+        }
+        
+        // Handle sign out
+        if (event === 'SIGNED_OUT') {
+          // Only show error if they were previously authenticated on this page AND had started the flow
+          if ((isGoogleAuthed || email) && (step > 1)) {
+            console.warn('[ReviewerApply] User signed out during application at step:', step);
+            setError('Your session was ended. Please refresh the page and sign in again to continue.');
+          } else {
+            console.log('[ReviewerApply] SIGNED_OUT event ignored - user not in active flow');
+          }
+        }
+      });
     }
     
-    const { data: authListener } = supabase.auth.onAuthStateChange((event: any, session: any) => {
-      console.log('[ReviewerApply] Auth state change:', event, !!session);
-      
-      // Handle successful sign in or token refresh
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
-        if (session?.user) {
-          console.log('[ReviewerApply] Valid session established:', session.user.id);
-          // Update user info when session is available
-          if (session.user.app_metadata?.provider === 'google') {
-            setIsGoogleAuthed(true);
-          }
-          if (session.user.email) setEmail(session.user.email);
-          if (session.user.user_metadata?.given_name) setFirstName(session.user.user_metadata.given_name);
-          if (session.user.user_metadata?.family_name) setLastName(session.user.user_metadata.family_name);
-          
-          // Clear any previous session-related errors when we have a valid session
-          if (error.includes('session') || error.includes('expired')) {
-            setError('');
-          }
-        }
-      }
-      
-      // Only show error for SIGNED_OUT if user was actually authenticated and this is intentional
-      if (event === 'SIGNED_OUT') {
-        // Only show error if they were previously authenticated on this page AND had started the flow
-        if ((isGoogleAuthed || email) && (step > 1)) {
-          console.warn('[ReviewerApply] User signed out during application at step:', step);
-          setError('Your session was ended. Please refresh and sign in again.');
-        } else {
-          console.log('[ReviewerApply] SIGNED_OUT event ignored - user not in active flow');
-        }
-        return;
-      }
-    });
+    // Initial auth check
+    checkAuthAndLoadProfile();
     
     return () => {
-      authListener?.subscription?.unsubscribe();
+      isMounted = false;
+      if (authListener?.subscription) {
+        authListener.subscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -324,19 +463,12 @@ export default function FoundingReviewerApplyPage() {
     setError('');
 
     try {
-      // Save current state to localStorage before OAuth redirect
-      try {
-        localStorage.setItem('auro_reviewer_signup_state', JSON.stringify({
-          step: 2,
-          firstName,
-          lastName,
-          email,
-          timestamp: Date.now()
-        }));
-      } catch {}
+      // Save current form data before OAuth redirect
+      saveFormData();
 
       if (!supabase?.auth) {
-        setError('Authentication service is not available. Please refresh the page.');
+        setError('Authentication service is not available. Please refresh the page and try again.');
+        setLoading(false);
         return;
       }
 
@@ -351,9 +483,21 @@ export default function FoundingReviewerApplyPage() {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[ReviewerApply] Google OAuth error:', error);
+        if (error.message.includes('popup')) {
+          setError('Google sign-in was blocked by your browser. Please allow popups for this site and try again.');
+        } else if (error.message.includes('network')) {
+          setError('Network error during sign-in. Please check your internet connection and try again.');
+        } else {
+          setError('Google sign-in failed. Please try again or use the email signup option below.');
+        }
+        setLoading(false);
+        return;
+      }
     } catch (error: any) {
-      setError(error.message || 'Google sign in failed');
+      console.error('[ReviewerApply] Unexpected error during Google auth:', error);
+      setError('An unexpected error occurred during sign-in. Please refresh the page and try again.');
       setLoading(false);
     }
   };
@@ -436,7 +580,18 @@ export default function FoundingReviewerApplyPage() {
           setStep(4);
         }
       } catch (e: any) {
-        setError(e?.message || 'Sign up failed');
+        console.error('[ReviewerApply] Sign up error:', e);
+        if (e?.message?.includes('already registered')) {
+          setError('An account with this email already exists. Please sign in instead or use a different email address.');
+        } else if (e?.message?.includes('invalid email')) {
+          setError('Please enter a valid email address.');
+        } else if (e?.message?.includes('password')) {
+          setError('Password requirements not met. Please check the requirements below and try again.');
+        } else if (e?.message?.includes('network') || e?.message?.includes('fetch')) {
+          setError('Network error during sign-up. Please check your internet connection and try again.');
+        } else {
+          setError('Sign-up failed. Please try again or contact support if the problem persists.');
+        }
       } finally {
         setLoading(false);
       }
@@ -548,28 +703,30 @@ export default function FoundingReviewerApplyPage() {
         const token = session.access_token;
         const userId = userData.user.id;
         
-        // Submit to API
+        // Submit to API with retry logic
         console.log('[ReviewerApply] Submitting to API...');
-        const resp = await fetch('/api/reviewers/apply', {
-          method: 'POST',
-          headers: { 
-            'content-type': 'application/json', 
-            'authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            bio: '',
-            focusAreas: '',
-            hourlyRate: null,
-            avatarUrl: avatarUrl,
-            avatarPath: avatarPath,
-            socials: [],
-            instagramHandle: instagramHandle || null,
-            tiktokHandle: tiktokHandle || null,
-            phone: phone || null,
-            marketingConsent,
-            userId: userId,
-          })
-        });
+        const resp = await withRetry(async () => {
+          return fetch('/api/reviewers/apply', {
+            method: 'POST',
+            headers: { 
+              'content-type': 'application/json', 
+              'authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              bio: '',
+              focusAreas: '',
+              hourlyRate: null,
+              avatarUrl: avatarUrl,
+              avatarPath: avatarPath,
+              socials: [],
+              instagramHandle: instagramHandle || null,
+              tiktokHandle: tiktokHandle || null,
+              phone: phone || null,
+              marketingConsent,
+              userId: userId,
+            })
+          });
+        }, 2, 1000);
         
         const json = await resp.json();
         
@@ -586,10 +743,21 @@ export default function FoundingReviewerApplyPage() {
         }
         
         console.log('[ReviewerApply] Application submitted successfully');
+        clearFormData(); // Clear saved data on successful submission
         setStep(6);
       } catch (e: any) {
         console.error('[ReviewerApply] Error submitting application:', e);
-        setError(e?.message || 'Failed to submit application. Please try again.');
+        if (e?.message?.includes('already completed')) {
+          setError('You have already completed the reviewer application. Please check your email for confirmation or contact support.');
+        } else if (e?.message?.includes('session') || e?.message?.includes('auth')) {
+          setError('Your session has expired. Please refresh the page and sign in again to complete your application.');
+        } else if (e?.message?.includes('network') || e?.message?.includes('fetch')) {
+          setError('Network error during submission. Please check your internet connection and try again.');
+        } else if (e?.message?.includes('validation')) {
+          setError('Please check that all required fields are filled out correctly and try again.');
+        } else {
+          setError('Failed to submit application. Please try again or contact support if the problem persists.');
+        }
       } finally {
         setLoading(false);
       }
