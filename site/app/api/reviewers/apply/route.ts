@@ -86,9 +86,11 @@ export async function POST(req: Request) {
     // Now update ONLY reviewer-specific fields - don't touch core profile data
     // IMPORTANT: Only update fields that were explicitly provided to avoid overwriting existing data
     const reviewerUpdates: any = {
-      is_reviewer: true, // Always set this
+      is_reviewer: true, // Always set this - CRITICAL: This makes them a reviewer
       reviewer_signup_status: 'completed', // Mark as completed when they submit
     };
+    
+    console.log(`[Apply] Setting is_reviewer=true for user ${userId}`);
     
     // Only update bio if provided (empty string counts as intentional)
     if (typeof bio === 'string') reviewerUpdates.bio = bio;
@@ -125,6 +127,8 @@ export async function POST(req: Request) {
       console.error('Profile update error:', upErr);
       return new Response(JSON.stringify({ error: upErr.message }), { status: 400 });
     }
+    
+    console.log(`[Apply] Successfully updated profile for user ${userId} with is_reviewer=true`);
 
     // Store socials if provided
     if (Array.isArray(socials) && socials.length) {

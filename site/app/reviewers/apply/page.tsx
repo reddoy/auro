@@ -584,19 +584,36 @@ export default function FoundingReviewerApplyPage() {
         });
         if (error) throw error;
         if (data?.user) {
+          console.log('[ReviewerApply] Account created successfully:', data.user.id);
+          
+          // Store signup data for later use
+          try {
+            localStorage.setItem('auro_signup_user_id', data.user.id);
+            localStorage.setItem('auro_signup_email', email);
+            localStorage.setItem('auro_signup_full_name', fullName);
+          } catch {}
+          
+          // Try to ensure profile exists
           try {
             await fetch('/api/auth/ensure-profile', {
               method: 'POST',
               headers: { 'content-type': 'application/json' },
               body: JSON.stringify({ userId: data.user.id, email, fullName })
             });
-          } catch {}
-          try {
-            localStorage.setItem('auro_signup_user_id', data.user.id);
-            localStorage.setItem('auro_signup_email', email);
-            localStorage.setItem('auro_signup_full_name', fullName);
-          } catch {}
-          setStep(4);
+          } catch (profileError) {
+            console.warn('[ReviewerApply] Failed to ensure profile:', profileError);
+          }
+          
+          // Check if we have a session after signup
+          const { data: { session: newSession } } = await supabase.auth.getSession();
+          if (newSession) {
+            console.log('[ReviewerApply] Session established after signup');
+            setStep(4);
+          } else {
+            console.log('[ReviewerApply] No session after signup - user may need to confirm email');
+            // For now, continue to step 4 - the session will be established when they confirm
+            setStep(4);
+          }
         }
       } catch (e: any) {
         console.error('[ReviewerApply] Sign up error:', e);
@@ -680,9 +697,83 @@ export default function FoundingReviewerApplyPage() {
             return;
           }
           
-          // No user and no session - need to sign in
-          setError('Authentication required. Please sign in to continue.');
+          // No user and no session - this means they haven't completed the signup process yet
+          // Check if they have signup data in localStorage from step 3
+          const signupUserId = localStorage.getItem('auro_signup_user_id');
+          const signupEmail = localStorage.getItem('auro_signup_email');
+          
+          if (signupUserId && signupEmail) {
+            console.log('[ReviewerApply] Found signup data in localStorage, but no session - using signup endpoint');
+            
+            // Use the signup endpoint that doesn't require authentication
+            const signupFullName = localStorage.getItem('auro_signup_full_name') || '';
+            
+            try {
+              const resp = await withRetry(async () => {
+                return fetch('/api/reviewers/apply-signup', {
+                  method: 'POST',
+                  headers: { 
+                    'content-type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    bio: '',
+                    focusAreas: '',
+                    hourlyRate: null,
+                    avatarUrl: avatarUrl,
+                    avatarPath: avatarPath,
+                    socials: [],
+                    instagramHandle: instagramHandle || null,
+                    tiktokHandle: tiktokHandle || null,
+                    phone: phone || null,
+                    marketingConsent,
+                    userId: signupUserId,
+                    email: signupEmail,
+                    fullName: signupFullName,
+                    firstName: firstName,
+                    lastName: lastName
+                  })
+                });
+              }, 2, 1000);
+              
+              const json = await resp.json();
+              
+              if (!resp.ok) {
+                console.error('[ReviewerApply] Signup API error:', json);
+                throw new Error(json?.error || 'Failed to submit');
+              }
+              
+              console.log('[ReviewerApply] Application submitted successfully via signup endpoint');
+              
+              // Send confirmation email
+              try {
+                console.log('[ReviewerApply] Sending confirmation email...');
+                await fetch('/api/auth/resend-verification', {
+                  method: 'POST',
+                  headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({ email: signupEmail })
+                });
+                console.log('[ReviewerApply] Confirmation email sent successfully');
+              } catch (emailError) {
+                console.warn('[ReviewerApply] Failed to send confirmation email:', emailError);
+              }
+              
+              clearFormData(); // Clear saved data on successful submission
+              setStep(6);
+              setLoading(false);
+              return;
+              
+            } catch (signupError: any) {
+              console.error('[ReviewerApply] Error submitting via signup endpoint:', signupError);
+              setError('Failed to submit application. Please try again or contact support if the problem persists.');
+              setLoading(false);
+              return;
+            }
+          }
+          
+          // No signup data either - they need to start the process
+          setError('Please complete the signup process first. Go back to step 2 and create your account.');
           setLoading(false);
+          setStep(2); // Go back to account creation step
           return;
         }
         
