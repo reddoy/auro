@@ -709,29 +709,37 @@ export default function FoundingReviewerApplyPage() {
             const signupFullName = localStorage.getItem('auro_signup_full_name') || '';
             
             try {
+              const requestData = {
+                bio: '',
+                focusAreas: '',
+                hourlyRate: null,
+                avatarUrl: avatarUrl,
+                avatarPath: avatarPath,
+                socials: [],
+                instagramHandle: instagramHandle || null,
+                tiktokHandle: tiktokHandle || null,
+                phone: phone || null,
+                marketingConsent,
+                userId: signupUserId,
+                email: signupEmail,
+                fullName: signupFullName,
+                firstName: firstName,
+                lastName: lastName
+              };
+              
+              console.log('[ReviewerApply] Sending signup request with data:', {
+                userId: signupUserId,
+                email: signupEmail,
+                fullName: signupFullName
+              });
+              
               const resp = await withRetry(async () => {
                 return fetch('/api/reviewers/apply-signup', {
                   method: 'POST',
                   headers: { 
                     'content-type': 'application/json'
                   },
-                  body: JSON.stringify({
-                    bio: '',
-                    focusAreas: '',
-                    hourlyRate: null,
-                    avatarUrl: avatarUrl,
-                    avatarPath: avatarPath,
-                    socials: [],
-                    instagramHandle: instagramHandle || null,
-                    tiktokHandle: tiktokHandle || null,
-                    phone: phone || null,
-                    marketingConsent,
-                    userId: signupUserId,
-                    email: signupEmail,
-                    fullName: signupFullName,
-                    firstName: firstName,
-                    lastName: lastName
-                  })
+                  body: JSON.stringify(requestData)
                 });
               }, 2, 1000);
               

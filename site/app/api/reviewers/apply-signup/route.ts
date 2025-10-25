@@ -20,6 +20,12 @@ export async function POST(req: Request) {
       firstName,
       lastName
     } = body || {};
+    
+    console.log('[ApplySignup] Received request with:', {
+      userId: userIdFromBody,
+      email: email,
+      fullName: fullName
+    });
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -36,21 +42,47 @@ export async function POST(req: Request) {
     if (userIdFromBody) {
       // Verify the user exists in Supabase auth
       try {
+        // First try to get user by ID
         const { data: userData, error: userError } = await admin.auth.admin.getUserById(userIdFromBody);
+        
         if (userError || !userData?.user) {
-          return new Response(JSON.stringify({ error: 'Invalid user ID' }), { status: 400 });
+          // If getUserById fails, try to find by email as fallback
+          console.log(`[ApplySignup] getUserById failed for ${userIdFromBody}, trying email lookup`);
+          
+          if (!email) {
+            return new Response(JSON.stringify({ error: 'User verification failed - no email provided' }), { status: 400 });
+          }
+          
+          const { data: users, error: listError } = await admin.auth.admin.listUsers();
+          if (listError) {
+            return new Response(JSON.stringify({ error: 'Failed to verify user by email' }), { status: 400 });
+          }
+          
+          const user = users.users.find(u => u.email === email);
+          if (!user) {
+            return new Response(JSON.stringify({ error: 'User not found by email' }), { status: 400 });
+          }
+          
+          // Verify the email matches the userId we were given
+          if (user.id !== userIdFromBody) {
+            return new Response(JSON.stringify({ error: 'User ID and email mismatch' }), { status: 400 });
+          }
+          
+          userId = userIdFromBody;
+          console.log(`[ApplySignup] User verified by email lookup: ${email}`);
+        } else {
+          // User found by ID, check email confirmation status
+          if (userData.user.email_confirmed_at) {
+            return new Response(JSON.stringify({ 
+              error: 'Email already confirmed. Please use the regular sign-in flow.' 
+            }), { status: 400 });
+          }
+          
+          userId = userIdFromBody;
+          console.log(`[ApplySignup] User verified by ID: ${userIdFromBody}`);
         }
-        
-        // SECURITY: Only allow this endpoint for users who haven't confirmed their email yet
-        // If they've confirmed their email, they should use the regular authenticated endpoint
-        if (userData.user.email_confirmed_at) {
-          return new Response(JSON.stringify({ 
-            error: 'Email already confirmed. Please use the regular sign-in flow.' 
-          }), { status: 400 });
-        }
-        
-        userId = userIdFromBody;
       } catch (e) {
+        console.error('[ApplySignup] User verification error:', e);
         return new Response(JSON.stringify({ error: 'User verification failed' }), { status: 400 });
       }
     } else {
@@ -70,7 +102,9 @@ export async function POST(req: Request) {
           return new Response(JSON.stringify({ error: 'User not found' }), { status: 400 });
         }
         userId = user.id;
+        console.log(`[ApplySignup] User found by email: ${email}`);
       } catch (e) {
+        console.error('[ApplySignup] Email lookup error:', e);
         return new Response(JSON.stringify({ error: 'User lookup failed' }), { status: 400 });
       }
     }
