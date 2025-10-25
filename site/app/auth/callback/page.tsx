@@ -15,17 +15,17 @@ function AuthCallbackContent() {
       try {
         console.log('[AuthCallback] Starting OAuth callback handling...');
         
-        // Wait for Supabase to process the OAuth callback
-        // The session should be automatically extracted from URL params
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Get the session after OAuth processing
         if (!supabase?.auth) {
           console.error('[AuthCallback] Supabase client or auth is null');
           setStatus('error');
           setMessage('Authentication service is not available. Please refresh the page.');
           return;
         }
+        
+        // Wait a moment for Supabase to process the OAuth callback
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Try to get the session - Supabase should have processed the OAuth callback
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -75,12 +75,59 @@ function AuthCallbackContent() {
           // Redirect to the intended destination or default page
           const redirectTo = searchParams.get('redirect_to') || '/request';
           console.log('[AuthCallback] Redirecting to:', redirectTo);
+          
+          // Give time for session to be properly established
           setTimeout(() => {
             router.push(redirectTo);
-          }, 1500);
+          }, 1000);
         } else {
-          console.error('[AuthCallback] No session found after authentication');
-          throw new Error('No session found after authentication');
+          // No session yet - set up auth state listener to wait for it
+          console.log('[AuthCallback] No session yet, setting up auth listener...');
+          
+          const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            console.log('[AuthCallback] Auth state change:', event, !!session);
+            
+            if (event === 'SIGNED_IN' && session) {
+              console.log('[AuthCallback] Session established via listener, user:', session.user.id);
+              subscription.unsubscribe();
+              
+              setStatus('success');
+              setMessage('Successfully signed in!');
+              
+              // Store user info
+              try {
+                const user = session.user;
+                localStorage.setItem('auro_signup_user_id', user.id);
+                localStorage.setItem('auro_signup_email', user.email || '');
+                
+                const metadata = user.user_metadata;
+                if (metadata) {
+                  const fullName = metadata.full_name || metadata.name || '';
+                  if (fullName) localStorage.setItem('auro_signup_full_name', fullName);
+                }
+              } catch (e) {
+                console.error('[AuthCallback] Failed to store user info:', e);
+              }
+              
+              const redirectTo = searchParams.get('redirect_to') || '/request';
+              setTimeout(() => {
+                router.push(redirectTo);
+              }, 1000);
+            }
+          });
+          
+          // Timeout after 5 seconds if no session arrives
+          setTimeout(() => {
+            subscription.unsubscribe();
+            if (status === 'loading') {
+              console.error('[AuthCallback] Timeout waiting for session');
+              setStatus('error');
+              setMessage('Authentication timed out. Please try again.');
+              setTimeout(() => {
+                router.push('/request');
+              }, 3000);
+            }
+          }, 5000);
         }
       } catch (error: any) {
         console.error('Auth callback error:', error);

@@ -635,37 +635,22 @@ export default function FoundingReviewerApplyPage() {
     if (step === 5) {
       // Profile picture and social handles step - submit application
       
-      // Validate session before submission - but handle gracefully for users in signup process
-      if (!supabase?.auth) {
-        console.error('[ReviewerApply] Supabase client or auth is null');
-        setError('Authentication service is not available. Please refresh the page.');
-        return;
-      }
-      
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      // Only treat as error if it's not a missing session (which is normal for users in signup process)
-      if (sessionError && !sessionError.message?.includes('session missing') && !sessionError.message?.includes('AuthSessionMissingError')) {
-        console.error('[ReviewerApply] Session error at step 5:', sessionError);
-        setError('Authentication error. Please refresh the page and try again.');
-        return;
-      }
-      
-      if (!session) {
-        console.log('[ReviewerApply] No session at step 5 - user may be in signup process');
-        // Don't show error immediately - try to proceed with the application submission
-        // The API will handle authentication requirements
-      }
-      
       // Submit the application
       try {
         setLoading(true);
         setError(''); // Clear any previous errors
         
-        console.log('[ReviewerApply] Submitting application at step 4');
+        console.log('[ReviewerApply] Submitting application at step 5');
+        
+        if (!supabase?.auth) {
+          console.error('[ReviewerApply] Supabase client or auth is null');
+          setError('Authentication service is not available. Please refresh the page.');
+          setLoading(false);
+          return;
+        }
         
         // Get current session and verify it's valid
-        let { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         console.log('[ReviewerApply] Initial session check:', {
           hasSession: !!session,
@@ -674,57 +659,34 @@ export default function FoundingReviewerApplyPage() {
           now: Math.floor(Date.now() / 1000)
         });
         
-        // If no session or error, try to refresh - but handle gracefully for signup process
-        if (sessionError || !session) {
-          console.log('[ReviewerApply] No valid session, attempting refresh...');
+        // Check if session exists and is valid
+        if (!session) {
+          console.log('[ReviewerApply] No session found');
           
-          // First, try to get user to see if we have any auth state
+          // Try to get user to see if we have any auth state
           const { data: userData, error: userError } = await supabase.auth.getUser();
           console.log('[ReviewerApply] User check:', { hasUser: !!userData?.user, userError: userError?.message });
           
-          // Only treat as error if it's not a missing session (normal for signup process)
-          if (userError && !userError.message?.includes('session missing') && !userError.message?.includes('AuthSessionMissingError')) {
-            console.error('[ReviewerApply] User check error:', userError);
-            setError('Authentication error. Please refresh the page and try again.');
+          // If we have a user but no session, this is likely an OAuth callback issue
+          if (userData?.user && !userError) {
+            console.log('[ReviewerApply] User exists but no session - OAuth callback likely incomplete');
+            setError('Your session is being restored. Please wait a moment and try again, or refresh the page.');
             setLoading(false);
+            
+            // Automatically retry after a short delay
+            setTimeout(() => {
+              window.location.reload();
+            }, 3000);
             return;
           }
           
-          if (userData?.user) {
-            // We have a user but no session - this is the OAuth issue
-            console.log('[ReviewerApply] User exists but no session - OAuth callback issue');
-            setError('Authentication incomplete. Please click "Continue with Google" above to complete sign-in.');
-            setLoading(false);
-            return;
-          }
-          
-          // Try to refresh session
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-          
-          if (refreshError) {
-            console.error('[ReviewerApply] Session refresh failed:', refreshError);
-            // If user came from Google OAuth, they might need to re-authenticate
-            if (isGoogleAuthed) {
-              setError('Your session expired. Please click "Continue with Google" above to re-authenticate.');
-            } else {
-              setError('Your session expired. Please refresh the page and try again.');
-            }
-            setLoading(false);
-            return;
-          }
-          
-          if (!refreshData.session) {
-            console.error('[ReviewerApply] Session refresh returned no session');
-            setError('Unable to verify your session. Please refresh the page and try again.');
-            setLoading(false);
-            return;
-          }
-          
-          session = refreshData.session;
-          console.log('[ReviewerApply] Session refreshed successfully');
+          // No user and no session - need to sign in
+          setError('Authentication required. Please sign in to continue.');
+          setLoading(false);
+          return;
         }
         
-        // Verify user still exists with the session
+        // Session exists - verify user
         const { data: userData, error: userError } = await supabase.auth.getUser();
         
         if (userError || !userData?.user) {
@@ -734,7 +696,7 @@ export default function FoundingReviewerApplyPage() {
           return;
         }
         
-        console.log('[ReviewerApply] User verified:', userData.user.id);
+        console.log('[ReviewerApply] Session and user verified:', userData.user.id);
         
         const token = session.access_token;
         const userId = userData.user.id;
