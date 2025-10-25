@@ -35,32 +35,30 @@ export default function FoundingReviewerApplyPage() {
   const router = useRouter();
 
   // Retry utility function
-  const withRetry = useCallback(<T>(
+  const withRetry = async <T,>(
     operation: () => Promise<T>,
     maxRetries: number = 3,
     delay: number = 1000
   ): Promise<T> => {
-    return (async () => {
-      let lastError: any;
-      
-      for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        try {
-          return await operation();
-        } catch (error) {
-          lastError = error;
-          console.warn(`[ReviewerApply] Operation failed (attempt ${attempt + 1}/${maxRetries + 1}):`, error);
-          
-          if (attempt < maxRetries) {
-            const waitTime = delay * Math.pow(2, attempt); // Exponential backoff
-            console.log(`[ReviewerApply] Retrying in ${waitTime}ms...`);
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-          }
+    let lastError: any;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error;
+        console.warn(`[ReviewerApply] Operation failed (attempt ${attempt + 1}/${maxRetries + 1}):`, error);
+        
+        if (attempt < maxRetries) {
+          const waitTime = delay * Math.pow(2, attempt); // Exponential backoff
+          console.log(`[ReviewerApply] Retrying in ${waitTime}ms...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
         }
       }
-      
-      throw lastError;
-    })();
-  }, []);
+    }
+    
+    throw lastError;
+  };
 
   // Data persistence utilities
   const saveFormData = useCallback(() => {
