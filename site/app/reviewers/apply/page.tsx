@@ -681,7 +681,7 @@ export default function FoundingReviewerApplyPage() {
   // Show completion message if they already completed signup
   if (signupStatus === 'completed') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0c0325] via-[#1a0b3d] to-[#0c0325] text-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-[#0c0325] via-[#1a0b3d] to-[#0c0325] text-white flex items-center justify-center px-6">
         <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
           <CardContent className="py-12 text-center space-y-6">
             <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto">
@@ -739,7 +739,7 @@ export default function FoundingReviewerApplyPage() {
                 
                 <p className="text-xs md:text-base text-gray-300 px-4 leading-relaxed max-w-xl mx-auto">
                   We're building the platform where your honest feedback helps guys level up—and you earn money doing it. 
-                  <span className="text-orange-400 font-semibold"> Join the first 100 reviewers</span> and lock in exclusive perks forever.
+                  <span className="text-orange-400 font-semibold"> Join the first 35 reviewers</span> and lock in exclusive perks forever.
                 </p>
               </div>
 
@@ -805,12 +805,12 @@ export default function FoundingReviewerApplyPage() {
                 <div className="bg-gradient-to-r from-orange-500/20 via-pink-500/20 to-purple-600/20 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-orange-500/30">
                   <div className="flex items-center justify-between mb-1.5 md:mb-2">
                     <span className="text-xs md:text-sm font-medium text-orange-300">Founding Spots</span>
-                    <span className="text-xs md:text-sm font-bold text-white">{Math.max(0, 100 - reviewerCount)}/100 left</span>
+                    <span className="text-xs md:text-sm font-bold text-white">{Math.max(0, 35 - reviewerCount)}/35 left</span>
                   </div>
                   <div className="w-full bg-white/10 rounded-full h-2 md:h-3 overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-orange-500 to-pink-500 transition-all duration-500 rounded-full"
-                      style={{ width: `${Math.min(100, ((100 - reviewerCount) / 100) * 100)}%` }}
+                      style={{ width: `${Math.min(100, ((35 - reviewerCount) / 35) * 100)}%` }}
                     />
                   </div>
                 </div>

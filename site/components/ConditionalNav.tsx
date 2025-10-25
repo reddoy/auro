@@ -60,7 +60,7 @@ export default function ConditionalNav() {
     return () => clearInterval(interval);
   }, []);
   
-  const spotsLeft = Math.max(0, 100 - count);
+  const spotsLeft = Math.max(0, 35 - count);
   const isNearFull = spotsLeft <= 10;
   const isFull = spotsLeft === 0;
   

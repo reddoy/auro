@@ -130,7 +130,7 @@ export default function HomePage() {
     };
   }, []);
 
-  const spotsLeft = Math.max(0, 100 - reviewerCount);
+  const spotsLeft = Math.max(0, 35 - reviewerCount);
   const isNearFull = spotsLeft <= 10;
   const isFull = spotsLeft === 0;
   
