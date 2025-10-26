@@ -36,6 +36,27 @@ BEGIN
     END IF;
   END IF;
   
+  -- When a review is completed, subtract from pending balance (they earned it)
+  IF TG_OP = 'UPDATE' AND NEW.status = 'completed' AND OLD.status != 'completed'
+     AND NEW.influencer_id IS NOT NULL 
+     AND NEW.amount_cents IS NOT NULL THEN
+    -- Remove the pending amount since the review is now complete
+    UPDATE profiles
+    SET pending_payout_balance_cents = GREATEST(0, COALESCE(pending_payout_balance_cents, 0) - FLOOR(NEW.amount_cents * 0.8))
+    WHERE id = NEW.influencer_id;
+  END IF;
+  
+  -- When a review is rejected, subtract from pending balance (no payout for rejected requests)
+  IF TG_OP = 'UPDATE' AND NEW.status = 'rejected' AND OLD.status != 'rejected'
+     AND NEW.influencer_id IS NOT NULL 
+     AND NEW.amount_cents IS NOT NULL
+     AND OLD.status = 'paid' THEN
+    -- Remove the pending amount since the review was rejected
+    UPDATE profiles
+    SET pending_payout_balance_cents = GREATEST(0, COALESCE(pending_payout_balance_cents, 0) - FLOOR(NEW.amount_cents * 0.8))
+    WHERE id = NEW.influencer_id;
+  END IF;
+  
   -- When a payment is distributed, subtract from pending balance
   IF TG_OP = 'UPDATE' AND NEW.payment_distributed = TRUE AND OLD.payment_distributed = FALSE 
      AND NEW.influencer_id IS NOT NULL THEN
@@ -54,3 +75,20 @@ CREATE TRIGGER trg_update_reviewer_pending_balance
 AFTER INSERT OR UPDATE ON requests
 FOR EACH ROW
 EXECUTE FUNCTION update_reviewer_pending_balance();
+
+-- Backfill existing paid requests that haven't been distributed yet
+UPDATE profiles
+SET pending_payout_balance_cents = (
+  SELECT COALESCE(SUM(FLOOR(amount_cents * 0.8)), 0)
+  FROM requests
+  WHERE influencer_id = profiles.id
+    AND status = 'paid'
+    AND (payment_distributed IS NULL OR payment_distributed = FALSE)
+    AND amount_cents IS NOT NULL
+)
+WHERE id IN (
+  SELECT DISTINCT influencer_id
+  FROM requests
+  WHERE status = 'paid'
+    AND (payment_distributed IS NULL OR payment_distributed = FALSE)
+);

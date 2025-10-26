@@ -45,14 +45,14 @@ export default function ProfileScreen() {
           try {
             const requests = await getRequestsByReviewer(p.id);
             const completedRequests = requests.filter(r => r.status === 'completed' && r.net_amount_cents);
-            const pendingRequests = requests.filter(r => r.status === 'pending' && r.amount_cents);
+            // Pending requests = paid but not completed (waiting for review to be completed)
+            const pendingRequests = requests.filter(r => (r.status === 'paid' || r.status === 'in_progress') && r.amount_cents);
             const totalEarnings = completedRequests.reduce((sum, r) => sum + (r.net_amount_cents || 0), 0);
-            const pendingAmount = pendingRequests.reduce((sum, r) => sum + (r.amount_cents || 0), 0);
             const count = completedRequests.length;
             const pendingCount = pendingRequests.length;
             const average = count > 0 ? totalEarnings / count : 0;
             
-            // Get pending payout balance from database (tracked by trigger)
+            // Get pending payout balance from database (tracked by trigger) - this is what they'll get after completing reviews
             const pendingPayoutBalanceCents = p?.pending_payout_balance_cents || 0;
             console.log('[pending-payout] from database:', pendingPayoutBalanceCents / 100);
             
@@ -60,9 +60,9 @@ export default function ProfileScreen() {
               total: totalEarnings / 100, 
               count, 
               average: average / 100, 
-              pendingAmount: pendingAmount / 100, 
+              pendingAmount: pendingPayoutBalanceCents / 100, // Show what they'll earn from pending reviews
               pendingCount,
-              stripePendingAmount: pendingPayoutBalanceCents / 100 // Show pending payouts from database
+              stripePendingAmount: 0 // Not used anymore - pending payout moved to pendingAmount
             }); // Convert cents to dollars
           } catch (e) {
             console.log('[earnings] error fetching', e);
@@ -193,14 +193,14 @@ export default function ProfileScreen() {
         try {
           const requests = await getRequestsByReviewer(p.id);
           const completedRequests = requests.filter(r => r.status === 'completed' && r.net_amount_cents);
-          const pendingRequests = requests.filter(r => r.status === 'pending' && r.amount_cents);
+          // Pending requests = paid but not completed (waiting for review to be completed)
+          const pendingRequests = requests.filter(r => (r.status === 'paid' || r.status === 'in_progress') && r.amount_cents);
           const totalEarnings = completedRequests.reduce((sum, r) => sum + (r.net_amount_cents || 0), 0);
-          const pendingAmount = pendingRequests.reduce((sum, r) => sum + (r.amount_cents || 0), 0);
           const count = completedRequests.length;
           const pendingCount = pendingRequests.length;
           const average = count > 0 ? totalEarnings / count : 0;
           
-          // Get pending payout balance from database (tracked by trigger)
+          // Get pending payout balance from database (tracked by trigger) - this is what they'll get after completing reviews
           const pendingPayoutBalanceCents = p?.pending_payout_balance_cents || 0;
           console.log('[pending-payout] from database:', pendingPayoutBalanceCents / 100);
           
@@ -208,9 +208,9 @@ export default function ProfileScreen() {
             total: totalEarnings / 100, 
             count, 
             average: average / 100, 
-            pendingAmount: pendingAmount / 100, 
+            pendingAmount: pendingPayoutBalanceCents / 100, // Show what they'll earn from pending reviews
             pendingCount,
-            stripePendingAmount: pendingPayoutBalanceCents / 100 // Show pending payouts from database
+            stripePendingAmount: 0 // Not used anymore - pending payout moved to pendingAmount
           });
         } catch {}
       }
@@ -358,16 +358,6 @@ export default function ProfileScreen() {
                             style={styles.earningStatBg}
                           />
                           <Text style={styles.earningStatNumber}>${earnings.pendingAmount.toFixed(2)}</Text>
-                          <Text style={styles.earningStatLabel}>Pending Requests</Text>
-                        </View>
-                        <View style={styles.earningStat}>
-                          <ExpoLinearGradient
-                            colors={['rgba(99, 91, 255, 0.15)', 'rgba(139, 69, 19, 0.15)']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.earningStatBg}
-                          />
-                          <Text style={styles.earningStatNumber}>${earnings.stripePendingAmount.toFixed(2)}</Text>
                           <Text style={styles.earningStatLabel}>Pending Payout</Text>
                         </View>
                       </View>
