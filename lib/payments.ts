@@ -228,6 +228,7 @@ export type PendingPaymentsData = {
 };
 
 export async function getPendingPayments(reviewerId: string): Promise<PendingPaymentsData | null> {
+  console.log('[getPendingPayments] called with reviewerId:', reviewerId);
   try {
     const siteUrl = process.env.EXPO_PUBLIC_SITE_URL || (Constants.expoConfig?.extra as any)?.siteUrl || (Constants.manifest2 as any)?.extra?.siteUrl || '';
     if (!siteUrl) return null;

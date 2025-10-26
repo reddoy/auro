@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { StyleSheet, TouchableOpacity, Alert, FlatList, Platform, Linking, Switch, View as RNView, Image, Modal, TextInput, RefreshControl, ScrollView } from 'react-native';
+import { StyleSheet, TouchableOpacity, Alert, FlatList, Platform, Linking, Switch, View as RNView, Image, RefreshControl, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -11,7 +11,7 @@ import Colors from '@/constants/Colors';
 import AvatarUploader from '@/components/AvatarUploader';
 import { getCurrentProfile, updateProfile, getSignedAvatarUrl } from '@/lib/profile';
 import type { Profile } from '@/types';
-import { createStripeExpressLoginLink, createStripeExpressOnboardingLink, getPendingPayments } from '@/lib/payments';
+import { createStripeExpressLoginLink, createStripeExpressOnboardingLink } from '@/lib/payments';
 import { getRequestsByReviewer } from '@/lib/api';
 
 const socialIcons = {
@@ -29,10 +29,7 @@ export default function ProfileScreen() {
   const [stripePortalUrl, setStripePortalUrl] = useState<string | null>(null);
   const [earnings, setEarnings] = useState({ total: 0, count: 0, average: 0, pendingAmount: 0, pendingCount: 0, stripePendingAmount: 0 });
   
-  // Rate editing modal state
-  const [showRateModal, setShowRateModal] = useState(false);
-  const [editingRate, setEditingRate] = useState('');
-  const [savingRate, setSavingRate] = useState(false);
+
 
   useEffect(() => {
     const run = async () => {
@@ -55,16 +52,9 @@ export default function ProfileScreen() {
             const pendingCount = pendingRequests.length;
             const average = count > 0 ? totalEarnings / count : 0;
             
-            // Fetch Stripe pending payments
-            let stripePendingAmount = 0;
-            try {
-              const stripeData = await getPendingPayments(p.id);
-              if (stripeData) {
-                stripePendingAmount = stripeData.pendingAmountDollars;
-              }
-            } catch (e) {
-              console.log('[stripe-pending] error fetching', e);
-            }
+            // Get pending payout balance from database (tracked by trigger)
+            const pendingPayoutBalanceCents = p?.pending_payout_balance_cents || 0;
+            console.log('[pending-payout] from database:', pendingPayoutBalanceCents / 100);
             
             setEarnings({ 
               total: totalEarnings / 100, 
@@ -72,7 +62,7 @@ export default function ProfileScreen() {
               average: average / 100, 
               pendingAmount: pendingAmount / 100, 
               pendingCount,
-              stripePendingAmount
+              stripePendingAmount: pendingPayoutBalanceCents / 100 // Show pending payouts from database
             }); // Convert cents to dollars
           } catch (e) {
             console.log('[earnings] error fetching', e);
@@ -184,44 +174,10 @@ export default function ProfileScreen() {
   }, [profile]);
 
   const handleEditRate = useCallback(() => {
-    setEditingRate(profile?.hourly_rate != null ? String(profile.hourly_rate) : '');
-    setShowRateModal(true);
-  }, [profile]);
+    router.push('/(tabs)/profile/set-rate');
+  }, []);
 
-  const handleSaveRate = useCallback(async () => {
-    try {
-      setSavingRate(true);
-      const rate = editingRate.trim();
-      const rateNumber = rate ? Number(rate) : null;
-      
-      if (rate && (isNaN(rateNumber) || rateNumber <= 0)) {
-        Alert.alert('Invalid Rate', 'Please enter a valid positive number.');
-        return;
-      }
 
-      const updated = await updateProfile({ hourly_rate: rateNumber });
-      setProfile(updated);
-      setShowRateModal(false);
-      
-      // Show confirmation with take-home calculation
-      if (rateNumber) {
-        const auroFee = rateNumber * 0.15;
-        const stripeFee = Math.max(0, rateNumber * 0.029 + 0.3);
-        const net = Math.max(0, rateNumber - auroFee - stripeFee);
-        
-        Alert.alert(
-          'Rate Updated!', 
-          `Your rate is now $${rateNumber}/review.\n\nEstimated take-home: $${net.toFixed(2)}\n(After Auro fee: $${auroFee.toFixed(2)} and Stripe fee: $${stripeFee.toFixed(2)})`
-        );
-      } else {
-        Alert.alert('Rate Updated!', 'Your rate has been cleared.');
-      }
-    } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to update rate');
-    } finally {
-      setSavingRate(false);
-    }
-  }, [editingRate, profile]);
 
   const onRefresh = useCallback(async () => {
     try {
@@ -244,16 +200,9 @@ export default function ProfileScreen() {
           const pendingCount = pendingRequests.length;
           const average = count > 0 ? totalEarnings / count : 0;
           
-          // Fetch Stripe pending payments
-          let stripePendingAmount = 0;
-          try {
-            const stripeData = await getPendingPayments(p.id);
-            if (stripeData) {
-              stripePendingAmount = stripeData.pendingAmountDollars;
-            }
-          } catch (e) {
-            console.log('[stripe-pending] error fetching', e);
-          }
+          // Get pending payout balance from database (tracked by trigger)
+          const pendingPayoutBalanceCents = p?.pending_payout_balance_cents || 0;
+          console.log('[pending-payout] from database:', pendingPayoutBalanceCents / 100);
           
           setEarnings({ 
             total: totalEarnings / 100, 
@@ -261,7 +210,7 @@ export default function ProfileScreen() {
             average: average / 100, 
             pendingAmount: pendingAmount / 100, 
             pendingCount,
-            stripePendingAmount
+            stripePendingAmount: pendingPayoutBalanceCents / 100 // Show pending payouts from database
           });
         } catch {}
       }
@@ -285,10 +234,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: 0 }]}>
-      <FlatList
-        data={[]}
-        keyExtractor={(item) => String(item)}
-        renderItem={() => null}
+      <ScrollView
         refreshControl={
           !initialLoad && !refreshing ? (
             <RefreshControl
@@ -302,67 +248,66 @@ export default function ProfileScreen() {
         }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 24, paddingHorizontal: 16, paddingTop: 0 }}
-        ListHeaderComponent={(
-          <>
-            <View style={styles.header}>
-              <View style={styles.headerContent}>
-                <View style={styles.profileSection}>
-                  <View style={styles.avatarContainer}>
-                    <AvatarUploader
-                      uri={avatarUri}
-                      previousPathOrUrl={profile?.avatar_url || undefined as any}
-                      onUploaded={async ({ publicUrl, path }) => {
-                        let signed: string | null = null;
-                        try {
-                          const updated = await updateProfile({ avatar_url: path });
-                          setProfile(updated);
-                        } catch (e: any) {
-                          Alert.alert('Profile not updated', 'Showing your new photo locally. Enable profile update policy in Supabase to persist.');
-                        } finally {
-                          try { signed = await getSignedAvatarUrl(path, 3600); } catch {}
-                          setAvatarUri(signed || publicUrl || undefined);
-                        }
-                      }}
-                      onRemoved={async () => {
-                        try {
-                          await updateProfile({ avatar_url: null });
-                          setProfile(prev => (prev ? { ...prev, avatar_url: null } : prev));
-                          setAvatarUri(undefined);
-                        } catch (e: any) {
-                          setAvatarUri(undefined);
-                          Alert.alert('Profile not updated', 'Removed locally. Enable profile update policy in Supabase to persist.');
-                        }
-                      }}
-                      size={94}
-                      accessibilityLabel="Change avatar"
-                    />
-                  </View>
-                  <View style={styles.userInfo}>
-                    <Text style={styles.userName}>
-                      {profile ? (profile.full_name || profile.username || 'User') : 'Loading...'}
-                    </Text>
-                    {!!profile?.created_at && (
-                      <Text style={styles.userEmail}>Joined {new Date(profile.created_at).toLocaleDateString()}</Text>
-                    )}
-                  </View>
-                </View>
-
-                <TouchableOpacity style={styles.editButton} onPress={() => router.push('/(tabs)/profile/settings')} accessibilityLabel="Edit profile">
-                  <Text style={styles.editButtonText}>Edit Profile</Text>
-                </TouchableOpacity>
+      >
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <View style={styles.profileSection}>
+              <View style={styles.avatarContainer}>
+                <AvatarUploader
+                  uri={avatarUri}
+                  previousPathOrUrl={profile?.avatar_url || undefined as any}
+                  onUploaded={async ({ publicUrl, path }) => {
+                    let signed: string | null = null;
+                    try {
+                      const updated = await updateProfile({ avatar_url: path });
+                      setProfile(updated);
+                    } catch (e: any) {
+                      Alert.alert('Profile not updated', 'Showing your new photo locally. Enable profile update policy in Supabase to persist.');
+                    } finally {
+                      try { signed = await getSignedAvatarUrl(path, 3600); } catch {}
+                      setAvatarUri(signed || publicUrl || undefined);
+                    }
+                  }}
+                  onRemoved={async () => {
+                    try {
+                      await updateProfile({ avatar_url: null });
+                      setProfile(prev => (prev ? { ...prev, avatar_url: null } : prev));
+                      setAvatarUri(undefined);
+                    } catch (e: any) {
+                      setAvatarUri(undefined);
+                      Alert.alert('Profile not updated', 'Removed locally. Enable profile update policy in Supabase to persist.');
+                    }
+                  }}
+                  size={94}
+                  accessibilityLabel="Change avatar"
+                />
+              </View>
+              <View style={styles.userInfo}>
+                <Text style={styles.userName}>
+                  {profile ? (profile.full_name || profile.username || 'User') : 'Loading...'}
+                </Text>
+                {!!profile?.created_at && (
+                  <Text style={styles.userEmail}>Joined {new Date(profile.created_at).toLocaleDateString()}</Text>
+                )}
               </View>
             </View>
 
-            <View style={styles.bioSection}>
-              <Text style={styles.sectionTitle}>Reviewer Settings</Text>
-              <Text style={{ color: Colors.brand.textSecondary }}>Control your reviewer status and price per review.</Text>
-              
-              {profile?.is_reviewer ? (
-                <>
-                  {/* Earnings Tracker - Moved to top */}
-                  <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
-                    <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>💰 Earnings Overview</Text>
-                    <View style={styles.earningsCard}>
+            <TouchableOpacity style={styles.editButton} onPress={() => router.push('/(tabs)/profile/settings')} accessibilityLabel="Edit profile">
+              <Text style={styles.editButtonText}>Edit Profile</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.bioSection}>
+          <Text style={styles.sectionTitle}>Reviewer Settings</Text>
+          <Text style={{ color: Colors.brand.textSecondary }}>Control your reviewer status and price per review.</Text>
+          
+          {profile?.is_reviewer ? (
+            <>
+              {/* Earnings Tracker - Moved to top */}
+              <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
+                <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>💰 Earnings Overview</Text>
+                <View style={styles.earningsCard}>
                       <View style={styles.earningsHeaderMobile}>
                         <View style={{ backgroundColor: 'transparent', marginBottom: 16 }}>
                           <Text style={styles.earningsLabel}>Total Earned</Text>
@@ -547,139 +492,59 @@ export default function ProfileScreen() {
                 </View>
               </View>
             )}
-          </>
-        )}
-        ListFooterComponent={(
-          <>
-            <View style={styles.actionsSection}>
-              <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/settings')} accessibilityLabel="Open account settings">
-                <View style={styles.actionIconContainer}>
-                  <ExpoLinearGradient
-                    colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.actionIconGradient}
-                  />
-                  <Text style={styles.actionIcon}>⚙️</Text>
-                </View>
-                <Text style={styles.actionText}>Account Settings</Text>
-                <Text style={styles.actionArrow}>›</Text>
-              </TouchableOpacity>
 
-              <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/profile/video-review-demo' as any)} accessibilityLabel="Open dating profile upload">
-                <View style={styles.actionIconContainer}>
-                  <ExpoLinearGradient
-                    colors={[Colors.brand.accentOrange, Colors.brand.primary]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.actionIconGradient}
-                  />
-                  <Text style={styles.actionIcon}>💕</Text>
-                </View>
-                <Text style={styles.actionText}>Dating Profile Upload</Text>
-                <Text style={styles.actionArrow}>›</Text>
-              </TouchableOpacity>
+        <View style={styles.actionsSection}>
+          <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/settings')} accessibilityLabel="Open account settings">
+            <View style={styles.actionIconContainer}>
+              <ExpoLinearGradient
+                colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.actionIconGradient}
+              />
+              <Text style={styles.actionIcon}>⚙️</Text>
+            </View>
+            <Text style={styles.actionText}>Account Settings</Text>
+            <Text style={styles.actionArrow}>›</Text>
+          </TouchableOpacity>
 
-              <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/hinge-clone')} accessibilityLabel="Open Hinge profile clone">
-                <View style={styles.actionIconContainer}>
-                  <ExpoLinearGradient
-                    colors={['#FF6B6B', '#FF8E8E']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.actionIconGradient}
-                  />
-                  <Text style={styles.actionIcon}>💕</Text>
-                </View>
-                <Text style={styles.actionText}>Hinge Profile Clone</Text>
-                <Text style={styles.actionArrow}>›</Text>
-              </TouchableOpacity>
+          <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/profile/video-review-demo' as any)} accessibilityLabel="Open dating profile upload">
+            <View style={styles.actionIconContainer}>
+              <ExpoLinearGradient
+                colors={[Colors.brand.accentOrange, Colors.brand.primary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.actionIconGradient}
+              />
+              <Text style={styles.actionIcon}>💕</Text>
             </View>
+            <Text style={styles.actionText}>Dating Profile Upload</Text>
+            <Text style={styles.actionArrow}>›</Text>
+          </TouchableOpacity>
 
-            <View style={styles.dangerSection}>
-              <TouchableOpacity style={styles.logoutButtonDark} onPress={handleLogout}>
-                <View style={styles.logoutButtonBorder} />
-                <Text style={styles.logoutText}>Logout</Text>
-              </TouchableOpacity>
+          <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/hinge-clone')} accessibilityLabel="Open Hinge profile clone">
+            <View style={styles.actionIconContainer}>
+              <ExpoLinearGradient
+                colors={['#FF6B6B', '#FF8E8E']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.actionIconGradient}
+              />
+              <Text style={styles.actionIcon}>💕</Text>
             </View>
-          </>
-        )}
-      />
-      
-      {/* Rate Editing Modal */}
-      <Modal
-        visible={showRateModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowRateModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Set Your Rate</Text>
-            <Text style={styles.modalSubtitle}>Enter your price per review</Text>
-            
-            <TextInput
-              style={styles.rateInput}
-              value={editingRate}
-              onChangeText={setEditingRate}
-              placeholder="e.g. 42"
-              keyboardType="numeric"
-              autoFocus={true}
-              placeholderTextColor={Colors.brand.textSecondary}
-            />
-            
-            {!!editingRate && !isNaN(Number(editingRate)) && Number(editingRate) > 0 && (
-              <View style={styles.breakdownContainer}>
-                {(() => {
-                  const price = Number(editingRate);
-                  const auroFee = price * 0.15;
-                  const stripeFee = Math.max(0, price * 0.029 + 0.3);
-                  const net = Math.max(0, price - auroFee - stripeFee);
-                  return (
-                    <>
-                      <Text style={styles.breakdownTitle}>Fee Breakdown:</Text>
-                      <View style={styles.breakdownRow}>
-                        <Text style={styles.breakdownLabel}>Your price</Text>
-                        <Text style={styles.breakdownValue}>${price.toFixed(2)}</Text>
-                      </View>
-                      <View style={styles.breakdownRow}>
-                        <Text style={styles.breakdownLabel}>Auro fee (15%)</Text>
-                        <Text style={[styles.breakdownValue, styles.breakdownFee]}>-${auroFee.toFixed(2)}</Text>
-                      </View>
-                      <View style={styles.breakdownRow}>
-                        <Text style={styles.breakdownLabel}>Stripe fee (est.)</Text>
-                        <Text style={[styles.breakdownValue, styles.breakdownFee]}>-${stripeFee.toFixed(2)}</Text>
-                      </View>
-                      <View style={[styles.breakdownRow, styles.breakdownTotal]}>
-                        <Text style={styles.breakdownTotalLabel}>Take-home</Text>
-                        <Text style={styles.breakdownTotalValue}>${net.toFixed(2)}</Text>
-                      </View>
-                    </>
-                  );
-                })()}
-              </View>
-            )}
-            
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.modalButtonCancel]} 
-                onPress={() => setShowRateModal(false)}
-              >
-                <Text style={styles.modalButtonCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.modalButtonSave, savingRate && styles.modalButtonDisabled]} 
-                onPress={handleSaveRate}
-                disabled={savingRate}
-              >
-                <Text style={styles.modalButtonSaveText}>
-                  {savingRate ? 'Saving...' : 'Save'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+            <Text style={styles.actionText}>Hinge Profile Clone</Text>
+            <Text style={styles.actionArrow}>›</Text>
+          </TouchableOpacity>
         </View>
-      </Modal>
+
+        <View style={styles.dangerSection}>
+          <TouchableOpacity style={styles.logoutButtonDark} onPress={handleLogout}>
+            <View style={styles.logoutButtonBorder} />
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
     </View>
   );
 }
@@ -933,14 +798,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     backgroundColor: 'transparent',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
   },
   earningStat: {
     flex: 1,
-    minWidth: '30%',
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderRadius: 18,
-    padding: 16,
+    padding: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,

@@ -177,6 +177,7 @@ export interface Profile {
   preferences?: ProfilePreferences | null;
   hourly_rate?: number | null;
   availability?: string | null;
+  pending_payout_balance_cents?: number | null;
   // Derived stats (optional, may be selected via RPC/views)
   reviews_given_count?: number | null;
   reviews_received_count?: number | null;

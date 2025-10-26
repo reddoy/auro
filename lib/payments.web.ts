@@ -148,4 +148,38 @@ export async function createStripeExpressOnboardingLink(reviewerId: string): Pro
   }
 }
 
+export type PendingPaymentsData = {
+  pendingAmountCents: number;
+  pendingAmountDollars: number;
+  currency: string;
+  recentTransfers: Array<{
+    id: string;
+    amount: number;
+    amountDollars: number;
+    currency: string;
+    status: string;
+    created: number;
+    description: string | null;
+  }>;
+};
+
+export async function getPendingPayments(reviewerId: string): Promise<PendingPaymentsData | null> {
+  console.log('[getPendingPayments] called with reviewerId:', reviewerId);
+  try {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.EXPO_PUBLIC_SITE_URL || '';
+    if (!siteUrl) return null;
+    
+    const resp = await fetch(`${siteUrl}/api/stripe/pending-payments?reviewerId=${encodeURIComponent(reviewerId)}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if (!resp.ok) return null;
+    const json = await resp.json();
+    return json;
+  } catch {
+    return null;
+  }
+}
+
 
