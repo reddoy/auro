@@ -72,6 +72,7 @@ export default function RevieweeWaitlist() {
               type="submit" 
               disabled={status === 'loading'}
               className="submit-button"
+              variant="gradient"
             >
               {status === 'loading' ? 'Joining...' : 'Join Waitlist'}
             </Button>
@@ -149,62 +150,9 @@ export default function RevieweeWaitlist() {
         }
 
         .submit-button {
-          background: linear-gradient(135deg, #FF6F00, #9333EA, #FF8A00, #A855F7);
-          background-size: 300% 300%;
-          color: white;
-          padding: 12px 24px;
-          font-weight: 600;
-          white-space: nowrap;
-          border: 0;
-          border-radius: 16px;
-          box-shadow: 0 12px 40px rgba(255, 111, 0, 0.3);
-          transition: all 0.3s ease;
-          animation: gradientShift 0.5s ease infinite;
-          position: relative;
-          overflow: hidden;
+          /* Custom styling handled by Button component gradient variant */
         }
 
-        .submit-button::before {
-          content: '';
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          width: 0;
-          height: 0;
-          border-radius: 50%;
-          background: rgba(200, 53, 159, 0.3);
-          transition: width 0.6s, height 0.6s;
-          transform: translate(-50%, -50%);
-        }
-
-        .submit-button:hover::before {
-          width: 300px;
-          height: 300px;
-          background: rgba(200, 53, 159, 0.2);
-          animation: ripple 0.6s linear;
-        }
-
-        .submit-button:hover {
-          transform: translateY(-3px) scale(1.02);
-          box-shadow: 0 16px 50px rgba(255, 111, 0, 0.4);
-        }
-
-        .submit-button:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
-          transform: none;
-        }
-
-        @keyframes gradientShift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-
-        @keyframes ripple {
-          0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
-          100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
-        }
 
         .success-message {
           display: flex;
