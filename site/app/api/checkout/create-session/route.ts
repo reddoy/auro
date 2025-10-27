@@ -91,6 +91,7 @@ export async function POST(req: Request) {
     console.log('✅ [CHECKOUT] Resolved creator ID:', resolvedCreatorId);
 
     // Determine price (in cents) from creators_public or profiles.hourly_rate
+    // hourly_rate is what the customer pays, not what the reviewer gets
     let priceCents = 1000; // default $10 fallback
     let connectAccountId: string | undefined = undefined;
     let auroFeeBps: number | undefined = undefined; // 15% founders (1500 bps) for first 100 creators; otherwise 20% (2000 bps)
@@ -298,7 +299,7 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: `Failed to create request: ${(e as any)?.message || 'unknown'}` }), { status: 400 });
     }
 
-    // Compute application fee from auroFeeBps
+    // Compute application fee from auroFeeBps based on customer price
     const applicationFeeCents = Math.floor((priceCents * (auroFeeBps || 2000)) / 10000);
     
     // Ensure application fee doesn't exceed the total amount
@@ -393,7 +394,7 @@ export async function POST(req: Request) {
         await admin
           .from('requests')
           .update({
-            amount_cents: priceCents,
+            amount_cents: priceCents, // Customer pays this
             application_fee_cents: finalApplicationFeeCents,
             auro_fee_bps: auroFeeBps || 2000,
             stripe_connect_account_id: connectAccountId || null,

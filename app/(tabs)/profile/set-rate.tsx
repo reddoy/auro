@@ -41,15 +41,16 @@ export default function SetRateScreen() {
       const updated = await updateProfile({ hourly_rate: rateNumber });
       setProfile(updated);
       
-      // Show confirmation with simplified calculation
+              // Show confirmation with detailed calculation
       if (rateNumber !== null && rateNumber > 0) {
-        // Simplified: Reviewer gets 80% of the total amount (20% Auro fee)
-        const reviewerEarnings = rateNumber * 0.8;
+        // rateNumber is what the customer pays, calculate reviewer's take-home
         const auroFee = rateNumber * 0.2;
+        const stripeFee = rateNumber * 0.029 + 0.30;
+        const reviewerTakeHome = rateNumber - auroFee - stripeFee;
         
         Alert.alert(
           'Rate Updated!', 
-          `Your rate is now $${rateNumber}/review.\n\nYou will earn: $${reviewerEarnings.toFixed(2)}\n(Auro fee: $${auroFee.toFixed(2)})`,
+          `Your price per review: $${rateNumber.toFixed(2)}\n\nAuro fee (20%): -$${auroFee.toFixed(2)}\nStripe fee (2.9% + $0.30): -$${stripeFee.toFixed(2)}\n\nYour take-home: $${reviewerTakeHome.toFixed(2)}`,
           [{ text: 'OK', onPress: () => router.back() }]
         );
       } else {
@@ -65,7 +66,7 @@ export default function SetRateScreen() {
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-      style={[styles.container, { paddingTop: insets.top }]}
+      style={styles.container}
     >
       {/* Header */}
       <View style={styles.header}>
@@ -83,16 +84,16 @@ export default function SetRateScreen() {
       >
         <View style={styles.content}>
           <Text style={styles.description}>
-            Set your price per review. This is what clients will pay for your review service.
+            Set your price per review (what customers pay). Fees and processing costs will be deducted to calculate your take-home.
           </Text>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Price per Review</Text>
+            <Text style={styles.inputLabel}>Price per Review (What Customer Pays)</Text>
             <TextInput
               style={styles.rateInput}
               value={editingRate}
               onChangeText={setEditingRate}
-              placeholder="e.g. 42"
+              placeholder="e.g. 65"
               keyboardType="numeric"
               placeholderTextColor={Colors.brand.textSecondary}
             />
@@ -101,27 +102,31 @@ export default function SetRateScreen() {
           {!!editingRate && !isNaN(Number(editingRate)) && Number(editingRate) > 0 && (
             <View style={styles.breakdownContainer}>
               {(() => {
-                const price = Number(editingRate);
-                // Simplified: Reviewer gets 80% of the total (20% Auro fee)
-                const reviewerEarnings = price * 0.8;
-                const auroFee = price * 0.2;
+                const customerPrice = Number(editingRate);
+                const auroFee = customerPrice * 0.2;
+                const stripeFee = customerPrice * 0.029 + 0.30;
+                const reviewerTakeHome = customerPrice - auroFee - stripeFee;
                 return (
                   <>
                     <Text style={styles.breakdownTitle}>Rate Breakdown</Text>
                     <View style={styles.breakdownCard}>
                       <View style={styles.breakdownRow}>
-                        <Text style={styles.breakdownLabel}>Your price per review</Text>
-                        <Text style={styles.breakdownValue}>${price.toFixed(2)}</Text>
+                        <Text style={styles.breakdownLabel}>Customer pays</Text>
+                        <Text style={styles.breakdownValue}>${customerPrice.toFixed(2)}</Text>
                       </View>
                       <View style={styles.breakdownDivider} />
                       <View style={styles.breakdownRow}>
                         <Text style={styles.breakdownLabel}>Auro fee (20%)</Text>
                         <Text style={[styles.breakdownValue, styles.breakdownFee]}>-${auroFee.toFixed(2)}</Text>
                       </View>
+                      <View style={styles.breakdownRow}>
+                        <Text style={styles.breakdownLabel}>Stripe fee (2.9% + $0.30)</Text>
+                        <Text style={[styles.breakdownValue, styles.breakdownFee]}>-${stripeFee.toFixed(2)}</Text>
+                      </View>
                       <View style={[styles.breakdownDivider, { marginTop: 8 }]} />
                       <View style={styles.breakdownRow}>
-                        <Text style={styles.breakdownTotalLabel}>You earn</Text>
-                        <Text style={styles.breakdownTotalValue}>${reviewerEarnings.toFixed(2)}</Text>
+                        <Text style={styles.breakdownTotalLabel}>Your take-home</Text>
+                        <Text style={styles.breakdownTotalValue}>${reviewerTakeHome.toFixed(2)}</Text>
                       </View>
                     </View>
                   </>
