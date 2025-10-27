@@ -218,7 +218,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
             <ul>
               <li>✅ Detailed attractiveness rating (1-10)</li>
               <li>✅ Wardrobe and style feedback</li>
-              <li>✅ Room setup recommendations</li>
+              <li>✅ Dating profile optimization</li>
               <li>✅ Personalized improvement suggestions</li>
               <li>✅ Honest, constructive feedback</li>
               <li>✅ Delivered within 48 hours</li>

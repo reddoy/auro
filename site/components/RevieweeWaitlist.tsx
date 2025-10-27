@@ -149,24 +149,44 @@ export default function RevieweeWaitlist() {
         }
 
         .submit-button {
-          background: linear-gradient(135deg, #ff6b35, #cc3598, #ea4c64);
-          background-size: 200% 200%;
+          background: linear-gradient(135deg, #FF6F00, #9333EA, #FF8A00, #A855F7);
+          background-size: 300% 300%;
           color: white;
           padding: 12px 24px;
           font-weight: 600;
           white-space: nowrap;
           border: 0;
-          border-radius: 12px;
-          box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
+          border-radius: 16px;
+          box-shadow: 0 12px 40px rgba(255, 111, 0, 0.3);
           transition: all 0.3s ease;
-          animation: gradientShift 3s ease infinite;
+          animation: gradientShift 0.5s ease infinite;
           position: relative;
           overflow: hidden;
         }
 
+        .submit-button::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 0;
+          height: 0;
+          border-radius: 50%;
+          background: rgba(200, 53, 159, 0.3);
+          transition: width 0.6s, height 0.6s;
+          transform: translate(-50%, -50%);
+        }
+
+        .submit-button:hover::before {
+          width: 300px;
+          height: 300px;
+          background: rgba(200, 53, 159, 0.2);
+          animation: ripple 0.6s linear;
+        }
+
         .submit-button:hover {
-          transform: translateY(-2px) scale(1.02);
-          box-shadow: 0 8px 30px rgba(255, 107, 53, 0.4);
+          transform: translateY(-3px) scale(1.02);
+          box-shadow: 0 16px 50px rgba(255, 111, 0, 0.4);
         }
 
         .submit-button:disabled {
@@ -179,6 +199,11 @@ export default function RevieweeWaitlist() {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
+        }
+
+        @keyframes ripple {
+          0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+          100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
         }
 
         .success-message {

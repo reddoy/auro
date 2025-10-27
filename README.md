@@ -1,6 +1,6 @@
 # Auro - Get Reviewed by Influencer Women
 
-Auro is a mobile app where men can sign up to get reviewed by popular influencer women on their attractiveness, wardrobe, and room setup to receive feedback on how to improve.
+Auro is a mobile app where men can sign up to get reviewed by popular influencer women on their attractiveness, wardrobe, and dating profiles to receive feedback on how to improve.
 
 ## Features
 

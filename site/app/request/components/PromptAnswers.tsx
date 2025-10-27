@@ -72,7 +72,7 @@ export default function PromptAnswers({ message, onMessageChange, onNext, onBack
           <textarea
             value={message}
             onChange={handleMessageChange}
-            placeholder="Hi! I'm looking for honest feedback on my overall attractiveness and style. I'm particularly interested in improving my wardrobe for dating. I'd also love feedback on my room setup as I often bring dates over. Any specific advice on what works and what doesn't would be incredibly helpful. Thanks!"
+            placeholder="Hi! I'm looking for honest feedback on my overall attractiveness and style. I'm particularly interested in improving my wardrobe for dating. Any specific advice on what works and what doesn't would be incredibly helpful. Thanks!"
             className="message-textarea"
             rows={8}
           />

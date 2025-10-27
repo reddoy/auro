@@ -500,7 +500,7 @@ export default function HomePage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <CardDescription className="text-center text-white/80 text-base leading-relaxed">
-                    Accept requests and rate men on attractiveness, style, room, and social profiles (Hinge/Tinder/Instagram) from 1-5. Give specific advice on what they could improve.
+                    Accept requests and rate men on attractiveness, style, and social profiles (Hinge/Tinder/Instagram) from 1-5. Give specific advice on what they could improve.
                   </CardDescription>
                   <div className="flex flex-wrap gap-2 justify-center">
                     <Badge variant="outline" className="text-xs border-purple-400/40 text-purple-300 bg-purple-500/20">📊 Rate 1-5 scale</Badge>
@@ -647,10 +647,10 @@ export default function HomePage() {
           
               <div className="space-y-5 text-left">
                 <p className="text-xl text-white/90 leading-relaxed">
-                  I started Auro because I know a lot of guys could use a little guidance—and getting a woman's perspective can make a huge difference in style, rooms, and even how you come across on dating apps.
+                  Look, I know us guys struggle on dating apps. We could definitely use a woman's opinion on our photos, style, and how we come across.
                 </p>
                 <p className="text-xl text-white/90 leading-relaxed">
-                  At the same time, I wanted to give creators a way to monetize their expertise in style, rooms, and dating advice. Auro makes it easy to share your knowledge, get paid, and help people level up—all at the same time.
+                  So I built Auro to connect guys who need help with women who can give it. This way women get paid for their expertise and guys get a leg up in the tough dating scene. Everyone wins.
                 </p>
                 <p className="text-xl font-bold leading-relaxed">
                   <span className="bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
