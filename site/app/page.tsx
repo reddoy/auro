@@ -171,7 +171,7 @@ export default function HomePage() {
                 </h1>
                 
                 <p className="text-lg text-white/90 max-w-lg mx-auto mobile-text-reveal leading-relaxed px-4 font-medium" style={{ animationDelay: '1s' }}>
-                  Get paid to review men's profiles, style, and dating photos.
+                  Get paid to review men's dating profiles and give help.
                 </p>
                 
                 <div className="mobile-text-reveal space-y-2 px-4" style={{ animationDelay: '1.1s' }}>
@@ -286,10 +286,7 @@ export default function HomePage() {
                   </h1>
                   
                   <p className="text-xl text-white/90 max-w-2xl leading-relaxed font-medium">
-                    Get paid to review men's profiles, style, and dating photos. 
-                    <span className="block mt-2 text-lg text-white/80">
-                      Set your own rates • Work when you want • 80% earnings forever
-                    </span>
+                    Get paid to review men's dating profiles and give help.
                   </p>
                 </div>
                 
