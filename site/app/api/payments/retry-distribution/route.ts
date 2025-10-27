@@ -31,8 +31,12 @@ export async function POST(req: Request) {
         amount_cents,
         application_fee_cents,
         payment_distributed,
+        reviewer_amount_cents,
+        stripe_transfer_id,
+        payment_distributed_at,
         payment_distribution_attempts,
         payment_distribution_error,
+        payment_distribution_failed_at,
         profiles!requests_influencer_id_fkey (
           id,
           stripe_connect_account_id,

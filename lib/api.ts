@@ -241,21 +241,49 @@ export async function submitRequestReview(params: {
     // Trigger payment distribution to reviewer
     try {
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.appauro.com';
+      console.log(`[payment-distribution] Attempting to distribute payment for request: ${requestId}`);
+      console.log(`[payment-distribution] Request ID type: ${typeof requestId}`);
+      console.log(`[payment-distribution] Request ID length: ${requestId?.length}`);
+      console.log(`[payment-distribution] Using base URL: ${baseUrl}`);
+      
+      // Validate requestId format
+      if (!requestId || typeof requestId !== 'string' || requestId.length < 10) {
+        console.error('[payment-distribution] Invalid requestId format:', requestId);
+        return result; // Skip payment distribution for invalid requestId
+      }
+      
       const response = await fetch(`${baseUrl}/api/payments/distribute-reviewer-payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ requestId })
       });
       
+      console.log(`[payment-distribution] Response status: ${response.status}`);
+      console.log(`[payment-distribution] Response ok: ${response.ok}`);
+      
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Payment distribution failed:', errorData);
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (parseError) {
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
+        }
+        console.error('[payment-distribution] Payment distribution failed:', errorData);
+        console.error('[payment-distribution] Error type:', errorData.errorType);
+        console.error('[payment-distribution] Full error details:', JSON.stringify(errorData, null, 2));
+        
+        // Don't fail the review submission, but log the specific error
+        if (errorData.error === 'Request not found') {
+          console.warn('[payment-distribution] Request not found in database - this might be a timing issue');
+        }
       } else {
         const successData = await response.json().catch(() => ({}));
-        console.log('Payment distribution successful:', successData);
+        console.log('[payment-distribution] Payment distribution successful:', successData);
       }
     } catch (paymentError) {
-      console.error('Failed to distribute payment to reviewer:', paymentError);
+      console.error('[payment-distribution] Network error distributing payment:', paymentError);
+      console.error('[payment-distribution] Error message:', paymentError.message);
+      console.error('[payment-distribution] Error stack:', paymentError.stack);
       // Don't fail the review submission if payment distribution fails
       // The payment can be distributed manually later
     }
