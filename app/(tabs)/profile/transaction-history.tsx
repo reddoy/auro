@@ -1,0 +1,425 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import { StyleSheet, TouchableOpacity, FlatList, RefreshControl, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router, useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
+
+import { Text, View } from '@/components/Themed';
+import { supabase } from '@/lib/supabase';
+import Colors from '@/constants/Colors';
+import { getRequestsByReviewer } from '@/lib/api';
+import type { Profile } from '@/types';
+
+interface TransactionItem {
+  id: string;
+  status: string;
+  amount_cents: number;
+  application_fee_cents: number;
+  reviewer_amount_cents?: number;
+  payment_distributed: boolean;
+  payment_distributed_at?: string;
+  payment_distribution_error?: string;
+  payment_status?: string;
+  created_at: string;
+  completed_at?: string;
+  requester_name?: string;
+  requester_username?: string;
+}
+
+export default function TransactionBreakdownScreen() {
+  const insets = useSafeAreaInsets();
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+
+  const loadTransactions = useCallback(async () => {
+    try {
+      const p = await supabase.auth.getUser();
+      if (!p.data.user) return;
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', p.data.user.id)
+        .single();
+
+      setProfile(profileData);
+
+      if (profileData?.is_reviewer) {
+        const requests = await getRequestsByReviewer(profileData.id);
+        
+        // Transform requests into transaction items
+        const transactionItems: TransactionItem[] = requests
+          .filter(r => r.amount_cents) // Only include requests with amounts
+          .map(r => ({
+            id: r.id,
+            status: r.status,
+            amount_cents: r.amount_cents || 0,
+            application_fee_cents: r.application_fee_cents || 0,
+            reviewer_amount_cents: r.reviewer_amount_cents,
+            payment_distributed: r.payment_distributed || false,
+            payment_distributed_at: r.payment_distributed_at,
+            payment_distribution_error: r.payment_distribution_error,
+            payment_status: r.payment_status,
+            created_at: r.created_at,
+            completed_at: r.completed_at,
+            requester_name: r.requester_name,
+            requester_username: r.requester_username,
+          }))
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        setTransactions(transactionItems);
+      }
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTransactions();
+  }, [loadTransactions]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadTransactions();
+    }, [loadTransactions])
+  );
+
+  const getPaymentStatus = (transaction: TransactionItem) => {
+    if (transaction.status !== 'completed') {
+      return {
+        status: 'pending',
+        message: 'Review not completed yet',
+        color: Colors.brand.textSecondary,
+        icon: '⏳'
+      };
+    }
+
+    // Use payment_status if available, otherwise fall back to old logic
+    if (transaction.payment_status) {
+      switch (transaction.payment_status) {
+        case 'paid':
+          return {
+            status: 'paid',
+            message: 'Payment sent to your account',
+            color: '#10b981',
+            icon: '✅'
+          };
+        case 'failed':
+          return {
+            status: 'failed',
+            message: 'Payment failed - will retry automatically',
+            color: '#ef4444',
+            icon: '❌'
+          };
+        case 'queued':
+          return {
+            status: 'queued',
+            message: 'Awaiting settlement (5-7 business days)',
+            color: '#f59e0b',
+            icon: '⏳'
+          };
+        default:
+          return {
+            status: 'processing',
+            message: 'Processing payment...',
+            color: '#3b82f6',
+            icon: '🔄'
+          };
+      }
+    }
+
+    // Fallback to old logic
+    if (transaction.payment_distributed) {
+      return {
+        status: 'paid',
+        message: 'Payment sent to your account',
+        color: '#10b981',
+        icon: '✅'
+      };
+    }
+
+    if (transaction.payment_distribution_error) {
+      return {
+        status: 'failed',
+        message: 'Payment failed - will retry automatically',
+        color: '#ef4444',
+        icon: '❌'
+      };
+    }
+
+    return {
+      status: 'queued',
+      message: 'Awaiting settlement (5-7 business days)',
+      color: '#f59e0b',
+      icon: '⏳'
+    };
+  };
+
+  const getAmountDisplay = (transaction: TransactionItem) => {
+    const reviewerAmount = transaction.reviewer_amount_cents || 
+      (transaction.amount_cents - transaction.application_fee_cents);
+    return (reviewerAmount / 100).toFixed(2);
+  };
+
+  const renderTransaction = ({ item }: { item: TransactionItem }) => {
+    const paymentStatus = getPaymentStatus(item);
+    const amount = getAmountDisplay(item);
+    const createdDate = new Date(item.created_at).toLocaleDateString();
+    const completedDate = item.completed_at ? new Date(item.completed_at).toLocaleDateString() : null;
+
+    return (
+      <View style={styles.transactionCard}>
+        <View style={styles.transactionHeader}>
+          <View style={styles.transactionInfo}>
+            <Text style={styles.transactionTitle}>
+              {item.requester_name || item.requester_username || 'Unknown User'}
+            </Text>
+            <Text style={styles.transactionDate}>
+              Created: {createdDate}
+              {completedDate && ` • Completed: ${completedDate}`}
+            </Text>
+          </View>
+          <View style={styles.transactionAmount}>
+            <Text style={styles.amountText}>${amount}</Text>
+          </View>
+        </View>
+
+        <View style={styles.paymentStatusContainer}>
+          <Text style={[styles.paymentStatusText, { color: paymentStatus.color }]}>
+            {paymentStatus.icon} {paymentStatus.message}
+          </Text>
+        </View>
+
+        {item.payment_distribution_error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>
+              Error: {item.payment_distribution_error}
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.transactionDetails}>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Total Amount:</Text>
+            <Text style={styles.detailValue}>${(item.amount_cents / 100).toFixed(2)}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Platform Fee:</Text>
+            <Text style={styles.detailValue}>${(item.application_fee_cents / 100).toFixed(2)}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Your Earnings:</Text>
+            <Text style={[styles.detailValue, styles.earningsValue]}>${amount}</Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={Colors.brand.textPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Transaction History</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading transactions...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.brand.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Transaction History</Text>
+      </View>
+
+      <View style={styles.content}>
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryTitle}>Payment Processing Info</Text>
+          <Text style={styles.summaryText}>
+            💳 Completed reviews are processed within 5-7 business days after completion.
+            This is due to payment settlement timing from Stripe.
+          </Text>
+        </View>
+
+        <FlatList
+          data={transactions}
+          renderItem={renderTransaction}
+          keyExtractor={(item) => item.id}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                loadTransactions();
+              }}
+              tintColor={Colors.brand.textPrimary}
+            />
+          }
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.brand.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    backgroundColor: Colors.brand.background,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.brand.cardBackground,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: Colors.brand.textSecondary,
+    fontSize: 16,
+  },
+  summaryCard: {
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.2)',
+  },
+  summaryTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+    marginBottom: 8,
+  },
+  summaryText: {
+    fontSize: 14,
+    color: Colors.brand.textSecondary,
+    lineHeight: 20,
+  },
+  listContainer: {
+    paddingBottom: 20,
+  },
+  transactionCard: {
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.brand.border,
+  },
+  transactionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+    backgroundColor: 'transparent',
+  },
+  transactionInfo: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  transactionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.brand.textPrimary,
+    marginBottom: 4,
+  },
+  transactionDate: {
+    fontSize: 12,
+    color: Colors.brand.textSecondary,
+  },
+  transactionAmount: {
+    backgroundColor: 'transparent',
+  },
+  amountText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+  },
+  paymentStatusContainer: {
+    marginBottom: 12,
+    backgroundColor: 'transparent',
+  },
+  paymentStatusText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  errorContainer: {
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 12,
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#ef4444',
+  },
+  transactionDetails: {
+    backgroundColor: 'transparent',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+    backgroundColor: 'transparent',
+  },
+  detailLabel: {
+    fontSize: 14,
+    color: Colors.brand.textSecondary,
+  },
+  detailValue: {
+    fontSize: 14,
+    color: Colors.brand.textPrimary,
+    fontWeight: '500',
+  },
+  earningsValue: {
+    color: '#10b981',
+    fontWeight: '700',
+  },
+});

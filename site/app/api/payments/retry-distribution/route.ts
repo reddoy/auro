@@ -124,9 +124,8 @@ export async function POST(req: Request) {
       const balance = await stripe.balance.retrieve({}, { stripeAccount: auroAccountId });
       const availableBalance = balance.available[0]?.amount || 0; // In cents
       const pendingBalance = balance.pending[0]?.amount || 0; // In cents
-      const totalBalance = availableBalance + pendingBalance; // Combined balance
       
-      if (totalBalance < reviewerAmount) {
+      if (availableBalance < reviewerAmount) {
         // Log insufficient funds error
         await admin
           .from('requests')

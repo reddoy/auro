@@ -62,6 +62,14 @@ export default function ReviewSubmittedScreen() {
         <Text style={styles.title}>Thank you for submitting your review!</Text>
         <Text style={styles.subtitle}>You can post straight to TikTok or IG</Text>
 
+        {/* Payment Processing Notice */}
+        <View style={styles.paymentNotice}>
+          <Text style={styles.paymentNoticeTitle}>💰 Payment Processing</Text>
+          <Text style={styles.paymentNoticeText}>
+            Your payment will be processed and appear in your account within 5-7 business days.
+          </Text>
+        </View>
+
         {!!mediaUri && (
           <Text style={styles.hint}>Attached media ready: {mediaUri.split('/').pop()}</Text>
         )}
@@ -108,6 +116,29 @@ const styles = StyleSheet.create({
   buttonText: { color: Colors.brand.textOnGradient, fontSize: 16, fontWeight: '700' },
   secondaryButton: { marginTop: 18, alignItems: 'center', paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: Colors.brand.border },
   secondaryText: { color: Colors.brand.textPrimary, fontSize: 15, fontWeight: '700' },
+  paymentNotice: {
+    marginTop: 16,
+    marginBottom: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.2)',
+  },
+  paymentNoticeTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  paymentNoticeText: {
+    fontSize: 13,
+    color: Colors.brand.textSecondary,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
 });
 
 

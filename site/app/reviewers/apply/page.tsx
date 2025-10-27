@@ -1366,6 +1366,13 @@ export default function FoundingReviewerApplyPage() {
                 <p className="text-xs text-gray-400">
                   We'll use this to notify you about new review requests and payment updates.
                 </p>
+                
+                {/* Payment Processing Notice */}
+                <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <p className="text-xs text-blue-300 text-center">
+                    💳 <strong>Payment Processing:</strong> Payments are processed within 5-7 business days after review completion
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -1521,6 +1528,13 @@ export default function FoundingReviewerApplyPage() {
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                     <span>Start earning with your founding benefits</span>
+                  </div>
+                  
+                  {/* Payment Processing Notice */}
+                  <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                    <p className="text-xs text-blue-300 text-center">
+                      💳 <strong>Payment Processing:</strong> Payments are processed within 5-7 business days after review completion
+                    </p>
                   </div>
             </div>
           </div>

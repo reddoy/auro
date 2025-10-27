@@ -106,17 +106,15 @@ export async function POST(req: Request) {
     const balance = await stripe.balance.retrieve({}, { stripeAccount: auroAccountId });
     const availableBalance = balance.available[0]?.amount || 0; // In cents
     const pendingBalance = balance.pending[0]?.amount || 0; // In cents
-    const totalBalance = availableBalance + pendingBalance; // Combined balance
     
-    if (totalBalance < reviewerAmount) {
+    if (availableBalance < reviewerAmount) {
       return new Response(JSON.stringify({ 
-        error: 'Insufficient funds in Auro account to complete this transfer.',
+        error: 'Insufficient available funds in Auro account to complete this transfer.',
         availableBalance: availableBalance,
         pendingBalance: pendingBalance,
-        totalBalance: totalBalance,
         requiredAmount: reviewerAmount,
-        shortfall: reviewerAmount - totalBalance,
-        message: `Available: $${(availableBalance / 100).toFixed(2)}, Pending: $${(pendingBalance / 100).toFixed(2)}, Total: $${(totalBalance / 100).toFixed(2)}, Required: $${(reviewerAmount / 100).toFixed(2)}`
+        shortfall: reviewerAmount - availableBalance,
+        message: `Available: $${(availableBalance / 100).toFixed(2)}, Pending: $${(pendingBalance / 100).toFixed(2)}, Required: $${(reviewerAmount / 100).toFixed(2)}. Only available funds can be used for transfers.`
       }), { status: 400 });
     }
     const transfer = await stripe.transfers.create({

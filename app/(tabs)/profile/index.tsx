@@ -44,11 +44,18 @@ export default function ProfileScreen() {
           // Fetch earnings data
           try {
             const requests = await getRequestsByReviewer(p.id);
+            
+            // Completed requests = reviews that are done
             const completedRequests = requests.filter(r => r.status === 'completed' && r.amount_cents);
-            // Pending requests = paid but not completed (waiting for review to be completed)
-            const pendingRequests = requests.filter(r => (r.status === 'paid' || r.status === 'in_progress') && r.amount_cents);
-            // Calculate total earnings using reviewer_amount_cents if available, otherwise calculate from amount_cents - application_fee_cents
-            const totalEarnings = completedRequests.reduce((sum, r) => {
+            
+            // In-progress requests = reviews that are being worked on
+            const inProgressRequests = requests.filter(r => r.status === 'in_progress' && r.amount_cents);
+            
+            // Paid requests = reviews that are paid for but not yet completed
+            const paidRequests = requests.filter(r => r.status === 'paid' && r.amount_cents);
+            
+            // Calculate completed earnings (reviews that are done)
+            const completedEarnings = completedRequests.reduce((sum, r) => {
               if (r.reviewer_amount_cents) {
                 return sum + r.reviewer_amount_cents;
               }
@@ -57,20 +64,32 @@ export default function ProfileScreen() {
               const auroFee = r.application_fee_cents || 0;
               return sum + (amount - auroFee);
             }, 0);
-            const count = completedRequests.length;
-            const pendingCount = pendingRequests.length;
-            const average = count > 0 ? totalEarnings / count : 0;
+            
+            // Calculate future earnings (reviews that are paid for but not completed yet)
+            const futureEarnings = paidRequests.reduce((sum, r) => {
+              if (r.reviewer_amount_cents) {
+                return sum + r.reviewer_amount_cents;
+              }
+              const amount = r.amount_cents || 0;
+              const auroFee = r.application_fee_cents || 0;
+              return sum + (amount - auroFee);
+            }, 0);
+            
+            const completedCount = completedRequests.length;
+            const futureCount = paidRequests.length;
+            const inProgressCount = inProgressRequests.length;
+            const average = completedCount > 0 ? completedEarnings / completedCount : 0;
             
             // Get pending payout balance from database (tracked by trigger) - this is what they'll get after completing reviews
             const pendingPayoutBalanceCents = p?.pending_payout_balance_cents || 0;
             console.log('[pending-payout] from database:', pendingPayoutBalanceCents / 100);
             
             setEarnings({ 
-              total: totalEarnings / 100, 
-              count, 
+              total: completedEarnings / 100, // Only completed and paid out earnings
+              count: completedCount, 
               average: average / 100, 
-              pendingAmount: pendingPayoutBalanceCents / 100, // Show what they'll earn from pending reviews
-              pendingCount,
+              pendingAmount: pendingPayoutBalanceCents / 100, // Completed reviews waiting for payout
+              pendingCount: futureCount, // Reviews waiting to be completed
               stripePendingAmount: 0 // Not used anymore - pending payout moved to pendingAmount
             }); // Convert cents to dollars
           } catch (e) {
@@ -201,11 +220,18 @@ export default function ProfileScreen() {
         // Refresh earnings data
         try {
           const requests = await getRequestsByReviewer(p.id);
+          
+          // Completed requests = reviews that are done
           const completedRequests = requests.filter(r => r.status === 'completed' && r.amount_cents);
-          // Pending requests = paid but not completed (waiting for review to be completed)
-          const pendingRequests = requests.filter(r => (r.status === 'paid' || r.status === 'in_progress') && r.amount_cents);
-          // Calculate total earnings using reviewer_amount_cents if available, otherwise calculate from amount_cents - application_fee_cents
-          const totalEarnings = completedRequests.reduce((sum, r) => {
+          
+          // In-progress requests = reviews that are being worked on
+          const inProgressRequests = requests.filter(r => r.status === 'in_progress' && r.amount_cents);
+          
+          // Paid requests = reviews that are paid for but not yet completed
+          const paidRequests = requests.filter(r => r.status === 'paid' && r.amount_cents);
+          
+          // Calculate completed earnings (reviews that are done)
+          const completedEarnings = completedRequests.reduce((sum, r) => {
             if (r.reviewer_amount_cents) {
               return sum + r.reviewer_amount_cents;
             }
@@ -214,20 +240,32 @@ export default function ProfileScreen() {
             const auroFee = r.application_fee_cents || 0;
             return sum + (amount - auroFee);
           }, 0);
-          const count = completedRequests.length;
-          const pendingCount = pendingRequests.length;
-          const average = count > 0 ? totalEarnings / count : 0;
+          
+          // Calculate future earnings (reviews that are paid for but not completed yet)
+          const futureEarnings = paidRequests.reduce((sum, r) => {
+            if (r.reviewer_amount_cents) {
+              return sum + r.reviewer_amount_cents;
+            }
+            const amount = r.amount_cents || 0;
+            const auroFee = r.application_fee_cents || 0;
+            return sum + (amount - auroFee);
+          }, 0);
+          
+          const completedCount = completedRequests.length;
+          const futureCount = paidRequests.length;
+          const inProgressCount = inProgressRequests.length;
+          const average = completedCount > 0 ? completedEarnings / completedCount : 0;
           
           // Get pending payout balance from database (tracked by trigger) - this is what they'll get after completing reviews
           const pendingPayoutBalanceCents = p?.pending_payout_balance_cents || 0;
           console.log('[pending-payout] from database:', pendingPayoutBalanceCents / 100);
           
           setEarnings({ 
-            total: totalEarnings / 100, 
-            count, 
+            total: completedEarnings / 100, // Only completed and paid out earnings
+            count: completedCount, 
             average: average / 100, 
-            pendingAmount: pendingPayoutBalanceCents / 100, // Show what they'll earn from pending reviews
-            pendingCount,
+            pendingAmount: pendingPayoutBalanceCents / 100, // Completed reviews waiting for payout
+            pendingCount: futureCount, // Reviews waiting to be completed
             stripePendingAmount: 0 // Not used anymore - pending payout moved to pendingAmount
           });
         } catch {}
@@ -332,34 +370,45 @@ export default function ProfileScreen() {
                 <View style={styles.earningsCard}>
                       <View style={styles.earningsHeaderMobile}>
                         <View style={{ backgroundColor: 'transparent', marginBottom: 16 }}>
-                          <Text style={styles.earningsLabel}>Total Earned</Text>
+                          <Text style={styles.earningsLabel}>Completed & Paid</Text>
                           <Text style={styles.earningsTotal}>${earnings.total.toFixed(2)}</Text>
                         </View>
-                        <TouchableOpacity
-                          onPress={async () => {
-                            try {
-                              if (stripePortalUrl) {
-                                console.log('[stripe-login] Opening', stripePortalUrl);
-                                Linking.openURL(stripePortalUrl);
-                                return;
+                        <View style={styles.paymentButtonsContainer}>
+                          <TouchableOpacity
+                            onPress={() => router.push('/(tabs)/profile/transaction-history')}
+                            style={styles.transactionHistoryButton}
+                          >
+                            <Text style={styles.transactionHistoryText}>
+                              📊 Transaction History
+                            </Text>
+                          </TouchableOpacity>
+                          
+                          <TouchableOpacity
+                            onPress={async () => {
+                              try {
+                                if (stripePortalUrl) {
+                                  console.log('[stripe-login] Opening', stripePortalUrl);
+                                  Linking.openURL(stripePortalUrl);
+                                  return;
+                                }
+                                const reviewerId = profile?.id || '';
+                                const url = await createStripeExpressOnboardingLink(reviewerId);
+                                console.log('[stripe-onboarding] reviewerId:', reviewerId, 'url:', url);
+                                if (url) Linking.openURL(url);
+                                else Alert.alert('Stripe', 'Setup link not available. Check env EXPO_PUBLIC_SUPABASE_URL and function URL envs.');
+                              } catch (e: any) {
+                                console.log('[stripe-onboarding] error', e?.message || e);
+                                Alert.alert('Stripe', e?.message || 'Failed to open Stripe');
                               }
-                              const reviewerId = profile?.id || '';
-                              const url = await createStripeExpressOnboardingLink(reviewerId);
-                              console.log('[stripe-onboarding] reviewerId:', reviewerId, 'url:', url);
-                              if (url) Linking.openURL(url);
-                              else Alert.alert('Stripe', 'Setup link not available. Check env EXPO_PUBLIC_SUPABASE_URL and function URL envs.');
-                            } catch (e: any) {
-                              console.log('[stripe-onboarding] error', e?.message || e);
-                              Alert.alert('Stripe', e?.message || 'Failed to open Stripe');
-                            }
-                          }}
-                          accessibilityLabel={stripePortalUrl ? 'Open Stripe Dashboard' : 'Set up Stripe payouts'}
-                          style={styles.stripeDashboardButtonMobile}
-                        >
-                          <Text style={styles.stripeDashboardText}>
-                            {stripePortalUrl ? '💰 See Payouts' : '⚡ Setup Stripe'}
-                          </Text>
-                        </TouchableOpacity>
+                            }}
+                            accessibilityLabel={stripePortalUrl ? 'Open Stripe Dashboard' : 'Set up Stripe payouts'}
+                            style={styles.stripeDashboardButtonMobile}
+                          >
+                            <Text style={styles.stripeDashboardText}>
+                              {stripePortalUrl ? '💰 See Payouts' : '⚡ Setup Stripe'}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
                       </View>
                       <View style={[styles.earningsStats, { marginTop: 16 }]}>
                         <View style={styles.earningStat}>
@@ -380,9 +429,18 @@ export default function ProfileScreen() {
                             style={styles.earningStatBg}
                           />
                           <Text style={styles.earningStatNumber}>${earnings.pendingAmount.toFixed(2)}</Text>
-                          <Text style={styles.earningStatLabel}>Pending Payout</Text>
+                          <Text style={styles.earningStatLabel}>Awaiting Payout</Text>
                         </View>
                       </View>
+                      
+                      {/* Payment Processing Time Notice */}
+                      {earnings.pendingAmount > 0 && (
+                        <View style={styles.paymentNoticeContainer}>
+                          <Text style={styles.paymentNoticeText}>
+                            💳 Completed reviews await payout due to settlement timing (5-7 business days)
+                          </Text>
+                        </View>
+                      )}
                     </View>
                   </View>
                 </>
@@ -987,6 +1045,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+  paymentNoticeContainer: {
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.2)',
+  },
+  paymentNoticeText: {
+    fontSize: 13,
+    color: Colors.brand.textSecondary,
+    textAlign: 'center',
+    fontWeight: '500',
+    lineHeight: 18,
+  },
+  paymentButtonsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    backgroundColor: 'transparent',
+  },
+  transactionHistoryButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    borderWidth: 1,
+    borderColor: Colors.brand.border,
+    alignItems: 'center',
+  },
+  transactionHistoryText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.brand.textPrimary,
+  },
 });
+
 
 
