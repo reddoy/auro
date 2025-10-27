@@ -101,9 +101,24 @@ export async function POST(req: Request) {
       }), { status: 400 });
     }
 
-    // Create a transfer to the reviewer's Connect account
-    // Use the Auro account ID as the source
-    const auroAccountId = 'acct_1S0FmFBCrjcqavov';
+    // Check account balance before attempting transfer
+    const auroAccountId = 'acct_1S0Fm0BQDAObfzKx'; // Updated to the account with $2000+
+    const balance = await stripe.balance.retrieve({}, { stripeAccount: auroAccountId });
+    const availableBalance = balance.available[0]?.amount || 0; // In cents
+    const pendingBalance = balance.pending[0]?.amount || 0; // In cents
+    const totalBalance = availableBalance + pendingBalance; // Combined balance
+    
+    if (totalBalance < reviewerAmount) {
+      return new Response(JSON.stringify({ 
+        error: 'Insufficient funds in Auro account to complete this transfer.',
+        availableBalance: availableBalance,
+        pendingBalance: pendingBalance,
+        totalBalance: totalBalance,
+        requiredAmount: reviewerAmount,
+        shortfall: reviewerAmount - totalBalance,
+        message: `Available: $${(availableBalance / 100).toFixed(2)}, Pending: $${(pendingBalance / 100).toFixed(2)}, Total: $${(totalBalance / 100).toFixed(2)}, Required: $${(reviewerAmount / 100).toFixed(2)}`
+      }), { status: 400 });
+    }
     const transfer = await stripe.transfers.create({
       amount: reviewerAmount,
       currency: 'usd',

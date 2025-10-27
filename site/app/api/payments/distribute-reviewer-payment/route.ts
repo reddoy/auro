@@ -121,12 +121,31 @@ export async function POST(req: Request) {
 
     try {
       // Check account balance before attempting transfer
-      // Use the Auro account ID to check the correct balance
-      const auroAccountId = 'acct_1S0FmFBCrjcqavov';
+      // Use BOTH available and pending balance for transfers
+      const auroAccountId = 'acct_1S0Fm0BQDAObfzKx'; // Updated to the account with $2000+
+      
+      console.log('🔍 Checking balance for account:', auroAccountId);
+      
+      // Get balance using the account-specific API
       const balance = await stripe.balance.retrieve({}, { stripeAccount: auroAccountId });
       const availableBalance = balance.available[0]?.amount || 0; // In cents
+      const pendingBalance = balance.pending[0]?.amount || 0; // In cents
+      const totalBalance = availableBalance + pendingBalance; // Combined balance
       
-      if (availableBalance < reviewerAmount) {
+      console.log('💰 Balance details:', {
+        accountId: auroAccountId,
+        availableBalance: availableBalance,
+        availableBalanceUSD: (availableBalance / 100).toFixed(2),
+        pendingBalance: pendingBalance,
+        pendingBalanceUSD: (pendingBalance / 100).toFixed(2),
+        totalBalance: totalBalance,
+        totalBalanceUSD: (totalBalance / 100).toFixed(2),
+        reviewerAmount: reviewerAmount,
+        reviewerAmountUSD: (reviewerAmount / 100).toFixed(2)
+      });
+      
+      // Use total balance (available + pending) for the check
+      if (totalBalance < reviewerAmount) {
         // Log insufficient funds error
         await admin
           .from('requests')
@@ -141,30 +160,77 @@ export async function POST(req: Request) {
           error: 'Insufficient funds in Auro account to complete this transfer.',
           errorType: 'INSUFFICIENT_FUNDS',
           availableBalance: availableBalance,
+          pendingBalance: pendingBalance,
+          totalBalance: totalBalance,
           requiredAmount: reviewerAmount,
-          shortfall: reviewerAmount - availableBalance,
-          message: 'Please add funds to the Auro Stripe account or contact support.'
+          shortfall: reviewerAmount - totalBalance,
+          message: `Available: $${(availableBalance / 100).toFixed(2)}, Pending: $${(pendingBalance / 100).toFixed(2)}, Total: $${(totalBalance / 100).toFixed(2)}, Required: $${(reviewerAmount / 100).toFixed(2)}`
         }), { status: 400 });
       }
 
       // Create a transfer to the reviewer's Connect account
-      const transfer = await stripe.transfers.create({
+      // When transferring from a connected account, we need to use the platform account's API key
+      // and specify the source account in the transfer parameters
+      console.log('🔄 Creating transfer:', {
         amount: reviewerAmount,
-        currency: 'usd',
         destination: connectAccountId,
-        source_transaction: undefined, // Let Stripe use the account's available balance
-        transfer_group: `review_${requestId}`,
-        metadata: {
-          request_id: requestId,
-          reviewer_id: request.influencer_id,
-          auro_fee_cents: auroFee.toString(),
-          total_amount_cents: totalAmount.toString(),
-          source_account: auroAccountId,
-        },
-      }, {
-        stripeAccount: auroAccountId // Use the Auro account as the source
+        sourceAccount: auroAccountId,
+        reviewerAmountUSD: (reviewerAmount / 100).toFixed(2)
       });
+      
+      let transfer;
+      try {
+        transfer = await stripe.transfers.create({
+          amount: reviewerAmount,
+          currency: 'usd',
+          destination: connectAccountId,
+          transfer_group: `review_${requestId}`,
+          metadata: {
+            request_id: requestId,
+            reviewer_id: request.influencer_id,
+            auro_fee_cents: auroFee.toString(),
+            total_amount_cents: totalAmount.toString(),
+            source_account: auroAccountId,
+          },
+        });
+        
+        console.log('✅ Transfer created successfully:', {
+          transferId: transfer.id,
+          amount: transfer.amount,
+          destination: transfer.destination,
+          status: transfer.status
+        });
+      } catch (transferError) {
+        console.error('❌ Transfer creation failed:', transferError);
+        console.error('❌ Transfer error details:', {
+          message: transferError.message,
+          type: transferError.type,
+          code: transferError.code,
+          decline_code: transferError.decline_code
+        });
+        
+        // Log the transfer error
+        await admin
+          .from('requests')
+          .update({ 
+            payment_distribution_attempts: (request.payment_distribution_attempts || 0) + 1,
+            payment_distribution_error: `Transfer failed: ${transferError.message}`,
+            payment_distribution_failed_at: new Date().toISOString()
+          })
+          .eq('id', requestId);
 
+        return new Response(JSON.stringify({ 
+          error: 'Transfer creation failed',
+          errorType: 'TRANSFER_FAILED',
+          details: transferError.message,
+          stripeError: {
+            type: transferError.type,
+            code: transferError.code,
+            decline_code: transferError.decline_code
+          }
+        }), { status: 400 });
+      }
+      
       // Update the request to mark payment as distributed
       const { error: updateError } = await admin
         .from('requests')
