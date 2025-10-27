@@ -60,8 +60,11 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
 
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, bio, links')
+          .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, bio, links, stripe_connect_account_id')
           .eq('is_reviewer', true)
+          .not('stripe_connect_account_id', 'is', null) // Only show reviewers with Connect accounts
+          .not('hourly_rate', 'is', null) // Only show reviewers who have set their rate
+          .gt('hourly_rate', 0) // Only show reviewers with positive rates
           .order('rating_average', { ascending: false, nullsFirst: false });
 
         if (error) throw error;

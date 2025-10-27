@@ -146,12 +146,15 @@ export async function ensureProfileForCurrentUser(): Promise<void> {
   }
 }
 
-// New: list reviewers from profiles where is_reviewer = true
+// New: list reviewers from profiles where is_reviewer = true and has Stripe Connect account
 export async function getReviewers(): Promise<DbReviewerSummary[]> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, is_reviewer, packages, links, bio')
+    .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, is_reviewer, packages, links, bio, stripe_connect_account_id')
     .eq('is_reviewer', true)
+    .not('stripe_connect_account_id', 'is', null) // Only show reviewers with Connect accounts
+    .not('hourly_rate', 'is', null) // Only show reviewers who have set their rate
+    .gt('hourly_rate', 0) // Only show reviewers with positive rates
     .order('rating_average', { ascending: false, nullsFirst: false });
   if (error) throw error;
   return (data || []).map((row: any) => ({
@@ -311,7 +314,41 @@ export async function denyRequest(id: string): Promise<DbRequestSummary> {
   if (current.status !== 'paid') {
     throw new Error('Cannot deny until payment is completed');
   }
-  return updateRequestStatus(id, 'rejected');
+  
+  // Update status to rejected first
+  const updated = await updateRequestStatus(id, 'rejected');
+  
+  // Trigger automatic refund
+  try {
+    const baseUrl = 'https://www.appauro.com';
+    console.log(`[automatic-refund] Triggering refund for denied request: ${id}`);
+    
+    const response = await fetch(`${baseUrl}/api/payments/refund`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        requestId: id, 
+        reason: 'reviewer_denied',
+        partial: false
+      })
+    });
+    
+    console.log(`[automatic-refund] Response status: ${response.status}`);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('[automatic-refund] Error response:', errorData);
+      // Don't throw error - status update should still succeed
+    } else {
+      const successData = await response.json();
+      console.log('[automatic-refund] Success response:', successData);
+    }
+  } catch (refundError) {
+    console.error('[automatic-refund] Refund failed:', refundError);
+    // Don't throw error - status update should still succeed
+  }
+  
+  return updated;
 }
 
 export async function archiveRequest(id: string): Promise<DbRequestSummary> {
