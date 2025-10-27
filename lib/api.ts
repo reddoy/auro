@@ -240,7 +240,7 @@ export async function submitRequestReview(params: {
     
     // Trigger payment distribution to reviewer
     try {
-      const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.appauro.com';
+      const baseUrl = 'https://www.appauro.com'; // Always use production URL for payment distribution
       console.log(`[payment-distribution] Attempting to distribute payment for request: ${requestId}`);
       console.log(`[payment-distribution] Request ID type: ${typeof requestId}`);
       console.log(`[payment-distribution] Request ID length: ${requestId?.length}`);
