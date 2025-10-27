@@ -102,18 +102,24 @@ export async function POST(req: Request) {
     }
 
     // Create a transfer to the reviewer's Connect account
+    // Use the Auro account ID as the source
+    const auroAccountId = 'acct_1S0FmFBCrjcqavov';
     const transfer = await stripe.transfers.create({
       amount: reviewerAmount,
       currency: 'usd',
       destination: connectAccountId,
+      source_transaction: undefined, // Let Stripe use the account's available balance
       transfer_group: `review_${requestId}`,
       metadata: {
         request_id: requestId,
         reviewer_id: request.influencer_id,
         auro_fee_cents: auroFee.toString(),
         total_amount_cents: totalAmount.toString(),
-        distributed_by: 'admin_manual'
+        distributed_by: 'admin_manual',
+        source_account: auroAccountId,
       },
+    }, {
+      stripeAccount: auroAccountId // Use the Auro account as the source
     });
 
     // Update the request to mark payment as distributed

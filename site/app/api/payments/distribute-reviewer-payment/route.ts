@@ -121,7 +121,9 @@ export async function POST(req: Request) {
 
     try {
       // Check account balance before attempting transfer
-      const balance = await stripe.balance.retrieve();
+      // Use the Auro account ID to check the correct balance
+      const auroAccountId = 'acct_1S0FmFBCrjcqavov';
+      const balance = await stripe.balance.retrieve({}, { stripeAccount: auroAccountId });
       const availableBalance = balance.available[0]?.amount || 0; // In cents
       
       if (availableBalance < reviewerAmount) {
@@ -150,13 +152,17 @@ export async function POST(req: Request) {
         amount: reviewerAmount,
         currency: 'usd',
         destination: connectAccountId,
+        source_transaction: undefined, // Let Stripe use the account's available balance
         transfer_group: `review_${requestId}`,
         metadata: {
           request_id: requestId,
           reviewer_id: request.influencer_id,
           auro_fee_cents: auroFee.toString(),
           total_amount_cents: totalAmount.toString(),
+          source_account: auroAccountId,
         },
+      }, {
+        stripeAccount: auroAccountId // Use the Auro account as the source
       });
 
       // Update the request to mark payment as distributed
