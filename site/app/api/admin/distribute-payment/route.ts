@@ -8,9 +8,6 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'Missing requestId' }), { status: 400 });
     }
 
-    // TODO: Add admin authentication check here
-    // For now, this endpoint is open - you should add proper admin auth
-
     const secret = process.env.STRIPE_SECRET_KEY || '';
     if (!secret) {
       return new Response(JSON.stringify({ error: 'Missing STRIPE_SECRET_KEY' }), { status: 500 });
@@ -33,7 +30,10 @@ export async function POST(req: Request) {
         influencer_id,
         amount_cents,
         application_fee_cents,
+        stripe_session_id,
+        stripe_payment_intent_id,
         payment_distributed,
+        reviewer_amount_cents,
         profiles!requests_influencer_id_fkey (
           id,
           stripe_connect_account_id,
@@ -56,14 +56,18 @@ export async function POST(req: Request) {
     // Check if payment already distributed
     if (request.payment_distributed && !force) {
       return new Response(JSON.stringify({ 
-        error: 'Payment already distributed. Use force=true to override.' 
+        error: 'Payment already distributed. Use force=true to override.',
+        alreadyDistributed: true,
+        transferId: request.stripe_transfer_id,
+        reviewerAmount: request.reviewer_amount_cents
       }), { status: 400 });
     }
 
     // Verify the request is completed (unless forced)
     if (request.status !== 'completed' && !force) {
       return new Response(JSON.stringify({ 
-        error: 'Request is not completed yet. Use force=true to override.' 
+        error: 'Request is not completed yet. Use force=true to override.',
+        currentStatus: request.status
       }), { status: 400 });
     }
 
@@ -75,7 +79,9 @@ export async function POST(req: Request) {
     const connectAccountId = reviewer.stripe_connect_account_id;
     if (!connectAccountId) {
       return new Response(JSON.stringify({ 
-        error: `Reviewer ${reviewer.username || reviewer.full_name} has not set up their payment account yet.` 
+        error: 'Reviewer has not set up their payment account yet. Please ask them to complete their Stripe Connect setup.',
+        reviewerId: request.influencer_id,
+        reviewerName: reviewer.full_name || reviewer.username
       }), { status: 400 });
     }
 
@@ -86,7 +92,10 @@ export async function POST(req: Request) {
 
     if (reviewerAmount <= 0) {
       return new Response(JSON.stringify({ 
-        error: 'Invalid payment amount. Reviewer amount would be zero or negative.' 
+        error: 'Invalid payment amount. Reviewer amount would be zero or negative.',
+        totalAmount,
+        auroFee,
+        reviewerAmount
       }), { status: 400 });
     }
 
@@ -101,8 +110,7 @@ export async function POST(req: Request) {
         reviewer_id: request.influencer_id,
         auro_fee_cents: auroFee.toString(),
         total_amount_cents: totalAmount.toString(),
-        distributed_by: 'admin',
-        force: force.toString(),
+        distributed_by: 'admin_manual'
       },
     });
 
@@ -127,8 +135,9 @@ export async function POST(req: Request) {
       transferId: transfer.id,
       reviewerAmount: reviewerAmount,
       auroFee: auroFee,
+      totalAmount: totalAmount,
       reviewerName: reviewer.full_name || reviewer.username,
-      message: `Payment successfully distributed to ${reviewer.full_name || reviewer.username}`
+      message: 'Payment successfully distributed to reviewer'
     }), { status: 200 });
 
   } catch (error: any) {

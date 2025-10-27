@@ -44,10 +44,19 @@ export default function ProfileScreen() {
           // Fetch earnings data
           try {
             const requests = await getRequestsByReviewer(p.id);
-            const completedRequests = requests.filter(r => r.status === 'completed' && r.net_amount_cents);
+            const completedRequests = requests.filter(r => r.status === 'completed' && r.amount_cents);
             // Pending requests = paid but not completed (waiting for review to be completed)
             const pendingRequests = requests.filter(r => (r.status === 'paid' || r.status === 'in_progress') && r.amount_cents);
-            const totalEarnings = completedRequests.reduce((sum, r) => sum + (r.net_amount_cents || 0), 0);
+            // Calculate total earnings using reviewer_amount_cents if available, otherwise calculate from amount_cents - application_fee_cents
+            const totalEarnings = completedRequests.reduce((sum, r) => {
+              if (r.reviewer_amount_cents) {
+                return sum + r.reviewer_amount_cents;
+              }
+              // Fallback calculation: amount - auro fee
+              const amount = r.amount_cents || 0;
+              const auroFee = r.application_fee_cents || 0;
+              return sum + (amount - auroFee);
+            }, 0);
             const count = completedRequests.length;
             const pendingCount = pendingRequests.length;
             const average = count > 0 ? totalEarnings / count : 0;
@@ -192,10 +201,19 @@ export default function ProfileScreen() {
         // Refresh earnings data
         try {
           const requests = await getRequestsByReviewer(p.id);
-          const completedRequests = requests.filter(r => r.status === 'completed' && r.net_amount_cents);
+          const completedRequests = requests.filter(r => r.status === 'completed' && r.amount_cents);
           // Pending requests = paid but not completed (waiting for review to be completed)
           const pendingRequests = requests.filter(r => (r.status === 'paid' || r.status === 'in_progress') && r.amount_cents);
-          const totalEarnings = completedRequests.reduce((sum, r) => sum + (r.net_amount_cents || 0), 0);
+          // Calculate total earnings using reviewer_amount_cents if available, otherwise calculate from amount_cents - application_fee_cents
+          const totalEarnings = completedRequests.reduce((sum, r) => {
+            if (r.reviewer_amount_cents) {
+              return sum + r.reviewer_amount_cents;
+            }
+            // Fallback calculation: amount - auro fee
+            const amount = r.amount_cents || 0;
+            const auroFee = r.application_fee_cents || 0;
+            return sum + (amount - auroFee);
+          }, 0);
           const count = completedRequests.length;
           const pendingCount = pendingRequests.length;
           const average = count > 0 ? totalEarnings / count : 0;
@@ -236,18 +254,22 @@ export default function ProfileScreen() {
     <View style={[styles.container, { paddingTop: 0 }]}>
       <ScrollView
         refreshControl={
-          !initialLoad && !refreshing ? (
+          !initialLoad ? (
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
               tintColor={Colors.brand.textPrimary}
               colors={[Colors.brand.accentMagenta]}
               progressBackgroundColor={Colors.brand.background}
+              title="Pull to refresh"
+              titleColor={Colors.brand.textSecondary}
             />
           ) : undefined
         }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 24, paddingHorizontal: 16, paddingTop: 0 }}
+        bounces={true}
+        alwaysBounceVertical={true}
       >
         <View style={styles.header}>
           <View style={styles.headerContent}>

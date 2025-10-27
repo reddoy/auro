@@ -29,9 +29,9 @@ BEGIN
      AND (NEW.payment_distributed IS NULL OR NEW.payment_distributed = FALSE) THEN
     -- Only add if this is a new paid request or status changed to paid
     IF TG_OP = 'INSERT' OR (TG_OP = 'UPDATE' AND (OLD.status != 'paid' OR OLD.status IS NULL)) THEN
-      -- Calculate reviewer's share (80% of amount)
+      -- Calculate reviewer's share (amount - auro fee)
       UPDATE profiles
-      SET pending_payout_balance_cents = COALESCE(pending_payout_balance_cents, 0) + FLOOR(NEW.amount_cents * 0.8)
+      SET pending_payout_balance_cents = COALESCE(pending_payout_balance_cents, 0) + (NEW.amount_cents - COALESCE(NEW.application_fee_cents, 0))
       WHERE id = NEW.influencer_id;
     END IF;
   END IF;
@@ -42,7 +42,7 @@ BEGIN
      AND NEW.amount_cents IS NOT NULL THEN
     -- Remove the pending amount since the review is now complete
     UPDATE profiles
-    SET pending_payout_balance_cents = GREATEST(0, COALESCE(pending_payout_balance_cents, 0) - FLOOR(NEW.amount_cents * 0.8))
+    SET pending_payout_balance_cents = GREATEST(0, COALESCE(pending_payout_balance_cents, 0) - (NEW.amount_cents - COALESCE(NEW.application_fee_cents, 0)))
     WHERE id = NEW.influencer_id;
   END IF;
   
@@ -53,7 +53,7 @@ BEGIN
      AND OLD.status = 'paid' THEN
     -- Remove the pending amount since the review was rejected
     UPDATE profiles
-    SET pending_payout_balance_cents = GREATEST(0, COALESCE(pending_payout_balance_cents, 0) - FLOOR(NEW.amount_cents * 0.8))
+    SET pending_payout_balance_cents = GREATEST(0, COALESCE(pending_payout_balance_cents, 0) - (NEW.amount_cents - COALESCE(NEW.application_fee_cents, 0)))
     WHERE id = NEW.influencer_id;
   END IF;
   
@@ -79,7 +79,7 @@ EXECUTE FUNCTION update_reviewer_pending_balance();
 -- Backfill existing paid requests that haven't been distributed yet
 UPDATE profiles
 SET pending_payout_balance_cents = (
-  SELECT COALESCE(SUM(FLOOR(amount_cents * 0.8)), 0)
+  SELECT COALESCE(SUM(amount_cents - COALESCE(application_fee_cents, 0)), 0)
   FROM requests
   WHERE influencer_id = profiles.id
     AND status = 'paid'

@@ -240,11 +240,20 @@ export async function submitRequestReview(params: {
     
     // Trigger payment distribution to reviewer
     try {
-      await fetch('/api/payments/distribute-reviewer-payment', {
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://www.appauro.com';
+      const response = await fetch(`${baseUrl}/api/payments/distribute-reviewer-payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ requestId })
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Payment distribution failed:', errorData);
+      } else {
+        const successData = await response.json().catch(() => ({}));
+        console.log('Payment distribution successful:', successData);
+      }
     } catch (paymentError) {
       console.error('Failed to distribute payment to reviewer:', paymentError);
       // Don't fail the review submission if payment distribution fails
