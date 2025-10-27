@@ -197,13 +197,13 @@ export async function POST(req: Request) {
           amount: transfer.amount,
           destination: transfer.destination
         });
-      } catch (transferError) {
+      } catch (transferError: any) {
         console.error('❌ Transfer creation failed:', transferError);
         console.error('❌ Transfer error details:', {
-          message: transferError.message,
-          type: transferError.type,
-          code: transferError.code,
-          decline_code: transferError.decline_code
+          message: transferError?.message,
+          type: transferError?.type,
+          code: transferError?.code,
+          decline_code: transferError?.decline_code
         });
         
         // Log the transfer error
@@ -211,7 +211,7 @@ export async function POST(req: Request) {
           .from('requests')
           .update({ 
             payment_distribution_attempts: (request.payment_distribution_attempts || 0) + 1,
-            payment_distribution_error: `Transfer failed: ${transferError.message}`,
+            payment_distribution_error: `Transfer failed: ${transferError?.message || 'Unknown error'}`,
             payment_distribution_failed_at: new Date().toISOString()
           })
           .eq('id', requestId);
@@ -219,11 +219,11 @@ export async function POST(req: Request) {
         return new Response(JSON.stringify({ 
           error: 'Transfer creation failed',
           errorType: 'TRANSFER_FAILED',
-          details: transferError.message,
+          details: transferError?.message,
           stripeError: {
-            type: transferError.type,
-            code: transferError.code,
-            decline_code: transferError.decline_code
+            type: transferError?.type,
+            code: transferError?.code,
+            decline_code: transferError?.decline_code
           }
         }), { status: 400 });
       }
