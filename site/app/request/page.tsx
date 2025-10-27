@@ -52,6 +52,7 @@ export default function RequestPage() {
   });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [supabase, setSupabase] = useState<any>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   // Check if Supabase client is properly configured
   if (!supabaseClient) {
@@ -109,6 +110,7 @@ export default function RequestPage() {
           if (!client) {
             console.error('Supabase client is null - check environment variables');
             setSupabase(null);
+            setIsInitializing(false);
             return;
           }
           setSupabase(client);
@@ -184,11 +186,14 @@ export default function RequestPage() {
           console.error('Supabase initialization error:', error);
           // Set null to prevent infinite loading and show error
           setSupabase(null);
+        } finally {
+          setIsInitializing(false);
         }
       } else {
         // Set a dummy client if env vars are missing to prevent infinite loading
         console.warn('Supabase environment variables are missing');
         setSupabase(null);
+        setIsInitializing(false);
       }
     }
   }, [currentStep]);
@@ -230,8 +235,8 @@ export default function RequestPage() {
   };
 
   const renderStep = () => {
-    // Show loading until Supabase is initialized
-    if (supabase === null) {
+    // Show error only after initialization is complete and Supabase is still null
+    if (!isInitializing && supabase === null) {
       return (
         <div className="loading-container">
           <div style={{ textAlign: 'center', padding: '40px' }}>
@@ -247,14 +252,20 @@ export default function RequestPage() {
       );
     }
 
-    if (!supabase) {
+    // Show loading only for steps that don't have their own loading states
+    // Skip showing loading for creator-selection since it has its own loading state
+    if (isInitializing && currentStep !== 'creator-selection') {
       return (
         <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading...</p>
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <div className="loading-spinner" style={{ margin: '0 auto 20px' }}></div>
+            <p style={{ color: '#fff', fontSize: '16px' }}>Initializing...</p>
+          </div>
         </div>
       );
     }
+
+    // Render the actual step content
 
     switch (currentStep) {
       case 'intro':

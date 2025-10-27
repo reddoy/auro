@@ -50,7 +50,7 @@ export default function TransactionBreakdownScreen() {
       setProfile(profileData);
 
       // Load Stripe portal URL if user is a reviewer
-      if (profileData?.is_reviewer && profileData.stripe_account_id) {
+      if (profileData?.is_reviewer && profileData.stripe_connect_account_id) {
         try {
           const url = await createStripeExpressLoginLink(profileData.id);
           setStripePortalUrl(url);

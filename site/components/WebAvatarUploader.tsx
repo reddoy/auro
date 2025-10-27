@@ -113,7 +113,7 @@ export default function WebAvatarUploader({
       }
 
       // Generate display URL that will persist across page refreshes
-      const displayUrl = `/api/storage/signed-view?path=${encodeURIComponent(path)}`;
+      const displayUrl = `/api/storage/signed-view?path=${encodeURIComponent(path)}&bucket=avatars`;
       
       // Update preview to use the persistent URL
       setPreviewUrl(displayUrl);

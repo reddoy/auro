@@ -5,6 +5,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const path = searchParams.get('path');
+    const bucketParam = searchParams.get('bucket');
     
     if (!path) {
       return new Response('Missing path parameter', { status: 400 });
@@ -19,11 +20,11 @@ export async function GET(req: NextRequest) {
 
     const supabase = createClient(url, key);
     
-    // Determine bucket based on path
+    // Use provided bucket parameter, or determine bucket based on path
     const requestMediaBucket = process.env.NEXT_PUBLIC_SUPABASE_REQUEST_MEDIA_BUCKET || 'request-media';
     const avatarBucket = process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET || 'avatars';
     
-    const bucket = (path.includes('/avatar/') || path.includes('/selfie/')) ? avatarBucket : requestMediaBucket;
+    const bucket = bucketParam || ((path.includes('/avatar/') || path.includes('/selfie/')) ? avatarBucket : requestMediaBucket);
     
     // Create signed URL that expires in 24 hours
     const { data, error } = await supabase.storage
@@ -39,8 +40,11 @@ export async function GET(req: NextRequest) {
       return new Response('No signed URL generated', { status: 500 });
     }
     
-    // Redirect to the signed URL
-    return Response.redirect(data.signedUrl, 302);
+    // Return JSON response with the signed URL
+    return new Response(JSON.stringify({ url: data.signedUrl }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
     
   } catch (error) {
     console.error('Signed view error:', error);

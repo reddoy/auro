@@ -24,7 +24,7 @@ type Props = {
 
 export default function CreatorSelection({ selectedCreator, onSelect, supabase, preselectedCreatorSlug }: Props) {
   const [creators, setCreators] = useState<Creator[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start as false, will be set to true when we start fetching
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string>('');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -45,6 +45,7 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
         return;
       }
 
+      setLoading(true); // Start loading when we begin fetching
       try {
         setError('');
         
@@ -224,16 +225,6 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
         </div>
       )}
 
-      {creators.length > 0 && (
-        <div className="debug-info" style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', marginTop: '10px' }}>
-          Debug: {creators.length} total reviewers, {filteredCreators.length} filtered
-          {searchTerm && ` (searching for: "${searchTerm}")`}
-          <br />
-          Supabase URL: {process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Present' : 'Missing'}
-          <br />
-          Sample creator data: {JSON.stringify(creators.slice(0, 1).map((c: Creator) => ({ username: c.username, avatar_url: c.avatar_url })))}
-        </div>
-      )}
     </div>
   );
 }
