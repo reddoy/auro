@@ -41,20 +41,15 @@ export default function SetRateScreen() {
       const updated = await updateProfile({ hourly_rate: rateNumber });
       setProfile(updated);
       
-      // Show confirmation with take-home calculation
+      // Show confirmation with simplified calculation
       if (rateNumber !== null && rateNumber > 0) {
-        // Reviewer gets 80% of the total amount
-        const reviewerShare = rateNumber * 0.8;
-        // Stripe fee is charged on the total (2.9% + $0.30)
-        const stripeFee = Math.max(0, rateNumber * 0.029 + 0.3);
-        // Auro takes 20%
+        // Simplified: Reviewer gets 80% of the total amount (20% Auro fee)
+        const reviewerEarnings = rateNumber * 0.8;
         const auroFee = rateNumber * 0.2;
-        // Net payout after Stripe fee
-        const net = Math.max(0, reviewerShare - stripeFee);
         
         Alert.alert(
           'Rate Updated!', 
-          `Your rate is now $${rateNumber}/review.\n\nEstimated take-home: $${net.toFixed(2)}\n(80% share: $${reviewerShare.toFixed(2)} minus Stripe fee: $${stripeFee.toFixed(2)})`,
+          `Your rate is now $${rateNumber}/review.\n\nYou will earn: $${reviewerEarnings.toFixed(2)}\n(Auro fee: $${auroFee.toFixed(2)})`,
           [{ text: 'OK', onPress: () => router.back() }]
         );
       } else {
@@ -83,7 +78,7 @@ export default function SetRateScreen() {
 
       <ScrollView 
         style={styles.scrollView} 
-        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+        contentContainerStyle={{ paddingBottom: 24 }}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
@@ -99,7 +94,6 @@ export default function SetRateScreen() {
               onChangeText={setEditingRate}
               placeholder="e.g. 42"
               keyboardType="numeric"
-              autoFocus={true}
               placeholderTextColor={Colors.brand.textSecondary}
             />
           </View>
@@ -108,14 +102,9 @@ export default function SetRateScreen() {
             <View style={styles.breakdownContainer}>
               {(() => {
                 const price = Number(editingRate);
-                // Reviewer gets 80% of the total
-                const reviewerShare = price * 0.8;
-                // Stripe fee is charged on the total (2.9% + $0.30)
-                const stripeFee = Math.max(0, price * 0.029 + 0.3);
-                // Auro takes 20%
+                // Simplified: Reviewer gets 80% of the total (20% Auro fee)
+                const reviewerEarnings = price * 0.8;
                 const auroFee = price * 0.2;
-                // Net payout after Stripe fee is deducted from reviewer's share
-                const net = Math.max(0, reviewerShare - stripeFee);
                 return (
                   <>
                     <Text style={styles.breakdownTitle}>Rate Breakdown</Text>
@@ -126,21 +115,13 @@ export default function SetRateScreen() {
                       </View>
                       <View style={styles.breakdownDivider} />
                       <View style={styles.breakdownRow}>
-                        <Text style={styles.breakdownLabel}>Your share (80%)</Text>
-                        <Text style={styles.breakdownValue}>${reviewerShare.toFixed(2)}</Text>
-                      </View>
-                      <View style={styles.breakdownRow}>
                         <Text style={styles.breakdownLabel}>Auro fee (20%)</Text>
                         <Text style={[styles.breakdownValue, styles.breakdownFee]}>-${auroFee.toFixed(2)}</Text>
                       </View>
-                      <View style={styles.breakdownRow}>
-                        <Text style={styles.breakdownLabel}>Stripe fee (est. 2.9% + $0.30)</Text>
-                        <Text style={[styles.breakdownValue, styles.breakdownFee]}>-${stripeFee.toFixed(2)}</Text>
-                      </View>
                       <View style={[styles.breakdownDivider, { marginTop: 8 }]} />
                       <View style={styles.breakdownRow}>
-                        <Text style={styles.breakdownTotalLabel}>Your take-home</Text>
-                        <Text style={styles.breakdownTotalValue}>${net.toFixed(2)}</Text>
+                        <Text style={styles.breakdownTotalLabel}>You earn</Text>
+                        <Text style={styles.breakdownTotalValue}>${reviewerEarnings.toFixed(2)}</Text>
                       </View>
                     </View>
                   </>

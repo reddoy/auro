@@ -137,8 +137,8 @@ export default function ReviewerSubmitScreen() {
   if (!request) return <View style={styles.container}><Text style={{ color: Colors.brand.textSecondary }}>Request not found</Text></View>;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: Platform.OS === 'web' ? 24 : insets.bottom + 24, paddingHorizontal: 16 }}>
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+      <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: Platform.OS === 'web' ? 24 : 24, paddingHorizontal: 16 }}>
       <Text style={styles.title}>Write Review</Text>
 
       {!!request && (

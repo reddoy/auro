@@ -185,7 +185,7 @@ export default function HomePage() {
                   </div>
                   <div className="flex items-center justify-center gap-2 text-base text-white/90">
                     <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
-                    <span className="font-medium">85% earnings for founding members</span>
+                    <span className="font-medium">80% earnings forever</span>
                   </div>
                 </div>
               </div>
@@ -252,7 +252,7 @@ export default function HomePage() {
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>85% earnings forever</span>
+                    <span>80% earnings forever</span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
@@ -288,7 +288,7 @@ export default function HomePage() {
                   <p className="text-xl text-white/90 max-w-2xl leading-relaxed font-medium">
                     Get paid to review men's profiles, style, and dating photos. 
                     <span className="block mt-2 text-lg text-white/80">
-                      Set your own rates • Work when you want • 85% earnings for founding members
+                      Set your own rates • Work when you want • 80% earnings forever
                     </span>
                   </p>
                 </div>
@@ -325,7 +325,7 @@ export default function HomePage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>85% earnings forever</span>
+                    <span>80% earnings forever</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
@@ -370,7 +370,7 @@ export default function HomePage() {
                   <div className="absolute bottom-2 right-2 glass rounded-lg p-2 shadow-lg animate-slide-in-right hover-lift" style={{ animationDelay: '0.5s' }}>
                     <div className="flex items-center gap-2">
                       <Star className="w-4 h-4 text-orange-500" />
-                      <span className="text-xs font-medium text-white">85% earnings forever</span>
+                      <span className="text-xs font-medium text-white">80% earnings forever</span>
                     </div>
                   </div>
                 </div>
@@ -389,7 +389,7 @@ export default function HomePage() {
                 🚨 FOUNDING MEMBERS ONLY
               </Badge>
               <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight">
-                First 100 reviewers get exclusive benefits{' '}
+                First 35 reviewers get exclusive benefits{' '}
                 <span className="bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
                   forever
                 </span>
@@ -403,7 +403,7 @@ export default function HomePage() {
                   <div className="w-20 h-20 bg-green-500/30 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/20">
                     <DollarSign className="w-10 h-10 text-green-400" />
                 </div>
-                  <CardTitle className="text-2xl font-bold text-white">85% Earnings</CardTitle>
+                  <CardTitle className="text-2xl font-bold text-white">80% Earnings</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <CardDescription className="text-center text-white/90 text-base leading-relaxed">
@@ -654,7 +654,7 @@ export default function HomePage() {
                 </p>
                 <p className="text-xl font-bold leading-relaxed">
                   <span className="bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
-                    Join the first 35 founding reviewers and lock in 85% earnings forever.
+                    Join the first 35 founding reviewers and lock in 80% earnings forever.
                   </span>
                 </p>
               </div>

@@ -94,7 +94,7 @@ export default function ConditionalNav() {
           <div className="cta-count-section">
             <span className="cta-count-number">{loading ? '...' : count}</span>
             <span className="cta-count-separator">/</span>
-            <span className="cta-count-max">100</span>
+            <span className="cta-count-max">35</span>
           </div>
           <div className="cta-text-section">
             <span className="cta-main-text">Become Founding Reviewer</span>

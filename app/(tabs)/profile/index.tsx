@@ -305,7 +305,7 @@ export default function ProfileScreen() {
           ) : undefined
         }
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 24, paddingHorizontal: 16, paddingTop: 0 }}
+        contentContainerStyle={{ paddingBottom: 24, paddingHorizontal: 16, paddingTop: 0 }}
         bounces={true}
         alwaysBounceVertical={true}
       >
@@ -382,32 +382,6 @@ export default function ProfileScreen() {
                               📊 Transaction History
                             </Text>
                           </TouchableOpacity>
-                          
-                          <TouchableOpacity
-                            onPress={async () => {
-                              try {
-                                if (stripePortalUrl) {
-                                  console.log('[stripe-login] Opening', stripePortalUrl);
-                                  Linking.openURL(stripePortalUrl);
-                                  return;
-                                }
-                                const reviewerId = profile?.id || '';
-                                const url = await createStripeExpressOnboardingLink(reviewerId);
-                                console.log('[stripe-onboarding] reviewerId:', reviewerId, 'url:', url);
-                                if (url) Linking.openURL(url);
-                                else Alert.alert('Stripe', 'Setup link not available. Check env EXPO_PUBLIC_SUPABASE_URL and function URL envs.');
-                              } catch (e: any) {
-                                console.log('[stripe-onboarding] error', e?.message || e);
-                                Alert.alert('Stripe', e?.message || 'Failed to open Stripe');
-                              }
-                            }}
-                            accessibilityLabel={stripePortalUrl ? 'Open Stripe Dashboard' : 'Set up Stripe payouts'}
-                            style={styles.stripeDashboardButtonMobile}
-                          >
-                            <Text style={styles.stripeDashboardText}>
-                              {stripePortalUrl ? '💰 See Payouts' : '⚡ Setup Stripe'}
-                            </Text>
-                          </TouchableOpacity>
                         </View>
                       </View>
                       <View style={[styles.earningsStats, { marginTop: 16 }]}>
@@ -480,14 +454,9 @@ export default function ProfileScreen() {
                 <>
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
                     <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Share Your Reviewer Profile</Text>
-                    <View style={styles.priceCard}>
-                      <Text style={styles.priceText} numberOfLines={1} ellipsizeMode="middle">
-                        {`appauro.com/${profile.username || profile.id}`}
-                      </Text>
-                      <TouchableOpacity onPress={handleCopyReviewerLink} accessibilityLabel="Copy reviewer link" style={styles.copyLinkButton}>
-                        <Text style={styles.copyLinkButtonText}>📋 Copy</Text>
-                      </TouchableOpacity>
-                    </View>
+                    <TouchableOpacity onPress={handleCopyReviewerLink} accessibilityLabel="Copy reviewer link" style={styles.shareProfileButton}>
+                      <Text style={styles.shareProfileButtonText}>🔗 Share Profile Link</Text>
+                    </TouchableOpacity>
                   </View>
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
                     <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Price per Review</Text>
@@ -578,19 +547,6 @@ export default function ProfileScreen() {
             <Text style={styles.actionArrow}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/profile/video-review-demo' as any)} accessibilityLabel="Open dating profile upload">
-            <View style={styles.actionIconContainer}>
-              <ExpoLinearGradient
-                colors={[Colors.brand.accentOrange, Colors.brand.primary]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.actionIconGradient}
-              />
-              <Text style={styles.actionIcon}>💕</Text>
-            </View>
-            <Text style={styles.actionText}>Dating Profile Upload</Text>
-            <Text style={styles.actionArrow}>›</Text>
-          </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/hinge-clone')} accessibilityLabel="Open Hinge profile clone">
             <View style={styles.actionIconContainer}>
@@ -787,6 +743,27 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontWeight: '700',
     fontSize: 14
+  },
+  
+  shareProfileButton: {
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2
+  },
+  shareProfileButtonText: {
+    color: Colors.brand.textPrimary,
+    fontWeight: '700',
+    fontSize: 16
   },
   
   // Earnings tracker styles

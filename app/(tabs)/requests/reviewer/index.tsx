@@ -47,11 +47,11 @@ export default function ReviewerDashboardScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
       <ScrollView 
         contentContainerStyle={{ 
           paddingTop: 12, 
-          paddingBottom: Platform.OS === 'web' ? 24 : insets.bottom + 24, 
+          paddingBottom: Platform.OS === 'web' ? 24 : 24, 
           paddingHorizontal: 16 
         }}
         refreshControl={

@@ -72,8 +72,8 @@ export default function ReviewerProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: Platform.OS === 'web' ? 24 : insets.bottom + 24, paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+      <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: Platform.OS === 'web' ? 24 : 24, paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
         <RNView style={styles.card}>
           <RNView style={{ alignItems: 'center' }}>
             <Avatar uri={avatarUri} name={reviewer?.displayName} size={96} />

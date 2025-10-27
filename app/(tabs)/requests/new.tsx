@@ -87,7 +87,7 @@ export default function DiscoverReviewersScreen() {
         data={filtered}
         keyExtractor={(it) => it.id}
         renderItem={renderItem}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80 }}
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyText}>{loading ? 'Loading…' : 'No reviewers found'}</Text>

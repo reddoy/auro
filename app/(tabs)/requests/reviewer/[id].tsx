@@ -362,8 +362,8 @@ export default function ReviewerRequestScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={{ paddingTop: 20, paddingBottom: Platform.OS === 'web' ? 120 : insets.bottom + 120, paddingHorizontal: 0 }} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+      <ScrollView contentContainerStyle={{ paddingTop: 20, paddingBottom: Platform.OS === 'web' ? 120 : 100, paddingHorizontal: 0 }} showsVerticalScrollIndicator={false}>
         {/* Modern Review Status Card */}
         <ReviewStatusCard
           displayName={reviewee?.displayName || 'User'}

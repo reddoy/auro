@@ -49,16 +49,16 @@ export default function ReviewSubmittedScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Back button in top left */}
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      {/* Back button positioned relative to LogoHeader */}
       <TouchableOpacity 
-        style={[styles.backButton, { top: insets.top + 12 }]} 
-        onPress={() => router.replace('/(tabs)/profile')}
+        style={[styles.backButton, { top: Platform.OS === 'ios' ? 60 : 70 }]} 
+        onPress={() => router.replace('/(tabs)/requests')}
       >
         <Ionicons name="arrow-back" size={24} color={Colors.brand.textPrimary} />
       </TouchableOpacity>
 
-      <View style={[styles.card, { paddingTop: 12, paddingBottom: Platform.OS === 'web' ? 24 : insets.bottom + 24 }] }>
+      <View style={[styles.card, { paddingTop: Platform.OS === 'ios' ? 0 : 12, paddingBottom: Platform.OS === 'web' ? 24 : 24 }] }>
         <Text style={styles.title}>Thank you for submitting your review!</Text>
         <Text style={styles.subtitle}>You can post straight to TikTok or IG</Text>
 

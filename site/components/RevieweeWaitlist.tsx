@@ -149,7 +149,7 @@ export default function RevieweeWaitlist() {
         }
 
         .submit-button {
-          background: linear-gradient(135deg, #FF6F00, #FF8A00, #9333EA, #A855F7);
+          background: linear-gradient(135deg, #ff6b35, #cc3598, #ea4c64);
           background-size: 200% 200%;
           color: white;
           padding: 12px 24px;
@@ -157,7 +157,7 @@ export default function RevieweeWaitlist() {
           white-space: nowrap;
           border: 0;
           border-radius: 12px;
-          box-shadow: 0 4px 20px rgba(255, 111, 0, 0.3);
+          box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
           transition: all 0.3s ease;
           animation: gradientShift 3s ease infinite;
           position: relative;
@@ -166,7 +166,7 @@ export default function RevieweeWaitlist() {
 
         .submit-button:hover {
           transform: translateY(-2px) scale(1.02);
-          box-shadow: 0 8px 30px rgba(255, 111, 0, 0.4);
+          box-shadow: 0 8px 30px rgba(255, 107, 53, 0.4);
         }
 
         .submit-button:disabled {

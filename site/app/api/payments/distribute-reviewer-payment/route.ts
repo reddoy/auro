@@ -195,8 +195,7 @@ export async function POST(req: Request) {
         console.log('✅ Transfer created successfully:', {
           transferId: transfer.id,
           amount: transfer.amount,
-          destination: transfer.destination,
-          status: transfer.status
+          destination: transfer.destination
         });
       } catch (transferError) {
         console.error('❌ Transfer creation failed:', transferError);

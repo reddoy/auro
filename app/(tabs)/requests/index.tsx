@@ -313,7 +313,7 @@ export default function RequestsScreen() {
           />
         }
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 24, paddingHorizontal: 16, paddingTop: 0 }}
+        contentContainerStyle={{ paddingBottom: 24, paddingHorizontal: 16, paddingTop: 0 }}
         ListHeaderComponent={(
           <>
             <View style={styles.headerPlain}>
@@ -664,9 +664,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   reviewPreview: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'column',
     backgroundColor: Colors.brand.cardBackgroundLight,
     padding: 16,
     borderRadius: 16,
@@ -678,17 +676,18 @@ const styles = StyleSheet.create({
   reviewLabel: {
     fontSize: 14,
     color: Colors.brand.textSecondary,
+    marginBottom: 8,
   },
   overallRating: {
     fontSize: 20,
     fontWeight: 'bold',
     color: Colors.brand.accentMagenta,
+    marginBottom: 8,
   },
   videoHint: {
     fontSize: 12,
     color: Colors.brand.textSecondary,
     fontStyle: 'italic',
-    marginTop: 4,
   },
   photosPreview: {
     marginTop: 10,

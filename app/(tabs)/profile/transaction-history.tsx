@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, TouchableOpacity, FlatList, RefreshControl, Platform } from 'react-native';
+import { StyleSheet, TouchableOpacity, FlatList, RefreshControl, Platform, Alert, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { Text, View } from '@/components/Themed';
 import { supabase } from '@/lib/supabase';
 import Colors from '@/constants/Colors';
 import { getRequestsByReviewer } from '@/lib/api';
+import { createStripeExpressLoginLink, createStripeExpressOnboardingLink } from '@/lib/payments';
 import type { Profile } from '@/types';
 
 interface TransactionItem {
@@ -33,6 +34,7 @@ export default function TransactionBreakdownScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [stripePortalUrl, setStripePortalUrl] = useState<string | null>(null);
 
   const loadTransactions = useCallback(async () => {
     try {
@@ -46,6 +48,17 @@ export default function TransactionBreakdownScreen() {
         .single();
 
       setProfile(profileData);
+
+      // Load Stripe portal URL if user is a reviewer
+      if (profileData?.is_reviewer && profileData.stripe_account_id) {
+        try {
+          const url = await createStripeExpressLoginLink(profileData.id);
+          setStripePortalUrl(url);
+        } catch (e) {
+          console.log('[stripe-portal] error', e);
+          setStripePortalUrl(null);
+        }
+      }
 
       if (profileData?.is_reviewer) {
         const requests = await getRequestsByReviewer(profileData.id);
@@ -162,8 +175,8 @@ export default function TransactionBreakdownScreen() {
   };
 
   const getAmountDisplay = (transaction: TransactionItem) => {
-    const reviewerAmount = transaction.reviewer_amount_cents || 
-      (transaction.amount_cents - transaction.application_fee_cents);
+    // Simplified: 80% of total amount (20% Auro fee)
+    const reviewerAmount = Math.round(transaction.amount_cents * 0.8);
     return (reviewerAmount / 100).toFixed(2);
   };
 
@@ -210,8 +223,8 @@ export default function TransactionBreakdownScreen() {
             <Text style={styles.detailValue}>${(item.amount_cents / 100).toFixed(2)}</Text>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Platform Fee:</Text>
-            <Text style={styles.detailValue}>${(item.application_fee_cents / 100).toFixed(2)}</Text>
+            <Text style={styles.detailLabel}>Auro fee (20%):</Text>
+            <Text style={styles.detailValue}>${(Math.round(item.amount_cents * 0.2) / 100).toFixed(2)}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Your Earnings:</Text>
@@ -243,7 +256,7 @@ export default function TransactionBreakdownScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+      <View style={[styles.header, { paddingTop: 12 }]}>
         <TouchableOpacity 
           style={styles.backButton} 
           onPress={() => router.back()}
@@ -261,6 +274,44 @@ export default function TransactionBreakdownScreen() {
             This is due to payment settlement timing from Stripe.
           </Text>
         </View>
+
+        {/* See Payouts Button */}
+        {profile?.is_reviewer && (
+          <View style={styles.payoutsButtonContainer}>
+            <TouchableOpacity
+              onPress={async () => {
+                try {
+                  if (stripePortalUrl) {
+                    console.log('[stripe-login] Opening', stripePortalUrl);
+                    Linking.openURL(stripePortalUrl);
+                    return;
+                  }
+                  const reviewerId = profile?.id || '';
+                  const url = await createStripeExpressOnboardingLink(reviewerId);
+                  console.log('[stripe-onboarding] reviewerId:', reviewerId, 'url:', url);
+                  if (url) Linking.openURL(url);
+                  else Alert.alert('Stripe', 'Setup link not available. Check env EXPO_PUBLIC_SUPABASE_URL and function URL envs.');
+                } catch (e: any) {
+                  console.log('[stripe-onboarding] error', e?.message || e);
+                  Alert.alert('Stripe', e?.message || 'Failed to open Stripe');
+                }
+              }}
+              accessibilityLabel={stripePortalUrl ? 'Open Stripe Dashboard' : 'Set up Stripe payouts'}
+              style={styles.payoutsButton}
+            >
+              <ExpoLinearGradient
+                colors={['rgba(255, 107, 53, 0.8)', 'rgba(255, 53, 71, 0.8)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.payoutsButtonGradient}
+              >
+                <Text style={styles.payoutsButtonText}>
+                  {stripePortalUrl ? '💰 See Payouts' : '⚡ Setup Stripe'}
+                </Text>
+              </ExpoLinearGradient>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <FlatList
           data={transactions}
@@ -341,6 +392,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.brand.textSecondary,
     lineHeight: 20,
+  },
+  payoutsButtonContainer: {
+    marginBottom: 16,
+  },
+  payoutsButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  payoutsButtonGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  payoutsButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
   },
   listContainer: {
     paddingBottom: 20,
