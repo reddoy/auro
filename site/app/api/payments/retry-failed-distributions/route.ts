@@ -107,7 +107,7 @@ export async function POST(req: Request) {
         console.log(`[retry-distributions] Retrying distribution for request ${request.id}: $${(reviewerAmount / 100).toFixed(2)}`);
 
         // Check account balance
-        const auroAccountId = 'acct_1S0Fm0BQDAObfzKx';
+        const auroAccountId = 'acct_1S0FmFBCrjcqavov'; // Correct test account ID
         const balance = await stripe.balance.retrieve({}, { stripeAccount: auroAccountId });
         const availableBalance = balance.available[0]?.amount || 0;
 

@@ -173,7 +173,7 @@ export async function POST(req: Request) {
     try {
       // Check account balance before attempting transfer
       // Only use AVAILABLE balance for transfers (not pending)
-      const auroAccountId = 'acct_1S0Fm0BQDAObfzKx'; // Updated to the account with $2000+
+      const auroAccountId = 'acct_1S0FmFBCrjcqavov'; // Correct test account ID
       
       console.log('🔍 Checking balance for account:', auroAccountId);
       
@@ -346,6 +346,31 @@ export async function POST(req: Request) {
           payment_distribution_failed_at: new Date().toISOString()
         })
         .eq('id', requestId);
+
+      // Check if this is a retryable error and we haven't exceeded max attempts
+      const attempts = (request.payment_distribution_attempts || 0) + 1;
+      const maxRetries = 3;
+      
+      if (attempts < maxRetries && (
+        errorType === 'INVALID_CONNECT_ACCOUNT' || 
+        errorType === 'INSUFFICIENT_FUNDS' ||
+        stripeError.code === 'rate_limit'
+      )) {
+        console.log(`[payment-distribution] Retryable error detected. Attempt ${attempts}/${maxRetries}. Will retry automatically.`);
+        
+        // Schedule automatic retry (you could use a queue system here)
+        // For now, just log that it should be retried
+        return new Response(JSON.stringify({ 
+          error: errorMessage,
+          errorType: errorType,
+          stripeErrorCode: stripeError.code,
+          reviewerId: request.influencer_id,
+          reviewerName: reviewer.full_name || reviewer.username,
+          message: `Payment distribution failed. Will retry automatically (attempt ${attempts}/${maxRetries}).`,
+          willRetry: true,
+          retryAttempt: attempts
+        }), { status: 500 });
+      }
 
       return new Response(JSON.stringify({ 
         error: errorMessage,

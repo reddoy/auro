@@ -275,6 +275,15 @@ export async function submitRequestReview(params: {
         console.error('[payment-distribution] Error type:', errorData.errorType);
         console.error('[payment-distribution] Full error details:', JSON.stringify(errorData, null, 2));
         
+        // Enhanced logging for debugging
+        if (errorData.errorType === 'INVALID_CONNECT_ACCOUNT') {
+          console.error('[payment-distribution] 🚨 ACCOUNT ISSUE DETECTED:');
+          console.error('[payment-distribution] Reviewer:', errorData.reviewerName);
+          console.error('[payment-distribution] Account ID:', errorData.reviewerId);
+          console.error('[payment-distribution] Stripe Error:', errorData.stripeErrorCode);
+          console.error('[payment-distribution] 💡 SOLUTION: Have the reviewer complete their Stripe Connect setup');
+        }
+        
         // Don't fail the review submission, but log the specific error
         if (errorData.error === 'Request not found') {
           console.warn('[payment-distribution] Request not found in database - this might be a timing issue');
