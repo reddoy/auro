@@ -175,8 +175,11 @@ export default function TransactionBreakdownScreen() {
   };
 
   const getAmountDisplay = (transaction: TransactionItem) => {
-    // Simplified: 80% of total amount (20% Auro fee)
-    const reviewerAmount = Math.round(transaction.amount_cents * 0.8);
+    // Correct calculation: amount - auro fee (20%) - stripe fee (2.9% + $0.30)
+    const amount = transaction.amount_cents;
+    const auroFee = Math.round(amount * 0.2); // 20% Auro fee
+    const stripeFee = Math.round(amount * 0.029 + 30); // 2.9% + $0.30 Stripe fee
+    const reviewerAmount = amount - auroFee - stripeFee;
     return (reviewerAmount / 100).toFixed(2);
   };
 
@@ -224,7 +227,11 @@ export default function TransactionBreakdownScreen() {
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Auro fee (20%):</Text>
-            <Text style={styles.detailValue}>${(Math.round(item.amount_cents * 0.2) / 100).toFixed(2)}</Text>
+            <Text style={styles.detailValue}>-${(Math.round(item.amount_cents * 0.2) / 100).toFixed(2)}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Stripe fee (2.9% + $0.30):</Text>
+            <Text style={styles.detailValue}>-${(Math.round(item.amount_cents * 0.029 + 30) / 100).toFixed(2)}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Your Earnings:</Text>

@@ -107,7 +107,7 @@ export default function ReviewStatusCard({
                 </RNView>
               )}
               
-              {/* Auro Fee - Simplified to 20% */}
+              {/* Auro Fee - 20% */}
               {typeof amountCents === 'number' && (
                 <RNView style={styles.earningsRow}>
                   <Text style={styles.earningsLabel}>Auro fee (20%)</Text>
@@ -117,11 +117,23 @@ export default function ReviewStatusCard({
                 </RNView>
               )}
               
-              {/* Net Amount - Simplified calculation */}
+              {/* Stripe Fee - 2.9% + $0.30 */}
+              {typeof amountCents === 'number' && (
+                <RNView style={styles.earningsRow}>
+                  <Text style={styles.earningsLabel}>Stripe fee (2.9% + $0.30)</Text>
+                  <Text style={[styles.earningsValue, styles.feeValue]}>
+                    -{formatCurrency(Math.round(amountCents * 0.029 + 30))}
+                  </Text>
+                </RNView>
+              )}
+              
+              {/* Net Amount - Correct calculation */}
               {typeof amountCents === 'number' && (
                 <RNView style={[styles.earningsRow, styles.netAmountRow]}>
                   <Text style={styles.netAmountLabel}>You receive</Text>
-                  <Text style={styles.netAmountValue}>{formatCurrency(Math.round(amountCents * 0.8))}</Text>
+                  <Text style={styles.netAmountValue}>
+                    {formatCurrency(Math.round(amountCents - (amountCents * 0.2) - (amountCents * 0.029 + 30)))}
+                  </Text>
                 </RNView>
               )}
             </RNView>

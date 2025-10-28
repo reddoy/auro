@@ -59,10 +59,11 @@ export default function ProfileScreen() {
               if (r.reviewer_amount_cents) {
                 return sum + r.reviewer_amount_cents;
               }
-              // Fallback calculation: amount - auro fee
+              // Fallback calculation: amount - auro fee (20%) - stripe fee (2.9% + $0.30)
               const amount = r.amount_cents || 0;
-              const auroFee = r.application_fee_cents || 0;
-              return sum + (amount - auroFee);
+              const auroFee = Math.round(amount * 0.2); // 20% Auro fee
+              const stripeFee = Math.round(amount * 0.029 + 30); // 2.9% + $0.30 Stripe fee
+              return sum + (amount - auroFee - stripeFee);
             }, 0);
             
             // Calculate future earnings (reviews that are paid for but not completed yet)
@@ -70,9 +71,11 @@ export default function ProfileScreen() {
               if (r.reviewer_amount_cents) {
                 return sum + r.reviewer_amount_cents;
               }
+              // Fallback calculation: amount - auro fee (20%) - stripe fee (2.9% + $0.30)
               const amount = r.amount_cents || 0;
-              const auroFee = r.application_fee_cents || 0;
-              return sum + (amount - auroFee);
+              const auroFee = Math.round(amount * 0.2); // 20% Auro fee
+              const stripeFee = Math.round(amount * 0.029 + 30); // 2.9% + $0.30 Stripe fee
+              return sum + (amount - auroFee - stripeFee);
             }, 0);
             
             const completedCount = completedRequests.length;
@@ -235,10 +238,11 @@ export default function ProfileScreen() {
             if (r.reviewer_amount_cents) {
               return sum + r.reviewer_amount_cents;
             }
-            // Fallback calculation: amount - auro fee
+            // Fallback calculation: amount - auro fee (20%) - stripe fee (2.9% + $0.30)
             const amount = r.amount_cents || 0;
-            const auroFee = r.application_fee_cents || 0;
-            return sum + (amount - auroFee);
+            const auroFee = Math.round(amount * 0.2); // 20% Auro fee
+            const stripeFee = Math.round(amount * 0.029 + 30); // 2.9% + $0.30 Stripe fee
+            return sum + (amount - auroFee - stripeFee);
           }, 0);
           
           // Calculate future earnings (reviews that are paid for but not completed yet)
@@ -246,9 +250,11 @@ export default function ProfileScreen() {
             if (r.reviewer_amount_cents) {
               return sum + r.reviewer_amount_cents;
             }
+            // Fallback calculation: amount - auro fee (20%) - stripe fee (2.9% + $0.30)
             const amount = r.amount_cents || 0;
-            const auroFee = r.application_fee_cents || 0;
-            return sum + (amount - auroFee);
+            const auroFee = Math.round(amount * 0.2); // 20% Auro fee
+            const stripeFee = Math.round(amount * 0.029 + 30); // 2.9% + $0.30 Stripe fee
+            return sum + (amount - auroFee - stripeFee);
           }, 0);
           
           const completedCount = completedRequests.length;

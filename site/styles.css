@@ -5316,7 +5316,7 @@ footer {
   flex: 1;
   padding: 12px 16px;
   background: transparent;
-  color: var(--text-2);
+  color: #666;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -5326,7 +5326,7 @@ footer {
 
 .auth-tab.active {
   background: var(--card);
-  color: var(--text);
+  color: #333;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
