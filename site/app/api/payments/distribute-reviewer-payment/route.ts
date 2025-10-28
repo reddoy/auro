@@ -141,7 +141,10 @@ export async function POST(req: Request) {
       }
 
       // Check for pending requirements
-      if (account.requirements && (account.requirements.currently_due?.length > 0 || account.requirements.past_due?.length > 0)) {
+      if (account.requirements && (
+        (account.requirements.currently_due && account.requirements.currently_due.length > 0) || 
+        (account.requirements.past_due && account.requirements.past_due.length > 0)
+      )) {
         console.log('⚠️ Account has pending requirements:', {
           currently_due: account.requirements.currently_due,
           past_due: account.requirements.past_due
