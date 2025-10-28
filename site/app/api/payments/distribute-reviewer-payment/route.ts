@@ -332,7 +332,7 @@ export async function POST(req: Request) {
             details_submitted: account.details_submitted,
             requirements: account.requirements
           });
-        } catch (accountError) {
+        } catch (accountError: any) {
           console.log('Could not retrieve account details:', accountError.message);
         }
       }
