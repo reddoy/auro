@@ -1,10 +1,11 @@
-// Minimal Next.js App Router page for creator profile
+// Hinge-style profile page
 import React from 'react';
 import RequestButton from './RequestButton';
 import { notFound } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import type { Metadata } from 'next';
 import Avatar from './Avatar';
+import HingeProfile from './HingeProfile';
 import { getDisplayAvatarUrl } from '../../../lib/avatar';
 export const dynamic = 'force-dynamic';
 
@@ -81,6 +82,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 export default async function CreatorPage({ params }: { params: { slug: string } }) {
   const creator = await getCreator(params.slug);
   if (!creator) return notFound();
+  
+  // Check if this is the hinge-clone profile
+  if (params.slug === 'hinge-clone') {
+    return <HingeProfile slug={params.slug} />;
+  }
+  
+  // Original creator profile for other users
   const avatarUrl = await getDisplayAvatarUrl(creator.avatarUrl);
   return (
     <section>
