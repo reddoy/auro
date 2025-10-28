@@ -284,6 +284,7 @@ export default function RequestPage() {
             }}
             supabase={supabase}
             preselectedCreatorSlug={requestData.creatorSlug}
+            isInitializing={isInitializing}
           />
         );
       case 'photo-upload':

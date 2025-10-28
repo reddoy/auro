@@ -20,9 +20,10 @@ type Props = {
   onSelect: (creatorId: string, creatorSlug: string) => void;
   supabase: any;
   preselectedCreatorSlug?: string;
+  isInitializing?: boolean;
 };
 
-export default function CreatorSelection({ selectedCreator, onSelect, supabase, preselectedCreatorSlug }: Props) {
+export default function CreatorSelection({ selectedCreator, onSelect, supabase, preselectedCreatorSlug, isInitializing }: Props) {
   const [creators, setCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(false); // Start as false, will be set to true when we start fetching
   const [searchTerm, setSearchTerm] = useState('');
@@ -105,10 +106,10 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
       }
     };
 
-    if (supabase) {
+    if (supabase && !isInitializing) {
       fetchCreators();
     }
-  }, [supabase, preselectedCreatorSlug, onSelect]);
+  }, [supabase, preselectedCreatorSlug, onSelect, isInitializing]);
 
   const filteredCreators = creators.filter(creator => {
     const searchLower = searchTerm.toLowerCase();
@@ -127,7 +128,7 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
     onSelect(creator.id, creator.username);
   };
 
-  if (loading) {
+  if (loading || isInitializing) {
     return (
       <div className="creator-selection loading">
         <div className="loading-spinner"></div>

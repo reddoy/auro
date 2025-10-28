@@ -105,6 +105,54 @@ export async function POST(req: Request) {
       }), { status: 400 });
     }
 
+    // Pre-flight check: Verify account status before attempting transfer
+    try {
+      console.log('🔍 Pre-flight check: Verifying account status for', connectAccountId);
+      const account = await stripe.accounts.retrieve(connectAccountId);
+      
+      console.log('📊 Account Status:', {
+        id: account.id,
+        charges_enabled: account.charges_enabled,
+        payouts_enabled: account.payouts_enabled,
+        details_submitted: account.details_submitted,
+        requirements: account.requirements
+      });
+
+      // Check if account can receive transfers
+      if (!account.payouts_enabled) {
+        console.log('❌ Account cannot receive payouts');
+        await admin
+          .from('requests')
+          .update({ 
+            payment_distribution_attempts: (request.payment_distribution_attempts || 0) + 1,
+            payment_distribution_error: 'Account payouts not enabled',
+            payment_distribution_failed_at: new Date().toISOString()
+          })
+          .eq('id', requestId);
+
+        return new Response(JSON.stringify({ 
+          error: 'Reviewer\'s account cannot receive payouts yet.',
+          errorType: 'PAYOUTS_DISABLED',
+          reviewerId: request.influencer_id,
+          reviewerName: reviewer.full_name || reviewer.username,
+          accountRequirements: account.requirements,
+          message: 'The reviewer needs to complete their account setup to enable payouts.'
+        }), { status: 400 });
+      }
+
+      // Check for pending requirements
+      if (account.requirements && (account.requirements.currently_due?.length > 0 || account.requirements.past_due?.length > 0)) {
+        console.log('⚠️ Account has pending requirements:', {
+          currently_due: account.requirements.currently_due,
+          past_due: account.requirements.past_due
+        });
+      }
+
+    } catch (accountCheckError: any) {
+      console.error('❌ Pre-flight account check failed:', accountCheckError.message);
+      // Continue with transfer attempt - the error might be more specific
+    }
+
     // Calculate the amount to transfer to reviewer
     const totalAmount = request.amount_cents || 0;
     const auroFee = request.application_fee_cents || 0;
@@ -270,6 +318,20 @@ export async function POST(req: Request) {
       } else if (stripeError.code === 'account_invalid') {
         errorType = 'INVALID_CONNECT_ACCOUNT';
         errorMessage = 'Reviewer\'s Stripe Connect account is invalid';
+        
+        // Try to get more details about the account
+        try {
+          const account = await stripe.accounts.retrieve(connectAccountId);
+          console.log('Account details for debugging:', {
+            id: account.id,
+            charges_enabled: account.charges_enabled,
+            payouts_enabled: account.payouts_enabled,
+            details_submitted: account.details_submitted,
+            requirements: account.requirements
+          });
+        } catch (accountError) {
+          console.log('Could not retrieve account details:', accountError.message);
+        }
       }
 
       // Log the error
