@@ -159,13 +159,16 @@ export async function POST(req: Request) {
     // Calculate the amount to transfer to reviewer
     const totalAmount = request.amount_cents || 0;
     const auroFee = request.application_fee_cents || 0;
-    const reviewerAmount = totalAmount - auroFee;
+    // Calculate Stripe fee (2.9% + $0.30) that was already deducted from our account
+    const stripeFee = Math.round(totalAmount * 0.029 + 30);
+    const reviewerAmount = totalAmount - auroFee - stripeFee;
 
     if (reviewerAmount <= 0) {
       return new Response(JSON.stringify({ 
         error: 'Invalid payment amount. Reviewer amount would be zero or negative.',
         totalAmount,
         auroFee,
+        stripeFee,
         reviewerAmount
       }), { status: 400 });
     }
@@ -238,6 +241,7 @@ export async function POST(req: Request) {
             request_id: requestId,
             reviewer_id: request.influencer_id,
             auro_fee_cents: auroFee.toString(),
+            stripe_fee_cents: stripeFee.toString(),
             total_amount_cents: totalAmount.toString(),
             source_account: auroAccountId,
           },
@@ -303,6 +307,7 @@ export async function POST(req: Request) {
         transferId: transfer.id,
         reviewerAmount: reviewerAmount,
         auroFee: auroFee,
+        stripeFee: stripeFee,
         totalAmount: totalAmount,
         reviewerName: reviewer.full_name || reviewer.username,
         message: 'Payment successfully distributed to reviewer'

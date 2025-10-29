@@ -87,3 +87,4 @@ WHERE id IN (
   WHERE status = 'paid'
     AND (payment_distributed IS NULL OR payment_distributed = FALSE)
 );
+
