@@ -59,6 +59,11 @@ export default function CircularCropModal({
     canvas.width = safeArea;
     canvas.height = safeArea;
 
+    // Improve rendering on mobile by enabling high-quality smoothing
+    // and promoting layer stability during transforms
+    (ctx as any).imageSmoothingEnabled = true;
+    (ctx as any).imageSmoothingQuality = 'high';
+
     ctx.translate(safeArea / 2, safeArea / 2);
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.translate(-safeArea / 2, -safeArea / 2);
@@ -134,6 +139,8 @@ export default function CircularCropModal({
               aspect={1}
               cropShape="round"
               showGrid={false}
+              restrictPosition
+              zoomWithScroll
               onCropChange={onCropChange}
               onCropComplete={onCropAreaChange}
               onZoomChange={setZoom}
@@ -143,6 +150,10 @@ export default function CircularCropModal({
                   width: '100%',
                   height: '100%',
                   position: 'relative',
+                  // Prevent browser pinch-zoom conflicts with crop gestures on mobile
+                  touchAction: 'none',
+                  WebkitTransform: 'translateZ(0)',
+                  transform: 'translateZ(0)'
                 },
                 cropAreaStyle: {
                   border: '3px solid #fff',
@@ -150,6 +161,9 @@ export default function CircularCropModal({
                 },
                 mediaStyle: {
                   maxWidth: 'none',
+                  willChange: 'transform',
+                  WebkitTransform: 'translateZ(0)',
+                  transform: 'translateZ(0)'
                 },
               }}
             />

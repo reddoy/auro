@@ -133,7 +133,6 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
   if (loading) {
     return (
       <div className="creator-selection loading">
-        <div className="loading-spinner"></div>
         <p>Loading reviewers...</p>
       </div>
     );

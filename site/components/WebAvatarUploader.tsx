@@ -171,19 +171,27 @@ export default function WebAvatarUploader({
                 style={{ 
                   width: size, 
                   height: size,
-                  borderRadius: '50%', // Make it circular
-                  clipPath: 'circle(50%)' // Ensure perfect circle
+                  borderRadius: '50%',
+                  // Avoid clip-path on mobile to prevent mask distortion during zoom
+                  // and promote the layer for smoother rendering
+                  WebkitTransform: 'translateZ(0)',
+                  transform: 'translateZ(0)'
                 }}
               >
                 {previewUrl ? (
                   <img
                     src={previewUrl}
                     alt="Profile preview"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover"
                     style={{
-                      borderRadius: '50%', // Ensure the image is circular
+                      borderRadius: '50%',
                       objectFit: 'cover',
-                      objectPosition: 'center'
+                      objectPosition: 'center',
+                      WebkitTransform: 'translateZ(0)',
+                      transform: 'translateZ(0)',
+                      willChange: 'transform'
                     }}
                   />
                 ) : (
