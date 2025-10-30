@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Dimensions, Platform, Linking, Animated, Pressable } from 'react-native';
+import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Dimensions, Platform, Linking, Animated, Pressable, LayoutAnimation } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -264,6 +264,7 @@ export default function ReviewerRequestScreen() {
       Alert.alert('Payment required', 'You can accept only after payment is completed.');
       return;
     }
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setAcceptLoading(true);
     try {
       await updateRequestStatus(request.id, 'in_progress');
@@ -292,6 +293,7 @@ export default function ReviewerRequestScreen() {
           text: 'Deny & Refund',
           style: 'destructive',
           onPress: async () => {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setDenyLoading(true);
             try {
               await denyRequest(request.id);
@@ -446,29 +448,38 @@ export default function ReviewerRequestScreen() {
 
         {request.status === 'paid' && (
           <View style={styles.actionsSection}>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.acceptButton]}
-              onPress={handleAccept}
-              disabled={acceptLoading || denyLoading}
-            >
-              {acceptLoading ? (
+            {/* Show only the active button during loading for smooth UX */}
+            {acceptLoading ? (
+              <TouchableOpacity
+                style={[styles.actionButton, styles.acceptButton]}
+                disabled
+              >
                 <Spinner size={18} color={Colors.brand.textOnGradient} borderColor={'rgba(255,255,255,0.35)'} />
-              ) : (
-                <Text style={styles.actionButtonText}>Accept Request</Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionButton, styles.denyButton]}
-              onPress={handleDeny}
-              disabled={acceptLoading || denyLoading}
-            >
-              {denyLoading ? (
+              </TouchableOpacity>
+            ) : denyLoading ? (
+              <TouchableOpacity
+                style={[styles.actionButton, styles.denyButton]}
+                disabled
+              >
                 <Spinner size={18} color={Colors.brand.status.rejected} borderColor={Colors.brand.border} />
-              ) : (
-                <Text style={[styles.actionButtonText, styles.denyButtonText]}>Deny Request</Text>
-              )}
-            </TouchableOpacity>
+              </TouchableOpacity>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.acceptButton]}
+                  onPress={handleAccept}
+                >
+                  <Text style={styles.actionButtonText}>Accept Request</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.denyButton]}
+                  onPress={handleDeny}
+                >
+                  <Text style={[styles.actionButtonText, styles.denyButtonText]}>Deny Request</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         )}
 
