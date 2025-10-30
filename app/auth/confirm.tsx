@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Linking } from 'react-native';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Text, View } from '@/components/Themed';
@@ -33,8 +33,7 @@ export default function ConfirmEmailScreen() {
             setConfirmationStatus('error');
           } else {
             setConfirmationStatus('success');
-            // Redirect to auth page after successful confirmation
-            setTimeout(() => router.replace('/auth'), 2000);
+            // Stay on this page and show next-step options rather than auto-redirect
           }
         } catch (err) {
           setConfirmationStatus('error');
@@ -104,7 +103,25 @@ export default function ConfirmEmailScreen() {
           {confirmationStatus === 'success' && !isConfirming && (
             <>
               <Text style={styles.title}>Email confirmed! 🎉</Text>
-              <Text style={styles.body}>Your email has been successfully verified. Redirecting you to sign in...</Text>
+              <Text style={styles.body}>Welcome to Auro — you’re all set. Choose a next step below.</Text>
+
+              <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/auth')}>
+                <Text style={styles.primaryBtnText}>Open the app</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.replace('/requests/new')}>
+                <Text style={styles.secondaryBtnText}>Request a review</Text>
+              </TouchableOpacity>
+
+              <View style={{ height: 8 }} />
+
+              <TouchableOpacity style={styles.storeBtn} onPress={() => Linking.openURL('https://apps.apple.com/') }>
+                <Text style={styles.storeBtnText}>Download on the App Store</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.storeBtn} onPress={() => Linking.openURL('https://play.google.com/store') }>
+                <Text style={styles.storeBtnText}>Get it on Google Play</Text>
+              </TouchableOpacity>
             </>
           )}
 
@@ -159,6 +176,8 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: Colors.brand.textOnGradient, fontSize: 16, fontWeight: '600' },
   secondaryBtn: { backgroundColor: Colors.brand.cardBackground, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 24, marginTop: 12, width: 260, alignItems: 'center', borderWidth: 1, borderColor: Colors.brand.divider },
   secondaryBtnText: { color: Colors.brand.textPrimary, fontSize: 16, fontWeight: '600' },
+  storeBtn: { backgroundColor: Colors.brand.cardBackground, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 24, marginTop: 12, width: 260, alignItems: 'center', borderWidth: 1, borderColor: Colors.brand.divider },
+  storeBtnText: { color: Colors.brand.textPrimary, fontSize: 16, fontWeight: '600' },
 });
 
 
