@@ -103,6 +103,8 @@ export default function ProfileScreen() {
           setEarnings({ awaitingCompletion: 0, awaitingPayout: 0, completedPaid: 0, completedCount: 0 });
         }
       } finally {
+        // Mark initial load complete so pull-to-refresh becomes available
+        setInitialLoad(false);
       }
     };
     run();

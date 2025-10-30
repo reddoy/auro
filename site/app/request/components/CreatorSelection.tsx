@@ -128,7 +128,9 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
     onSelect(creator.id, creator.username);
   };
 
-  if (loading || isInitializing) {
+  // Show local loading only when fetching creators. Avoid duplicating the
+  // global page initialization spinner by not rendering here during init.
+  if (loading) {
     return (
       <div className="creator-selection loading">
         <div className="loading-spinner"></div>
