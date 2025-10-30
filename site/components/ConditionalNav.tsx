@@ -23,26 +23,16 @@ export default function ConditionalNav() {
           return;
         }
         
-        // Try profiles table first since creators might not exist yet
-        const { data: profileData, error: profileError } = await supabase
+        // Count reviewers from profiles using head request for accurate exact count
+        const { count, error: profileError } = await supabase
           .from('profiles')
-          .select('id', { count: 'exact' })
+          .select('*', { count: 'exact', head: true })
           .eq('is_reviewer', true);
-        
-        if (!profileError && profileData) {
-          setCount(profileData.length || 0);
+
+        if (!profileError) {
+          setCount(count || 0);
           setLoading(false);
           return;
-        }
-
-        // Fallback to creators table
-        const { data, error } = await supabase
-          .from('creators')
-          .select('id', { count: 'exact' })
-          .eq('is_reviewer', true);
-
-        if (!error && data) {
-          setCount(data.length || 0);
         }
       } catch (err) {
         console.error('Error fetching reviewer count:', err);

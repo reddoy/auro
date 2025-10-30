@@ -25,30 +25,17 @@ export default function ReviewerCounter({ maxReviewers = 35, className = '' }: R
           return;
         }
         
-        // Count reviewers including those who haven't verified email yet
-        // This counts all profiles where is_reviewer = true OR reviewer_signup_status is not null
-        const { data, error } = await supabase
+        // Count only verified reviewers: profiles where is_reviewer = true
+        const { count, error } = await supabase
           .from('profiles')
-          .select('id', { count: 'exact' })
-          .or('is_reviewer.eq.true,reviewer_signup_status.not.is.null');
+          .select('*', { count: 'exact', head: true })
+          .eq('is_reviewer', true);
 
         if (error) {
           console.error('Error fetching reviewer count:', error);
-          // Fallback to the original method if the new query doesn't work
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('id', { count: 'exact' })
-            .or('is_reviewer.eq.true,reviewer_signup_status.not.is.null');
-          
-          if (profileError) {
-            console.error('Error fetching from profiles table:', profileError);
-            setError('Database connection issue');
-            // Keep current count instead of resetting to 0
-          } else {
-            setCount(profileData?.length || 0);
-          }
+          setError('Database connection issue');
         } else {
-          setCount(data?.length || 0);
+          setCount(count || 0);
         }
       } catch (err) {
         console.error('Error fetching reviewer count:', err);

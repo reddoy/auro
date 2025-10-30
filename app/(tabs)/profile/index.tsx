@@ -64,12 +64,12 @@ export default function ProfileScreen() {
             const awaitingCompletionRequests = requests.filter(r => r.status === 'paid' && r.amount_cents);
             const awaitingCompletion = awaitingCompletionRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
             
-            // Awaiting payout: completed reviews with failed distribution (status = 'completed', payment_distributed = false, has error)
+            // Awaiting payout: completed reviews that haven't been distributed yet
+            // This includes both pending distributions and failed distributions
             const awaitingPayoutRequests = requests.filter(r => 
               r.status === 'completed' && 
               r.amount_cents && 
-              !r.payment_distributed && 
-              r.payment_distribution_error
+              !r.payment_distributed
             );
             const awaitingPayout = awaitingPayoutRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
             
@@ -238,12 +238,12 @@ export default function ProfileScreen() {
           const awaitingCompletionRequests = requests.filter(r => r.status === 'paid' && r.amount_cents);
           const awaitingCompletion = awaitingCompletionRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
           
-          // Awaiting payout: completed reviews with failed distribution (status = 'completed', payment_distributed = false, has error)
+          // Awaiting payout: completed reviews that haven't been distributed yet
+          // This includes both pending distributions and failed distributions
           const awaitingPayoutRequests = requests.filter(r => 
             r.status === 'completed' && 
             r.amount_cents && 
-            !r.payment_distributed && 
-            r.payment_distribution_error
+            !r.payment_distributed
           );
           const awaitingPayout = awaitingPayoutRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
           
