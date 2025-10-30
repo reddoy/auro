@@ -197,7 +197,7 @@ export async function getReviewerById(id: string): Promise<DbReviewerSummary | n
 export async function getRequestsByReviewer(reviewerId: string): Promise<DbRequestSummary[]> {
   const { data, error } = await supabase
     .from('requests')
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps,payment_distributed,payment_distributed_at,stripe_transfer_id,reviewer_amount_cents,payment_distribution_error')
     .eq('influencer_id', reviewerId)
     .order('created_at', { ascending: false });
   if (error) throw error;

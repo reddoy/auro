@@ -27,7 +27,12 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
   const [stripePortalUrl, setStripePortalUrl] = useState<string | null>(null);
-  const [earnings, setEarnings] = useState({ total: 0, count: 0, average: 0, pendingAmount: 0, pendingCount: 0, stripePendingAmount: 0 });
+  const [earnings, setEarnings] = useState({ 
+    awaitingCompletion: 0,     // Money from paid reviews not yet completed
+    awaitingPayout: 0,          // Money from completed reviews awaiting payout (failed distribution)
+    completedPaid: 0,           // Money fully paid out to reviewer's Stripe account
+    completedCount: 0           // Total number of completed reviews
+  });
   
 
 
@@ -45,62 +50,57 @@ export default function ProfileScreen() {
           try {
             const requests = await getRequestsByReviewer(p.id);
             
-            // Completed requests = reviews that are done
-            const completedRequests = requests.filter(r => r.status === 'completed' && r.amount_cents);
-            
-            // In-progress requests = reviews that are being worked on
-            const inProgressRequests = requests.filter(r => r.status === 'in_progress' && r.amount_cents);
-            
-            // Paid requests = reviews that are paid for but not yet completed
-            const paidRequests = requests.filter(r => r.status === 'paid' && r.amount_cents);
-            
-            // Calculate completed earnings (reviews that are done)
-            const completedEarnings = completedRequests.reduce((sum, r) => {
-              if (r.reviewer_amount_cents) {
-                return sum + r.reviewer_amount_cents;
-              }
-              // Fallback calculation: amount - auro fee (20%) - stripe fee (2.9% + $0.30)
+            // Helper function to calculate reviewer amount for a request
+            const calculateReviewerAmount = (r: any) => {
+              if (r.reviewer_amount_cents) return r.reviewer_amount_cents;
+              // Fallback: amount - auro fee (20%) - stripe fee (2.9% + $0.30)
               const amount = r.amount_cents || 0;
-              const auroFee = Math.round(amount * 0.2); // 20% Auro fee
-              const stripeFee = Math.round(amount * 0.029 + 30); // 2.9% + $0.30 Stripe fee
-              return sum + (amount - auroFee - stripeFee);
-            }, 0);
+              const auroFee = Math.round(amount * 0.2);
+              const stripeFee = Math.round(amount * 0.029 + 30);
+              return amount - auroFee - stripeFee;
+            };
             
-            // Calculate future earnings (reviews that are paid for but not completed yet)
-            const futureEarnings = paidRequests.reduce((sum, r) => {
-              if (r.reviewer_amount_cents) {
-                return sum + r.reviewer_amount_cents;
-              }
-              // Fallback calculation: amount - auro fee (20%) - stripe fee (2.9% + $0.30)
-              const amount = r.amount_cents || 0;
-              const auroFee = Math.round(amount * 0.2); // 20% Auro fee
-              const stripeFee = Math.round(amount * 0.029 + 30); // 2.9% + $0.30 Stripe fee
-              return sum + (amount - auroFee - stripeFee);
-            }, 0);
+            // Awaiting completion: paid reviews not yet completed (status = 'paid')
+            const awaitingCompletionRequests = requests.filter(r => r.status === 'paid' && r.amount_cents);
+            const awaitingCompletion = awaitingCompletionRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
             
-            const completedCount = completedRequests.length;
-            const futureCount = paidRequests.length;
-            const inProgressCount = inProgressRequests.length;
-            const average = completedCount > 0 ? completedEarnings / completedCount : 0;
+            // Awaiting payout: completed reviews with failed distribution (status = 'completed', payment_distributed = false, has error)
+            const awaitingPayoutRequests = requests.filter(r => 
+              r.status === 'completed' && 
+              r.amount_cents && 
+              !r.payment_distributed && 
+              r.payment_distribution_error
+            );
+            const awaitingPayout = awaitingPayoutRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
             
-            // Get pending payout balance from database (tracked by trigger) - this is what they'll get after completing reviews
-            const pendingPayoutBalanceCents = p?.pending_payout_balance_cents || 0;
-            console.log('[pending-payout] from database:', pendingPayoutBalanceCents / 100);
+            // Completed & paid: fully paid out to reviewer (status = 'completed', payment_distributed = true)
+            const completedPaidRequests = requests.filter(r => 
+              r.status === 'completed' && 
+              r.amount_cents && 
+              r.payment_distributed === true
+            );
+            const completedPaid = completedPaidRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
+            
+            // Total completed count
+            const completedCount = requests.filter(r => r.status === 'completed' && r.amount_cents).length;
+            
+            console.log('[earnings-calc] Awaiting completion:', awaitingCompletion / 100);
+            console.log('[earnings-calc] Awaiting payout:', awaitingPayout / 100);
+            console.log('[earnings-calc] Completed & paid:', completedPaid / 100);
+            console.log('[earnings-calc] Completed count:', completedCount);
             
             setEarnings({ 
-              total: completedEarnings / 100, // Only completed and paid out earnings
-              count: completedCount, 
-              average: average / 100, 
-              pendingAmount: pendingPayoutBalanceCents / 100, // Completed reviews waiting for payout
-              pendingCount: futureCount, // Reviews waiting to be completed
-              stripePendingAmount: 0 // Not used anymore - pending payout moved to pendingAmount
-            }); // Convert cents to dollars
+              awaitingCompletion: awaitingCompletion / 100,
+              awaitingPayout: awaitingPayout / 100,
+              completedPaid: completedPaid / 100,
+              completedCount: completedCount
+            });
           } catch (e) {
             console.log('[earnings] error fetching', e);
           }
         } else {
           setStripePortalUrl(null);
-          setEarnings({ total: 0, count: 0, average: 0, pendingAmount: 0, pendingCount: 0, stripePendingAmount: 0 });
+          setEarnings({ awaitingCompletion: 0, awaitingPayout: 0, completedPaid: 0, completedCount: 0 });
         }
       } finally {
       }
@@ -220,59 +220,49 @@ export default function ProfileScreen() {
           const link = await createStripeExpressLoginLink(p.id);
           setStripePortalUrl(link);
         } catch {}
-        // Refresh earnings data
+          // Refresh earnings data
         try {
           const requests = await getRequestsByReviewer(p.id);
           
-          // Completed requests = reviews that are done
-          const completedRequests = requests.filter(r => r.status === 'completed' && r.amount_cents);
-          
-          // In-progress requests = reviews that are being worked on
-          const inProgressRequests = requests.filter(r => r.status === 'in_progress' && r.amount_cents);
-          
-          // Paid requests = reviews that are paid for but not yet completed
-          const paidRequests = requests.filter(r => r.status === 'paid' && r.amount_cents);
-          
-          // Calculate completed earnings (reviews that are done)
-          const completedEarnings = completedRequests.reduce((sum, r) => {
-            if (r.reviewer_amount_cents) {
-              return sum + r.reviewer_amount_cents;
-            }
-            // Fallback calculation: amount - auro fee (20%) - stripe fee (2.9% + $0.30)
+          // Helper function to calculate reviewer amount for a request
+          const calculateReviewerAmount = (r: any) => {
+            if (r.reviewer_amount_cents) return r.reviewer_amount_cents;
+            // Fallback: amount - auro fee (20%) - stripe fee (2.9% + $0.30)
             const amount = r.amount_cents || 0;
-            const auroFee = Math.round(amount * 0.2); // 20% Auro fee
-            const stripeFee = Math.round(amount * 0.029 + 30); // 2.9% + $0.30 Stripe fee
-            return sum + (amount - auroFee - stripeFee);
-          }, 0);
+            const auroFee = Math.round(amount * 0.2);
+            const stripeFee = Math.round(amount * 0.029 + 30);
+            return amount - auroFee - stripeFee;
+          };
           
-          // Calculate future earnings (reviews that are paid for but not completed yet)
-          const futureEarnings = paidRequests.reduce((sum, r) => {
-            if (r.reviewer_amount_cents) {
-              return sum + r.reviewer_amount_cents;
-            }
-            // Fallback calculation: amount - auro fee (20%) - stripe fee (2.9% + $0.30)
-            const amount = r.amount_cents || 0;
-            const auroFee = Math.round(amount * 0.2); // 20% Auro fee
-            const stripeFee = Math.round(amount * 0.029 + 30); // 2.9% + $0.30 Stripe fee
-            return sum + (amount - auroFee - stripeFee);
-          }, 0);
+          // Awaiting completion: paid reviews not yet completed (status = 'paid')
+          const awaitingCompletionRequests = requests.filter(r => r.status === 'paid' && r.amount_cents);
+          const awaitingCompletion = awaitingCompletionRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
           
-          const completedCount = completedRequests.length;
-          const futureCount = paidRequests.length;
-          const inProgressCount = inProgressRequests.length;
-          const average = completedCount > 0 ? completedEarnings / completedCount : 0;
+          // Awaiting payout: completed reviews with failed distribution (status = 'completed', payment_distributed = false, has error)
+          const awaitingPayoutRequests = requests.filter(r => 
+            r.status === 'completed' && 
+            r.amount_cents && 
+            !r.payment_distributed && 
+            r.payment_distribution_error
+          );
+          const awaitingPayout = awaitingPayoutRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
           
-          // Get pending payout balance from database (tracked by trigger) - this is what they'll get after completing reviews
-          const pendingPayoutBalanceCents = p?.pending_payout_balance_cents || 0;
-          console.log('[pending-payout] from database:', pendingPayoutBalanceCents / 100);
+          // Completed & paid: fully paid out to reviewer (status = 'completed', payment_distributed = true)
+          const completedPaidRequests = requests.filter(r => 
+            r.status === 'completed' && 
+            r.amount_cents && 
+            r.payment_distributed === true
+          );
+          const completedPaid = completedPaidRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
+          
+          // Total completed count
+          const completedCount = requests.filter(r => r.status === 'completed' && r.amount_cents).length;
           
           setEarnings({ 
-            total: completedEarnings / 100, // Only completed and paid out earnings
-            count: completedCount, 
-            average: average / 100, 
-            pendingAmount: pendingPayoutBalanceCents / 100, // Completed reviews waiting for payout
-            pendingCount: futureCount, // Reviews waiting to be completed
-            stripePendingAmount: 0 // Not used anymore - pending payout moved to pendingAmount
+            awaitingCompletion: awaitingCompletion / 100,
+            awaitingPayout: awaitingPayout / 100,
+            completedPaid: completedPaid / 100,
+            completedCount: completedCount
           });
         } catch {}
       }
@@ -374,55 +364,58 @@ export default function ProfileScreen() {
               <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
                 <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>💰 Earnings Overview</Text>
                 <View style={styles.earningsCard}>
-                      <View style={styles.earningsHeaderMobile}>
-                        <View style={{ backgroundColor: 'transparent', marginBottom: 16 }}>
-                          <Text style={styles.earningsLabel}>Completed & Paid</Text>
-                          <Text style={styles.earningsTotal}>${earnings.total.toFixed(2)}</Text>
-                        </View>
-                        <View style={styles.paymentButtonsContainer}>
-                          <TouchableOpacity
-                            onPress={() => router.push('/(tabs)/profile/transaction-history')}
-                            style={styles.transactionHistoryButton}
-                          >
-                            <Text style={styles.transactionHistoryText}>
-                              📊 Transaction History
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                      <View style={[styles.earningsStats, { marginTop: 16 }]}>
-                        <View style={styles.earningStat}>
-                          <ExpoLinearGradient
-                            colors={['rgba(16, 185, 129, 0.15)', 'rgba(5, 150, 105, 0.15)']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.earningStatBg}
-                          />
-                          <Text style={styles.earningStatNumber}>{earnings.count}</Text>
-                          <Text style={styles.earningStatLabel}>Completed Reviews</Text>
-                        </View>
-                        <View style={styles.earningStat}>
-                          <ExpoLinearGradient
-                            colors={['rgba(255, 193, 7, 0.15)', 'rgba(255, 152, 0, 0.15)']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 1 }}
-                            style={styles.earningStatBg}
-                          />
-                          <Text style={styles.earningStatNumber}>${earnings.pendingAmount.toFixed(2)}</Text>
-                          <Text style={styles.earningStatLabel}>Awaiting Payout</Text>
-                        </View>
-                      </View>
-                      
-                      {/* Payment Processing Time Notice */}
-                      {earnings.pendingAmount > 0 && (
-                        <View style={styles.paymentNoticeContainer}>
-                          <Text style={styles.paymentNoticeText}>
-                            💳 Completed reviews await payout due to settlement timing (5-7 business days)
-                          </Text>
-                        </View>
-                      )}
-                    </View>
+                  {/* Stack columns vertically */}
+                  <View style={styles.earningStatColumn}>
+                    <ExpoLinearGradient
+                      colors={['rgba(249, 115, 22, 0.15)', 'rgba(234, 88, 12, 0.15)']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.earningStatBg}
+                    />
+                    <Text style={styles.earningStatNumber}>${earnings.awaitingCompletion.toFixed(2)}</Text>
+                    <Text style={styles.earningStatLabel}>Awaiting Completion</Text>
                   </View>
+                  
+                  <View style={styles.earningStatColumn}>
+                    <ExpoLinearGradient
+                      colors={['rgba(255, 193, 7, 0.15)', 'rgba(255, 152, 0, 0.15)']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.earningStatBg}
+                    />
+                    <Text style={styles.earningStatNumber}>${earnings.awaitingPayout.toFixed(2)}</Text>
+                    <Text style={styles.earningStatLabel}>Awaiting Payout</Text>
+                  </View>
+                  
+                  <View style={styles.earningStatColumn}>
+                    <ExpoLinearGradient
+                      colors={['rgba(16, 185, 129, 0.15)', 'rgba(5, 150, 105, 0.15)']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.earningStatBg}
+                    />
+                    <Text style={styles.earningStatNumber}>${earnings.completedPaid.toFixed(2)}</Text>
+                    <Text style={styles.earningStatLabel}>Completed & Paid</Text>
+                  </View>
+                  
+                  <View style={{ backgroundColor: 'transparent', marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.1)' }}>
+                    <Text style={[styles.earningStatLabel, { textAlign: 'center', fontSize: 14 }]}>
+                      Completed Reviews: {earnings.completedCount}
+                    </Text>
+                  </View>
+                  
+                  <View style={[styles.paymentButtonsContainer, { marginTop: 16 }]}>
+                    <TouchableOpacity
+                      onPress={() => router.push('/(tabs)/profile/transaction-history')}
+                      style={styles.transactionHistoryButton}
+                    >
+                      <Text style={styles.transactionHistoryText}>
+                        📊 Transaction History
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
                 </>
               ) : null}
               
@@ -869,6 +862,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
+  },
+  earningStatColumn: {
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 18,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    position: 'relative',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+    marginBottom: 12,
   },
   earningStatBg: {
     position: 'absolute',

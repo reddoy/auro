@@ -124,6 +124,7 @@ export interface DbRequestSummary {
   payment_distributed_at?: string | null;
   stripe_transfer_id?: string | null;
   reviewer_amount_cents?: number | null;
+  payment_distribution_error?: string | null;
 }
 
 export interface DbUserProfile {
