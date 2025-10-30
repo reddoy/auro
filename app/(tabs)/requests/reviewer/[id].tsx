@@ -37,7 +37,8 @@ export default function ReviewerRequestScreen() {
   const [reviewee, setReviewee] = useState<any>(null);
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [acceptLoading, setAcceptLoading] = useState(false);
+  const [denyLoading,   setDenyLoading]   = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [videoUri, setVideoUri] = useState<string | null>(null);
 
@@ -263,7 +264,7 @@ export default function ReviewerRequestScreen() {
       Alert.alert('Payment required', 'You can accept only after payment is completed.');
       return;
     }
-    setActionLoading(true);
+    setAcceptLoading(true);
     try {
       await updateRequestStatus(request.id, 'in_progress');
       Alert.alert('Request Accepted', 'You can now submit your review for this request.');
@@ -272,7 +273,7 @@ export default function ReviewerRequestScreen() {
     } catch (error: any) {
       Alert.alert('Error', error?.message || 'Failed to accept request');
     } finally {
-      setActionLoading(false);
+      setAcceptLoading(false);
     }
   };
 
@@ -291,7 +292,7 @@ export default function ReviewerRequestScreen() {
           text: 'Deny & Refund',
           style: 'destructive',
           onPress: async () => {
-            setActionLoading(true);
+            setDenyLoading(true);
             try {
               await denyRequest(request.id);
               Alert.alert('Request Denied', 'The request has been denied and will be refunded.');
@@ -299,7 +300,7 @@ export default function ReviewerRequestScreen() {
             } catch (error: any) {
               Alert.alert('Error', error?.message || 'Failed to deny request');
             } finally {
-              setActionLoading(false);
+              setDenyLoading(false);
             }
           }
         }
@@ -448,21 +449,25 @@ export default function ReviewerRequestScreen() {
             <TouchableOpacity
               style={[styles.actionButton, styles.acceptButton]}
               onPress={handleAccept}
-              disabled={actionLoading}
+              disabled={acceptLoading || denyLoading}
             >
-              <Text style={styles.actionButtonText}>
-                {actionLoading ? 'Processing...' : 'Accept Request'}
-              </Text>
+              {acceptLoading ? (
+                <Spinner size={18} color={Colors.brand.textOnGradient} borderColor={'rgba(255,255,255,0.35)'} />
+              ) : (
+                <Text style={styles.actionButtonText}>Accept Request</Text>
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.actionButton, styles.denyButton]}
               onPress={handleDeny}
-              disabled={actionLoading}
+              disabled={acceptLoading || denyLoading}
             >
-              <Text style={[styles.actionButtonText, styles.denyButtonText]}>
-                {actionLoading ? 'Processing...' : 'Deny Request'}
-              </Text>
+              {denyLoading ? (
+                <Spinner size={18} color={Colors.brand.status.rejected} borderColor={Colors.brand.border} />
+              ) : (
+                <Text style={[styles.actionButtonText, styles.denyButtonText]}>Deny Request</Text>
+              )}
             </TouchableOpacity>
           </View>
         )}
