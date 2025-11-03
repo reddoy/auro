@@ -69,7 +69,7 @@ export default function SetRateScreen() {
       style={styles.container}
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 12 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backButtonText}>‹</Text>
         </TouchableOpacity>
@@ -79,7 +79,7 @@ export default function SetRateScreen() {
 
       <ScrollView 
         style={styles.scrollView} 
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: 68 + insets.bottom + 24 }}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
@@ -160,26 +160,30 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: Colors.brand.cardBackground,
+    paddingBottom: 16,
+    paddingTop: 12,
+    backgroundColor: Colors.brand.background,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.brand.divider
+    borderBottomColor: Colors.brand.border
   },
   backButton: { 
     width: 40, 
     height: 40, 
     justifyContent: 'center', 
-    alignItems: 'center' 
+    alignItems: 'center',
+    borderRadius: 20,
+    backgroundColor: Colors.brand.cardBackground
   },
   backButtonText: { 
-    fontSize: 32, 
-    color: Colors.brand.textPrimary, 
-    lineHeight: 40 
+    fontSize: 24, 
+    color: Colors.brand.textPrimary,
+    fontWeight: '300'
   },
   headerTitle: { 
     fontSize: 20, 
     fontWeight: '700', 
-    color: Colors.brand.textPrimary 
+    color: Colors.brand.textPrimary,
+    fontFamily: 'Poppins_700Bold'
   },
   headerSpacer: { 
     width: 40 

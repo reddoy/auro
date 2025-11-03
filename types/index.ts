@@ -149,6 +149,7 @@ export interface DbReviewerSummary {
   packages?: ReviewerPackage[] | null;
   links?: ProfileLinks | null;
   bio?: string | null;
+  createdAt?: string | null;
 }
 
 // Profile types for Profile/Settings screens

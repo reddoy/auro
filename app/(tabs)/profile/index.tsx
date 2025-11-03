@@ -60,8 +60,8 @@ export default function ProfileScreen() {
               return amount - auroFee - stripeFee;
             };
             
-            // Awaiting completion: paid reviews not yet completed (status = 'paid')
-            const awaitingCompletionRequests = requests.filter(r => r.status === 'paid' && r.amount_cents);
+            // Awaiting completion: paid reviews not yet completed (status = 'paid' or 'in_progress')
+            const awaitingCompletionRequests = requests.filter(r => (r.status === 'paid' || r.status === 'in_progress') && r.amount_cents);
             const awaitingCompletion = awaitingCompletionRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
             
             // Awaiting payout: completed reviews that haven't been distributed yet
@@ -236,8 +236,8 @@ export default function ProfileScreen() {
             return amount - auroFee - stripeFee;
           };
           
-          // Awaiting completion: paid reviews not yet completed (status = 'paid')
-          const awaitingCompletionRequests = requests.filter(r => r.status === 'paid' && r.amount_cents);
+          // Awaiting completion: paid reviews not yet completed (status = 'paid' or 'in_progress')
+          const awaitingCompletionRequests = requests.filter(r => (r.status === 'paid' || r.status === 'in_progress') && r.amount_cents);
           const awaitingCompletion = awaitingCompletionRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
           
           // Awaiting payout: completed reviews that haven't been distributed yet

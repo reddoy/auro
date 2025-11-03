@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase as supabaseClient } from '../../lib/supabase';
 
 // Step components
@@ -72,14 +72,71 @@ export default function RequestPage() {
     );
   }
 
+  // Save flow state to localStorage
+  // Use refs to always get the latest values
+  const currentStepRef = useRef(currentStep);
+  const requestDataRef = useRef(requestData);
+  
+  useEffect(() => {
+    currentStepRef.current = currentStep;
+    requestDataRef.current = requestData;
+  }, [currentStep, requestData]);
+
+  const saveFlowState = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const flowState = {
+        currentStep: currentStepRef.current,
+        requestData: requestDataRef.current,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem('auro_request_flow_state', JSON.stringify(flowState));
+    } catch (e) {
+      console.warn('[RequestPage] Failed to save flow state:', e);
+    }
+  }, []);
+
+  // Restore flow state from localStorage (if returning from OAuth)
+  const restoreFlowState = useCallback(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const saved = localStorage.getItem('auro_request_flow_state');
+      if (!saved) return false;
+      
+      const flowState = JSON.parse(saved);
+      // Only restore if saved within last 30 minutes (OAuth shouldn't take that long)
+      const age = Date.now() - (flowState.timestamp || 0);
+      if (age > 30 * 60 * 1000) {
+        localStorage.removeItem('auro_request_flow_state');
+        return false;
+      }
+      
+      if (flowState.currentStep && flowState.requestData) {
+        setCurrentStep(flowState.currentStep);
+        setRequestData(flowState.requestData);
+        console.log('[RequestPage] Restored flow state:', flowState.currentStep);
+        // Don't remove yet - let auth listener handle cleanup after advancing
+        // It will be cleaned up when auth listener advances to payment step
+        return true;
+      }
+    } catch (e) {
+      console.warn('[RequestPage] Failed to restore flow state:', e);
+      localStorage.removeItem('auro_request_flow_state');
+    }
+    return false;
+  }, []);
+
   // Handle URL parameters to pre-populate creator selection
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const creatorSlug = urlParams.get('creatorSlug');
       
-      if (creatorSlug) {
-        // Set the creator slug and skip to creator selection step
+      // Try to restore flow state first (for OAuth return)
+      const restored = restoreFlowState();
+      
+      if (creatorSlug && !restored) {
+        // Only set creator slug if we didn't restore from saved state
         setRequestData(prev => ({ ...prev, creatorSlug }));
         setCurrentStep('creator-selection');
       }
@@ -164,9 +221,14 @@ export default function RequestPage() {
             setIsAuthenticated(isRealUser);
             
             // Only auto-advance if user just completed authentication (not if they were already authenticated)
-            if (isRealUser && currentStep === 'auth' && event === 'SIGNED_IN') {
+            // Use ref to get the latest currentStep value
+            if (isRealUser && currentStepRef.current === 'auth' && event === 'SIGNED_IN') {
               setRequestData(prev => ({ ...prev, userId: session!.user!.id }));
               setCurrentStep('payment');
+              // Clear saved state since we're advancing
+              try {
+                localStorage.removeItem('auro_request_flow_state');
+              } catch {}
             }
             
             // Ensure profile exists server-side whenever we get a real session
@@ -200,7 +262,14 @@ export default function RequestPage() {
 
   const updateRequestData = (updates: Partial<RequestData>) => {
     setRequestData(prev => ({ ...prev, ...updates }));
+    // Save state after update
+    setTimeout(() => saveFlowState(), 100);
   };
+
+  // Save flow state whenever step or data changes
+  useEffect(() => {
+    saveFlowState();
+  }, [currentStep, requestData, saveFlowState]);
 
   const nextStep = () => {
     const currentIndex = STEPS.indexOf(currentStep);

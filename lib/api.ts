@@ -150,7 +150,7 @@ export async function ensureProfileForCurrentUser(): Promise<void> {
 export async function getReviewers(): Promise<DbReviewerSummary[]> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, is_reviewer, packages, links, bio, stripe_connect_account_id')
+    .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, is_reviewer, packages, links, bio, stripe_connect_account_id, created_at')
     .eq('is_reviewer', true)
     .not('stripe_connect_account_id', 'is', null) // Only show reviewers with Connect accounts
     .not('hourly_rate', 'is', null) // Only show reviewers who have set their rate
@@ -168,6 +168,7 @@ export async function getReviewers(): Promise<DbReviewerSummary[]> {
     packages: row.packages || null,
     links: row.links || null,
     bio: row.bio || null,
+    createdAt: row.created_at || null,
   })) as DbReviewerSummary[];
 }
 

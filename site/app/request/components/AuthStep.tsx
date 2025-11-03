@@ -173,10 +173,21 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
     setError('');
 
     try {
+      // Save the current state to localStorage so we can restore it after OAuth
+      try {
+        const savedState = {
+          step: 'auth', // We're on the auth step
+          timestamp: Date.now(),
+        };
+        localStorage.setItem('auro_request_flow_state', JSON.stringify(savedState));
+      } catch (e) {
+        console.warn('[AuthStep] Failed to save flow state:', e);
+      }
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?redirect_to=${encodeURIComponent(window.location.pathname)}`,
+          redirectTo: `${window.location.origin}/auth/callback?redirect_to=${encodeURIComponent(window.location.pathname + window.location.search)}`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
