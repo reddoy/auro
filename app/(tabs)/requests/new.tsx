@@ -159,12 +159,13 @@ export default function DiscoverReviewersScreen() {
       </RNView>
       
       {/* Filter Buttons */}
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterContainer}
-        contentContainerStyle={styles.filterContent}
-      >
+      <RNView style={styles.filterContainer}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          style={styles.filterScroll}
+          contentContainerStyle={styles.filterContent}
+        >
         <TouchableOpacity
           style={[styles.filterButton, filter === 'all' && styles.filterButtonActive]}
           onPress={() => setFilter('all')}
@@ -189,7 +190,8 @@ export default function DiscoverReviewersScreen() {
             Highly Rated
           </Text>
         </TouchableOpacity>
-      </ScrollView>
+        </ScrollView>
+      </RNView>
 
       {/* Sort Selector */}
       <RNView style={styles.sortContainer}>
@@ -254,27 +256,32 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
   header: { padding: 16, paddingTop: 20, backgroundColor: Colors.brand.cardBackground, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, marginBottom: 8 },
   title: { fontSize: 28, fontWeight: '700', color: Colors.brand.textPrimary },
-  searchWrap: { paddingHorizontal: 16, paddingVertical: 10 },
+  searchWrap: { paddingHorizontal: 16, paddingVertical: 8 },
   searchInput: { borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: Colors.brand.textPrimary, backgroundColor: Colors.brand.cardBackground, fontSize: 16 },
-  filterContainer: { marginBottom: 12 },
-  filterContent: { paddingHorizontal: 16, gap: 8 },
+  filterContainer: { marginBottom: 6, paddingVertical: 6, paddingHorizontal: 16, justifyContent: 'center', alignItems: 'center' },
+  filterScroll: { flexGrow: 0 },
+  filterContent: { gap: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   filterButton: { 
-    paddingHorizontal: 16, 
-    paddingVertical: 8, 
-    borderRadius: 20, 
+    paddingHorizontal: 14, 
+    paddingVertical: 4, 
+    borderRadius: 16, 
     backgroundColor: Colors.brand.cardBackground, 
     borderWidth: 1, 
     borderColor: Colors.brand.border,
     marginRight: 8,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   filterButtonActive: { 
     backgroundColor: Colors.brand.accentMagenta, 
     borderColor: Colors.brand.accentMagenta,
   },
   filterButtonText: { 
-    fontSize: 14, 
+    fontSize: 13, 
     fontWeight: '600', 
     color: Colors.brand.textPrimary,
+    lineHeight: 16,
   },
   filterButtonTextActive: { 
     color: '#FFFFFF',

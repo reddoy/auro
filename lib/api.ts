@@ -18,6 +18,11 @@ function mapRequestRow(row: any): DbRequestSummary {
     stripe_fee_cents: row.stripe_fee_cents ?? null,
     net_amount_cents: row.net_amount_cents ?? null,
     auro_fee_bps: row.auro_fee_bps ?? null,
+    payment_distributed: row.payment_distributed ?? null,
+    payment_distributed_at: row.payment_distributed_at ?? null,
+    stripe_transfer_id: row.stripe_transfer_id ?? null,
+    reviewer_amount_cents: row.reviewer_amount_cents ?? null,
+    payment_distribution_error: row.payment_distribution_error ?? null,
   } as DbRequestSummary;
 }
 
@@ -57,7 +62,7 @@ export async function getRequestsByUser(userId: string): Promise<DbRequestSummar
 export async function getRequestById(id: string): Promise<DbRequestSummary | null> {
   const { data, error } = await supabase
     .from('requests')
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps,payment_distributed,payment_distributed_at,stripe_transfer_id,reviewer_amount_cents,payment_distribution_error')
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;
