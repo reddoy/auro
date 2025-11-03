@@ -175,9 +175,14 @@ export default function TransactionBreakdownScreen() {
   };
 
   const getAmountDisplay = (transaction: TransactionItem) => {
-    // Correct calculation: amount - auro fee (20%) - stripe fee (2.9% + $0.30)
+    // Use reviewer_amount_cents if available (set by payment distribution)
+    if (transaction.reviewer_amount_cents) {
+      return (transaction.reviewer_amount_cents / 100).toFixed(2);
+    }
+    // Otherwise calculate: amount - application_fee_cents - stripe fee (2.9% + $0.30)
+    // This matches the payment distribution calculation
     const amount = transaction.amount_cents;
-    const auroFee = Math.round(amount * 0.2); // 20% Auro fee
+    const auroFee = transaction.application_fee_cents || 0; // Use actual application fee from Stripe
     const stripeFee = Math.round(amount * 0.029 + 30); // 2.9% + $0.30 Stripe fee
     const reviewerAmount = amount - auroFee - stripeFee;
     return (reviewerAmount / 100).toFixed(2);

@@ -53,9 +53,10 @@ export default function ProfileScreen() {
             // Helper function to calculate reviewer amount for a request
             const calculateReviewerAmount = (r: any) => {
               if (r.reviewer_amount_cents) return r.reviewer_amount_cents;
-              // Fallback: amount - auro fee (20%) - stripe fee (2.9% + $0.30)
+              // Fallback: amount - application_fee_cents (actual fee) - stripe fee (2.9% + $0.30)
+              // This matches the payment distribution calculation
               const amount = r.amount_cents || 0;
-              const auroFee = Math.round(amount * 0.2);
+              const auroFee = r.application_fee_cents || 0; // Use actual application fee from Stripe
               const stripeFee = Math.round(amount * 0.029 + 30);
               return amount - auroFee - stripeFee;
             };
@@ -229,9 +230,10 @@ export default function ProfileScreen() {
           // Helper function to calculate reviewer amount for a request
           const calculateReviewerAmount = (r: any) => {
             if (r.reviewer_amount_cents) return r.reviewer_amount_cents;
-            // Fallback: amount - auro fee (20%) - stripe fee (2.9% + $0.30)
+            // Fallback: amount - application_fee_cents (actual fee) - stripe fee (2.9% + $0.30)
+            // This matches the payment distribution calculation
             const amount = r.amount_cents || 0;
-            const auroFee = Math.round(amount * 0.2);
+            const auroFee = r.application_fee_cents || 0; // Use actual application fee from Stripe
             const stripeFee = Math.round(amount * 0.029 + 30);
             return amount - auroFee - stripeFee;
           };
