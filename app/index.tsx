@@ -19,7 +19,7 @@ export default function IndexGate() {
       if (data.session) {
         router.replace('/(tabs)/requests');
       } else {
-        router.replace('/auth');
+        router.replace('/intro');
       }
       setChecking(false);
     };

@@ -5,6 +5,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { supabase } from '@/lib/supabase';
+import { ensureProfileForCurrentUser } from '@/lib/api';
 
 export default function ConfirmEmailScreen() {
   const { email, token_hash, type } = useLocalSearchParams<{ email?: string; token_hash?: string; type?: string }>();
@@ -32,8 +33,18 @@ export default function ConfirmEmailScreen() {
           if (error) {
             setConfirmationStatus('error');
           } else {
+            // Ensure profile exists after email confirmation
+            try {
+              await ensureProfileForCurrentUser();
+            } catch (profileErr) {
+              console.warn('Profile creation warning:', profileErr);
+              // Continue even if profile creation fails
+            }
             setConfirmationStatus('success');
-            // Stay on this page and show next-step options rather than auto-redirect
+            // Auto-redirect to onboarding after 2 seconds
+            setTimeout(() => {
+              router.replace('/onboarding/role-selection');
+            }, 2000);
           }
         } catch (err) {
           setConfirmationStatus('error');
@@ -103,24 +114,14 @@ export default function ConfirmEmailScreen() {
           {confirmationStatus === 'success' && !isConfirming && (
             <>
               <Text style={styles.title}>Email confirmed! 🎉</Text>
-              <Text style={styles.body}>Welcome to Auro — you’re all set. Choose a next step below.</Text>
+              <Text style={styles.body}>Welcome to Auro! Let's get you started with onboarding.</Text>
 
-              <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/auth')}>
-                <Text style={styles.primaryBtnText}>Open the app</Text>
+              <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/onboarding/role-selection')}>
+                <Text style={styles.primaryBtnText}>Continue to Onboarding</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.replace('/requests/new')}>
-                <Text style={styles.secondaryBtnText}>Request a review</Text>
-              </TouchableOpacity>
-
-              <View style={{ height: 8 }} />
-
-              <TouchableOpacity style={styles.storeBtn} onPress={() => Linking.openURL('https://apps.apple.com/') }>
-                <Text style={styles.storeBtnText}>Download on the App Store</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.storeBtn} onPress={() => Linking.openURL('https://play.google.com/store') }>
-                <Text style={styles.storeBtnText}>Get it on Google Play</Text>
+              <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.replace('/(tabs)/requests')}>
+                <Text style={styles.secondaryBtnText}>Skip to App</Text>
               </TouchableOpacity>
             </>
           )}
@@ -138,8 +139,12 @@ export default function ConfirmEmailScreen() {
           {confirmationStatus === 'pending' && !isConfirming && (
             <>
               <Text style={styles.title}>Please confirm your email</Text>
-              {!!email && <Text style={styles.body}>We sent a link to {email}.</Text>}
-              {!email && <Text style={styles.body}>We sent a confirmation link to your inbox.</Text>}
+              {!!email && <Text style={styles.body}>We sent a confirmation link to {email}. Please check your inbox and click the link to verify your email address.</Text>}
+              {!email && <Text style={styles.body}>We sent a confirmation link to your inbox. Please check your email and click the link to verify your email address.</Text>}
+              
+              <Text style={[styles.body, { marginTop: 8, fontSize: 14, opacity: 0.8 }]}>
+                After verifying your email, you'll be able to continue with onboarding.
+              </Text>
 
               <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/auth')}>
                 <Text style={styles.primaryBtnText}>Back to Sign In</Text>

@@ -33,7 +33,8 @@ export default function AuthCallback() {
           setStatus('success');
           // Ensure user profile exists after OAuth login
           try { await ensureProfileForCurrentUser(); } catch {}
-          // Redirect to app after successful OAuth login
+          // Check if user needs onboarding (new signup) or go to app
+          // For now, redirect to app - could check profile completion status here
           setTimeout(() => router.replace('/(tabs)/requests'), 800);
         }
       } else {

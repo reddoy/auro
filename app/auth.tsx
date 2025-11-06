@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Platform, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image, KeyboardAvoidingView, useWindowDimensions } from 'react-native';
+import { Platform, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image, KeyboardAvoidingView, useWindowDimensions, Modal } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
 import { AntDesign } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { Text, View } from '@/components/Themed';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -69,25 +70,52 @@ export default function AuthScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [name, setName] = useState('');
-  const [age, setAge] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [phone, setPhone] = useState('');
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
   const isCompact = screenHeight <= 900; // Ensure iPhone 15 (852pt) is compact
   const isUltraCompact = screenHeight <= 780;
   const [signupStep, setSignupStep] = useState(0);
   const [cooldownSec, setCooldownSec] = useState(0);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [emailError, setEmailError] = useState('');
   React.useEffect(() => {
     if (cooldownSec <= 0) return;
     const t = setInterval(() => setCooldownSec((s) => (s > 0 ? s - 1 : 0)), 1000);
     return () => clearInterval(t);
   }, [cooldownSec]);
 
-  const nameRef = useRef<any>(null);
-  const ageRef = useRef<any>(null);
+  const firstNameRef = useRef<any>(null);
+  const lastNameRef = useRef<any>(null);
+  const dobRef = useRef<any>(null);
   const emailRef = useRef<any>(null);
   const passwordRef = useRef<any>(null);
   const confirmPasswordRef = useRef<any>(null);
+  const phoneRef = useRef<any>(null);
+
+  // Calculate age from date of birth
+  const calculateAge = (dob: Date): number => {
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  // Format date for display
+  const formatDate = (date: Date | null): string => {
+    if (!date) return '';
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
 
   const validatePassword = (pwd: string) => {
     const requirements = {
@@ -158,7 +186,7 @@ export default function AuthScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!email || !password || (!isLogin && (!name || !age))) {
+    if (!email || !password || (!isLogin && (!firstName || !lastName || !dateOfBirth || !phone))) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -206,17 +234,74 @@ export default function AuthScreen() {
           default: 'auro://auth/confirm',
         });
 
+        const age = dateOfBirth ? calculateAge(dateOfBirth) : null;
+        const fullName = `${firstName} ${lastName}`.trim();
         const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { name, age: Number(age) || null },
+            data: { 
+              name: fullName,
+              firstName,
+              lastName,
+              dateOfBirth: dateOfBirth?.toISOString().split('T')[0] || null,
+              age: age,
+              phone 
+            },
             emailRedirectTo: redirectTo,
           },
         });
-        if (error) throw error;
-        try { await ensureProfileForCurrentUser(); } catch {}
-        router.replace({ pathname: '/auth/confirm', params: { email } });
+        
+        if (error) {
+          // Check if user already exists
+          const errorMsg = String(error.message || '').toLowerCase();
+          if (errorMsg.includes('already registered') || errorMsg.includes('user already exists') || errorMsg.includes('email address is already registered')) {
+            Alert.alert(
+              'Account Already Exists',
+              'An account with this email address already exists. Please use the "Login" tab to sign in.',
+              [
+                {
+                  text: 'Go to Login',
+                  onPress: () => {
+                    setIsLogin(true);
+                    setSignupStep(0);
+                    setPassword('');
+                    setConfirmPassword('');
+                  },
+                },
+                {
+                  text: 'OK',
+                  style: 'cancel',
+                },
+              ]
+            );
+            return;
+          }
+          throw error;
+        }
+
+        // Check if user was created and if email confirmation is needed
+        if (signUpData.user) {
+          try { 
+            await ensureProfileForCurrentUser(); 
+            // Phone is stored in user_metadata via signUp options above
+          } catch {}
+          
+          // Check if email confirmation is required
+          // If user has a session, they're confirmed. Otherwise, they need to verify.
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (!session) {
+            // Email confirmation required - redirect to confirmation screen
+            router.replace({ pathname: '/auth/confirm', params: { email } });
+          } else {
+            // Already confirmed (shouldn't happen often, but handle it)
+            router.replace('/onboarding/role-selection');
+          }
+        } else {
+          // No user returned - should not happen, but handle gracefully
+          Alert.alert('Signup Error', 'Account creation failed. Please try again.');
+        }
       }
     } catch (err: any) {
       const msg = String(err?.message || '');
@@ -227,42 +312,189 @@ export default function AuthScreen() {
         Alert.alert('Please wait', `For security purposes, please try again in ${wait} seconds.`);
         return;
       }
+      // Check for duplicate email errors
+      if (/already registered|user already exists|email address is already registered/i.test(msg)) {
+        Alert.alert(
+          'Account Already Exists',
+          'An account with this email address already exists. Please use the "Login" tab to sign in.',
+          [
+            {
+              text: 'Go to Login',
+              onPress: () => {
+                setIsLogin(true);
+                setSignupStep(0);
+                setPassword('');
+                setConfirmPassword('');
+              },
+            },
+            {
+              text: 'OK',
+              style: 'cancel',
+            },
+          ]
+        );
+        return;
+      }
       Alert.alert('Auth error', msg || 'Something went wrong');
+      // Don't redirect on error - stay on the same screen
     }
   };
 
-  const handleNextSignupStep = () => {
-    if (!email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please enter your email and both passwords');
-      return;
+  const checkEmailExists = async (emailToCheck: string): Promise<boolean> => {
+    try {
+      // Attempt to reset password for the email
+      // Note: Supabase returns success even if email doesn't exist (to prevent enumeration)
+      // So we'll try sign in with a dummy password as a heuristic check
+      // This is not perfect but provides a good UX hint
+      const { error } = await supabase.auth.signInWithPassword({
+        email: emailToCheck,
+        password: 'dummy-password-check-12345!@#$%^&*()',
+      });
+      
+      if (error) {
+        const msg = String(error.message || '').toLowerCase();
+        // These specific errors suggest the email exists (credentials are wrong, or email not confirmed)
+        if (msg.includes('invalid login') || 
+            msg.includes('invalid credentials') || 
+            msg.includes('email not confirmed') ||
+            msg.includes('invalid password')) {
+          return true;
+        }
+        // "User not found" type errors suggest email doesn't exist
+        if (msg.includes('user not found') || 
+            msg.includes('no user found') || 
+            msg.includes('invalid email')) {
+          return false;
+        }
+      } else {
+        // No error means login succeeded (very unlikely with dummy password, but if it did, email exists)
+        return true;
+      }
+      // If we can't determine, assume it doesn't exist to allow signup attempt
+      return false;
+    } catch {
+      // On any error, assume email doesn't exist to allow signup attempt
+      // The actual signup will catch duplicate emails properly
+      return false;
     }
+  };
 
-    if (!isPasswordValid(password)) {
-      Alert.alert('Password Requirements', 
-        'Password must include:\n• At least 8 characters\n• One uppercase letter\n• One lowercase letter\n• One number\n• One special character');
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
+  const handleNextSignupStep = async () => {
+    if (signupStep === 0) {
+      if (!email || !password || !confirmPassword) {
+        Alert.alert('Error', 'Please enter your email and both passwords');
+        return;
+      }
 
-    setSignupStep(1);
-    requestAnimationFrame(() => {
-      nameRef.current?.focus?.();
-    });
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        Alert.alert('Invalid Email', 'Please enter a valid email address');
+        return;
+      }
+
+      if (!isPasswordValid(password)) {
+        Alert.alert('Password Requirements', 
+          'Password must include:\n• At least 8 characters\n• One uppercase letter\n• One lowercase letter\n• One number\n• One special character');
+        return;
+      }
+      
+      if (password !== confirmPassword) {
+        Alert.alert('Error', 'Passwords do not match');
+        return;
+      }
+
+      // Check if email already exists
+      setCheckingEmail(true);
+      setEmailError('');
+      try {
+        const emailExists = await checkEmailExists(email);
+        if (emailExists) {
+          setEmailError('An account with this email already exists. Please sign in instead.');
+          setCheckingEmail(false);
+          Alert.alert(
+            'Account Already Exists',
+            'An account with this email address already exists. Please use the "Login" tab to sign in, or use a different email address.',
+            [
+              {
+                text: 'Go to Login',
+                onPress: () => setIsLogin(true),
+              },
+              {
+                text: 'OK',
+                style: 'cancel',
+              },
+            ]
+          );
+          return;
+        }
+      } catch (err) {
+        // If check fails, continue anyway - let signup attempt handle it
+        console.warn('Email check failed:', err);
+      }
+      setCheckingEmail(false);
+
+      setSignupStep(1);
+      requestAnimationFrame(() => {
+        firstNameRef.current?.focus?.();
+      });
+    } else if (signupStep === 1) {
+      if (!firstName || !lastName) {
+        Alert.alert('Error', 'Please enter your first and last name');
+        return;
+      }
+      setSignupStep(2);
+      // Don't auto-focus DOB, let user tap to open picker
+    } else if (signupStep === 2) {
+      if (!dateOfBirth) {
+        Alert.alert('Error', 'Please select your date of birth');
+        return;
+      }
+      // Validate age (must be 18+)
+      const age = calculateAge(dateOfBirth);
+      if (age < 18) {
+        Alert.alert('Error', 'You must be at least 18 years old to sign up');
+        return;
+      }
+      setSignupStep(3);
+      requestAnimationFrame(() => {
+        phoneRef.current?.focus?.();
+      });
+    }
   };
 
   const handleBackSignupStep = () => {
-    setSignupStep(0);
-    requestAnimationFrame(() => {
-      emailRef.current?.focus?.();
-    });
+    if (signupStep === 3) {
+      setSignupStep(2);
+    } else if (signupStep === 2) {
+      setSignupStep(1);
+      requestAnimationFrame(() => {
+        lastNameRef.current?.focus?.();
+      });
+    } else if (signupStep === 1) {
+      setSignupStep(0);
+      requestAnimationFrame(() => {
+        emailRef.current?.focus?.();
+      });
+    }
+  };
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    if (selectedDate) {
+      setDateOfBirth(selectedDate);
+      if (Platform.OS === 'ios') {
+        // On iOS, keep picker open until user confirms
+      }
+    }
   };
 
   const shouldShowEmailPassword = isLogin || (!isLogin && signupStep === 0);
-  const shouldShowNameAge = !isLogin && signupStep === 1;
+  const shouldShowName = !isLogin && signupStep === 1;
+  const shouldShowDOB = !isLogin && signupStep === 2;
+  const shouldShowPhone = !isLogin && signupStep === 3;
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={12}>
@@ -291,10 +523,28 @@ export default function AuthScreen() {
         Platform.OS === 'web' && styles.formWeb,
         { marginBottom: isCompact ? 8 : (16 + insets.bottom) },
       ] }>
+        {/* Logo and Brand Name */}
+        <View style={[styles.logoContainer, isCompact && styles.logoContainerCompact]}>
+          <Image 
+            source={require('../auro_aura_logo_nobg.png')} 
+            style={[styles.logoImage, isCompact && styles.logoImageCompact]}
+            resizeMode="contain"
+          />
+          <Text style={[styles.brandText, isCompact && styles.brandTextCompact]}>Auro</Text>
+        </View>
+
         <View style={[styles.toggleContainer, isCompact && styles.toggleContainerCompact]}>
           <TouchableOpacity
             style={[styles.toggleButton, isLogin && styles.activeToggle]}
-            onPress={() => { setIsLogin(true); setSignupStep(0); }}
+            onPress={() => { 
+              setIsLogin(true); 
+              setSignupStep(0);
+              // Reset signup fields when switching to login
+              setFirstName('');
+              setLastName('');
+              setDateOfBirth(null);
+              setPhone('');
+            }}
           >
             <Text style={[styles.toggleText, isLogin && styles.activeToggleText]}>
               Login
@@ -302,7 +552,12 @@ export default function AuthScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.toggleButton, !isLogin && styles.activeToggle]}
-            onPress={() => { setIsLogin(false); setSignupStep(0); }}
+            onPress={() => { 
+              setIsLogin(false); 
+              setSignupStep(0);
+              // Reset login-specific fields when switching to signup
+              setConfirmPassword('');
+            }}
           >
             <Text style={[styles.toggleText, !isLogin && styles.activeToggleText]}>
               Sign Up
@@ -310,39 +565,165 @@ export default function AuthScreen() {
           </TouchableOpacity>
         </View>
 
-        {shouldShowNameAge && (
+        {shouldShowName && (
           <>
             <TouchableOpacity style={styles.backButton} onPress={handleBackSignupStep}>
               <Text style={styles.backButtonText}>Back</Text>
             </TouchableOpacity>
             <View style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
               {!isUltraCompact && (
-                <Text style={[styles.label, isCompact && styles.labelCompact]}>Full Name</Text>
+                <Text style={[styles.label, isCompact && styles.labelCompact]}>First Name</Text>
               )}
               <TextInput
                 style={[styles.input, isCompact && styles.inputCompact]}
-                value={name}
-                onChangeText={setName}
-                placeholder={isUltraCompact ? 'Full Name' : 'Enter your full name'}
+                value={firstName}
+                onChangeText={setFirstName}
+                placeholder={isUltraCompact ? 'First Name' : 'Enter your first name'}
                 autoCapitalize="words"
-                ref={nameRef}
+                ref={firstNameRef}
                 returnKeyType="next"
                 blurOnSubmit={false}
-                onSubmitEditing={() => ageRef.current?.focus()}
+                onSubmitEditing={() => lastNameRef.current?.focus()}
               />
             </View>
 
             <View style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
               {!isUltraCompact && (
-                <Text style={[styles.label, isCompact && styles.labelCompact]}>Age</Text>
+                <Text style={[styles.label, isCompact && styles.labelCompact]}>Last Name</Text>
               )}
               <TextInput
                 style={[styles.input, isCompact && styles.inputCompact]}
-                value={age}
-                onChangeText={setAge}
-                placeholder={isUltraCompact ? 'Age' : 'Enter your age'}
-                keyboardType="numeric"
-                ref={ageRef}
+                value={lastName}
+                onChangeText={setLastName}
+                placeholder={isUltraCompact ? 'Last Name' : 'Enter your last name'}
+                autoCapitalize="words"
+                ref={lastNameRef}
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={handleNextSignupStep}
+              />
+            </View>
+          </>
+        )}
+
+        {shouldShowDOB && (
+          <>
+            <TouchableOpacity style={styles.backButton} onPress={handleBackSignupStep}>
+              <Text style={styles.backButtonText}>Back</Text>
+            </TouchableOpacity>
+            <View style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
+              {!isUltraCompact && (
+                <Text style={[styles.label, isCompact && styles.labelCompact]}>Date of Birth</Text>
+              )}
+              <TouchableOpacity
+                style={[styles.input, styles.dateInput, isCompact && styles.inputCompact]}
+                onPress={() => setShowDatePicker(true)}
+                ref={dobRef}
+              >
+                <Text style={[styles.dateInputText, !dateOfBirth && styles.dateInputPlaceholder]}>
+                  {dateOfBirth ? formatDate(dateOfBirth) : (isUltraCompact ? 'Date of Birth' : 'Select your date of birth')}
+                </Text>
+                <AntDesign name="calendar" size={20} color={dateOfBirth ? Colors.brand.textOnGradient : Colors.brand.textSecondary} />
+              </TouchableOpacity>
+              {dateOfBirth && (
+                <Text style={styles.ageHint}>
+                  Age: {calculateAge(dateOfBirth)} years old
+                </Text>
+              )}
+            </View>
+
+            {Platform.OS === 'ios' && showDatePicker && (
+              <Modal
+                transparent
+                animationType="slide"
+                visible={showDatePicker}
+                onRequestClose={() => setShowDatePicker(false)}
+              >
+                <View style={styles.datePickerModal}>
+                  <View style={styles.datePickerContainer}>
+                    <View style={styles.datePickerHeader}>
+                      <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                        <Text style={styles.datePickerButton}>Cancel</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.datePickerTitle}>Select Date of Birth</Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          if (dateOfBirth) {
+                            setShowDatePicker(false);
+                          }
+                        }}
+                      >
+                        <Text style={[styles.datePickerButton, dateOfBirth && styles.datePickerButtonActive]}>
+                          Done
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    <DateTimePicker
+                      value={dateOfBirth || new Date(2000, 0, 1)}
+                      mode="date"
+                      display="spinner"
+                      onChange={handleDateChange}
+                      maximumDate={new Date()}
+                      minimumDate={new Date(1900, 0, 1)}
+                    />
+                  </View>
+                </View>
+              </Modal>
+            )}
+
+            {Platform.OS === 'android' && showDatePicker && (
+              <DateTimePicker
+                value={dateOfBirth || new Date(2000, 0, 1)}
+                mode="date"
+                display="default"
+                onChange={handleDateChange}
+                maximumDate={new Date()}
+                minimumDate={new Date(1900, 0, 1)}
+              />
+            )}
+
+            {Platform.OS === 'web' && (
+              <TextInput
+                style={[styles.input, isCompact && styles.inputCompact, { marginTop: 8 }]}
+                value={dateOfBirth ? dateOfBirth.toISOString().split('T')[0] : ''}
+                onChangeText={(text) => {
+                  // Handle YYYY-MM-DD format for web date input
+                  if (text.length === 10) {
+                    const date = new Date(text + 'T00:00:00');
+                    if (date.getTime() && date <= new Date() && date >= new Date(1900, 0, 1)) {
+                      setDateOfBirth(date);
+                    }
+                  } else if (text.length === 0) {
+                    setDateOfBirth(null);
+                  }
+                }}
+                placeholder="YYYY-MM-DD"
+                {...(Platform.OS === 'web' && {
+                  type: 'date',
+                  max: new Date().toISOString().split('T')[0],
+                  min: new Date(1900, 0, 1).toISOString().split('T')[0],
+                } as any)}
+              />
+            )}
+          </>
+        )}
+
+        {shouldShowPhone && (
+          <>
+            <TouchableOpacity style={styles.backButton} onPress={handleBackSignupStep}>
+              <Text style={styles.backButtonText}>Back</Text>
+            </TouchableOpacity>
+            <View style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
+              {!isUltraCompact && (
+                <Text style={[styles.label, isCompact && styles.labelCompact]}>Phone Number</Text>
+              )}
+              <TextInput
+                style={[styles.input, isCompact && styles.inputCompact]}
+                value={phone}
+                onChangeText={setPhone}
+                placeholder={isUltraCompact ? 'Phone' : 'Enter your phone number'}
+                keyboardType="phone-pad"
+                ref={phoneRef}
                 returnKeyType="done"
                 blurOnSubmit
                 onSubmitEditing={handleSubmit}
@@ -358,9 +739,12 @@ export default function AuthScreen() {
                 <Text style={[styles.label, isCompact && styles.labelCompact]}>Email</Text>
               )}
               <TextInput
-                style={[styles.input, isCompact && styles.inputCompact]}
+                style={[styles.input, isCompact && styles.inputCompact, emailError && styles.inputError]}
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => {
+                  setEmail(text);
+                  setEmailError(''); // Clear error when user types
+                }}
                 placeholder={isUltraCompact ? 'Email' : 'Enter your email'}
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -368,7 +752,14 @@ export default function AuthScreen() {
                 returnKeyType="next"
                 blurOnSubmit={false}
                 onSubmitEditing={() => passwordRef.current?.focus()}
+                editable={!checkingEmail}
               />
+              {checkingEmail && (
+                <Text style={styles.checkingEmailText}>Checking email...</Text>
+              )}
+              {emailError && (
+                <Text style={styles.errorText}>{emailError}</Text>
+              )}
             </View>
 
             <View style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
@@ -427,8 +818,8 @@ export default function AuthScreen() {
 
         <TouchableOpacity
           style={[styles.submitButton, isCompact && styles.submitButtonCompact]}
-          disabled={!isLogin && cooldownSec > 0}
-          onPress={isLogin ? handleSubmit : (signupStep === 0 ? handleNextSignupStep : handleSubmit)}
+          disabled={(!isLogin && cooldownSec > 0) || checkingEmail}
+          onPress={isLogin ? handleSubmit : (signupStep < 3 ? handleNextSignupStep : handleSubmit)}
         >
           <ExpoLinearGradient
             colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
@@ -437,35 +828,40 @@ export default function AuthScreen() {
             style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 28 }}
           />
           <Text style={styles.submitButtonText}>
-            {isLogin ? 'Login' : signupStep === 0 ? 'Next' : (cooldownSec > 0 ? `Create Account (${cooldownSec}s)` : 'Create Account')}
+            {isLogin ? 'Login' : (signupStep === 0 || signupStep === 1 || signupStep === 2) ? (checkingEmail ? 'Checking...' : 'Next') : (cooldownSec > 0 ? `Create Account (${cooldownSec}s)` : 'Create Account')}
           </Text>
         </TouchableOpacity>
 
-        {/* Divider */}
-        <View style={[styles.divider, isCompact && styles.dividerCompact]}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or</Text>
-          <View style={styles.dividerLine} />
-        </View>
+        {/* Only show Google sign-in on login or first signup step */}
+        {isLogin || signupStep === 0 ? (
+          <>
+            {/* Divider */}
+            <View style={[styles.divider, isCompact && styles.dividerCompact]}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.dividerLine} />
+            </View>
 
-        {/* Google Sign In Button */}
-        <TouchableOpacity
-          style={[
-            styles.googleButton, 
-            isCompact && styles.googleButtonCompact,
-            isGoogleHovered && Platform.OS === 'web' && styles.googleButtonHover
-          ]}
-          onPress={handleGoogleSignIn}
-          {...(Platform.OS === 'web' && {
-            onMouseEnter: () => setIsGoogleHovered(true),
-            onMouseLeave: () => setIsGoogleHovered(false),
-          } as any)}
-        >
-          <View style={styles.googleIconContainer}>
-            <GoogleLogo />
-          </View>
-          <Text style={styles.googleButtonText}>Continue with Google</Text>
-        </TouchableOpacity>
+            {/* Google Sign In Button */}
+            <TouchableOpacity
+              style={[
+                styles.googleButton, 
+                isCompact && styles.googleButtonCompact,
+                isGoogleHovered && Platform.OS === 'web' && styles.googleButtonHover
+              ]}
+              onPress={handleGoogleSignIn}
+              {...(Platform.OS === 'web' && {
+                onMouseEnter: () => setIsGoogleHovered(true),
+                onMouseLeave: () => setIsGoogleHovered(false),
+              } as any)}
+            >
+              <View style={styles.googleIconContainer}>
+                <GoogleLogo />
+              </View>
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </TouchableOpacity>
+          </>
+        ) : null}
 
         {isLogin && !isCompact && (
           <TouchableOpacity style={styles.forgotPassword}>
@@ -564,6 +960,35 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 111, 0, 0.25)',
   },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 32,
+    backgroundColor: 'transparent',
+  },
+  logoContainerCompact: {
+    marginBottom: 20,
+  },
+  logoImage: {
+    width: 48,
+    height: 48,
+    marginRight: 12,
+  },
+  logoImageCompact: {
+    width: 40,
+    height: 40,
+    marginRight: 10,
+  },
+  brandText: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins_700Bold',
+  },
+  brandTextCompact: {
+    fontSize: 28,
+  },
   toggleContainer: {
     flexDirection: 'row',
     backgroundColor: 'rgba(26, 11, 46, 0.08)',
@@ -640,6 +1065,21 @@ const styles = StyleSheet.create({
   },
   inputCompact: {
     paddingVertical: 12,
+  },
+  inputError: {
+    borderColor: '#ff4444',
+    borderWidth: 1.5,
+  },
+  errorText: {
+    color: '#ff4444',
+    fontSize: 12,
+    marginTop: 6,
+  },
+  checkingEmailText: {
+    color: Colors.brand.textSecondary,
+    fontSize: 12,
+    marginTop: 6,
+    fontStyle: 'italic',
   },
   submitButton: {
     backgroundColor: Colors.brand.accentMagenta,
@@ -744,6 +1184,60 @@ const styles = StyleSheet.create({
   },
   passwordMatchSuccess: {
     color: Colors.brand.success,
+  },
+  dateInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingRight: 18,
+  },
+  dateInputText: {
+    fontSize: 15,
+    color: Colors.brand.textOnGradient,
+    flex: 1,
+  },
+  dateInputPlaceholder: {
+    color: Colors.brand.textSecondary,
+  },
+  ageHint: {
+    fontSize: 13,
+    color: Colors.brand.textSecondary,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  datePickerModal: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  datePickerContainer: {
+    backgroundColor: Colors.brand.cardBackground || '#2A1B3D',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 20,
+  },
+  datePickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 111, 0, 0.2)',
+  },
+  datePickerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.brand.textOnGradient,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  datePickerButton: {
+    fontSize: 16,
+    color: Colors.brand.textSecondary,
+    paddingHorizontal: 8,
+  },
+  datePickerButtonActive: {
+    color: Colors.brand.accentMagenta,
+    fontWeight: '600',
   },
   // Google sign-in styles
   divider: {

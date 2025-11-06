@@ -95,13 +95,14 @@ function RootLayoutNav() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // Redirect unauthenticated users to /auth, except when already on /auth
+  // Redirect unauthenticated users to /intro, except when already on /intro or /auth
   useEffect(() => {
     if (!sessionChecked) return;
     try {
       const onAuth = pathname?.startsWith('/auth');
-      if (!isSignedIn && !onAuth) {
-        router.replace('/auth');
+      const onIntro = pathname?.startsWith('/intro');
+      if (!isSignedIn && !onAuth && !onIntro) {
+        router.replace('/intro');
       }
     } catch {}
   }, [sessionChecked, isSignedIn, pathname]);
@@ -165,6 +166,7 @@ function RootLayoutNav() {
               <LogoHeader />
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="index" />
+                <Stack.Screen name="intro" />
                 <Stack.Screen name="auth" />
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
