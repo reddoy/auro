@@ -1,12 +1,12 @@
 import React, { useRef, useState } from 'react';
-import { Platform, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image, KeyboardAvoidingView, useWindowDimensions, Modal } from 'react-native';
+import { Platform, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image, KeyboardAvoidingView, useWindowDimensions, Modal, Animated } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { Text, View } from '@/components/Themed';
@@ -83,11 +83,40 @@ export default function AuthScreen() {
   const [cooldownSec, setCooldownSec] = useState(0);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  
   React.useEffect(() => {
     if (cooldownSec <= 0) return;
     const t = setInterval(() => setCooldownSec((s) => (s > 0 ? s - 1 : 0)), 1000);
     return () => clearInterval(t);
   }, [cooldownSec]);
+
+  // Animation for step transitions
+  React.useEffect(() => {
+    // Reset and animate in
+    fadeAnim.setValue(0);
+    slideAnim.setValue(20);
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [signupStep, isLogin, forgotPasswordMode, fadeAnim, slideAnim]);
 
   const firstNameRef = useRef<any>(null);
   const lastNameRef = useRef<any>(null);
@@ -174,8 +203,32 @@ export default function AuthScreen() {
               access_token,
               refresh_token,
             });
-            try { await ensureProfileForCurrentUser(); } catch {}
-            router.replace('/(tabs)/requests');
+            
+            // Check if email is verified after OAuth login
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && !user.email_confirmed_at) {
+              // Email not verified - redirect to confirmation screen
+              await supabase.auth.signOut(); // Sign out to prevent partial session
+              router.replace({ pathname: '/auth/confirm', params: { email: user.email || '' } });
+              Alert.alert(
+                'Email Verification Required',
+                'Please verify your email address before logging in. We\'ve sent a confirmation email to your inbox.'
+              );
+              return;
+            }
+            
+            // Check if this is a new user (profile was just created)
+            let isNewUser = false;
+            try { 
+              isNewUser = await ensureProfileForCurrentUser();
+            } catch {}
+            
+            // If new user, redirect to onboarding; otherwise go to main app
+            if (isNewUser) {
+              router.replace('/onboarding/push-notifications');
+            } else {
+              router.replace('/(tabs)/requests');
+            }
           }
         }
       }
@@ -185,11 +238,59 @@ export default function AuthScreen() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!forgotPasswordEmail) {
+      Alert.alert('Error', 'Please enter your email address');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(forgotPasswordEmail)) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const origin = typeof window !== 'undefined' && (window as any).location?.origin
+        ? (window as any).location.origin
+        : 'https://www.appauro.com';
+
+      const redirectTo = Platform.select({
+        web: `${origin}/auth/confirm?type=recovery`,
+        default: 'auro://auth/confirm?type=recovery',
+      });
+
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
+        redirectTo,
+      });
+
+      if (error) throw error;
+      
+      setForgotPasswordSent(true);
+      Alert.alert('Email Sent', 'Check your inbox for password reset instructions.');
+    } catch (err: any) {
+      const msg = String(err?.message || '');
+      if (/security\s*purposes|too\s*many|rate/i.test(msg)) {
+        const secMatch = msg.match(/after\s+(\d+)\s*seconds?/i);
+        const wait = Number(secMatch?.[1]) || 60;
+        setCooldownSec(wait);
+        Alert.alert('Please wait', `For security purposes, please try again in ${wait} seconds.`);
+      } else {
+        Alert.alert('Error', msg || 'Failed to send reset email. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!email || !password || (!isLogin && (!firstName || !lastName || !dateOfBirth || !phone))) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
+    
+    setLoading(true);
 
     // Password validation for signup
     if (!isLogin) {
@@ -220,8 +321,21 @@ export default function AuthScreen() {
           throw error;
         }
 
+        // Check if email is verified before allowing login
+        if (data.user && !data.user.email_confirmed_at) {
+          // User exists but email is not verified - redirect to confirmation screen
+          await supabase.auth.signOut(); // Sign out to prevent partial session
+          router.replace({ pathname: '/auth/confirm', params: { email: data.user.email || email } });
+          Alert.alert(
+            'Email Verification Required',
+            'Please verify your email address before logging in. We\'ve sent a confirmation email to your inbox.'
+          );
+          return;
+        }
+
+        // Ensure profile exists (for existing users, this will return false)
         try { await ensureProfileForCurrentUser(); } catch {}
-        // Proceed directly to app after successful login (email-only auth)
+        // Proceed directly to app after successful login (existing users don't need onboarding)
         router.replace('/(tabs)/requests');
       } else {
         const origin =
@@ -282,6 +396,7 @@ export default function AuthScreen() {
 
         // Check if user was created and if email confirmation is needed
         if (signUpData.user) {
+          // Create profile for new user (this will return true for new signups)
           try { 
             await ensureProfileForCurrentUser(); 
             // Phone is stored in user_metadata via signUp options above
@@ -293,10 +408,12 @@ export default function AuthScreen() {
           
           if (!session) {
             // Email confirmation required - redirect to confirmation screen
+            // After confirmation, they'll be redirected to onboarding
             router.replace({ pathname: '/auth/confirm', params: { email } });
           } else {
             // Already confirmed (shouldn't happen often, but handle it)
-            router.replace('/onboarding/role-selection');
+            // Redirect to push notifications screen first (new users go through onboarding)
+            router.replace('/onboarding/push-notifications');
           }
         } else {
           // No user returned - should not happen, but handle gracefully
@@ -337,46 +454,16 @@ export default function AuthScreen() {
       }
       Alert.alert('Auth error', msg || 'Something went wrong');
       // Don't redirect on error - stay on the same screen
+    } finally {
+      setLoading(false);
     }
   };
 
   const checkEmailExists = async (emailToCheck: string): Promise<boolean> => {
-    try {
-      // Attempt to reset password for the email
-      // Note: Supabase returns success even if email doesn't exist (to prevent enumeration)
-      // So we'll try sign in with a dummy password as a heuristic check
-      // This is not perfect but provides a good UX hint
-      const { error } = await supabase.auth.signInWithPassword({
-        email: emailToCheck,
-        password: 'dummy-password-check-12345!@#$%^&*()',
-      });
-      
-      if (error) {
-        const msg = String(error.message || '').toLowerCase();
-        // These specific errors suggest the email exists (credentials are wrong, or email not confirmed)
-        if (msg.includes('invalid login') || 
-            msg.includes('invalid credentials') || 
-            msg.includes('email not confirmed') ||
-            msg.includes('invalid password')) {
-          return true;
-        }
-        // "User not found" type errors suggest email doesn't exist
-        if (msg.includes('user not found') || 
-            msg.includes('no user found') || 
-            msg.includes('invalid email')) {
-          return false;
-        }
-      } else {
-        // No error means login succeeded (very unlikely with dummy password, but if it did, email exists)
-        return true;
-      }
-      // If we can't determine, assume it doesn't exist to allow signup attempt
-      return false;
-    } catch {
-      // On any error, assume email doesn't exist to allow signup attempt
-      // The actual signup will catch duplicate emails properly
-      return false;
-    }
+    // Disabled: Email existence checking is unreliable and causes false positives
+    // Supabase's signup endpoint will properly handle duplicate emails
+    // This pre-check was causing issues where valid new emails were incorrectly flagged
+    return false;
   };
 
   const handleNextSignupStep = async () => {
@@ -517,12 +604,18 @@ export default function AuthScreen() {
         contentInsetAdjustmentBehavior="never"
       >
 
-      <View style={[
-        styles.form,
-        isCompact && styles.formCompact,
-        Platform.OS === 'web' && styles.formWeb,
-        { marginBottom: isCompact ? 8 : (16 + insets.bottom) },
-      ] }>
+      <Animated.View 
+        style={[
+          styles.form,
+          isCompact && styles.formCompact,
+          Platform.OS === 'web' && styles.formWeb,
+          { marginBottom: isCompact ? 8 : (16 + insets.bottom) },
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}
+      >
         {/* Logo and Brand Name */}
         <View style={[styles.logoContainer, isCompact && styles.logoContainerCompact]}>
           <Image 
@@ -533,37 +626,106 @@ export default function AuthScreen() {
           <Text style={[styles.brandText, isCompact && styles.brandTextCompact]}>Auro</Text>
         </View>
 
-        <View style={[styles.toggleContainer, isCompact && styles.toggleContainerCompact]}>
-          <TouchableOpacity
-            style={[styles.toggleButton, isLogin && styles.activeToggle]}
-            onPress={() => { 
-              setIsLogin(true); 
-              setSignupStep(0);
-              // Reset signup fields when switching to login
-              setFirstName('');
-              setLastName('');
-              setDateOfBirth(null);
-              setPhone('');
-            }}
-          >
-            <Text style={[styles.toggleText, isLogin && styles.activeToggleText]}>
-              Login
+        {!forgotPasswordMode ? (
+          <>
+            <View style={[styles.toggleContainer, isCompact && styles.toggleContainerCompact]}>
+              <TouchableOpacity
+                style={[styles.toggleButton, isLogin && styles.activeToggle]}
+                onPress={() => { 
+                  setIsLogin(true); 
+                  setSignupStep(0);
+                  setForgotPasswordMode(false);
+                  // Reset signup fields when switching to login
+                  setFirstName('');
+                  setLastName('');
+                  setDateOfBirth(null);
+                  setPhone('');
+                }}
+              >
+                <Text style={[styles.toggleText, isLogin && styles.activeToggleText]}>
+                  Login
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.toggleButton, !isLogin && styles.activeToggle]}
+                onPress={() => { 
+                  setIsLogin(false); 
+                  setSignupStep(0);
+                  setForgotPasswordMode(false);
+                  // Reset login-specific fields when switching to signup
+                  setConfirmPassword('');
+                }}
+              >
+                <Text style={[styles.toggleText, !isLogin && styles.activeToggleText]}>
+                  Sign Up
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <View style={styles.forgotPasswordHeader}>
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={() => {
+                setForgotPasswordMode(false);
+                setForgotPasswordEmail('');
+                setForgotPasswordSent(false);
+              }}
+            >
+              <Ionicons name="arrow-back" size={20} color={Colors.brand.accentMagenta} />
+              <Text style={styles.backButtonText}> Back to {isLogin ? 'Login' : 'Sign Up'}</Text>
+            </TouchableOpacity>
+            <Text style={styles.forgotPasswordTitle}>Reset Password</Text>
+            <Text style={styles.forgotPasswordSubtitle}>
+              Enter your email address and we'll send you instructions to reset your password.
             </Text>
-          </TouchableOpacity>
+          </View>
+        )}
+
+        {forgotPasswordMode && (
+          <View style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
+            <Text style={[styles.label, isCompact && styles.labelCompact]}>Email</Text>
+            <TextInput
+              style={[styles.input, isCompact && styles.inputCompact]}
+              value={forgotPasswordEmail}
+              onChangeText={setForgotPasswordEmail}
+              placeholder="Enter your email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              editable={!loading && !forgotPasswordSent}
+            />
+            {forgotPasswordSent && (
+              <View style={styles.successMessage}>
+                <Ionicons name="checkmark-circle" size={20} color={Colors.brand.success} />
+                <Text style={styles.successText}>
+                  Password reset email sent! Check your inbox.
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {forgotPasswordMode && (
           <TouchableOpacity
-            style={[styles.toggleButton, !isLogin && styles.activeToggle]}
-            onPress={() => { 
-              setIsLogin(false); 
-              setSignupStep(0);
-              // Reset login-specific fields when switching to signup
-              setConfirmPassword('');
-            }}
+            style={[styles.submitButton, isCompact && styles.submitButtonCompact, loading && styles.submitButtonDisabled]}
+            disabled={loading || forgotPasswordSent}
+            onPress={handleForgotPassword}
           >
-            <Text style={[styles.toggleText, !isLogin && styles.activeToggleText]}>
-              Sign Up
-            </Text>
+            <ExpoLinearGradient
+              colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 28 }}
+            />
+            {loading ? (
+              <Text style={styles.submitButtonText}>Sending...</Text>
+            ) : forgotPasswordSent ? (
+              <Text style={styles.submitButtonText}>Email Sent ✓</Text>
+            ) : (
+              <Text style={styles.submitButtonText}>Send Reset Link</Text>
+            )}
           </TouchableOpacity>
-        </View>
+        )}
 
         {shouldShowName && (
           <>
@@ -766,17 +928,29 @@ export default function AuthScreen() {
               {!isUltraCompact && (
                 <Text style={[styles.label, isCompact && styles.labelCompact]}>Password</Text>
               )}
-              <TextInput
-                style={[styles.input, isCompact && styles.inputCompact]}
-                value={password}
-                onChangeText={setPassword}
-                placeholder={isUltraCompact ? 'Password' : 'Enter your password'}
-                secureTextEntry
-                ref={passwordRef}
-                returnKeyType={isLogin ? 'go' : 'next'}
-                blurOnSubmit={isLogin}
-                onSubmitEditing={isLogin ? handleSubmit : () => confirmPasswordRef.current?.focus()}
-              />
+              <View style={styles.passwordInputContainer}>
+                <TextInput
+                  style={[styles.input, styles.passwordInput, isCompact && styles.inputCompact]}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder={isUltraCompact ? 'Password' : 'Enter your password'}
+                  secureTextEntry={!showPassword}
+                  ref={passwordRef}
+                  returnKeyType={isLogin ? 'go' : 'next'}
+                  blurOnSubmit={isLogin}
+                  onSubmitEditing={isLogin ? handleSubmit : () => confirmPasswordRef.current?.focus()}
+                />
+                <TouchableOpacity
+                  style={styles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color={Colors.brand.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
               {!isLogin && password.length > 0 && (
                 <View style={styles.passwordRequirements}>
                   <PasswordRequirement met={validatePassword(password).length} text="8+ characters" />
@@ -793,17 +967,29 @@ export default function AuthScreen() {
                 {!isUltraCompact && (
                   <Text style={[styles.label, isCompact && styles.labelCompact]}>Confirm Password</Text>
                 )}
-                <TextInput
-                  style={[styles.input, isCompact && styles.inputCompact]}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  placeholder={isUltraCompact ? 'Confirm Password' : 'Confirm your password'}
-                  secureTextEntry
-                  ref={confirmPasswordRef}
-                  returnKeyType="next"
-                  blurOnSubmit={false}
-                  onSubmitEditing={handleNextSignupStep}
-                />
+                <View style={styles.passwordInputContainer}>
+                  <TextInput
+                    style={[styles.input, styles.passwordInput, isCompact && styles.inputCompact]}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    placeholder={isUltraCompact ? 'Confirm Password' : 'Confirm your password'}
+                    secureTextEntry={!showConfirmPassword}
+                    ref={confirmPasswordRef}
+                    returnKeyType="next"
+                    blurOnSubmit={false}
+                    onSubmitEditing={handleNextSignupStep}
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    <Ionicons
+                      name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={20}
+                      color={Colors.brand.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
                 {confirmPassword.length > 0 && (
                   <View style={styles.passwordMatch}>
                     <Text style={[styles.passwordMatchText, password === confirmPassword && styles.passwordMatchSuccess]}>
@@ -816,24 +1002,32 @@ export default function AuthScreen() {
           </>
         )}
 
-        <TouchableOpacity
-          style={[styles.submitButton, isCompact && styles.submitButtonCompact]}
-          disabled={(!isLogin && cooldownSec > 0) || checkingEmail}
-          onPress={isLogin ? handleSubmit : (signupStep < 3 ? handleNextSignupStep : handleSubmit)}
-        >
-          <ExpoLinearGradient
-            colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 28 }}
-          />
-          <Text style={styles.submitButtonText}>
-            {isLogin ? 'Login' : (signupStep === 0 || signupStep === 1 || signupStep === 2) ? (checkingEmail ? 'Checking...' : 'Next') : (cooldownSec > 0 ? `Create Account (${cooldownSec}s)` : 'Create Account')}
-          </Text>
-        </TouchableOpacity>
+        {!forgotPasswordMode && (
+          <TouchableOpacity
+            style={[styles.submitButton, isCompact && styles.submitButtonCompact, (loading || (!isLogin && cooldownSec > 0) || checkingEmail) && styles.submitButtonDisabled]}
+            disabled={loading || (!isLogin && cooldownSec > 0) || checkingEmail}
+            onPress={isLogin ? handleSubmit : (signupStep < 3 ? handleNextSignupStep : handleSubmit)}
+          >
+            <ExpoLinearGradient
+              colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 28 }}
+            />
+            {loading ? (
+              <Text style={styles.submitButtonText}>
+                {isLogin ? 'Signing in...' : 'Creating account...'}
+              </Text>
+            ) : (
+              <Text style={styles.submitButtonText}>
+                {isLogin ? 'Login' : (signupStep === 0 || signupStep === 1 || signupStep === 2) ? (checkingEmail ? 'Checking...' : 'Next') : (cooldownSec > 0 ? `Create Account (${cooldownSec}s)` : 'Create Account')}
+              </Text>
+            )}
+          </TouchableOpacity>
+        )}
 
         {/* Only show Google sign-in on login or first signup step */}
-        {isLogin || signupStep === 0 ? (
+        {!forgotPasswordMode && (isLogin || signupStep === 0) && (
           <>
             {/* Divider */}
             <View style={[styles.divider, isCompact && styles.dividerCompact]}>
@@ -861,14 +1055,20 @@ export default function AuthScreen() {
               <Text style={styles.googleButtonText}>Continue with Google</Text>
             </TouchableOpacity>
           </>
-        ) : null}
+        )}
 
-        {isLogin && !isCompact && (
-          <TouchableOpacity style={styles.forgotPassword}>
+        {isLogin && !isCompact && !forgotPasswordMode && (
+          <TouchableOpacity 
+            style={styles.forgotPassword}
+            onPress={() => {
+              setForgotPasswordEmail(email);
+              setForgotPasswordMode(true);
+            }}
+          >
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
         )}
-      </View>
+        </Animated.View>
 
       {!isCompact && (
         <View style={[styles.footer, Platform.OS === 'web' && styles.footerWeb, { marginBottom: insets.bottom + 6 }]}>
@@ -1092,26 +1292,82 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
+    overflow: 'hidden',
   },
   submitButtonCompact: {
     paddingVertical: 14,
     borderRadius: 22,
+  },
+  submitButtonDisabled: {
+    opacity: 0.6,
   },
   submitButtonText: {
     color: Colors.brand.textOnGradient,
     fontSize: 17,
     fontWeight: 'bold',
     fontFamily: 'Inter_600SemiBold',
+    zIndex: 1,
   },
   forgotPassword: {
     alignItems: 'center',
     marginTop: 20,
     backgroundColor: 'transparent',
+    paddingVertical: 8,
   },
   forgotPasswordText: {
     color: Colors.brand.accentMagenta,
     fontSize: 14,
     fontWeight: '600',
+  },
+  forgotPasswordHeader: {
+    marginBottom: 24,
+    backgroundColor: 'transparent',
+  },
+  forgotPasswordTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+    marginBottom: 8,
+    textAlign: 'center',
+    fontFamily: 'Poppins_700Bold',
+  },
+  forgotPasswordSubtitle: {
+    fontSize: 14,
+    color: Colors.brand.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginTop: 8,
+  },
+  passwordInputContainer: {
+    position: 'relative',
+    backgroundColor: 'transparent',
+  },
+  passwordInput: {
+    paddingRight: 50,
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 16,
+    top: '50%',
+    transform: [{ translateY: -10 }],
+    padding: 4,
+    backgroundColor: 'transparent',
+  },
+  successMessage: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: 'rgba(61, 220, 132, 0.1)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(61, 220, 132, 0.3)',
+  },
+  successText: {
+    color: Colors.brand.success,
+    fontSize: 13,
+    marginLeft: 8,
+    flex: 1,
   },
   footer: {
     margin: 20,
@@ -1143,6 +1399,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     paddingVertical: 4,
     paddingHorizontal: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   backButtonText: {
     color: Colors.brand.accentMagenta,

@@ -157,19 +157,22 @@ export async function POST(req: Request) {
     }
 
     // Calculate the amount to transfer to reviewer
+    // SIMPLE MODEL: Customer pays X, Reviewer gets 80%, Auro absorbs Stripe fee
+    // Standard fee: 20% for all reviewers
     const totalAmount = request.amount_cents || 0;
     const auroFee = request.application_fee_cents || 0;
-    // Calculate Stripe fee (2.9% + $0.30) that was already deducted from our account
-    const stripeFee = Math.round(totalAmount * 0.029 + 30);
-    const reviewerAmount = totalAmount - auroFee - stripeFee;
+    
+    // Reviewer receives: total amount minus Auro's platform fee (80% of total)
+    // Auro absorbs Stripe fee from their platform fee
+    const reviewerAmount = totalAmount - auroFee;
 
     if (reviewerAmount <= 0) {
       return new Response(JSON.stringify({ 
         error: 'Invalid payment amount. Reviewer amount would be zero or negative.',
         totalAmount,
         auroFee,
-        stripeFee,
-        reviewerAmount
+        reviewerAmount,
+        calculation: 'reviewerAmount = totalAmount - auroFee (Auro absorbs Stripe fee)'
       }), { status: 400 });
     }
 
@@ -191,8 +194,13 @@ export async function POST(req: Request) {
         availableBalanceUSD: (availableBalance / 100).toFixed(2),
         pendingBalance: pendingBalance,
         pendingBalanceUSD: (pendingBalance / 100).toFixed(2),
+        totalAmount: totalAmount,
+        totalAmountUSD: (totalAmount / 100).toFixed(2),
+        auroFee: auroFee,
+        auroFeeUSD: (auroFee / 100).toFixed(2),
         reviewerAmount: reviewerAmount,
         reviewerAmountUSD: (reviewerAmount / 100).toFixed(2),
+        calculation: `reviewerAmount = ${totalAmount} - ${auroFee} = ${reviewerAmount} (Auro absorbs Stripe fee)`,
         note: 'Only using AVAILABLE balance for transfers'
       });
       
@@ -227,7 +235,8 @@ export async function POST(req: Request) {
         amount: reviewerAmount,
         destination: connectAccountId,
         sourceAccount: auroAccountId,
-        reviewerAmountUSD: (reviewerAmount / 100).toFixed(2)
+        reviewerAmountUSD: (reviewerAmount / 100).toFixed(2),
+        calculation: `totalAmount (${totalAmount}) - auroFee (${auroFee}) = reviewerAmount (${reviewerAmount})`
       });
       
       let transfer;
@@ -241,9 +250,10 @@ export async function POST(req: Request) {
             request_id: requestId,
             reviewer_id: request.influencer_id,
             auro_fee_cents: auroFee.toString(),
-            stripe_fee_cents: stripeFee.toString(),
             total_amount_cents: totalAmount.toString(),
+            reviewer_amount_cents: reviewerAmount.toString(),
             source_account: auroAccountId,
+            note: 'Auro absorbs Stripe processing fee',
           },
         });
         
@@ -302,14 +312,53 @@ export async function POST(req: Request) {
         // Don't fail the request since the transfer was successful
       }
 
+      // Send notification to reviewer about payment
+      try {
+        if (request.influencer_id) {
+          // Get reviewer's push token
+          const { data: reviewerProfile } = await admin
+            .from('profiles')
+            .select('push_token')
+            .eq('id', request.influencer_id)
+            .maybeSingle();
+          
+          if (reviewerProfile?.push_token) {
+            // Send push notification via Expo API
+            await fetch('https://exp.host/--/api/v2/push/send', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Accept-Encoding': 'gzip, deflate',
+              },
+              body: JSON.stringify({
+                to: reviewerProfile.push_token,
+                sound: 'default',
+                title: 'You Just Got Paid! 💰',
+                body: `You received $${(reviewerAmount / 100).toFixed(2)} for your review!`,
+                data: {
+                  type: 'payment_received',
+                  requestId: requestId,
+                  amount: reviewerAmount,
+                },
+                priority: 'high',
+              }),
+            }).catch(err => console.error('Failed to send payment notification:', err));
+          }
+        }
+      } catch (notifError) {
+        // Don't fail the payment if notification fails
+        console.error('Error sending payment notification:', notifError);
+      }
+
       return new Response(JSON.stringify({ 
         success: true,
         transferId: transfer.id,
         reviewerAmount: reviewerAmount,
         auroFee: auroFee,
-        stripeFee: stripeFee,
         totalAmount: totalAmount,
         reviewerName: reviewer.full_name || reviewer.username,
+        calculation: `reviewerAmount = totalAmount (${totalAmount}) - auroFee (${auroFee}) = ${reviewerAmount} (Auro absorbs Stripe fee)`,
         message: 'Payment successfully distributed to reviewer'
       }), { status: 200 });
 

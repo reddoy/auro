@@ -32,9 +32,9 @@ export default function RateScreen() {
   };
 
   const rateNumber = rate.trim() ? Number(rate.trim()) : null;
-  const auroFee = rateNumber && rateNumber > 0 ? rateNumber * 0.2 : 0;
-  const stripeFee = rateNumber && rateNumber > 0 ? rateNumber * 0.029 + 0.30 : 0;
-  const takeHome = rateNumber && rateNumber > 0 ? rateNumber - auroFee - stripeFee : 0;
+  // SIMPLE MODEL: Customer pays X, Reviewer gets 80%, Auro absorbs Stripe fee
+  const auroFee = rateNumber && rateNumber > 0 ? rateNumber * 0.2 : 0; // 20% platform fee
+  const takeHome = rateNumber && rateNumber > 0 ? rateNumber - auroFee : 0; // Reviewer gets 80%
 
   return (
     <KeyboardAvoidingView 
@@ -55,7 +55,7 @@ export default function RateScreen() {
         <View style={styles.content}>
           <Text style={styles.title}>Set Your Rate</Text>
           <Text style={styles.description}>
-            Set your price per review (what customers pay). You can change this at any time.
+            Set your price per review (what customers pay). You'll receive 80% of this amount - Auro covers all processing fees.
           </Text>
 
           <View style={styles.inputContainer}>
@@ -86,14 +86,15 @@ export default function RateScreen() {
                   <Text style={styles.breakdownLabel}>Auro fee (20%)</Text>
                   <Text style={[styles.breakdownValue, styles.breakdownFee]}>-${auroFee.toFixed(2)}</Text>
                 </View>
-                <View style={styles.breakdownRow}>
-                  <Text style={styles.breakdownLabel}>Stripe fee (2.9% + $0.30)</Text>
-                  <Text style={[styles.breakdownValue, styles.breakdownFee]}>-${stripeFee.toFixed(2)}</Text>
-                </View>
                 <View style={[styles.breakdownDivider, { marginTop: 8 }]} />
                 <View style={styles.breakdownRow}>
                   <Text style={styles.breakdownTotalLabel}>Your take-home</Text>
-                  <Text style={styles.breakdownTotalValue}>${takeHome.toFixed(2)}</Text>
+                  <Text style={styles.breakdownTotalValue}>${takeHome.toFixed(2)} (80%)</Text>
+                </View>
+                <View style={styles.breakdownRow}>
+                  <Text style={[styles.breakdownLabel, { fontSize: 12, fontStyle: 'italic', color: Colors.brand.textSecondary }]}>
+                    * Processing fees are covered by Auro
+                  </Text>
                 </View>
               </View>
             </View>

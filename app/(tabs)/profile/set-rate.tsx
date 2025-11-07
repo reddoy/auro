@@ -41,16 +41,15 @@ export default function SetRateScreen() {
       const updated = await updateProfile({ hourly_rate: rateNumber });
       setProfile(updated);
       
-              // Show confirmation with detailed calculation
+              // Show confirmation with simple calculation
       if (rateNumber !== null && rateNumber > 0) {
-        // rateNumber is what the customer pays, calculate reviewer's take-home
-        const auroFee = rateNumber * 0.2;
-        const stripeFee = rateNumber * 0.029 + 0.30;
-        const reviewerTakeHome = rateNumber - auroFee - stripeFee;
+        // SIMPLE MODEL: Customer pays X, Reviewer gets 80%, Auro absorbs Stripe fee
+        const auroFee = rateNumber * 0.2; // 20% platform fee
+        const reviewerTakeHome = rateNumber - auroFee; // Reviewer gets 80%
         
         Alert.alert(
           'Rate Updated!', 
-          `Your price per review: $${rateNumber.toFixed(2)}\n\nAuro fee (20%): -$${auroFee.toFixed(2)}\nStripe fee (2.9% + $0.30): -$${stripeFee.toFixed(2)}\n\nYour take-home: $${reviewerTakeHome.toFixed(2)}`,
+          `Your price per review: $${rateNumber.toFixed(2)}\n\nAuro fee (20%): -$${auroFee.toFixed(2)}\n\nYour take-home: $${reviewerTakeHome.toFixed(2)} (80%)\n\n* Processing fees are covered by Auro`,
           [{ text: 'OK', onPress: () => router.back() }]
         );
       } else {
@@ -84,7 +83,7 @@ export default function SetRateScreen() {
       >
         <View style={styles.content}>
           <Text style={styles.description}>
-            Set your price per review (what customers pay). Fees and processing costs will be deducted to calculate your take-home.
+            Set your price per review (what customers pay). You'll receive 80% of this amount - Auro covers all processing fees.
           </Text>
 
           <View style={styles.inputContainer}>
@@ -103,9 +102,8 @@ export default function SetRateScreen() {
             <View style={styles.breakdownContainer}>
               {(() => {
                 const customerPrice = Number(editingRate);
-                const auroFee = customerPrice * 0.2;
-                const stripeFee = customerPrice * 0.029 + 0.30;
-                const reviewerTakeHome = customerPrice - auroFee - stripeFee;
+                const auroFee = customerPrice * 0.2; // 20% platform fee
+                const reviewerTakeHome = customerPrice - auroFee; // Reviewer gets 80%
                 return (
                   <>
                     <Text style={styles.breakdownTitle}>Rate Breakdown</Text>
@@ -119,14 +117,15 @@ export default function SetRateScreen() {
                         <Text style={styles.breakdownLabel}>Auro fee (20%)</Text>
                         <Text style={[styles.breakdownValue, styles.breakdownFee]}>-${auroFee.toFixed(2)}</Text>
                       </View>
-                      <View style={styles.breakdownRow}>
-                        <Text style={styles.breakdownLabel}>Stripe fee (2.9% + $0.30)</Text>
-                        <Text style={[styles.breakdownValue, styles.breakdownFee]}>-${stripeFee.toFixed(2)}</Text>
-                      </View>
                       <View style={[styles.breakdownDivider, { marginTop: 8 }]} />
                       <View style={styles.breakdownRow}>
                         <Text style={styles.breakdownTotalLabel}>Your take-home</Text>
-                        <Text style={styles.breakdownTotalValue}>${reviewerTakeHome.toFixed(2)}</Text>
+                        <Text style={styles.breakdownTotalValue}>${reviewerTakeHome.toFixed(2)} (80%)</Text>
+                      </View>
+                      <View style={styles.breakdownRow}>
+                        <Text style={[styles.breakdownLabel, { fontSize: 12, fontStyle: 'italic', color: Colors.brand.textSecondary }]}>
+                          * Processing fees are covered by Auro
+                        </Text>
                       </View>
                     </View>
                   </>

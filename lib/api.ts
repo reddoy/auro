@@ -126,17 +126,18 @@ export async function getUserProfile(): Promise<DbUserProfile | null> {
 }
 
 // Ensure a profile row exists for the current user. Safe to call after login.
-export async function ensureProfileForCurrentUser(): Promise<void> {
+// Returns true if a new profile was created, false if it already existed.
+export async function ensureProfileForCurrentUser(): Promise<boolean> {
   const { data: sessionData } = await supabase.auth.getUser();
   const user = sessionData.user;
-  if (!user) return;
+  if (!user) return false;
   try {
     const { data: existing } = await supabase
       .from('profiles')
       .select('id')
       .eq('id', user.id)
       .maybeSingle();
-    if (existing) return;
+    if (existing) return false; // Profile already existed
   } catch {}
   const payload: any = {
     id: user.id,
@@ -146,8 +147,10 @@ export async function ensureProfileForCurrentUser(): Promise<void> {
   };
   try {
     await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
+    return true; // New profile was created
   } catch (e) {
     // Swallow errors here to avoid blocking login; RLS or schema issues can be handled server-side
+    return false;
   }
 }
 
@@ -246,6 +249,32 @@ export async function submitRequestReview(params: {
   if (error) throw error;
   if (data) {
     const result = mapRequestRow(data);
+    
+    // Send notification to reviewer about review submission
+    if (data.influencer_id) {
+      try {
+        // Call Next.js API route to send notification
+        const baseUrl = 'https://www.appauro.com'; // Use production URL
+        fetch(`${baseUrl}/api/notifications/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: data.influencer_id,
+            title: 'Review Submitted! ✅',
+            body: 'Your review has been submitted! The reviewee can now see your feedback.',
+            data: {
+              type: 'review_submitted',
+              requestId: requestId,
+            },
+          }),
+        }).catch(err => console.error('Failed to send review submission notification:', err));
+      } catch (notifError) {
+        // Don't fail the review submission if notification fails
+        console.error('Error sending review submission notification:', notifError);
+      }
+    }
     
     // Trigger payment distribution to reviewer
     try {
@@ -409,6 +438,149 @@ export async function getProfileById(id: string): Promise<{ id: string; displayN
     username: data.username || null,
     avatarUrl: data.avatar_url || null,
   };
+}
+
+// Reviewer review functions
+export interface ReviewerReview {
+  id: string;
+  requestId: string;
+  reviewerId: string;
+  revieweeId: string;
+  rating: number;
+  comment?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Check if a reviewer review exists for a request
+export async function getReviewerReviewByRequestId(requestId: string): Promise<ReviewerReview | null> {
+  const { data, error } = await supabase
+    .from('reviewer_reviews')
+    .select('id, request_id, reviewer_id, reviewee_id, rating, comment, created_at, updated_at')
+    .eq('request_id', requestId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return {
+    id: data.id,
+    requestId: data.request_id,
+    reviewerId: data.reviewer_id,
+    revieweeId: data.reviewee_id,
+    rating: data.rating,
+    comment: data.comment ?? null,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
+}
+
+// Submit a reviewer review (reviewee reviews the reviewer)
+export async function submitReviewerReview(params: {
+  requestId: string;
+  rating: number;
+  comment?: string;
+}): Promise<ReviewerReview> {
+  const { requestId, rating, comment } = params;
+  
+  // Get the current user
+  const { data: sessionData } = await supabase.auth.getUser();
+  const user = sessionData.user;
+  if (!user) throw new Error('Not signed in');
+  
+  // Get the request to verify it's completed and get reviewer ID
+  const request = await getRequestById(requestId);
+  if (!request) throw new Error('Request not found');
+  if (request.status !== 'completed') throw new Error('Request must be completed before reviewing the reviewer');
+  if (!request.review) throw new Error('Review must exist before reviewing the reviewer');
+  if (request.userId !== user.id) throw new Error('Only the reviewee can review the reviewer');
+  if (!request.influencerId) throw new Error('Reviewer ID not found');
+  
+  // Validate rating
+  if (rating < 1 || rating > 5) throw new Error('Rating must be between 1 and 5');
+  
+  // Check if review already exists
+  const existing = await getReviewerReviewByRequestId(requestId);
+  
+  let result;
+  if (existing) {
+    // Update existing review
+    const { data, error } = await supabase
+      .from('reviewer_reviews')
+      .update({
+        rating,
+        comment: comment ?? null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existing.id)
+      .select('id, request_id, reviewer_id, reviewee_id, rating, comment, created_at, updated_at')
+      .single();
+    if (error) throw error;
+    result = data;
+  } else {
+    // Create new review
+    const { data, error } = await supabase
+      .from('reviewer_reviews')
+      .insert({
+        request_id: requestId,
+        reviewer_id: request.influencerId,
+        reviewee_id: user.id,
+        rating,
+        comment: comment ?? null,
+      })
+      .select('id, request_id, reviewer_id, reviewee_id, rating, comment, created_at, updated_at')
+      .single();
+    if (error) throw error;
+    result = data;
+  }
+  
+  // Update reviewer's average rating
+  try {
+    const { data: reviews } = await supabase
+      .from('reviewer_reviews')
+      .select('rating')
+      .eq('reviewer_id', request.influencerId);
+    
+    if (reviews && reviews.length > 0) {
+      const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+      await supabase
+        .from('profiles')
+        .update({ rating_average: Math.round(avgRating * 10) / 10 })
+        .eq('id', request.influencerId);
+    }
+  } catch (updateError) {
+    // Don't fail the review submission if rating update fails
+    console.error('Failed to update reviewer rating:', updateError);
+  }
+  
+  return {
+    id: result.id,
+    requestId: result.request_id,
+    reviewerId: result.reviewer_id,
+    revieweeId: result.reviewee_id,
+    rating: result.rating,
+    comment: result.comment ?? null,
+    createdAt: result.created_at,
+    updatedAt: result.updated_at,
+  };
+}
+
+// Get all reviewer reviews for a specific reviewer
+export async function getReviewerReviewsByReviewerId(reviewerId: string): Promise<ReviewerReview[]> {
+  const { data, error } = await supabase
+    .from('reviewer_reviews')
+    .select('id, request_id, reviewer_id, reviewee_id, rating, comment, created_at, updated_at')
+    .eq('reviewer_id', reviewerId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map((row: any) => ({
+    id: row.id,
+    requestId: row.request_id,
+    reviewerId: row.reviewer_id,
+    revieweeId: row.reviewee_id,
+    rating: row.rating,
+    comment: row.comment ?? null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
 }
 
 

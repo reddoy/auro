@@ -179,12 +179,10 @@ export default function TransactionBreakdownScreen() {
     if (transaction.reviewer_amount_cents) {
       return (transaction.reviewer_amount_cents / 100).toFixed(2);
     }
-    // Otherwise calculate: amount - application_fee_cents - stripe fee (2.9% + $0.30)
-    // This matches the payment distribution calculation
+    // SIMPLE MODEL: Calculate reviewer amount as totalAmount - auroFee (Auro absorbs Stripe fee)
     const amount = transaction.amount_cents;
-    const auroFee = transaction.application_fee_cents || 0; // Use actual application fee from Stripe
-    const stripeFee = Math.round(amount * 0.029 + 30); // 2.9% + $0.30 Stripe fee
-    const reviewerAmount = amount - auroFee - stripeFee;
+    const auroFee = transaction.application_fee_cents || 0;
+    const reviewerAmount = amount - auroFee;
     return (reviewerAmount / 100).toFixed(2);
   };
 
@@ -227,20 +225,23 @@ export default function TransactionBreakdownScreen() {
 
         <View style={styles.transactionDetails}>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Total Amount:</Text>
+            <Text style={styles.detailLabel}>Customer pays:</Text>
             <Text style={styles.detailValue}>${(item.amount_cents / 100).toFixed(2)}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Auro fee (20%):</Text>
-            <Text style={styles.detailValue}>-${(Math.round(item.amount_cents * 0.2) / 100).toFixed(2)}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Stripe fee (2.9% + $0.30):</Text>
-            <Text style={styles.detailValue}>-${(Math.round(item.amount_cents * 0.029 + 30) / 100).toFixed(2)}</Text>
+            <Text style={styles.detailValue}>
+              -${((item.application_fee_cents || Math.round(item.amount_cents * 0.2)) / 100).toFixed(2)}
+            </Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Your Earnings:</Text>
             <Text style={[styles.detailValue, styles.earningsValue]}>${amount}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={[styles.detailLabel, { fontSize: 12, fontStyle: 'italic', color: Colors.brand.textSecondary }]}>
+              * Processing fees are covered by Auro
+            </Text>
           </View>
         </View>
       </View>

@@ -1,15 +1,35 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { useEffect, useState, useRef } from 'react';
+import { ActivityIndicator, StyleSheet, Image, TouchableOpacity, Animated } from 'react-native';
+import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { ensureProfileForCurrentUser } from '@/lib/api';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function AuthCallback() {
   const { code, error_description, error, linked } = useLocalSearchParams();
   const [status, setStatus] = useState<'loading'|'success'|'error'>('loading');
   const [message, setMessage] = useState('');
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [status, fadeAnim, scaleAnim]);
 
   useEffect(() => {
     const run = async () => {
@@ -30,12 +50,29 @@ export default function AuthCallback() {
           setStatus('error');
           setMessage(error.message);
         } else {
+          // Check if email is verified after OAuth login
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user && !user.email_confirmed_at) {
+            // Email not verified - redirect to confirmation screen
+            await supabase.auth.signOut(); // Sign out to prevent partial session
+            router.replace({ pathname: '/auth/confirm', params: { email: user.email || '' } });
+            return;
+          }
+          
           setStatus('success');
           // Ensure user profile exists after OAuth login
-          try { await ensureProfileForCurrentUser(); } catch {}
-          // Check if user needs onboarding (new signup) or go to app
-          // For now, redirect to app - could check profile completion status here
-          setTimeout(() => router.replace('/(tabs)/requests'), 800);
+          // Check if this is a new user (profile was just created)
+          let isNewUser = false;
+          try { 
+            isNewUser = await ensureProfileForCurrentUser();
+          } catch {}
+          
+          // If new user, redirect to onboarding; otherwise go to main app
+          if (isNewUser) {
+            setTimeout(() => router.replace('/onboarding/push-notifications'), 800);
+          } else {
+            setTimeout(() => router.replace('/(tabs)/requests'), 800);
+          }
         }
       } else {
         // Fallback for web links that deliver tokens or errors in the URL hash
@@ -71,11 +108,29 @@ export default function AuthCallback() {
                 setStatus('error');
                 setMessage(setError.message);
               } else {
+                // Check if email is verified after OAuth login
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user && !user.email_confirmed_at) {
+                  // Email not verified - redirect to confirmation screen
+                  await supabase.auth.signOut(); // Sign out to prevent partial session
+                  router.replace({ pathname: '/auth/confirm', params: { email: user.email || '' } });
+                  return;
+                }
+                
                 setStatus('success');
                 // Ensure user profile exists after OAuth login
-                try { await ensureProfileForCurrentUser(); } catch {}
-                // Redirect to app after successful OAuth login
-                setTimeout(() => router.replace('/(tabs)/requests'), 800);
+                // Check if this is a new user (profile was just created)
+                let isNewUser = false;
+                try { 
+                  isNewUser = await ensureProfileForCurrentUser();
+                } catch {}
+                
+                // If new user, redirect to onboarding; otherwise go to main app
+                if (isNewUser) {
+                  setTimeout(() => router.replace('/onboarding/push-notifications'), 800);
+                } else {
+                  setTimeout(() => router.replace('/(tabs)/requests'), 800);
+                }
               }
             } catch (e: any) {
               setStatus('error');
@@ -96,51 +151,134 @@ export default function AuthCallback() {
 
   return (
     <View style={styles.container}>
+      <ExpoLinearGradient
+        colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+        style={styles.backgroundGradient}
+      />
       {status === 'loading' && (
-        <>
-          <ActivityIndicator color={Colors.brand.accentMagenta} />
+        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+          <ActivityIndicator color={Colors.brand.accentMagenta} size="large" />
           <Text style={styles.title}>Confirming…</Text>
-        </>
+          <Text style={styles.body}>Please wait while we complete your sign-in.</Text>
+        </Animated.View>
       )}
       {status === 'success' && (
-        <>
+        <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+          <View style={styles.iconContainer}>
+            <Ionicons name="checkmark-circle" size={64} color={Colors.brand.success} />
+          </View>
           <Image
             source={require('@/Auro_side_side_no_bg.png')}
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.title}>Thanks for confirming 🎉</Text>
-          <Text style={styles.body}>Your email has been verified. You can now sign in.</Text>
-          <TouchableOpacity style={styles.button} onPress={() => router.replace('/auth')}>
-            <Text style={styles.buttonText}>Back to Sign In</Text>
-          </TouchableOpacity>
-        </>
+          <Text style={styles.title}>Welcome to Auro! 🎉</Text>
+          <Text style={styles.body}>Successfully signed in. Redirecting you now...</Text>
+        </Animated.View>
       )}
       {status === 'error' && (
-        <>
+        <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+          <View style={styles.iconContainer}>
+            <Ionicons name="close-circle" size={64} color={Colors.brand.error} />
+          </View>
           <Image
             source={require('@/Auro_side_side_no_bg.png')}
             style={styles.logo}
             resizeMode="contain"
           />
           <Text style={styles.title}>We couldn't confirm your email</Text>
-          <Text style={styles.body}>{message}</Text>
+          <Text style={styles.body}>{message || 'An error occurred during authentication.'}</Text>
           <TouchableOpacity style={styles.button} onPress={() => router.replace('/auth')}>
+            <ExpoLinearGradient
+              colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.buttonGradient}
+            />
             <Text style={styles.buttonText}>Back to Sign In</Text>
           </TouchableOpacity>
-        </>
+        </Animated.View>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.brand.background, padding: 24 },
-  title: { color: Colors.brand.textPrimary, fontSize: 20, fontWeight: '600' },
-  body: { color: Colors.brand.textSecondary, marginTop: 8, textAlign: 'center' },
-  logo: { width: 200, height: 80, marginBottom: 16 },
-  button: { backgroundColor: Colors.brand.accentMagenta, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 24, marginTop: 16 },
-  buttonText: { color: Colors.brand.textOnGradient, fontSize: 16, fontWeight: '600' },
+  container: { 
+    flex: 1, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    backgroundColor: Colors.brand.background, 
+    padding: 24 
+  },
+  backgroundGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    opacity: 0.1,
+  },
+  content: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    width: '100%',
+    maxWidth: 400,
+  },
+  iconContainer: {
+    marginBottom: 20,
+    backgroundColor: 'transparent',
+  },
+  title: { 
+    color: Colors.brand.textPrimary, 
+    fontSize: 24, 
+    fontWeight: '700',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+    fontFamily: 'Poppins_700Bold',
+  },
+  body: { 
+    color: Colors.brand.textSecondary, 
+    marginTop: 8, 
+    textAlign: 'center',
+    fontSize: 15,
+    lineHeight: 22,
+    paddingHorizontal: 20,
+  },
+  logo: { 
+    width: 180, 
+    height: 72, 
+    marginBottom: 24,
+  },
+  button: { 
+    backgroundColor: Colors.brand.accentMagenta, 
+    paddingVertical: 14, 
+    paddingHorizontal: 32, 
+    borderRadius: 24, 
+    marginTop: 24,
+    overflow: 'hidden',
+    shadowColor: Colors.brand.accentMagenta,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  buttonGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 24,
+  },
+  buttonText: { 
+    color: Colors.brand.textOnGradient, 
+    fontSize: 16, 
+    fontWeight: '600',
+    zIndex: 1,
+  },
 });
 
 

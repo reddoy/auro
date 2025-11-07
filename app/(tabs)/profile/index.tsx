@@ -50,16 +50,15 @@ export default function ProfileScreen() {
           try {
             const requests = await getRequestsByReviewer(p.id);
             
-            // Helper function to calculate reviewer amount for a request
-            const calculateReviewerAmount = (r: any) => {
-              if (r.reviewer_amount_cents) return r.reviewer_amount_cents;
-              // Fallback: amount - application_fee_cents (actual fee) - stripe fee (2.9% + $0.30)
-              // This matches the payment distribution calculation
-              const amount = r.amount_cents || 0;
-              const auroFee = r.application_fee_cents || 0; // Use actual application fee from Stripe
-              const stripeFee = Math.round(amount * 0.029 + 30);
-              return amount - auroFee - stripeFee;
-            };
+          // Helper function to calculate reviewer amount for a request
+          // SIMPLE MODEL: Reviewer gets totalAmount - auroFee (Auro absorbs Stripe fee)
+          const calculateReviewerAmount = (r: any) => {
+            if (r.reviewer_amount_cents) return r.reviewer_amount_cents;
+            // Fallback: amount - application_fee_cents
+            const amount = r.amount_cents || 0;
+            const auroFee = r.application_fee_cents || 0;
+            return amount - auroFee;
+          };
             
             // Awaiting completion: paid reviews not yet completed (status = 'paid' or 'in_progress')
             const awaitingCompletionRequests = requests.filter(r => (r.status === 'paid' || r.status === 'in_progress') && r.amount_cents);
@@ -228,14 +227,13 @@ export default function ProfileScreen() {
           const requests = await getRequestsByReviewer(p.id);
           
           // Helper function to calculate reviewer amount for a request
+          // SIMPLE MODEL: Reviewer gets totalAmount - auroFee (Auro absorbs Stripe fee)
           const calculateReviewerAmount = (r: any) => {
             if (r.reviewer_amount_cents) return r.reviewer_amount_cents;
-            // Fallback: amount - application_fee_cents (actual fee) - stripe fee (2.9% + $0.30)
-            // This matches the payment distribution calculation
+            // Fallback: amount - application_fee_cents
             const amount = r.amount_cents || 0;
-            const auroFee = r.application_fee_cents || 0; // Use actual application fee from Stripe
-            const stripeFee = Math.round(amount * 0.029 + 30);
-            return amount - auroFee - stripeFee;
+            const auroFee = r.application_fee_cents || 0;
+            return amount - auroFee;
           };
           
           // Awaiting completion: paid reviews not yet completed (status = 'paid' or 'in_progress')

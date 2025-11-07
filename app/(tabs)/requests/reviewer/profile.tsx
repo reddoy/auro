@@ -6,7 +6,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import Avatar from '@/components/Avatar';
-import { getReviewerById, getRequestsByReviewer } from '@/lib/api';
+import { getReviewerById, getRequestsByReviewer, getReviewerReviewsByReviewerId } from '@/lib/api';
 import { getSignedAvatarUrl } from '@/lib/profile';
 import { getReviewsReceived } from '@/lib/profile';
 import type { DbReviewerSummary } from '@/types';
@@ -25,6 +25,7 @@ export default function ReviewerProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [completedCount, setCompletedCount] = useState<number>(0);
   const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewerReviews, setReviewerReviews] = useState<any[]>([]);
   const [avgRating, setAvgRating] = useState<number | null>(null);
 
   useEffect(() => {
@@ -40,14 +41,22 @@ export default function ReviewerProfileScreen() {
         setAvatarUri(uri || undefined);
         // Load stats in parallel
         try {
-          const [reqs, recvd] = await Promise.all([
+          const [reqs, recvd, reviewerRevws] = await Promise.all([
             getRequestsByReviewer(String(id)),
             getReviewsReceived(String(id)),
+            getReviewerReviewsByReviewerId(String(id)),
           ]);
           const completed = (reqs || []).filter((rq: any) => rq.status === 'completed').length;
           setCompletedCount(completed);
           setReviews(recvd.items || []);
-          if (recvd.items && recvd.items.length) {
+          setReviewerReviews(reviewerRevws || []);
+          
+          // Calculate average rating from reviewer reviews (preferred) or general reviews
+          const reviewerRatings = (reviewerRevws || []).map((r: any) => r.rating).filter((n: number) => !isNaN(n) && n > 0);
+          if (reviewerRatings.length > 0) {
+            const avg = reviewerRatings.reduce((a: number, b: number) => a + b, 0) / reviewerRatings.length;
+            setAvgRating(Number(avg.toFixed(2)));
+          } else if (recvd.items && recvd.items.length) {
             const nums = recvd.items
               .map((it: any) => Number(it.rating) || 0)
               .filter((n: number) => !isNaN(n) && n > 0);
@@ -121,10 +130,32 @@ export default function ReviewerProfileScreen() {
           )}
         </RNView>
 
-        {/* Reviews from clients */}
+        {/* Reviews from clients (reviewer reviews from completed requests) */}
         <RNView style={[styles.card, { marginTop: 16 }]}> 
           <Text style={styles.sectionTitle}>Client Reviews</Text>
-          {reviews.length ? (
+          {reviewerReviews.length > 0 ? (
+            <RNView>
+              {reviewerReviews.slice(0, 5).map((rv: any) => (
+                <RNView key={rv.id} style={styles.reviewItem}>
+                  <RNView style={styles.reviewRatingRow}>
+                    {[1, 2, 3, 4, 5].map((r) => (
+                      <Text
+                        key={r}
+                        style={[
+                          styles.reviewStar,
+                          { color: r <= rv.rating ? Colors.brand.accentMagenta : Colors.brand.border }
+                        ]}
+                      >
+                        ★
+                      </Text>
+                    ))}
+                  </RNView>
+                  {!!rv.comment && <Text style={styles.reviewComment}>{rv.comment}</Text>}
+                  <Text style={styles.reviewMeta}>{new Date(rv.createdAt || Date.now()).toLocaleDateString()}</Text>
+                </RNView>
+              ))}
+            </RNView>
+          ) : reviews.length > 0 ? (
             <RNView>
               {reviews.slice(0, 5).map((rv: any) => (
                 <RNView key={rv.id} style={styles.reviewItem}>
@@ -159,6 +190,8 @@ const styles = StyleSheet.create({
   statLabel: { color: Colors.brand.textSecondary, fontWeight: '600', fontSize: 12 },
   reviewItem: { backgroundColor: Colors.brand.cardBackgroundLight, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', marginBottom: 10 },
   reviewRating: { color: Colors.brand.accentMagenta, fontWeight: '800', marginBottom: 4 },
+  reviewRatingRow: { flexDirection: 'row', marginBottom: 4, gap: 2 },
+  reviewStar: { fontSize: 16 },
   reviewComment: { color: Colors.brand.textPrimary, marginBottom: 4 },
   reviewMeta: { color: Colors.brand.textSecondary, fontSize: 12 },
   emptyText: { color: Colors.brand.textSecondary },

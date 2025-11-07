@@ -4,7 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, router } from 'expo-router';
 
 import { Text, View } from '@/components/Themed';
-import { getRequestById } from '@/lib/api';
+import { getRequestById, getReviewerReviewByRequestId, type ReviewerReview } from '@/lib/api';
 import { getReviewerById, getProfileById } from '@/lib/api';
 import Colors from '@/constants/Colors';
 import { Image } from 'expo-image';
@@ -17,6 +17,7 @@ import Avatar from '@/components/Avatar';
 import { getSignedAvatarUrl } from '@/lib/profile';
 import * as Sharing from 'expo-sharing';
 import StarRating from '@/components/StarRating';
+import ReviewerReviewModal from '@/components/ReviewerReviewModal';
 
 export default function ReviewDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,6 +33,8 @@ export default function ReviewDetailScreen() {
   const [galleryOpen, setGalleryOpen] = React.useState(false);
   const [galleryUris, setGalleryUris] = React.useState<string[]>([]);
   const [galleryIndex, setGalleryIndex] = React.useState(0);
+  const [reviewerReviewModalOpen, setReviewerReviewModalOpen] = React.useState(false);
+  const [reviewerReview, setReviewerReview] = React.useState<ReviewerReview | null>(null);
 
   const statusBanner = React.useMemo(() => {
     const s = request?.status as string | undefined;
@@ -119,6 +122,15 @@ export default function ReviewDetailScreen() {
               } catch {}
             }
           } catch {}
+        }
+        // Load existing reviewer review if it exists
+        if (req?.status === 'completed' && req?.review) {
+          try {
+            const existingReview = await getReviewerReviewByRequestId(String(id));
+            setReviewerReview(existingReview);
+          } catch (error) {
+            console.error('Failed to load reviewer review:', error);
+          }
         }
       } finally {
         setLoading(false);
@@ -366,6 +378,43 @@ export default function ReviewDetailScreen() {
             <RNView style={{ height: 8 }} />
           </>
         ) : null}
+        
+        {/* Reviewer Review Button - only show if review is completed */}
+        {request?.status === 'completed' && review ? (
+          <>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: Colors.brand.accentMagenta }]}
+              onPress={() => setReviewerReviewModalOpen(true)}
+            >
+              <Text style={styles.actionButtonText}>
+                {reviewerReview ? 'Update Your Review of Reviewer' : 'Review Your Reviewer'}
+              </Text>
+            </TouchableOpacity>
+            {reviewerReview && (
+              <View style={styles.reviewerReviewCard}>
+                <Text style={styles.reviewerReviewTitle}>Your Review of {influencerName}</Text>
+                <RNView style={styles.reviewerReviewRating}>
+                  {[1, 2, 3, 4, 5].map((r) => (
+                    <Text
+                      key={r}
+                      style={[
+                        styles.reviewerReviewStar,
+                        { color: r <= reviewerReview.rating ? Colors.brand.accentMagenta : Colors.brand.border }
+                      ]}
+                    >
+                      ★
+                    </Text>
+                  ))}
+                </RNView>
+                {reviewerReview.comment && (
+                  <Text style={styles.reviewerReviewComment}>{reviewerReview.comment}</Text>
+                )}
+              </View>
+            )}
+            <RNView style={{ height: 8 }} />
+          </>
+        ) : null}
+        
         <TouchableOpacity 
           style={styles.actionButton}
           onPress={() => router.push('/(tabs)/requests/new')}
@@ -384,6 +433,18 @@ export default function ReviewDetailScreen() {
         </View>
       </ScrollView>
       <ImageGalleryModal visible={galleryOpen} uris={galleryUris} initialIndex={galleryIndex} onClose={() => setGalleryOpen(false)} />
+      {request?.status === 'completed' && review && (
+        <ReviewerReviewModal
+          visible={reviewerReviewModalOpen}
+          requestId={String(id)}
+          reviewerName={influencerName}
+          onClose={() => setReviewerReviewModalOpen(false)}
+          onSuccess={(review) => {
+            setReviewerReview(review);
+            setReviewerReviewModalOpen(false);
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -630,5 +691,33 @@ const styles = StyleSheet.create({
     color: Colors.brand.textSecondary,
     textAlign: 'center',
     marginTop: 50,
+  },
+  reviewerReviewCard: {
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: Colors.brand.border,
+  },
+  reviewerReviewTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.brand.textPrimary,
+    marginBottom: 8,
+  },
+  reviewerReviewRating: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  reviewerReviewStar: {
+    fontSize: 20,
+    marginRight: 2,
+  },
+  reviewerReviewComment: {
+    fontSize: 14,
+    color: Colors.brand.textSecondary,
+    lineHeight: 20,
+    marginTop: 8,
   },
 });

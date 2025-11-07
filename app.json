@@ -25,7 +25,8 @@
         "NSPhotoLibraryUsageDescription": "This app needs access to photo library to select photos for your review requests.",
         "NSMicrophoneUsageDescription": "This app may need access to microphone for video content in review requests.",
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "usesAppleSignIn": false
     },
     "android": {
       "package": "com.auro.app",
@@ -39,7 +40,8 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -57,7 +59,15 @@
           "androidPayMode": "production"
         }
       ],
-      "expo-video"
+      "expo-video",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#FF6F00",
+          "sounds": []
+        }
+      ]
     ],
     "extra": {
       "supabaseUrl": "https://zxazjbduiistnfstnwka.supabase.co",
