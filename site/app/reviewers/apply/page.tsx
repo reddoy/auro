@@ -927,8 +927,8 @@ export default function FoundingReviewerApplyPage() {
                         <Star className="w-4 h-4 md:w-6 md:h-6 text-orange-400" />
                       </div>
                       <div className="text-center">
-                        <div className="text-sm md:text-lg font-bold text-white">85%</div>
-                        <div className="text-[10px] md:text-xs text-gray-300">forever</div>
+                        <div className="text-sm md:text-lg font-bold text-white">80%</div>
+                        <div className="text-[10px] md:text-xs text-gray-300">earnings forever</div>
                       </div>
                     </div>
                   </div>
