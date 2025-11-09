@@ -7,6 +7,7 @@ function mapRequestRow(row: any): DbRequestSummary {
     influencerId: row.influencer_id ?? row.influencerId,
     userId: row.user_id ?? row.userId,
     createdAt: row.created_at ?? row.createdAt,
+    created_at: row.created_at ?? row.createdAt,
     status: row.status,
     photos: row.photos || [],
     notes: row.notes ?? null,
@@ -23,6 +24,20 @@ function mapRequestRow(row: any): DbRequestSummary {
     stripe_transfer_id: row.stripe_transfer_id ?? null,
     reviewer_amount_cents: row.reviewer_amount_cents ?? null,
     payment_distribution_error: row.payment_distribution_error ?? null,
+    completed_at: row.completed_at ?? row.completedAt ?? null,
+    payment_status: row.payment_status ?? row.paymentStatus ?? null,
+    requester_name:
+      row.requester_name ??
+      row.requester?.full_name ??
+      row.requester?.fullName ??
+      row.user?.full_name ??
+      row.user?.fullName ??
+      null,
+    requester_username:
+      row.requester_username ??
+      row.requester?.username ??
+      row.user?.username ??
+      null,
   } as DbRequestSummary;
 }
 
@@ -206,11 +221,48 @@ export async function getReviewerById(id: string): Promise<DbReviewerSummary | n
 export async function getRequestsByReviewer(reviewerId: string): Promise<DbRequestSummary[]> {
   const { data, error } = await supabase
     .from('requests')
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps,payment_distributed,payment_distributed_at,stripe_transfer_id,reviewer_amount_cents,payment_distribution_error')
+    .select('id,influencer_id,created_at,completed_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps,payment_distributed,payment_distributed_at,stripe_transfer_id,reviewer_amount_cents,payment_distribution_error,payment_status')
     .eq('influencer_id', reviewerId)
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return ((data as any[]) || []).map(mapRequestRow);
+  const requests = ((data as any[]) || []).map(mapRequestRow);
+
+  const userIds = Array.from(
+    new Set(
+      requests
+        .map((r) => r.userId)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0)
+    )
+  );
+
+  if (userIds.length === 0) {
+    return requests;
+  }
+
+  const { data: profilesData, error: profilesError } = await supabase
+    .from('profiles')
+    .select('id, full_name, username')
+    .in('id', userIds);
+
+  if (profilesError || !profilesData) {
+    return requests;
+  }
+
+  const profileMap = new Map<string, { id: string; full_name: string | null; username: string | null }>(
+    profilesData.map((profile: any) => [
+      profile.id,
+      { id: profile.id, full_name: profile.full_name ?? null, username: profile.username ?? null },
+    ])
+  );
+
+  return requests.map((request) => {
+    const profile = request.userId ? profileMap.get(request.userId) : undefined;
+    return {
+      ...request,
+      requester_name: request.requester_name ?? profile?.full_name ?? null,
+      requester_username: request.requester_username ?? profile?.username ?? null,
+    };
+  });
 }
 
 // New: update a request status

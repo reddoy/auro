@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 type Props = {
   isAuthenticated: boolean;
@@ -16,43 +16,26 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   // SMS 2FA removed
 
-  // If user is already authenticated, show a confirmation screen
-  if (isAuthenticated) {
-    return (
-      <div className="step-container">
-        <div className="step-header">
-          <h2>Account Verified</h2>
-          <p>You're already signed in! Ready to proceed to payment?</p>
-        </div>
-        
-        <div className="step-content">
-          <div className="success-message">
-            <div className="success-icon">✓</div>
-            <p>Your account is ready to go!</p>
-          </div>
-          
-          <div className="step-actions">
-            <button 
-              type="button"
-              onClick={onBack}
-              className="btn-secondary"
-            >
-              Back
-            </button>
-            <button 
-              type="button"
-              onClick={onNext}
-              className="btn-primary"
-            >
-              Continue to Payment
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!isAuthenticated || !supabase?.auth) {
+        setCurrentUserEmail(null);
+        return;
+      }
+      try {
+        const { data } = await supabase.auth.getUser();
+        setCurrentUserEmail(data.user?.email ?? null);
+      } catch (err) {
+        console.warn('[AuthStep] Failed to load current user:', err);
+        setCurrentUserEmail(null);
+      }
+    };
+
+    fetchUser();
+  }, [isAuthenticated, supabase]);
 
   const handleSignUp = async () => {
     if (!email || !password || !fullName) {
@@ -209,7 +192,14 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
       <div className="auth-step authenticated">
         <div className="step-header">
           <h2>✅ Account Ready</h2>
-          <p>You're already signed in and ready to proceed with payment.</p>
+          <p>
+            {currentUserEmail
+              ? `You're signed in as ${currentUserEmail}.`
+              : "You're already signed in and ready to proceed with payment."}
+          </p>
+          <p>
+            Want to use a different account instead? You can sign in as someone else or create a new account.
+          </p>
         </div>
 
         <div className="step-actions">
@@ -219,7 +209,39 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
           <button type="button" onClick={onNext} className="btn-primary">
             Continue to Payment
           </button>
+          <button
+            type="button"
+            className="btn-tertiary"
+            onClick={async () => {
+              if (!supabase?.auth) {
+                setError('Authentication service is not available. Please refresh the page.');
+                return;
+              }
+              setLoading(true);
+              setError('');
+              try {
+                await supabase.auth.signOut();
+                setCurrentUserEmail(null);
+                setIsSignUp(false);
+                setEmail('');
+                setPassword('');
+                setFullName('');
+              } catch (signOutError: any) {
+                setError(signOutError?.message || 'Unable to switch accounts. Please try again.');
+              } finally {
+                setLoading(false);
+              }
+            }}
+          >
+            Use a different account
+          </button>
         </div>
+
+        {error && (
+          <div className="error-message" style={{ marginTop: '16px' }}>
+            {error}
+          </div>
+        )}
       </div>
     );
   }

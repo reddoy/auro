@@ -19,13 +19,13 @@ interface TransactionItem {
   application_fee_cents: number;
   reviewer_amount_cents?: number;
   payment_distributed: boolean;
-  payment_distributed_at?: string;
-  payment_distribution_error?: string;
-  payment_status?: string;
+  payment_distributed_at?: string | null;
+  payment_distribution_error?: string | null;
+  payment_status?: string | null;
   created_at: string;
-  completed_at?: string;
-  requester_name?: string;
-  requester_username?: string;
+  completed_at?: string | null;
+  requester_name?: string | null;
+  requester_username?: string | null;
 }
 
 export default function TransactionBreakdownScreen() {
@@ -76,12 +76,16 @@ export default function TransactionBreakdownScreen() {
             payment_distributed_at: r.payment_distributed_at,
             payment_distribution_error: r.payment_distribution_error,
             payment_status: r.payment_status,
-            created_at: r.created_at,
-            completed_at: r.completed_at,
-            requester_name: r.requester_name,
-            requester_username: r.requester_username,
+            created_at: r.created_at ?? r.createdAt,
+            completed_at: r.completed_at ?? null,
+            requester_name: r.requester_name ?? null,
+            requester_username: r.requester_username ?? null,
           }))
-          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          .sort((a, b) => {
+            const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+            const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+            return bTime - aTime;
+          });
 
         setTransactions(transactionItems);
       }
@@ -189,15 +193,21 @@ export default function TransactionBreakdownScreen() {
   const renderTransaction = ({ item }: { item: TransactionItem }) => {
     const paymentStatus = getPaymentStatus(item);
     const amount = getAmountDisplay(item);
-    const createdDate = new Date(item.created_at).toLocaleDateString();
-    const completedDate = item.completed_at ? new Date(item.completed_at).toLocaleDateString() : null;
+    const createdTimestamp = item.created_at ?? null;
+    const completedTimestamp = item.completed_at ?? null;
+    const createdDate = createdTimestamp ? new Date(createdTimestamp).toLocaleDateString() : 'Unknown date';
+    const completedDate = completedTimestamp ? new Date(completedTimestamp).toLocaleDateString() : null;
+    const requesterDisplayName =
+      item.requester_name ??
+      item.requester_username ??
+      'Unknown User';
 
     return (
       <View style={styles.transactionCard}>
         <View style={styles.transactionHeader}>
           <View style={styles.transactionInfo}>
             <Text style={styles.transactionTitle}>
-              {item.requester_name || item.requester_username || 'Unknown User'}
+              {requesterDisplayName}
             </Text>
             <Text style={styles.transactionDate}>
               Created: {createdDate}

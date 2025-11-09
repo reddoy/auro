@@ -147,8 +147,12 @@ export default function RequestPage() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      // Scroll to the very top of the page when step changes
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const container = document.querySelector('.request-content');
+      if (container && 'scrollIntoView' in container) {
+        (container as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } catch (error) {
       console.warn('Scroll to top failed:', error);
     }
