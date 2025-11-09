@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { StyleSheet, TouchableOpacity, Alert, FlatList, Platform, Linking, Switch, View as RNView, Image, RefreshControl, ScrollView } from 'react-native';
+import { StyleSheet, Alert, FlatList, Platform, Linking, Switch, View as RNView, Image, RefreshControl, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { copyToClipboard } from '@/lib/clipboard';
 
 import { Text, View } from '@/components/Themed';
+import Spinner from '@/components/Spinner';
 import { supabase } from '@/lib/supabase';
 import Colors from '@/constants/Colors';
 import AvatarUploader from '@/components/AvatarUploader';
@@ -13,6 +14,7 @@ import { getCurrentProfile, updateProfile, getSignedAvatarUrl } from '@/lib/prof
 import type { Profile } from '@/types';
 import { createStripeExpressLoginLink, createStripeExpressOnboardingLink } from '@/lib/payments';
 import { getRequestsByReviewer } from '@/lib/api';
+import { MotionPressable, MotionView, cardEntrance, subtleFadeIn } from '@/components/motion';
 
 const socialIcons = {
   instagram: require('../../../Instagram_icon-removebg-preview.png'),
@@ -82,7 +84,7 @@ export default function ProfileScreen() {
             const completedPaid = completedPaidRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
             
             // Total completed count
-            const completedCount = requests.filter(r => r.status === 'completed' && r.amount_cents).length;
+            const completedCount = requests.filter(r => r.status === 'completed').length;
             
             console.log('[earnings-calc] Awaiting completion:', awaitingCompletion / 100);
             console.log('[earnings-calc] Awaiting payout:', awaitingPayout / 100);
@@ -258,7 +260,7 @@ export default function ProfileScreen() {
           const completedPaid = completedPaidRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
           
           // Total completed count
-          const completedCount = requests.filter(r => r.status === 'completed' && r.amount_cents).length;
+          const completedCount = requests.filter(r => r.status === 'completed').length;
           
           setEarnings({ 
             awaitingCompletion: awaitingCompletion / 100,
@@ -284,7 +286,17 @@ export default function ProfileScreen() {
     }, [onRefresh, initialLoad])
   );
 
-  
+  let sectionCursor = 0;
+  const nextEntrance = () => cardEntrance(sectionCursor++);
+
+  if (initialLoad) {
+    return (
+      <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
+        <Spinner size={48} />
+        <Text style={styles.loadingText}>Loading your profile…</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingTop: 0 }]}>
@@ -307,10 +319,10 @@ export default function ProfileScreen() {
         bounces={true}
         alwaysBounceVertical={true}
       >
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.profileSection}>
-              <View style={styles.avatarContainer}>
+        <MotionView entering={nextEntrance()} style={styles.header}>
+          <MotionView entering={subtleFadeIn()} style={styles.headerContent}>
+            <MotionView entering={subtleFadeIn()} style={styles.profileSection}>
+              <MotionView entering={subtleFadeIn()} style={styles.avatarContainer}>
                 <AvatarUploader
                   uri={avatarUri}
                   previousPathOrUrl={profile?.avatar_url || undefined as any}
@@ -339,24 +351,29 @@ export default function ProfileScreen() {
                   size={94}
                   accessibilityLabel="Change avatar"
                 />
-              </View>
-              <View style={styles.userInfo}>
+              </MotionView>
+              <MotionView entering={subtleFadeIn()} style={styles.userInfo}>
                 <Text style={styles.userName}>
                   {profile ? (profile.full_name || profile.username || 'User') : 'Loading...'}
                 </Text>
                 {!!profile?.created_at && (
                   <Text style={styles.userEmail}>Joined {new Date(profile.created_at).toLocaleDateString()}</Text>
                 )}
-              </View>
-            </View>
+              </MotionView>
+            </MotionView>
 
-            <TouchableOpacity style={styles.editButton} onPress={() => router.push('/(tabs)/profile/settings')} accessibilityLabel="Edit profile">
+            <MotionPressable
+              entering={subtleFadeIn()}
+              style={styles.editButton}
+              onPress={() => router.push('/(tabs)/profile/settings')}
+              accessibilityLabel="Edit profile"
+            >
               <Text style={styles.editButtonText}>Edit Profile</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+            </MotionPressable>
+          </MotionView>
+        </MotionView>
 
-        <View style={styles.bioSection}>
+        <MotionView entering={nextEntrance()} style={styles.bioSection}>
           <Text style={styles.sectionTitle}>Reviewer Settings</Text>
           <Text style={{ color: Colors.brand.textSecondary }}>Control your reviewer status and price per review.</Text>
           
@@ -406,16 +423,16 @@ export default function ProfileScreen() {
                     </Text>
                   </View>
                   
-                  <View style={[styles.paymentButtonsContainer, { marginTop: 16 }]}>
-                    <TouchableOpacity
+                  <MotionView entering={subtleFadeIn()} style={[styles.paymentButtonsContainer, { marginTop: 16 }]}>
+                    <MotionPressable
                       onPress={() => router.push('/(tabs)/profile/transaction-history')}
                       style={styles.transactionHistoryButton}
                     >
                       <Text style={styles.transactionHistoryText}>
                         📊 Transaction History
                       </Text>
-                    </TouchableOpacity>
-                  </View>
+                    </MotionPressable>
+                  </MotionView>
                 </View>
               </View>
                 </>
@@ -424,12 +441,12 @@ export default function ProfileScreen() {
               {/* Reviewer Status Toggle */}
               <View style={styles.reviewerStatusRow}>
                 <Text style={styles.reviewerStatusLabel}>Reviewer Status</Text>
-                <View style={styles.reviewerStatusControls}>
-                  <View style={[styles.statusIndicator, profile?.is_reviewer && styles.statusIndicatorActive]}>
+                <MotionView entering={subtleFadeIn()} style={styles.reviewerStatusControls}>
+                  <MotionView entering={subtleFadeIn()} style={[styles.statusIndicator, profile?.is_reviewer && styles.statusIndicatorActive]}>
                     <Text style={[styles.statusIndicatorText, profile?.is_reviewer && styles.statusIndicatorTextActive]}>
                       {profile?.is_reviewer ? '● Active' : '● Inactive'}
                     </Text>
-                  </View>
+                  </MotionView>
                   <Switch
                     value={!!profile?.is_reviewer}
                     onValueChange={async (val) => {
@@ -449,23 +466,27 @@ export default function ProfileScreen() {
                     thumbColor={profile?.is_reviewer ? '#ffffff' : '#f4f3f4'}
                     style={styles.reviewerSwitch}
                   />
-                </View>
+                </MotionView>
               </View>
               {profile?.is_reviewer ? (
                 <>
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
                     <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Share Your Reviewer Profile</Text>
-                    <TouchableOpacity onPress={handleCopyReviewerLink} accessibilityLabel="Copy reviewer link" style={styles.shareProfileButton}>
+                    <MotionPressable
+                      onPress={handleCopyReviewerLink}
+                      accessibilityLabel="Copy reviewer link"
+                      style={styles.shareProfileButton}
+                    >
                       <Text style={styles.shareProfileButtonText}>🔗 Share Profile Link</Text>
-                    </TouchableOpacity>
+                    </MotionPressable>
                   </View>
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
                     <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Price per Review</Text>
                     <View style={styles.priceCard}>
                       <Text style={styles.priceText}>{profile?.hourly_rate != null ? `$${profile.hourly_rate}/review` : 'Tap to set your rate →'}</Text>
-                      <TouchableOpacity onPress={handleEditRate} accessibilityLabel="Edit rate" style={styles.editRateButton}>
+                      <MotionPressable onPress={handleEditRate} accessibilityLabel="Edit rate" style={styles.editRateButton}>
                         <Text style={styles.editRateButtonText}>Edit</Text>
-                      </TouchableOpacity>
+                      </MotionPressable>
                     </View>
                   </View>
                 </>
@@ -473,14 +494,14 @@ export default function ProfileScreen() {
             </View>
 
             {profile?.bio && (
-              <View style={styles.bioSection}>
+              <MotionView entering={nextEntrance()} style={styles.bioSection}>
                 <Text style={styles.sectionTitle}>Bio</Text>
                 <Text style={styles.bioText}>{profile.bio}</Text>
-              </View>
+              </MotionView>
             )}
 
             {!!profile?.links && (
-              <View style={styles.bioSection}>
+              <MotionView entering={nextEntrance()} style={styles.bioSection}>
                 <Text style={styles.sectionTitle}>Socials</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', backgroundColor: Colors.brand.cardBackground }}>
                   {(() => {
@@ -493,48 +514,48 @@ export default function ProfileScreen() {
                     if (tt) items.push({ label: 'TikTok', url: `https://www.tiktok.com/@${tt.replace(/^@+/, '')}`, key: 'tiktok' });
                     if (lt) items.push({ label: 'Linktree', url: `https://linktr.ee/${lt.replace(/^@+/, '')}`, key: 'linktree' });
                     return items.map((it, idx) => (
-                      <TouchableOpacity key={`${it.label}-${idx}`} onPress={() => Linking.openURL(it.url)} style={styles.socialLinkBtn}>
+                      <MotionPressable key={`${it.label}-${idx}`} onPress={() => Linking.openURL(it.url)} style={styles.socialLinkBtn}>
                         <Image source={socialIcons[it.key]} style={styles.socialIcon} resizeMode="contain" />
                         <Text style={styles.socialLinkText}>{it.label}</Text>
-                      </TouchableOpacity>
+                      </MotionPressable>
                     ));
                   })()}
                 </View>
-              </View>
+              </MotionView>
             )}
 
             {/* Removed separate payouts banner; consolidated into Reviewer Settings card above */}
 
             {!!profile?.skills?.length && (
-              <View style={styles.bioSection}>
+              <MotionView entering={nextEntrance()} style={styles.bioSection}>
                 <Text style={styles.sectionTitle}>Skills</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                   {profile.skills!.map((s, idx) => (
                     <View key={`${s}-${idx}`} style={styles.skillChip}><Text style={styles.skillChipText}>{s}</Text></View>
                   ))}
                 </View>
-              </View>
+              </MotionView>
             )}
 
             {!!(profile?.links?.twitter || profile?.links?.linkedin || profile?.links?.github) && (
-              <View style={styles.bioSection}>
+              <MotionView entering={nextEntrance()} style={styles.bioSection}>
                 <Text style={styles.sectionTitle}>Links</Text>
                 <View style={{ flexDirection: 'row' }}>
                   {profile?.links?.twitter ? (
-                    <TouchableOpacity onPress={() => Linking.openURL(profile.links!.twitter!)} style={styles.socialLinkBtn}><Text style={styles.socialLinkText}>Twitter</Text></TouchableOpacity>
+                    <MotionPressable onPress={() => Linking.openURL(profile.links!.twitter!)} style={styles.socialLinkBtn}><Text style={styles.socialLinkText}>Twitter</Text></MotionPressable>
                   ) : null}
                   {profile?.links?.linkedin ? (
-                    <TouchableOpacity onPress={() => Linking.openURL(profile.links!.linkedin!)} style={styles.socialLinkBtn}><Text style={styles.socialLinkText}>LinkedIn</Text></TouchableOpacity>
+                    <MotionPressable onPress={() => Linking.openURL(profile.links!.linkedin!)} style={styles.socialLinkBtn}><Text style={styles.socialLinkText}>LinkedIn</Text></MotionPressable>
                   ) : null}
                   {profile?.links?.github ? (
-                    <TouchableOpacity onPress={() => Linking.openURL(profile.links!.github!)} style={styles.socialLinkBtn}><Text style={styles.socialLinkText}>GitHub</Text></TouchableOpacity>
+                    <MotionPressable onPress={() => Linking.openURL(profile.links!.github!)} style={styles.socialLinkBtn}><Text style={styles.socialLinkText}>GitHub</Text></MotionPressable>
                   ) : null}
                 </View>
-              </View>
+              </MotionView>
             )}
 
-        <View style={styles.actionsSection}>
-          <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/settings')} accessibilityLabel="Open account settings">
+        <MotionView entering={nextEntrance()} style={styles.actionsSection}>
+          <MotionPressable style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/settings')} accessibilityLabel="Open account settings">
             <View style={styles.actionIconContainer}>
               <ExpoLinearGradient
                 colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
@@ -546,10 +567,10 @@ export default function ProfileScreen() {
             </View>
             <Text style={styles.actionText}>Account Settings</Text>
             <Text style={styles.actionArrow}>›</Text>
-          </TouchableOpacity>
+          </MotionPressable>
 
 
-          <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/hinge-clone')} accessibilityLabel="Open Hinge profile clone">
+          <MotionPressable style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/hinge-clone')} accessibilityLabel="Open Hinge profile clone">
             <View style={styles.actionIconContainer}>
               <ExpoLinearGradient
                 colors={['#FF6B6B', '#FF8E8E']}
@@ -561,15 +582,15 @@ export default function ProfileScreen() {
             </View>
             <Text style={styles.actionText}>Hinge Profile Clone</Text>
             <Text style={styles.actionArrow}>›</Text>
-          </TouchableOpacity>
-        </View>
+          </MotionPressable>
+        </MotionView>
 
-        <View style={styles.dangerSection}>
-          <TouchableOpacity style={styles.logoutButtonDark} onPress={handleLogout}>
+        <MotionView entering={nextEntrance()} style={styles.dangerSection}>
+          <MotionPressable style={styles.logoutButtonDark} onPress={handleLogout}>
             <View style={styles.logoutButtonBorder} />
             <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
-        </View>
+          </MotionPressable>
+        </MotionView>
       </ScrollView>
 
     </View>
@@ -577,6 +598,19 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: Colors.brand.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.brand.textSecondary,
+  },
   container: { flex: 1, backgroundColor: Colors.brand.background },
   scrollView: { flex: 1, backgroundColor: 'transparent' },
   header: { paddingTop: 20, paddingBottom: 40, paddingHorizontal: 0, backgroundColor: Colors.brand.cardBackground, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 24, elevation: 12 },

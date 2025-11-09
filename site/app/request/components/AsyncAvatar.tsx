@@ -86,6 +86,7 @@ export default function AsyncAvatar({ avatarPathOrUrl, alt, size = 64 }: Props) 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          boxSizing: 'border-box',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '0 4px 12px rgba(12, 3, 37, 0.25)'
         }}

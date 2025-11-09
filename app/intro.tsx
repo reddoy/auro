@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Image, TouchableOpacity, Platform, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, Image, Platform, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { StatusBar } from 'expo-status-bar';
@@ -8,6 +8,7 @@ import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
+import { MotionPressable, MotionView, MotionZoomIn, cardEntrance, subtleFadeIn } from '@/components/motion';
 
 export default function IntroScreen() {
   const insets = useSafeAreaInsets();
@@ -63,18 +64,18 @@ export default function IntroScreen() {
       <StatusBar style="light" translucent />
       
       {/* Logo and Brand Name */}
-      <View style={[styles.logoContainer, { paddingTop: insets.top + 20 }]}>
+      <MotionView entering={subtleFadeIn()} style={[styles.logoContainer, { paddingTop: insets.top + 20 }]}>
         <Image 
           source={require('../auro_aura_logo_nobg.png')} 
           style={[styles.logoImage, isCompact && styles.logoImageCompact]}
           resizeMode="contain"
         />
         <Text style={[styles.brandText, isCompact && styles.brandTextCompact]}>Auro</Text>
-      </View>
+      </MotionView>
 
       {/* Video Container */}
       <View style={styles.videoContainer}>
-        <View style={[
+        <MotionView entering={MotionZoomIn} style={[
           styles.videoWrapper,
           { 
             maxWidth: VIDEO_MAX_WIDTH,
@@ -97,21 +98,22 @@ export default function IntroScreen() {
             nativeControls={true}
             allowsFullscreen={true}
           />
-        </View>
+        </MotionView>
       </View>
 
       {/* Tagline Text */}
-      <View style={styles.taglineContainer}>
+      <MotionView entering={subtleFadeIn()} style={styles.taglineContainer}>
         <Text style={[styles.taglineText, isCompact && styles.taglineTextCompact]}>
           Real women, Real reviews, More matches
         </Text>
-      </View>
+      </MotionView>
 
       {/* Get Started Button */}
       <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + 20 }]}>
-        <TouchableOpacity
+        <MotionPressable
           style={[styles.getStartedButton, isCompact && styles.getStartedButtonCompact]}
           onPress={handleGetStarted}
+          entering={cardEntrance(0)}
         >
           <ExpoLinearGradient
             colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
@@ -120,7 +122,7 @@ export default function IntroScreen() {
             style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: buttonBorderRadius }}
           />
           <Text style={styles.getStartedButtonText}>Get Started</Text>
-        </TouchableOpacity>
+        </MotionPressable>
       </View>
     </View>
   );
