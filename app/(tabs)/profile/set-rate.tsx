@@ -1,18 +1,21 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, TouchableOpacity, Alert, View, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { getCurrentProfile, updateProfile } from '@/lib/profile';
 import type { Profile } from '@/types';
+import { MotionView, cardEntrance } from '@/components/motion';
+import { SkeletonBlock, SkeletonCircle, SkeletonParagraph } from '@/components/Skeletons';
 
 export default function SetRateScreen() {
   const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [editingRate, setEditingRate] = useState('');
   const [savingRate, setSavingRate] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -22,6 +25,8 @@ export default function SetRateScreen() {
         setEditingRate(p?.hourly_rate != null ? String(p.hourly_rate) : '');
       } catch (e: any) {
         Alert.alert('Error', 'Failed to load profile');
+      } finally {
+        setLoading(false);
       }
     };
     loadProfile();
@@ -61,6 +66,52 @@ export default function SetRateScreen() {
       setSavingRate(false);
     }
   }, [editingRate]);
+
+  if (loading) {
+    return (
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <View style={[styles.header, { paddingTop: 12 }]}>
+          <View style={{ marginRight: 12 }}>
+            <SkeletonCircle size={40} />
+          </View>
+          <SkeletonBlock width={160} height={24} radius={12} />
+          <View style={styles.headerSpacer} />
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={{ paddingBottom: 68 + insets.bottom + 24, paddingHorizontal: 20, paddingTop: 20 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <MotionView entering={cardEntrance(0)} style={styles.skeletonCard}>
+            <SkeletonParagraph lines={3} widths={['100%', '90%', '85%']} />
+          </MotionView>
+
+          <MotionView entering={cardEntrance(1)} style={styles.skeletonCard}>
+            <SkeletonBlock width="60%" height={16} />
+            <SkeletonBlock width="100%" height={52} radius={18} style={{ marginTop: 16 }} />
+          </MotionView>
+
+          <MotionView entering={cardEntrance(2)} style={styles.skeletonCard}>
+            <SkeletonBlock width="40%" height={18} />
+            <SkeletonParagraph
+              lines={4}
+              lineHeight={14}
+              widths={['95%', '85%', '75%', '65%']}
+              style={{ marginTop: 16 }}
+            />
+          </MotionView>
+
+          <MotionView entering={cardEntrance(3)} style={[styles.saveButton, styles.saveButtonDisabled, styles.skeletonButton]}>
+            <SkeletonBlock width="60%" height={18} />
+          </MotionView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
 
   return (
     <KeyboardAvoidingView 
@@ -135,9 +186,9 @@ export default function SetRateScreen() {
           )}
 
           <TouchableOpacity 
-            style={[styles.saveButton, savingRate && styles.saveButtonDisabled]} 
+            style={[styles.saveButton, (savingRate || loading) && styles.saveButtonDisabled]} 
             onPress={handleSaveRate}
-            disabled={savingRate}
+            disabled={savingRate || loading}
           >
             <Text style={styles.saveButtonText}>
               {savingRate ? 'Saving...' : 'Save Rate'}
@@ -283,6 +334,17 @@ const styles = StyleSheet.create({
   },
   saveButtonDisabled: {
     opacity: 0.6,
+  },
+  skeletonCard: {
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    marginBottom: 20,
+  },
+  skeletonButton: {
+    marginTop: 4,
   },
   saveButtonText: {
     color: Colors.brand.textOnGradient,

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, TouchableOpacity, FlatList, RefreshControl, Platform, Alert, Linking } from 'react-native';
+import { StyleSheet, TouchableOpacity, FlatList, RefreshControl, Platform, Alert, Linking, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,8 @@ import Colors from '@/constants/Colors';
 import { getRequestsByReviewer } from '@/lib/api';
 import { createStripeExpressLoginLink, createStripeExpressOnboardingLink } from '@/lib/payments';
 import type { Profile } from '@/types';
+import { MotionView, cardEntrance, subtleFadeIn } from '@/components/motion';
+import { SkeletonBlock, SkeletonCircle, SkeletonParagraph } from '@/components/Skeletons';
 
 interface TransactionItem {
   id: string;
@@ -35,6 +37,68 @@ export default function TransactionBreakdownScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [stripePortalUrl, setStripePortalUrl] = useState<string | null>(null);
+
+  const renderSkeleton = (overlay = false) => {
+    const header = (
+      <MotionView entering={subtleFadeIn()} style={[styles.header, { paddingTop: 12 }]}>
+        <View style={{ marginRight: 12 }}>
+          <SkeletonCircle size={40} />
+        </View>
+        <SkeletonBlock width={180} height={24} radius={12} />
+      </MotionView>
+    );
+
+    const body = (
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32, gap: 16 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <MotionView entering={cardEntrance(0)} style={styles.summaryCard}>
+          <SkeletonBlock width="50%" height={18} />
+          <SkeletonParagraph
+            lines={2}
+            lineHeight={12}
+            widths={['100%', '75%']}
+            style={{ marginTop: 12 }}
+          />
+        </MotionView>
+        {[...Array(3)].map((_, idx) => (
+          <MotionView key={idx} entering={cardEntrance(idx + 1)} style={styles.transactionCard}>
+            <View style={styles.transactionSkeletonHeader}>
+              <View style={{ flex: 1 }}>
+                <SkeletonBlock width="70%" height={18} />
+                <SkeletonBlock width="45%" height={12} style={{ marginTop: 8 }} />
+              </View>
+              <SkeletonBlock width={72} height={26} radius={12} />
+            </View>
+            <SkeletonBlock width="80%" height={12} style={{ marginBottom: 16 }} />
+            <SkeletonParagraph
+              lines={4}
+              lineHeight={12}
+              widths={['55%', '60%', '65%', '70%']}
+            />
+          </MotionView>
+        ))}
+      </ScrollView>
+    );
+
+    if (overlay) {
+      return (
+        <View style={styles.refreshOverlay}>
+          {header}
+          {body}
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.container}>
+        {header}
+        {body}
+      </View>
+    );
+  };
 
   const loadTransactions = useCallback(async () => {
     try {
@@ -259,22 +323,7 @@ export default function TransactionBreakdownScreen() {
   };
 
   if (loading) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color={Colors.brand.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Transaction History</Text>
-        </View>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading transactions...</Text>
-        </View>
-      </View>
-    );
+    return renderSkeleton();
   }
 
   return (
@@ -354,6 +403,7 @@ export default function TransactionBreakdownScreen() {
           showsVerticalScrollIndicator={false}
         />
       </View>
+      {refreshing ? renderSkeleton(true) : null}
     </View>
   );
 }
@@ -392,6 +442,19 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  transactionSkeletonHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    backgroundColor: 'transparent',
+  },
+  refreshOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Colors.brand.background,
+    zIndex: 5,
+    paddingTop: 0,
   },
   loadingText: {
     color: Colors.brand.textSecondary,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, View as RNView, ActivityIndicator, Linking, Platform } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, View as RNView, Linking, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 
@@ -8,8 +8,7 @@ import { getRequestById, getReviewerReviewByRequestId, type ReviewerReview } fro
 import { getReviewerById, getProfileById } from '@/lib/api';
 import Colors from '@/constants/Colors';
 import { Image } from 'expo-image';
-import { signRequestMediaUrls, getSignedRequestMediaUrl } from '@/lib/uploads';
-import LightboxImage from '@/components/LightboxImage';
+import { signRequestMediaUrls } from '@/lib/uploads';
 import ImageGalleryModal from '@/components/ImageGalleryModal';
 import PhotoCarousel from '@/components/PhotoCarousel';
 import StatusBadge from '@/components/StatusBadge';
@@ -69,24 +68,26 @@ export default function ReviewDetailScreen() {
     }
   }, [request?.notes]);
 
-  const [signedOutfits, setSignedOutfits] = React.useState<string[]>([]);
-  const [signedRoom, setSignedRoom] = React.useState<string[]>([]);
-  const [signedSocials, setSignedSocials] = React.useState<string[]>([]);
+  const [signedProfilePhotos, setSignedProfilePhotos] = React.useState<string[]>([]);
   // Removed signedSelfie - now using user's profile picture
 
   React.useEffect(() => {
     (async () => {
       try {
-        const outfits = Array.isArray(parsedNotes?.media?.outfits) ? parsedNotes?.media?.outfits as string[] : [];
-        const room = Array.isArray(parsedNotes?.media?.roomTourPhotos) ? parsedNotes?.media?.roomTourPhotos as string[] : [];
-        const socials = Array.isArray(parsedNotes?.media?.datingProfileScreenshots) ? parsedNotes?.media?.datingProfileScreenshots as string[] : [];
-        // No longer loading selfie - using user's profile picture instead
-        setSignedOutfits(await signRequestMediaUrls(outfits));
-        setSignedRoom(await signRequestMediaUrls(room));
-        setSignedSocials(await signRequestMediaUrls(socials));
+        const datingProfileScreenshots = Array.isArray(parsedNotes?.media?.datingProfileScreenshots)
+          ? (parsedNotes.media.datingProfileScreenshots as string[])
+          : [];
+        const basePhotos = Array.isArray(request?.photos) ? (request.photos as string[]) : [];
+        const photosToSign = datingProfileScreenshots.length ? datingProfileScreenshots : basePhotos;
+
+        if (photosToSign.length) {
+          setSignedProfilePhotos(await signRequestMediaUrls(photosToSign));
+        } else {
+          setSignedProfilePhotos([]);
+        }
       } catch {}
     })();
-  }, [parsedNotes?.media]);
+  }, [parsedNotes?.media?.datingProfileScreenshots, request?.photos]);
 
   const hasConsent = React.useMemo(() => typeof parsedNotes?.consent?.shareOnSocial === 'boolean', [parsedNotes]);
   const shareConsent = React.useMemo(() => !!parsedNotes?.consent?.shareOnSocial, [parsedNotes]);
@@ -159,6 +160,29 @@ export default function ReviewDetailScreen() {
   const mediaVideoUrl = review?.media?.videoUrl as string | undefined;
   const mediaImageUrl = review?.media?.imageUrl as string | undefined;
 
+  const ratingEntries = React.useMemo(() => {
+    if (!review?.ratings) return [];
+    const entries = [
+      {
+        key: 'overall',
+        label: 'Overall',
+        description: 'Overall dating profile vibe',
+        value: review.ratings.overall,
+      },
+    ];
+    return entries.filter(
+      (entry) => typeof entry.value === 'number' && (entry.value ?? 0) > 0
+    );
+  }, [review?.ratings]);
+
+  const datingProfileNotes = React.useMemo(() => {
+    return (
+      review?.feedback?.sectionNotes?.datingProfile ??
+      review?.feedback?.sectionNotes?.socials ??
+      null
+    );
+  }, [review?.feedback?.sectionNotes?.datingProfile, review?.feedback?.sectionNotes?.socials]);
+
   const openTikTok = async () => {
     try {
       const uri = mediaVideoUrl || mediaImageUrl;
@@ -222,7 +246,7 @@ export default function ReviewDetailScreen() {
           {hasConsent ? (
             <RNView style={[styles.consentPill, { borderColor: shareConsent ? Colors.brand.status.completed : Colors.brand.status.rejected }] }>
               <Text style={[styles.consentPillText, { color: shareConsent ? Colors.brand.status.completed : Colors.brand.status.rejected }]}>
-                {`Consent to share review on socials? ${shareConsent ? 'Yes' : 'No'}`}
+                {`Consent to share review publicly? ${shareConsent ? 'Yes' : 'No'}`}
               </Text>
             </RNView>
           ) : null}
@@ -231,39 +255,36 @@ export default function ReviewDetailScreen() {
 
       {/* Consent pill is now shown inside the status card */}
 
-      {review ? (<View style={styles.ratingsSection}>
-        <Text style={styles.sectionTitle}>Your Ratings</Text>
-        <RNView style={styles.ratingsGrid}>
-          <View style={styles.ratingCard}>
-            <StarRating 
-              rating={review?.ratings?.overall ?? 0} 
-              category="Overall"
-              size="medium"
-            />
-          </View>
-          <View style={styles.ratingCard}>
-            <StarRating 
-              rating={review?.ratings?.attractiveness ?? 0} 
-              category="Attractiveness"
-              size="medium"
-            />
-          </View>
-          <View style={styles.ratingCard}>
-            <StarRating 
-              rating={review?.ratings?.wardrobe ?? 0} 
-              category="Wardrobe"
-              size="medium"
-            />
-          </View>
-          <View style={styles.ratingCard}>
-            <StarRating 
-              rating={review?.ratings?.room ?? 0} 
-              category="Room"
-              size="medium"
-            />
-          </View>
-        </RNView>
-      </View>) : null}
+      {review && ratingEntries.length > 0 ? (
+        <View style={styles.ratingsSection}>
+          <Text style={styles.sectionTitle}>Your Ratings</Text>
+          <RNView
+            style={[
+              styles.ratingsGrid,
+              ratingEntries.length === 1 && styles.singleRatingGrid,
+            ]}
+          >
+            {ratingEntries.map((entry) => (
+              <View
+                key={entry.key}
+                style={[
+                  styles.ratingCard,
+                  ratingEntries.length === 1 && styles.ratingCardFull,
+                ]}
+              >
+                <StarRating
+                  rating={entry.value ?? 0}
+                  category={entry.label}
+                  size={ratingEntries.length === 1 ? 'large' : 'medium'}
+                />
+                {entry.description ? (
+                  <Text style={styles.ratingDescription}>{entry.description}</Text>
+                ) : null}
+              </View>
+            ))}
+          </RNView>
+        </View>
+      ) : null}
 
       {review && (<View style={styles.feedbackSection}>
         <Text style={styles.sectionTitle}>Feedback</Text>
@@ -287,67 +308,54 @@ export default function ReviewDetailScreen() {
           <Text style={styles.generalFeedback}>{review?.feedback?.generalFeedback}</Text>
         </View>
 
-        {(review?.feedback?.sectionNotes?.outfits || review?.feedback?.sectionNotes?.room || review?.feedback?.sectionNotes?.socials) ? (
+        {datingProfileNotes ? (
           <View style={styles.feedbackCard}>
-            <Text style={styles.feedbackTitle}>📋 Section Notes</Text>
-            {review?.feedback?.sectionNotes?.outfits ? (
-              <>
-                <Text style={[styles.feedbackTitle, { fontSize: 14 }]}>Outfits</Text>
-                <Text style={styles.generalFeedback}>{review?.feedback?.sectionNotes?.outfits}</Text>
-              </>
-            ) : null}
-            {review?.feedback?.sectionNotes?.room ? (
-              <>
-                <RNView style={{ height: 8 }} />
-                <Text style={[styles.feedbackTitle, { fontSize: 14 }]}>Room</Text>
-                <Text style={styles.generalFeedback}>{review?.feedback?.sectionNotes?.room}</Text>
-              </>
-            ) : null}
-            {review?.feedback?.sectionNotes?.socials ? (
-              <>
-                <RNView style={{ height: 8 }} />
-                <Text style={[styles.feedbackTitle, { fontSize: 14 }]}>Socials</Text>
-                <Text style={styles.generalFeedback}>{review?.feedback?.sectionNotes?.socials}</Text>
-              </>
-            ) : null}
+            <Text style={styles.feedbackTitle}>📋 Dating Profile Notes</Text>
+            <Text style={styles.generalFeedback}>{datingProfileNotes}</Text>
           </View>
         ) : null}
       </View>)}
 
-        {!!parsedNotes?.message && (
+        {(revieweeAvatar || parsedNotes?.message) && (
           <View style={styles.mediaSection}>
-            <Text style={styles.sectionTitle}>Profile Picture</Text>
+            <Text style={styles.sectionTitle}>Profile Photo</Text>
             {revieweeAvatar ? (
-              <TouchableOpacity onPress={() => { setGalleryUris([revieweeAvatar]); setGalleryIndex(0); setGalleryOpen(true); }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setGalleryUris([revieweeAvatar]);
+                  setGalleryIndex(0);
+                  setGalleryOpen(true);
+                }}
+              >
                 <Image source={{ uri: revieweeAvatar }} style={styles.selfie} contentFit="cover" transition={200} cachePolicy="none" />
               </TouchableOpacity>
             ) : null}
-            <Text style={[styles.promptLabel, { fontSize: 12, color: Colors.brand.textSecondary }]}>
-              This is the profile picture used in reviews
-            </Text>
-            <Text style={styles.promptLabel}>{`About ${revieweeName || 'You'}`}</Text>
-            <Text style={styles.promptText}>{parsedNotes.message}</Text>
+            {revieweeAvatar ? (
+              <Text style={styles.mediaHint}>
+                This is the hero photo they lead with on their dating profile.
+              </Text>
+            ) : null}
+            {parsedNotes?.message ? (
+              <>
+                <Text style={[styles.promptLabel, styles.mediaHeading]}>Profile Bio</Text>
+                <Text style={styles.promptText}>{parsedNotes.message}</Text>
+              </>
+            ) : null}
           </View>
         )}
 
-        {signedOutfits.length ? (
+        {signedProfilePhotos.length ? (
           <View style={styles.mediaSection}>
-            <Text style={styles.sectionTitle}>Outfits</Text>
-            <PhotoCarousel uris={signedOutfits} onPressItem={(i) => { setGalleryUris(signedOutfits); setGalleryIndex(i); setGalleryOpen(true); }} />
-          </View>
-        ) : null}
-
-        {signedRoom.length ? (
-          <View style={styles.mediaSection}>
-            <Text style={styles.sectionTitle}>Room Tour</Text>
-            <PhotoCarousel uris={signedRoom} onPressItem={(i) => { setGalleryUris(signedRoom); setGalleryIndex(i); setGalleryOpen(true); }} />
-          </View>
-        ) : null}
-
-        {signedSocials.length ? (
-          <View style={styles.mediaSection}>
-            <Text style={styles.sectionTitle}>Socials</Text>
-            <PhotoCarousel uris={signedSocials} onPressItem={(i) => { setGalleryUris(signedSocials); setGalleryIndex(i); setGalleryOpen(true); }} />
+            <Text style={styles.sectionTitle}>Dating Profile Gallery</Text>
+            <Text style={styles.mediaHint}>Tap to view each dating profile photo in full resolution.</Text>
+            <PhotoCarousel
+              uris={signedProfilePhotos}
+              onPressItem={(i) => {
+                setGalleryUris(signedProfilePhotos);
+                setGalleryIndex(i);
+                setGalleryOpen(true);
+              }}
+            />
           </View>
         ) : null}
 
@@ -507,27 +515,42 @@ const styles = StyleSheet.create({
   },
   ratingsSection: {
     margin: 15,
-    backgroundColor: Colors.brand.cardBackground,
-    borderRadius: 15,
-    padding: 20,
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    borderRadius: 22,
+    padding: 24,
     shadowColor: Colors.brand.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 28,
     elevation: 10,
   },
   ratingsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    gap: 12,
+  },
+  singleRatingGrid: {
+    justifyContent: 'center',
   },
   ratingCard: {
     width: '48%',
     alignItems: 'center',
-    padding: 15,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 12,
+    padding: 18,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 16,
     marginBottom: 10,
+  },
+  ratingCardFull: {
+    width: '100%',
+    paddingVertical: 24,
+  },
+  ratingDescription: {
+    marginTop: 12,
+    fontSize: 13,
+    color: Colors.brand.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   feedbackSection: {
     margin: 15,
@@ -535,25 +558,27 @@ const styles = StyleSheet.create({
   mediaSection: {
     marginTop: 16,
     marginBottom: 16,
-    backgroundColor: Colors.brand.cardBackground,
-    borderRadius: 15,
-    padding: 16,
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    borderRadius: 20,
+    padding: 20,
     shadowColor: Colors.brand.shadow,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.16,
     shadowRadius: 24,
     elevation: 10,
   },
   feedbackCard: {
-    backgroundColor: Colors.brand.cardBackground,
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 15,
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    borderRadius: 20,
+    padding: 22,
+    marginBottom: 16,
     shadowColor: Colors.brand.shadow,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
+    shadowOpacity: 0.14,
+    shadowRadius: 26,
     elevation: 10,
+    borderWidth: 1,
+    borderColor: Colors.brand.border,
   },
   feedbackTitle: {
     fontSize: 16,
@@ -572,31 +597,11 @@ const styles = StyleSheet.create({
     color: Colors.brand.textSecondary,
     lineHeight: 22,
   },
-  photosSection: {
-    marginTop: 16,
-    marginBottom: 16,
-    backgroundColor: Colors.brand.cardBackground,
-    borderRadius: 15,
-    padding: 16,
-    shadowColor: Colors.brand.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 10,
-  },
-  photosGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  photo: {
-    width: '31%',
-    aspectRatio: 1,
-    borderRadius: 12,
-  },
-  selfie: { width: '100%', aspectRatio: 1.5, borderRadius: 12 },
-  promptLabel: { color: Colors.brand.textSecondary, marginTop: 10, marginBottom: 6 },
-  promptText: { color: Colors.brand.textPrimary },
+  selfie: { width: '100%', aspectRatio: 1, borderRadius: 16, marginBottom: 12 },
+  promptLabel: { color: Colors.brand.textSecondary, marginTop: 10, marginBottom: 6, fontWeight: '600', fontSize: 14 },
+  promptText: { color: Colors.brand.textPrimary, fontSize: 15, lineHeight: 24 },
+  mediaHint: { color: Colors.brand.textSecondary, marginTop: 12, fontSize: 13, lineHeight: 20 },
+  mediaHeading: { marginTop: 20 },
   videoThumb: { width: '100%', aspectRatio: 1.77, borderRadius: 12 },
   videoHint: { color: Colors.brand.textSecondary, marginTop: 6, fontSize: 12 },
   actionsSection: {

@@ -34,6 +34,11 @@ export default function ReviewerProfileScreen() {
         if (!id) return;
         const r = await getReviewerById(String(id));
         setReviewer(r);
+        const initialCount =
+          r?.reviewsGivenCount != null && !Number.isNaN(Number(r.reviewsGivenCount))
+            ? Number(r.reviewsGivenCount)
+            : 0;
+        setCompletedCount(initialCount);
         let uri = r?.avatarUrl || '';
         if (uri) {
           try { uri = (await getSignedAvatarUrl(uri, 60 * 60 * 24 * 30)) || uri; } catch {}
@@ -46,8 +51,18 @@ export default function ReviewerProfileScreen() {
             getReviewsReceived(String(id)),
             getReviewerReviewsByReviewerId(String(id)),
           ]);
-          const completed = (reqs || []).filter((rq: any) => rq.status === 'completed').length;
-          setCompletedCount(completed);
+          const requestCompleted = (reqs || []).filter((rq: any) => rq.status === 'completed').length;
+          const reviewerReviewsCompleted = (reviewerRevws || []).length;
+          const fallbackCount =
+            r?.reviewsGivenCount != null && !Number.isNaN(Number(r.reviewsGivenCount))
+              ? Number(r.reviewsGivenCount)
+              : null;
+          const bestCount = [fallbackCount, requestCompleted, reviewerReviewsCompleted]
+            .filter((value): value is number => typeof value === 'number' && !Number.isNaN(Number(value)))
+            .reduce((max, value) => Math.max(max, value), 0);
+          setCompletedCount(
+            bestCount
+          );
           setReviews(recvd.items || []);
           setReviewerReviews(reviewerRevws || []);
           
@@ -80,9 +95,14 @@ export default function ReviewerProfileScreen() {
     try { Linking.openURL(finalUrl); } catch {}
   };
 
+  const bottomPadding = Platform.OS === 'web' ? 24 : insets.bottom + 120;
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: Platform.OS === 'web' ? 24 : 24, paddingHorizontal: 16 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={{ paddingTop: 12, paddingBottom: bottomPadding, paddingHorizontal: 16 }}
+        showsVerticalScrollIndicator={false}
+      >
         <RNView style={styles.card}>
           <RNView style={{ alignItems: 'center' }}>
             <Avatar uri={avatarUri} name={reviewer?.displayName} size={96} />

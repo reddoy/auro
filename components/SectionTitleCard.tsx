@@ -22,18 +22,18 @@ export default function SectionTitleCard({ title, subtitle, isActive = false }: 
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.brand.cardBackground,
-    borderRadius: 20,
-    padding: 20,
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    borderRadius: 22,
+    padding: 22,
     marginHorizontal: 20,
     marginVertical: 12,
     shadowColor: Colors.brand.shadow,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
     elevation: 8,
-    borderWidth: 2,
-    borderColor: Colors.brand.accentOrange,
+    borderWidth: 1,
+    borderColor: Colors.brand.border,
   },
   activeCard: {
     borderColor: Colors.brand.accentOrange,

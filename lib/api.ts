@@ -173,14 +173,22 @@ export async function ensureProfileForCurrentUser(): Promise<boolean> {
 export async function getReviewers(): Promise<DbReviewerSummary[]> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, is_reviewer, packages, links, bio, stripe_connect_account_id, created_at')
+    .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, is_reviewer, packages, links, bio, stripe_connect_account_id, created_at, reviews_given_count')
     .eq('is_reviewer', true)
     .not('stripe_connect_account_id', 'is', null) // Only show reviewers with Connect accounts
     .not('hourly_rate', 'is', null) // Only show reviewers who have set their rate
     .gt('hourly_rate', 0) // Only show reviewers with positive rates
     .order('rating_average', { ascending: false, nullsFirst: false });
   if (error) throw error;
-  return (data || []).map((row: any) => ({
+  return (data || []).map((row: any) => {
+    const reviewsGivenRaw = row.reviews_given_count;
+    const parsedReviewsGivenCount =
+      reviewsGivenRaw === null || reviewsGivenRaw === undefined ? null : Number(reviewsGivenRaw);
+    const safeReviewsGivenCount =
+      parsedReviewsGivenCount !== null && Number.isFinite(parsedReviewsGivenCount)
+        ? parsedReviewsGivenCount
+        : null;
+    return {
     id: row.id,
     displayName: row.full_name || row.username || 'Reviewer',
     username: row.username,
@@ -188,21 +196,30 @@ export async function getReviewers(): Promise<DbReviewerSummary[]> {
     skills: row.skills || null,
     pricePerReview: row.hourly_rate ?? null,
     rating: row.rating_average ?? null,
+      reviewsGivenCount: safeReviewsGivenCount,
     packages: row.packages || null,
     links: row.links || null,
     bio: row.bio || null,
     createdAt: row.created_at || null,
-  })) as DbReviewerSummary[];
+    };
+  }) as DbReviewerSummary[];
 }
 
 export async function getReviewerById(id: string): Promise<DbReviewerSummary | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, is_reviewer, packages, links, bio')
+    .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, is_reviewer, packages, links, bio, reviews_given_count')
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
+  const reviewsGivenRaw = (data as any).reviews_given_count;
+  const parsedReviewsGivenCount =
+    reviewsGivenRaw === null || reviewsGivenRaw === undefined ? null : Number(reviewsGivenRaw);
+  const safeReviewsGivenCount =
+    parsedReviewsGivenCount !== null && Number.isFinite(parsedReviewsGivenCount)
+      ? parsedReviewsGivenCount
+      : null;
   return {
     id: data.id,
     displayName: data.full_name || data.username || 'Reviewer',
@@ -211,6 +228,7 @@ export async function getReviewerById(id: string): Promise<DbReviewerSummary | n
     skills: data.skills || null,
     pricePerReview: data.hourly_rate ?? null,
     rating: data.rating_average ?? null,
+    reviewsGivenCount: safeReviewsGivenCount,
     packages: (data as any).packages || null,
     links: (data as any).links || null,
     bio: (data as any).bio || null,
@@ -221,7 +239,7 @@ export async function getReviewerById(id: string): Promise<DbReviewerSummary | n
 export async function getRequestsByReviewer(reviewerId: string): Promise<DbRequestSummary[]> {
   const { data, error } = await supabase
     .from('requests')
-    .select('id,influencer_id,created_at,completed_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps,payment_distributed,payment_distributed_at,stripe_transfer_id,reviewer_amount_cents,payment_distribution_error,payment_status')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps,payment_distributed,payment_distributed_at,stripe_transfer_id,reviewer_amount_cents,payment_distribution_error,payment_status')
     .eq('influencer_id', reviewerId)
     .order('created_at', { ascending: false });
   if (error) throw error;

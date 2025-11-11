@@ -25,7 +25,6 @@ import VideoReviewSection from '@/components/VideoReviewSection';
 import PaginationDots from '@/components/PaginationDots';
 import SectionSlideCard from '@/components/SectionSlideCard';
 import ReviewStatusCard from '@/components/ReviewStatusCard';
-import { LinearGradient } from 'expo-linear-gradient';
 import StarRating from '@/components/StarRating';
 
 // Removed unused URL helper functions since we're not showing social links in this screen
@@ -42,10 +41,7 @@ export default function ReviewerRequestScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [videoUri, setVideoUri] = useState<string | null>(null);
 
-  const [signedPhotos, setSignedPhotos] = useState<string[]>([]); // fallback when categories aren't present
-  const [signedOutfits, setSignedOutfits] = useState<string[]>([]);
-  const [signedRoom, setSignedRoom] = useState<string[]>([]);
-  const [signedSocials, setSignedSocials] = useState<string[]>([]);
+  const [signedProfilePhotos, setSignedProfilePhotos] = useState<string[]>([]);
   // Removed signedSelfie - now using user's profile picture from avatarUri
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [recordingModeOpen, setRecordingModeOpen] = useState(false);
@@ -70,7 +66,6 @@ export default function ReviewerRequestScreen() {
   const [noteText, setNoteText] = useState('');
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isVideoReviewMode, setIsVideoReviewMode] = useState(false);
-  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   
   // Video review is now the only option - no individual section ratings needed
   const canSubmit = React.useMemo(() => !!videoUri && overallRating > 0, [videoUri, overallRating]);
@@ -89,109 +84,50 @@ export default function ReviewerRequestScreen() {
   const allSlides = React.useMemo(() => {
     const slides: Array<{type: 'profile' | 'section' | 'photo' | 'overall', data: any, index: number}> = [];
     let slideIndex = 0;
-    
-    // Add profile slide
+
     slides.push({
       type: 'profile',
       data: { name: reviewee?.displayName || 'User', message: parsedNotes?.message, profilePicture: avatarUri },
       index: slideIndex++
     });
-    
-    // Add sections with their photos
-    if (signedOutfits.length > 0) {
-      // Section card
+
+    if (signedProfilePhotos.length > 0) {
       slides.push({
         type: 'section',
-        data: { title: 'Outfits', subtitle: "These are {name}'s best outfits" },
+        data: { title: 'Dating Profile', subtitle: "Let's explore {name}'s dating profile" },
         index: slideIndex++
       });
-      // Outfit photos
-      signedOutfits.forEach((uri, i) => {
+
+      signedProfilePhotos.forEach((uri, i) => {
         slides.push({
           type: 'photo',
-          data: { uri, category: 'Outfits', photoIndex: i, totalPhotos: signedOutfits.length },
+          data: { uri, category: 'Dating Profile', photoIndex: i, totalPhotos: signedProfilePhotos.length },
           index: slideIndex++
         });
       });
     }
-    
-    if (signedRoom.length > 0) {
-      // Section card
-      slides.push({
-        type: 'section',
-        data: { title: 'Room Tour', subtitle: "Here are some pictures of {name}'s room" },
-        index: slideIndex++
-      });
-      // Room photos
-      signedRoom.forEach((uri, i) => {
-        slides.push({
-          type: 'photo',
-          data: { uri, category: 'Room Tour', photoIndex: i, totalPhotos: signedRoom.length },
-          index: slideIndex++
-        });
-      });
-    }
-    
-    if (signedSocials.length > 0) {
-      // Section card
-      slides.push({
-        type: 'section',
-        data: { title: 'Socials', subtitle: "Here are {name}'s social media highlights" },
-        index: slideIndex++
-      });
-      // Social photos
-      signedSocials.forEach((uri, i) => {
-        slides.push({
-          type: 'photo',
-          data: { uri, category: 'Socials', photoIndex: i, totalPhotos: signedSocials.length },
-          index: slideIndex++
-        });
-      });
-    }
-    
-    // Add overall rating slide at the end
+
     slides.push({
       type: 'overall',
-      data: { name: reviewee?.displayName || 'User', profilePicture: avatarUri }, // Use profile picture instead of selfie
+      data: { name: reviewee?.displayName || 'User', profilePicture: avatarUri },
       index: slideIndex++
     });
-    
+
     return slides;
-  }, [signedOutfits, signedRoom, signedSocials, avatarUri, reviewee?.displayName, parsedNotes?.message]);
+  }, [signedProfilePhotos, avatarUri, reviewee?.displayName, parsedNotes?.message]);
 
   // Create sections for VideoReviewSection
   const reviewSections = React.useMemo(() => {
-    const sections = [];
-    
-    if (signedOutfits.length > 0) {
-      sections.push({
-        title: 'Outfits',
-        subtitle: 'Rate and review their outfit choices',
-        photos: signedOutfits,
-        category: 'outfits'
-      });
-    }
-    
-    if (signedRoom.length > 0) {
-      sections.push({
-        title: 'Room Tour',
-        subtitle: 'Evaluate their living space and style',
-        photos: signedRoom,
-        category: 'room'
-      });
-    }
-    
-    if (signedSocials.length > 0) {
-      sections.push({
-        title: 'Socials',
-        subtitle: 'Review their social media presence',
-        photos: signedSocials,
-        category: 'socials'
-      });
-    }
-    
-    return sections;
-  }, [signedOutfits, signedRoom, signedSocials]);
+    if (!signedProfilePhotos.length) return [];
+    return [
+      {
+        title: 'Dating Profile',
+        subtitle: 'Review their dating profile photos and share what stands out',
+        photos: signedProfilePhotos,
+        category: 'datingProfile'
+      },
+    ];
+  }, [signedProfilePhotos]);
 
   const hasConsent = React.useMemo(() => typeof parsedNotes?.consent?.shareOnSocial === 'boolean', [parsedNotes]);
   const shareConsent = React.useMemo(() => !!parsedNotes?.consent?.shareOnSocial, [parsedNotes]);
@@ -225,19 +161,16 @@ export default function ReviewerRequestScreen() {
         try {
           const n = req?.notes ? (typeof req.notes === 'string' ? JSON.parse(req.notes) : req.notes) : null;
           const basePhotos = Array.isArray((req as any)?.photos) ? ((req as any).photos as string[]) : [];
-          const outfits: string[] = Array.isArray(n?.media?.outfits) ? (n.media.outfits as string[]) : [];
-          const room: string[] = Array.isArray(n?.media?.roomTourPhotos) ? (n.media.roomTourPhotos as string[]) : [];
-          const socials: string[] = Array.isArray(n?.media?.datingProfileScreenshots) ? (n.media.datingProfileScreenshots as string[]) : [];
+          const datingProfilePhotos: string[] = Array.isArray(n?.media?.datingProfileScreenshots)
+            ? (n.media.datingProfileScreenshots as string[])
+            : [];
 
-          if (outfits.length) setSignedOutfits(await signRequestMediaUrls(outfits)); else setSignedOutfits([]);
-          if (room.length) setSignedRoom(await signRequestMediaUrls(room)); else setSignedRoom([]);
-          if (socials.length) setSignedSocials(await signRequestMediaUrls(socials)); else setSignedSocials([]);
+          const photosToSign = datingProfilePhotos.length ? datingProfilePhotos : basePhotos;
 
-          // Fallback: if no categorized media present, show whatever is in basePhotos under a generic section
-          if (!outfits.length && !room.length && !socials.length && basePhotos.length) {
-            setSignedPhotos(await signRequestMediaUrls(basePhotos));
+          if (photosToSign.length) {
+            setSignedProfilePhotos(await signRequestMediaUrls(photosToSign));
           } else {
-            setSignedPhotos([]);
+            setSignedProfilePhotos([]);
           }
 
           // No longer loading selfie - using user's profile picture instead
@@ -392,16 +325,16 @@ export default function ReviewerRequestScreen() {
 
         {parsedNotes?.message && (
           <View style={styles.section}>
-            <Text style={styles.label}>About Me</Text>
+            <Text style={styles.label}>Profile Bio</Text>
             <Text style={[styles.value, { lineHeight: 26, fontStyle: 'italic' }]}>{parsedNotes.message}</Text>
           </View>
         )}
 
         {avatarUri && (
           <View style={[styles.section, styles.mediaSection]}>
-            <Text style={styles.label}>Profile Picture</Text>
+            <Text style={styles.label}>Profile Photo</Text>
             <Text style={[styles.value, { fontSize: 14, color: Colors.brand.textSecondary, marginBottom: 12 }]}>
-              This is the profile picture that will be used in reviews
+              This is the hero photo they lead with on their dating profile.
             </Text>
             <TouchableOpacity onPress={() => { 
               if (!isVideoReviewMode) {
@@ -417,8 +350,11 @@ export default function ReviewerRequestScreen() {
 
         {/* Video Review Section with section cards */}
         {reviewSections.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.label}>Photo Review</Text>
+          <View style={[styles.section, styles.mediaSection]}>
+            <Text style={styles.label}>Dating Profile Photos</Text>
+            <Text style={[styles.sectionHint, { marginTop: 0 }]}>
+              Browse their uploaded dating profile shots while you plan your feedback.
+            </Text>
             <VideoReviewSection
               sections={reviewSections}
               onPhotoPress={(photos, index) => {
@@ -428,21 +364,26 @@ export default function ReviewerRequestScreen() {
                   setGalleryOpen(true);
                 }
               }}
-              currentSectionIndex={currentSectionIndex}
             />
           </View>
         )}
 
-        {signedPhotos.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.label}>Photos</Text>
-            <PhotoCarousel uris={signedPhotos} onPressItem={(i) => { 
-              if (!isVideoReviewMode) {
-                setGalleryUris(signedPhotos); 
-                setGalleryIndex(i); 
-                setGalleryOpen(true); 
-              }
-            }} />
+        {signedProfilePhotos.length > 0 && (
+          <View style={[styles.section, styles.mediaSection]}>
+            <Text style={styles.label}>Dating Profile Gallery</Text>
+            <Text style={[styles.sectionHint, { marginTop: 0 }]}>
+              Swipe through their dating profile photos and tap any image to see the full resolution.
+            </Text>
+            <PhotoCarousel
+              uris={signedProfilePhotos}
+              onPressItem={(i) => {
+                if (!isVideoReviewMode) {
+                  setGalleryUris(signedProfilePhotos);
+                  setGalleryIndex(i);
+                  setGalleryOpen(true);
+                }
+              }}
+            />
           </View>
         )}
 
@@ -499,7 +440,9 @@ export default function ReviewerRequestScreen() {
         {request.status === 'in_progress' && (
           <View style={styles.section}>
             <Text style={styles.label}>Video Review</Text>
-            <Text style={styles.sectionHint}>Record a video review while swiping through photos. You can rate and add notes to each photo during the recording.</Text>
+            <Text style={styles.sectionHint}>
+              Record a dating profile video review while you swipe through their photos. Drop quick notes or ratings as you go to keep everything fresh.
+            </Text>
             {Platform.OS !== 'web' && (
               <RNView style={{ marginTop: 16 }}>
                 <TouchableOpacity style={[styles.actionButton, styles.primaryButton]} onPress={() => {
@@ -771,26 +714,37 @@ export default function ReviewerRequestScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
-  section: { marginHorizontal: 20, marginVertical: 12, backgroundColor: Colors.brand.cardBackground, borderRadius: 20, padding: 20, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4 },
-  mediaSection: { alignItems: 'stretch' },
-  label: { fontSize: 20, color: Colors.brand.textPrimary, marginBottom: 12, fontWeight: '800', letterSpacing: 0.3 },
-  value: { fontSize: 16, color: Colors.brand.textPrimary, lineHeight: 24, fontWeight: '500' },
-  selfie: { width: '100%', aspectRatio: 1.2, borderRadius: 12, marginTop: 8, maxHeight: 280 },
-  photosGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 8, justifyContent: 'center' },
-  photo: { width: '31%', aspectRatio: 1, borderRadius: 8 },
+  section: {
+    marginHorizontal: 20,
+    marginVertical: 12,
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.22,
+    shadowRadius: 24,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  mediaSection: { alignItems: 'stretch', gap: 16 },
+  label: { fontSize: 22, color: Colors.brand.textPrimary, marginBottom: 12, fontWeight: '900', letterSpacing: 0.4 },
+  value: { fontSize: 16, color: Colors.brand.textPrimary, lineHeight: 26, fontWeight: '500' },
+  selfie: { width: '100%', aspectRatio: 1, borderRadius: 16, marginTop: 8, maxHeight: 320 },
   actionsSection: { marginHorizontal: 20, marginVertical: 16, gap: 16 },
-  actionButton: { paddingVertical: 18, paddingHorizontal: 24, borderRadius: 16, alignItems: 'center', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
+  actionButton: { paddingVertical: 18, paddingHorizontal: 24, borderRadius: 18, alignItems: 'center', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.18, shadowRadius: 10, elevation: 4 },
   acceptButton: { backgroundColor: Colors.brand.status.completed },
   primaryButton: { backgroundColor: Colors.brand.accentOrange },
   denyButton: { backgroundColor: 'transparent', borderWidth: 2, borderColor: Colors.brand.status.rejected },
-  actionButtonText: { fontSize: 17, fontWeight: '700', color: Colors.brand.textOnGradient, letterSpacing: 0.3 },
+  actionButtonText: { fontSize: 17, fontWeight: '700', color: Colors.brand.textOnGradient, letterSpacing: 0.35 },
   denyButtonText: { color: Colors.brand.status.rejected },
   statusMessage: { fontSize: 16, fontWeight: '600', color: Colors.brand.textSecondary, textAlign: 'center', padding: 16 },
   emptyText: { color: Colors.brand.textSecondary },
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   modalCard: { width: '90%', backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 16 },
   noteInput: { minHeight: 100, borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 12, padding: 12, color: Colors.brand.textPrimary, marginBottom: 12 },
-  sectionHint: { fontSize: 14, color: Colors.brand.textSecondary, marginTop: 8, fontWeight: '500', lineHeight: 20, fontStyle: 'italic' },
+  sectionHint: { fontSize: 15, color: Colors.brand.textSecondary, marginTop: 8, fontWeight: '500', lineHeight: 22, fontStyle: 'italic' },
 
   disabledButton: { backgroundColor: Colors.brand.border, opacity: 0.6 },
   overlayCard: { 

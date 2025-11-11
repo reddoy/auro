@@ -6,7 +6,6 @@ import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { copyToClipboard } from '@/lib/clipboard';
 
 import { Text, View } from '@/components/Themed';
-import Spinner from '@/components/Spinner';
 import { supabase } from '@/lib/supabase';
 import Colors from '@/constants/Colors';
 import AvatarUploader from '@/components/AvatarUploader';
@@ -15,6 +14,7 @@ import type { Profile } from '@/types';
 import { createStripeExpressLoginLink, createStripeExpressOnboardingLink } from '@/lib/payments';
 import { getRequestsByReviewer } from '@/lib/api';
 import { MotionPressable, MotionView, cardEntrance, subtleFadeIn } from '@/components/motion';
+import { SkeletonBlock, SkeletonCircle, SkeletonParagraph } from '@/components/Skeletons';
 
 const socialIcons = {
   instagram: require('../../../Instagram_icon-removebg-preview.png'),
@@ -289,13 +289,98 @@ export default function ProfileScreen() {
   let sectionCursor = 0;
   const nextEntrance = () => cardEntrance(sectionCursor++);
 
-  if (initialLoad) {
+  const renderSkeleton = (overlay = false) => {
+    const content = (
+      <ScrollView
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: 24,
+          paddingHorizontal: 16,
+          paddingTop: overlay ? 0 : insets.top,
+        }}
+      >
+        <MotionView entering={subtleFadeIn()} style={styles.header}>
+          <MotionView entering={subtleFadeIn()} style={styles.headerContent}>
+            <MotionView entering={subtleFadeIn()} style={styles.profileSection}>
+              <View style={{ marginRight: 20 }}>
+                <SkeletonCircle size={94} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <SkeletonBlock width="75%" height={32} />
+                <SkeletonBlock width="50%" height={16} style={{ marginTop: 10 }} />
+              </View>
+            </MotionView>
+            <SkeletonBlock width="60%" height={50} radius={24} />
+          </MotionView>
+        </MotionView>
+
+        <MotionView entering={cardEntrance(1)} style={styles.bioSection}>
+          <SkeletonBlock width="45%" height={26} />
+          <SkeletonParagraph
+            lines={3}
+            lineHeight={14}
+            widths={['95%', '85%', '70%']}
+            style={{ marginTop: 18 }}
+          />
+          <SkeletonBlock width="100%" height={48} radius={18} style={{ marginTop: 20 }} />
+        </MotionView>
+
+        <MotionView entering={cardEntrance(2)} style={styles.bioSection}>
+          <SkeletonBlock width="35%" height={24} />
+          <SkeletonParagraph
+            lines={4}
+            lineHeight={14}
+            widths={['90%', '80%', '70%', '50%']}
+            style={{ marginTop: 16 }}
+          />
+        </MotionView>
+
+        <MotionView entering={cardEntrance(3)} style={styles.actionsSection}>
+          {[0, 1].map((index) => (
+            <View
+              key={index}
+              style={[
+                styles.actionItem,
+                { borderBottomWidth: index === 1 ? 0 : StyleSheet.hairlineWidth },
+              ]}
+            >
+              <View style={styles.actionIconContainer}>
+                <SkeletonCircle size={44} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <SkeletonBlock width="60%" height={18} />
+              </View>
+              <SkeletonBlock width={18} height={18} radius={9} />
+            </View>
+          ))}
+        </MotionView>
+
+        <MotionView entering={cardEntrance(4)} style={styles.dangerSection}>
+          <View style={styles.logoutButtonDark}>
+            <SkeletonBlock width="40%" height={18} />
+          </View>
+        </MotionView>
+      </ScrollView>
+    );
+
+    if (overlay) {
+      return (
+        <View style={styles.profileRefreshOverlay}>
+          {content}
+        </View>
+      );
+    }
+
     return (
-      <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
-        <Spinner size={48} />
-        <Text style={styles.loadingText}>Loading your profile…</Text>
+      <View style={[styles.container, { paddingTop: 0 }]}>
+        {content}
       </View>
     );
+  };
+
+  if (initialLoad) {
+    return renderSkeleton();
   }
 
   return (
@@ -491,7 +576,7 @@ export default function ProfileScreen() {
                   </View>
                 </>
               ) : null}
-            </View>
+            </MotionView>
 
             {profile?.bio && (
               <MotionView entering={nextEntrance()} style={styles.bioSection}>
@@ -592,7 +677,7 @@ export default function ProfileScreen() {
           </MotionPressable>
         </MotionView>
       </ScrollView>
-
+      {refreshing ? renderSkeleton(true) : null}
     </View>
   );
 }
@@ -610,6 +695,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: Colors.brand.textSecondary,
+  },
+  profileRefreshOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Colors.brand.background,
+    zIndex: 6,
   },
   container: { flex: 1, backgroundColor: Colors.brand.background },
   scrollView: { flex: 1, backgroundColor: 'transparent' },

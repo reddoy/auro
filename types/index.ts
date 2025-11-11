@@ -151,6 +151,7 @@ export interface DbReviewerSummary {
   skills?: string[] | null;
   pricePerReview?: number | null;
   rating?: number | null;
+  reviewsGivenCount?: number | null;
   packages?: ReviewerPackage[] | null;
   links?: ProfileLinks | null;
   bio?: string | null;

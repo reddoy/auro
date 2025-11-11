@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, TouchableOpacity, TextInput, View as RNView, FlatList, ScrollView } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { StyleSheet, TouchableOpacity, TextInput, View as RNView, FlatList, ScrollView, Animated, Easing } from 'react-native';
 import { router } from 'expo-router';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
@@ -20,6 +20,9 @@ export default function DiscoverReviewersScreen() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [sort, setSort] = useState<SortType>('default');
   const insets = useSafeAreaInsets();
+  const contentOpacity = useRef(new Animated.Value(0)).current;
+  const skeletonOpacity = useRef(new Animated.Value(1)).current;
+  const [skeletonVisible, setSkeletonVisible] = useState(true);
 
   useEffect(() => {
     const run = async () => {
@@ -47,6 +50,35 @@ export default function DiscoverReviewersScreen() {
     };
     run();
   }, []);
+
+  useEffect(() => {
+    if (loading) {
+      contentOpacity.stopAnimation();
+      skeletonOpacity.stopAnimation();
+      contentOpacity.setValue(0);
+      skeletonOpacity.setValue(1);
+      setSkeletonVisible(true);
+      return;
+    }
+
+    Animated.parallel([
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 280,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(skeletonOpacity, {
+        toValue: 0,
+        duration: 240,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setSkeletonVisible(false);
+      skeletonOpacity.setValue(0);
+    });
+  }, [loading, contentOpacity, skeletonOpacity]);
 
   const filteredAndSorted = useMemo(() => {
     let result = [...reviewers];
@@ -157,7 +189,7 @@ export default function DiscoverReviewersScreen() {
           accessibilityLabel="Search reviewers"
         />
       </RNView>
-      
+
       {/* Filter Buttons */}
       <RNView style={styles.filterContainer}>
         <ScrollView 
@@ -237,17 +269,35 @@ export default function DiscoverReviewersScreen() {
         </ScrollView>
       </RNView>
 
-      <FlatList
-        data={filteredAndSorted}
-        keyExtractor={(it) => it.id}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80 }}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>{loading ? 'Loading…' : 'No reviewers found'}</Text>
-          </View>
-        }
-      />
+      <View style={styles.listWrapper}>
+        {skeletonVisible && (
+          <Animated.View style={[styles.skeletonContainer, { opacity: skeletonOpacity }]} pointerEvents="none">
+          {[...Array(6)].map((_, index) => (
+            <View key={index} style={styles.skeletonRow}>
+              <View style={styles.skeletonAvatar} />
+              <View style={styles.skeletonContent}>
+                <View style={[styles.skeletonLine, { width: '60%', marginBottom: 8 }]} />
+                <View style={[styles.skeletonLine, { width: '40%', marginBottom: 12 }]} />
+                <View style={[styles.skeletonLine, { width: '50%' }]} />
+              </View>
+            </View>
+          ))}
+          </Animated.View>
+        )}
+        <Animated.View style={[styles.contentWrapper, { opacity: contentOpacity }]}>
+          <FlatList
+            data={filteredAndSorted}
+            keyExtractor={(it) => it.id}
+            renderItem={renderItem}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80 }}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <Text style={styles.emptyText}>{loading ? 'Loading…' : 'No reviewers found'}</Text>
+              </View>
+            }
+          />
+        </Animated.View>
+      </View>
     </View>
   );
 }
@@ -377,4 +427,33 @@ const styles = StyleSheet.create({
   },
   empty: { alignItems: 'center', justifyContent: 'center', paddingTop: 40 },
   emptyText: { color: Colors.brand.textSecondary },
+  listWrapper: { flex: 1 },
+  skeletonContainer: { 
+    ...StyleSheet.absoluteFillObject,
+    paddingHorizontal: 16, 
+    paddingBottom: 80,
+    justifyContent: 'flex-start',
+  },
+  skeletonRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: Colors.brand.cardBackground, 
+    padding: 16, 
+    borderRadius: 14, 
+    marginBottom: 12,
+  },
+  skeletonAvatar: { 
+    width: 56, 
+    height: 56, 
+    borderRadius: 28, 
+    backgroundColor: 'rgba(255,255,255,0.08)', 
+    marginRight: 12,
+  },
+  skeletonContent: { flex: 1 },
+  skeletonLine: { 
+    height: 12, 
+    borderRadius: 6, 
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  contentWrapper: { flex: 1 },
 });

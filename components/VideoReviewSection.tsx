@@ -1,10 +1,8 @@
 import React from 'react';
 import { StyleSheet, ScrollView } from 'react-native';
-import { View, Text } from '@/components/Themed';
+import { View } from '@/components/Themed';
 import SectionTitleCard from './SectionTitleCard';
 import PhotoCarousel from './PhotoCarousel';
-import PaginationDots from './PaginationDots';
-import Colors from '@/constants/Colors';
 
 type PhotoSection = {
   title: string;
@@ -49,7 +47,7 @@ export default function VideoReviewSection({ sections, onPhotoPress, currentSect
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.brand.background,
+    backgroundColor: 'transparent',
   },
   sectionContainer: {
     marginBottom: 8,
