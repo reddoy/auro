@@ -64,10 +64,10 @@ export default function DatingProfileUploadScreen() {
     const frameWidth = Math.max(220, Math.min(constrainedWidth, heightLimitedWidth));
     const frameHeight = frameWidth * (16 / 9);
     const slideHorizontalPadding = Math.max((windowWidth - frameWidth) / 2, 16);
-    const slideTopPadding = insets.top + 96;
-    const slideBottomPadding = insets.bottom + 36;
-    const paginationTop = slideTopPadding + frameHeight / 2 - 48;
-    const paginationLeft = Math.max(slideHorizontalPadding - 24, 12);
+    const slideTopPadding = Math.max(insets.top + 56, 48);
+    const slideBottomPadding = Math.max(insets.bottom + 48, 36);
+    const paginationTop = slideTopPadding + frameHeight / 2 - 40;
+    const paginationLeft = Math.max(slideHorizontalPadding - 16, 16);
 
     return {
       frameWidth,
@@ -624,79 +624,127 @@ export default function DatingProfileUploadScreen() {
                 )}
                 
                 {slide.type === 'overall' && (
-                  <RNView style={[styles.overlayCard, { width: frameMetrics.frameWidth, maxHeight: frameMetrics.frameHeight }]}>
-                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
-                    <Text style={styles.overlayTitle}>Overall Rating</Text>
-                    <Text style={styles.overlayText}>Rate {slide.data.name} overall</Text>
-                    
-                    {slide.data.profilePicture ? (
-                      <TouchableOpacity
-                        style={{ width: '100%', aspectRatio: 1, borderRadius: 12, marginTop: 16, marginBottom: 16, overflow: 'hidden' }}
-                      >
-                        <Image source={{ uri: slide.data.profilePicture }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
-                      </TouchableOpacity>
-                    ) : null}
-                    
-                    <RNView style={{ marginTop: 16, alignItems: 'center' }}>
-                      <Text style={[styles.overlayText, { marginBottom: 16 }]}>Overall Rating:</Text>
-                      <StarRating 
-                        rating={videoReviewState.overallRating * 2}
-                        category="Overall"
-                        size="large"
-                        showNumber={false}
-                      />
-                      <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 16 }}>
+                  <RNView style={[
+                    styles.overallCardWrapper,
+                    { width: frameMetrics.frameWidth, height: frameMetrics.frameHeight }
+                  ]}>
+                    <LinearGradient
+                      colors={['rgba(255,138,76,0.24)', 'rgba(61,30,125,0.65)']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.overallGradient}
+                    >
+                      <RNView style={styles.overallCardHeader}>
+                        <Image
+                          source={require('@/auro_aura_logo_nobg.png')}
+                          style={styles.overallLogo}
+                          contentFit="contain"
+                        />
+                        <RNView style={styles.ratingBadge}>
+                          <Text style={styles.ratingBadgeNumber}>
+                            {videoReviewState.overallRating > 0
+                              ? videoReviewState.overallRating.toFixed(1)
+                              : '—'}
+                          </Text>
+                          <Text style={styles.ratingBadgeSuffix}>/5</Text>
+                        </RNView>
+                      </RNView>
+
+                      <Text style={[styles.overlayTitle, styles.overallTitle]}>Overall Rating</Text>
+                      <Text style={[styles.overlayText, styles.overallSubtitle]}>
+                        Give {slide.data.name} your final score
+                      </Text>
+
+                      <RNView style={styles.overallAvatarBlock}>
+                        {slide.data.profilePicture ? (
+                          <LinearGradient
+                            colors={[Colors.brand.accentOrange, Colors.brand.primary]}
+                            style={styles.overallAvatarRing}
+                          >
+                            <Image
+                              source={{ uri: slide.data.profilePicture }}
+                              style={styles.overallAvatarImage}
+                              contentFit="cover"
+                            />
+                          </LinearGradient>
+                        ) : (
+                          <RNView style={[styles.overallAvatarRing, styles.overallAvatarFallback]}>
+                            <Text style={styles.overallAvatarInitial}>
+                              {slide.data.name ? slide.data.name.charAt(0).toUpperCase() : '?'}
+                            </Text>
+                          </RNView>
+                        )}
+                      </RNView>
+
+                      <RNView style={styles.overallStars}>
+                        <StarRating
+                          rating={videoReviewState.overallRating * 2}
+                          category="Overall"
+                          size="large"
+                          showNumber={false}
+                        />
+                      </RNView>
+
+                      <RNView style={styles.overallButtonsGrid}>
                         {ratingSteps.map((rating) => {
                           const isSelected = videoReviewState.overallRating === rating;
                           return (
                             <TouchableOpacity
                               key={rating}
-                              onPress={() => setVideoReviewState(prev => ({ ...prev, overallRating: rating }))}
+                              onPress={() =>
+                                setVideoReviewState(prev => ({ ...prev, overallRating: rating }))
+                              }
                               style={[
                                 styles.ratingButton,
+                                styles.overallRatingButton,
                                 isSelected && styles.ratingButtonSelected
                               ]}
                             >
-                              <Text style={[
-                                styles.ratingButtonText,
-                                isSelected && styles.ratingButtonTextSelected
-                              ]}>
+                              <Text
+                                style={[
+                                  styles.ratingButtonText,
+                                  styles.overallRatingButtonText,
+                                  isSelected && styles.ratingButtonTextSelected
+                                ]}
+                              >
                                 {rating.toFixed(rating % 1 === 0 ? 0 : 1)}
                               </Text>
                             </TouchableOpacity>
                           );
                         })}
                       </RNView>
-                    </RNView>
 
-                    <RNView style={{ marginTop: 20, width: '100%' }}>
-                      <Text style={[styles.overlayText, { marginBottom: 12 }]}>Overall Note</Text>
-                      <TextInput
-                        style={[styles.overallNoteInput, { minHeight: 100 }]}
-                        placeholder="Write a quick summary to pair with your video review"
-                        placeholderTextColor={Colors.brand.textSecondary}
-                        multiline
-                        value={videoReviewState.overallNote}
-                        onChangeText={(text) => setVideoReviewState(prev => ({ ...prev, overallNote: text }))}
-                        numberOfLines={4}
-                        textAlignVertical="top"
-                      />
-                    </RNView>
-                    
-                    <TouchableOpacity
-                      onPress={handleSubmitReview}
-                      disabled={!canSubmitReview}
-                      style={[
-                        styles.actionButton, 
-                        styles.acceptButton, 
-                        { marginTop: 24 },
-                        !canSubmitReview && styles.disabledButton
-                      ]}
-                    >
-                      <Text style={styles.actionButtonText}>
-                        Finish Video Review
-                      </Text>
-                    </TouchableOpacity>
+                      <RNView style={styles.overallNoteWrapper}>
+                        <Text style={styles.overallNoteLabel}>Overall Note</Text>
+                        <TextInput
+                          style={[styles.overallNoteInput, styles.overallNoteInputDark]}
+                          placeholder="Drop a quick summary that pairs perfectly with your video"
+                          placeholderTextColor="rgba(255,255,255,0.6)"
+                          multiline
+                          value={videoReviewState.overallNote}
+                          onChangeText={(text) =>
+                            setVideoReviewState(prev => ({ ...prev, overallNote: text }))
+                          }
+                          numberOfLines={4}
+                          textAlignVertical="top"
+                        />
+                      </RNView>
+
+                      <TouchableOpacity
+                        onPress={handleSubmitReview}
+                        disabled={!canSubmitReview}
+                        style={[
+                          styles.actionButton,
+                          styles.acceptButton,
+                          styles.finishButton,
+                          !canSubmitReview && styles.disabledButton
+                        ]}
+                      >
+                        <Text style={styles.actionButtonText}>
+                          Finish Video Review
+                        </Text>
+                      </TouchableOpacity>
+                    </LinearGradient>
                   </RNView>
                 )}
               </RNView>
@@ -1076,6 +1124,11 @@ const styles = StyleSheet.create({
   ratingButtonSelected: {
     backgroundColor: Colors.brand.accentOrange,
     borderColor: Colors.brand.accentOrange,
+    shadowColor: Colors.brand.accentOrange,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.32,
+    shadowRadius: 16,
+    elevation: 10,
   },
   ratingButtonText: {
     fontSize: 18,
@@ -1103,6 +1156,121 @@ const styles = StyleSheet.create({
     color: Colors.brand.textPrimary,
     borderWidth: 1,
     borderColor: Colors.brand.divider,
+  },
+  overallCardWrapper: {
+    borderRadius: 28,
+    overflow: 'hidden',
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.35,
+    shadowRadius: 28,
+    elevation: 12,
+  },
+  overallGradient: {
+    flex: 1,
+    borderRadius: 28,
+    paddingVertical: 24,
+    paddingHorizontal: 24,
+    justifyContent: 'space-between',
+  },
+  overallCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  overallLogo: {
+    width: 72,
+    height: 34,
+  },
+  ratingBadge: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
+  ratingBadgeNumber: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: Colors.brand.textOnGradient,
+    lineHeight: 32,
+  },
+  ratingBadgeSuffix: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.brand.textOnGradient,
+    marginLeft: 4,
+    marginBottom: 4,
+  },
+  overallTitle: {
+    marginTop: 8,
+    fontSize: 26,
+    color: Colors.brand.textOnGradient,
+  },
+  overallSubtitle: {
+    color: 'rgba(255,255,255,0.72)',
+  },
+  overallAvatarBlock: {
+    alignItems: 'center',
+  },
+  overallAvatarRing: {
+    width: 132,
+    height: 132,
+    borderRadius: 66,
+    padding: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  overallAvatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 62,
+  },
+  overallAvatarFallback: {
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
+  overallAvatarInitial: {
+    fontSize: 52,
+    fontWeight: '800',
+    color: Colors.brand.textOnGradient,
+  },
+  overallStars: {
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  overallButtonsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  overallRatingButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  overallRatingButtonText: {
+    color: Colors.brand.textOnGradient,
+    fontSize: 16,
+  },
+  overallNoteWrapper: {
+    marginTop: 8,
+    width: '100%',
+  },
+  overallNoteInputDark: {
+    backgroundColor: 'rgba(0,0,0,0.22)',
+    borderColor: 'rgba(255,255,255,0.18)',
+    color: Colors.brand.textOnGradient,
+    borderRadius: 18,
+  },
+  finishButton: {
+    marginTop: 18,
   },
   backToHomeButton: {
     marginTop: 32,
