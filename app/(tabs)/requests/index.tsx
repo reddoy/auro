@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { StyleSheet, Alert, View as RNView, FlatList, Platform, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -27,6 +27,12 @@ export default function RequestsScreen() {
   const [isReviewer, setIsReviewer] = useState(false);
   const receivedCount = requests.length;
   const [filter, setFilter] = useState<'active' | 'completed' | 'archived'>('active');
+  const skipNextFocusRefresh = useRef(true);
+  const loadingRef = useRef(loading);
+
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
 
   useEffect(() => {
     const run = async () => {
@@ -113,6 +119,10 @@ export default function RequestsScreen() {
 
   // Refresh data whenever this screen regains focus (e.g., after Accept/Deny)
   const refreshData = useCallback(() => {
+    if (loadingRef.current) {
+      console.log('[my-reviews] refresh skipped because loading is in progress');
+      return;
+    }
     (async () => {
       console.log('[my-reviews] refresh triggered');
       try {
@@ -188,6 +198,11 @@ export default function RequestsScreen() {
   }, []);
 
   useFocusEffect(useCallback(() => {
+    if (skipNextFocusRefresh.current) {
+      skipNextFocusRefresh.current = false;
+      console.log('[my-reviews] focus refresh skipped on first focus');
+      return () => {};
+    }
   console.log('[my-reviews] screen focused, running refreshData');
     refreshData();
     return () => {};

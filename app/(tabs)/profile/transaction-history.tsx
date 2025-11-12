@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { StyleSheet, TouchableOpacity, FlatList, RefreshControl, Platform, Alert, Linking, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -37,6 +37,8 @@ export default function TransactionBreakdownScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [stripePortalUrl, setStripePortalUrl] = useState<string | null>(null);
+  const skipNextFocusRefresh = useRef(true);
+  const loadInFlightRef = useRef(false);
 
   const renderSkeleton = (overlay = false) => {
     const header = (
@@ -100,7 +102,21 @@ export default function TransactionBreakdownScreen() {
     );
   };
 
-  const loadTransactions = useCallback(async () => {
+  const loadTransactions = useCallback(
+  async (reason: 'initial' | 'focus' | 'pull' = 'initial') => {
+    if (loadInFlightRef.current) {
+      console.log('[transactions] load skipped', { reason, inFlight: true });
+      return;
+    }
+
+    loadInFlightRef.current = true;
+    if (reason === 'initial') {
+      setLoading(true);
+    } else if (reason === 'pull') {
+      setRefreshing(true);
+    }
+    console.log('[transactions] load started', { reason });
+
     try {
       const p = await supabase.auth.getUser();
       if (!p.data.user) return;
@@ -113,7 +129,6 @@ export default function TransactionBreakdownScreen() {
 
       setProfile(profileData);
 
-      // Load Stripe portal URL if user is a reviewer
       if (profileData?.is_reviewer && profileData.stripe_connect_account_id) {
         try {
           const url = await createStripeExpressLoginLink(profileData.id);
@@ -122,14 +137,15 @@ export default function TransactionBreakdownScreen() {
           console.log('[stripe-portal] error', e);
           setStripePortalUrl(null);
         }
+      } else {
+        setStripePortalUrl(null);
       }
 
       if (profileData?.is_reviewer) {
         const requests = await getRequestsByReviewer(profileData.id);
-        
-        // Transform requests into transaction items
+
         const transactionItems: TransactionItem[] = requests
-          .filter(r => r.amount_cents) // Only include requests with amounts
+          .filter(r => r.amount_cents)
           .map(r => ({
             id: r.id,
             status: r.status,
@@ -152,22 +168,35 @@ export default function TransactionBreakdownScreen() {
           });
 
         setTransactions(transactionItems);
+        console.log('[transactions] load finished', { reason, count: transactionItems.length });
+      } else {
+        setTransactions([]);
+        console.log('[transactions] load finished', { reason, count: 0, reviewer: false });
       }
     } catch (error) {
       console.error('Error loading transactions:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
+      loadInFlightRef.current = false;
     }
-  }, []);
+  },
+  []
+  );
 
   useEffect(() => {
-    loadTransactions();
+    loadTransactions('initial');
   }, [loadTransactions]);
 
   useFocusEffect(
     useCallback(() => {
-      loadTransactions();
+    if (skipNextFocusRefresh.current) {
+      skipNextFocusRefresh.current = false;
+      console.log('[transactions] focus refresh skipped on first focus');
+      return () => {};
+    }
+    loadTransactions('focus');
+    return () => {};
     }, [loadTransactions])
   );
 
@@ -393,8 +422,7 @@ export default function TransactionBreakdownScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => {
-                setRefreshing(true);
-                loadTransactions();
+                loadTransactions('pull');
               }}
               tintColor={Colors.brand.textPrimary}
             />

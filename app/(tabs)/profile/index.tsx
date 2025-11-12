@@ -35,11 +35,14 @@ export default function ProfileScreen() {
     completedPaid: 0,           // Money fully paid out to reviewer's Stripe account
     completedCount: 0           // Total number of completed reviews
   });
+  const skipNextFocusRefresh = useRef(true);
+  const refreshInFlight = useRef(false);
   
 
 
   useEffect(() => {
     const run = async () => {
+      refreshInFlight.current = true;
       console.log('[profile] initial load started');
       try {
         const p = await getCurrentProfile();
@@ -122,6 +125,7 @@ export default function ProfileScreen() {
       } finally {
         // Mark initial load complete so pull-to-refresh becomes available
         setInitialLoad(false);
+        refreshInFlight.current = false;
         console.log('[profile] initial load finished');
       }
     };
@@ -230,85 +234,117 @@ export default function ProfileScreen() {
 
 
 
-  const onRefresh = useCallback(async () => {
-    console.log('[profile] onRefresh start');
-    try {
-      setRefreshing(true);
-      const p = await getCurrentProfile();
-      setProfile(p);
-      if (p?.id && p?.is_reviewer) {
-        try {
-          const link = await createStripeExpressLoginLink(p.id);
-          setStripePortalUrl(link);
-        } catch {}
-        // Refresh earnings data
-        try {
-          const requests = await getRequestsByReviewer(p.id);
-          
-          // Helper function to calculate reviewer amount for a request
-          // SIMPLE MODEL: Reviewer gets totalAmount - auroFee (Auro absorbs Stripe fee)
-          const calculateReviewerAmount = (r: any) => {
-            if (r.reviewer_amount_cents) return r.reviewer_amount_cents;
-            // Fallback: amount - application_fee_cents
-            const amount = r.amount_cents || 0;
-            const auroFee = r.application_fee_cents || 0;
-            return amount - auroFee;
-          };
-          
-          // Awaiting completion: paid reviews not yet completed (status = 'paid' or 'in_progress')
-          const awaitingCompletionRequests = requests.filter(r => (r.status === 'paid' || r.status === 'in_progress') && r.amount_cents);
-          const awaitingCompletion = awaitingCompletionRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
-          
-          // Awaiting payout: completed reviews that haven't been distributed yet
-          // This includes both pending distributions and failed distributions
-          const awaitingPayoutRequests = requests.filter(r => 
-            r.status === 'completed' && 
-            r.amount_cents && 
-            !r.payment_distributed
-          );
-          const awaitingPayout = awaitingPayoutRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
-          
-          // Completed & paid: fully paid out to reviewer (status = 'completed', payment_distributed = true)
-          const completedPaidRequests = requests.filter(r => 
-            r.status === 'completed' && 
-            r.amount_cents && 
-            r.payment_distributed === true
-          );
-          const completedPaid = completedPaidRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
-          
-          // Total completed count
-          const completedCount = requests.filter(r => r.status === 'completed').length;
-          
-          setEarnings({ 
-            awaitingCompletion: awaitingCompletion / 100,
-            awaitingPayout: awaitingPayout / 100,
-            completedPaid: completedPaid / 100,
-            completedCount: completedCount
-          });
-        console.log('[profile] onRefresh earnings updated', {
-          awaitingCompletion: awaitingCompletion / 100,
-          awaitingPayout: awaitingPayout / 100,
-          completedPaid: completedPaid / 100,
-          completedCount,
-        });
-        } catch {}
+  const refreshProfile = useCallback(
+    async (trigger: 'focus' | 'pull') => {
+      if (refreshInFlight.current) {
+        console.log('[profile] refresh skipped', { trigger, reason: 'in-flight' });
+        return;
       }
-    } finally {
-      setRefreshing(false);
-      setInitialLoad(false);
-  console.log('[profile] onRefresh finished');
-    }
-  }, []);
+      if (trigger === 'focus' && initialLoad) {
+        console.log('[profile] refresh skipped', { trigger, reason: 'initial load still running' });
+        return;
+      }
+
+      refreshInFlight.current = true;
+      console.log('[profile] refresh start', { trigger });
+      try {
+        if (trigger === 'pull') {
+          setRefreshing(true);
+        }
+        const p = await getCurrentProfile();
+        setProfile(p);
+        if (p?.id && p?.is_reviewer) {
+          try {
+            const link = await createStripeExpressLoginLink(p.id);
+            setStripePortalUrl(link);
+          } catch {}
+          // Refresh earnings data
+          try {
+            const requests = await getRequestsByReviewer(p.id);
+
+            // Helper function to calculate reviewer amount for a request
+            // SIMPLE MODEL: Reviewer gets totalAmount - auroFee (Auro absorbs Stripe fee)
+            const calculateReviewerAmount = (r: any) => {
+              if (r.reviewer_amount_cents) return r.reviewer_amount_cents;
+              // Fallback: amount - application_fee_cents
+              const amount = r.amount_cents || 0;
+              const auroFee = r.application_fee_cents || 0;
+              return amount - auroFee;
+            };
+
+            // Awaiting completion: paid reviews not yet completed (status = 'paid' or 'in_progress')
+            const awaitingCompletionRequests = requests.filter(r => (r.status === 'paid' || r.status === 'in_progress') && r.amount_cents);
+            const awaitingCompletion = awaitingCompletionRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
+
+            // Awaiting payout: completed reviews that haven't been distributed yet
+            // This includes both pending distributions and failed distributions
+            const awaitingPayoutRequests = requests.filter(r =>
+              r.status === 'completed' &&
+              r.amount_cents &&
+              !r.payment_distributed
+            );
+            const awaitingPayout = awaitingPayoutRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
+
+            // Completed & paid: fully paid out to reviewer (status = 'completed', payment_distributed = true)
+            const completedPaidRequests = requests.filter(r =>
+              r.status === 'completed' &&
+              r.amount_cents &&
+              r.payment_distributed === true
+            );
+            const completedPaid = completedPaidRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
+
+            // Total completed count
+            const completedCount = requests.filter(r => r.status === 'completed').length;
+
+            setEarnings({
+              awaitingCompletion: awaitingCompletion / 100,
+              awaitingPayout: awaitingPayout / 100,
+              completedPaid: completedPaid / 100,
+              completedCount: completedCount
+            });
+            console.log('[profile] refresh earnings updated', {
+              trigger,
+              awaitingCompletion: awaitingCompletion / 100,
+              awaitingPayout: awaitingPayout / 100,
+              completedPaid: completedPaid / 100,
+              completedCount,
+            });
+          } catch {}
+        } else {
+          setStripePortalUrl(null);
+          setEarnings({ awaitingCompletion: 0, awaitingPayout: 0, completedPaid: 0, completedCount: 0 });
+          if (p?.id) {
+            console.log('[profile] refresh reset earnings for non-reviewer', { trigger });
+          }
+        }
+      } finally {
+        if (trigger === 'pull') {
+          setRefreshing(false);
+        }
+        refreshInFlight.current = false;
+        setInitialLoad(false);
+        console.log('[profile] refresh finished', { trigger });
+      }
+    },
+    [initialLoad]
+  );
+
+  const onRefresh = useCallback(() => {
+    refreshProfile('pull');
+  }, [refreshProfile]);
 
   // Refresh profile when screen gains focus so recent changes (e.g., become reviewer) show up
   useFocusEffect(
     useCallback(() => {
-      // Only refresh if not initial load to prevent spacing issues
-      if (!initialLoad) {
-        console.log('[profile] screen focused, triggering onRefresh');
-        onRefresh();
+      if (skipNextFocusRefresh.current) {
+        skipNextFocusRefresh.current = false;
+        console.log('[profile] focus refresh skipped on first focus');
+        return () => {};
       }
-    }, [onRefresh, initialLoad])
+      console.log('[profile] screen focused, triggering refresh');
+      refreshProfile('focus');
+      return () => {};
+    }, [refreshProfile])
   );
 
   useEffect(() => {
