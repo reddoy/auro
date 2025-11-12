@@ -93,7 +93,7 @@ export default function StarRating({
       
       {!label && (
         <Text style={[styles.label, { fontSize: fontSize * 0.8, color: getRatingColor(normalizedRating) }]}>
-          {getRatingLabel(rating)}
+          {getRatingLabel(normalizedRating)}
         </Text>
       )}
     </RNView>

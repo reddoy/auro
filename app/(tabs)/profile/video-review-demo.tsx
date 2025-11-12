@@ -393,7 +393,7 @@ export default function DatingProfileUploadScreen() {
       <View style={styles.demoInfo}>
         <Text style={styles.demoTitle}>🎥 Video Review Interface</Text>
         <Text style={styles.demoDescription}>
-          This is what reviewers see when recording a video review. They can swipe through your photos, rate each one, add notes, and record their feedback.
+          This is what reviewers see when recording a video review. They swipe through your photos while filming, then finish with an overall rating and summary note.
         </Text>
       </View>
 
@@ -416,7 +416,7 @@ export default function DatingProfileUploadScreen() {
         {videoReviewState.videoUri && (
           <View style={styles.videoCompleteContainer}>
             <Text style={styles.videoCompleteText}>✅ Video Review Complete</Text>
-            <Text style={styles.videoCompleteSubtext}>Ready to submit with ratings and notes</Text>
+            <Text style={styles.videoCompleteSubtext}>Ready to submit with an overall rating and note</Text>
           </View>
         )}
       </View>
@@ -502,7 +502,7 @@ export default function DatingProfileUploadScreen() {
       <View style={styles.thankYouContainer}>
         <Text style={styles.thankYouTitle}>🎉 Review Complete!</Text>
         <Text style={styles.thankYouMessage}>
-          Thank you for experiencing the video review demo! In the real app, reviewers would submit their video review with ratings and notes, and you could share it to social media.
+          Thank you for experiencing the video review demo! In the real app, reviewers would submit their video review with an overall rating and note, and you could share it to social media.
             </Text>
             
             <View style={styles.shareButtonsContainer}>
