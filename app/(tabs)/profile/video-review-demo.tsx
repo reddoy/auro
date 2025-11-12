@@ -28,12 +28,8 @@ type VideoReviewState = {
   recordingModeOpen: boolean;
   videoUri: string | null;
   currentPhotoIndex: number;
-  photoRatings: Record<string, number>;
-  photoNotes: Record<string, string>;
   overallRating: number;
-  noteModalOpen: boolean;
-  noteUri: string | null;
-  noteText: string;
+  overallNote: string;
 };
 
 export default function DatingProfileUploadScreen() {
@@ -51,12 +47,8 @@ export default function DatingProfileUploadScreen() {
     recordingModeOpen: false,
     videoUri: null,
     currentPhotoIndex: 0,
-    photoRatings: {},
-    photoNotes: {},
     overallRating: 0,
-    noteModalOpen: false,
-    noteUri: null,
-    noteText: ''
+    overallNote: '',
   });
   const [revieweeName] = useState('Sarah'); // Demo reviewee name
   const [currentFlowStep, setCurrentFlowStep] = useState<'upload' | 'video-review' | 'submitted'>('upload');
@@ -89,6 +81,7 @@ export default function DatingProfileUploadScreen() {
   }, [insets, windowHeight, windowWidth]);
 
   const recorderTop = Math.max(insets.top + 16, frameMetrics.slideTopPadding - 96);
+  const ratingSteps = useMemo(() => Array.from({ length: 9 }, (_, index) => 1 + index * 0.5), []);
 
   const handlePhotoUpload = async (category: 'profile' | 'outfits' | 'room' | 'socials') => {
     try {
@@ -430,7 +423,7 @@ export default function DatingProfileUploadScreen() {
 
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Rating System</Text>
-        <Text style={styles.sectionSubtitle}>Reviewers rate each photo and give an overall rating</Text>
+        <Text style={styles.sectionSubtitle}>Reviewers leave an overall rating with optional notes</Text>
         
         <View style={styles.ratingDemoContainer}>
           <Text style={styles.ratingDemoLabel}>Overall Rating:</Text>
@@ -441,24 +434,41 @@ export default function DatingProfileUploadScreen() {
             showNumber={false}
           />
           <View style={styles.ratingButtons}>
-            {[1, 2, 3, 4, 5].map((rating) => (
-              <TouchableOpacity
-                key={rating}
-                onPress={() => setVideoReviewState(prev => ({ ...prev, overallRating: rating }))}
-                style={[
-                  styles.ratingButton,
-                  videoReviewState.overallRating === rating && styles.ratingButtonSelected
-                ]}
-              >
-                <Text style={[
-                  styles.ratingButtonText,
-                  videoReviewState.overallRating === rating && styles.ratingButtonTextSelected
-                ]}>
-                  {rating}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {ratingSteps.map((rating) => {
+              const isSelected = videoReviewState.overallRating === rating;
+              return (
+                <TouchableOpacity
+                  key={rating}
+                  onPress={() => setVideoReviewState(prev => ({ ...prev, overallRating: rating }))}
+                  style={[
+                    styles.ratingButton,
+                    isSelected && styles.ratingButtonSelected
+                  ]}
+                >
+                  <Text style={[
+                    styles.ratingButtonText,
+                    isSelected && styles.ratingButtonTextSelected
+                  ]}>
+                    {rating.toFixed(rating % 1 === 0 ? 0 : 1)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
+        </View>
+
+        <View style={styles.overallNoteContainer}>
+          <Text style={styles.overallNoteLabel}>Overall Note</Text>
+          <TextInput
+            style={styles.overallNoteInput}
+            placeholder="Share a quick summary of your feedback"
+            placeholderTextColor={Colors.brand.textSecondary}
+            multiline
+            value={videoReviewState.overallNote}
+            onChangeText={(text) => setVideoReviewState(prev => ({ ...prev, overallNote: text }))}
+            numberOfLines={4}
+            textAlignVertical="top"
+          />
         </View>
       </View>
 
@@ -607,30 +617,9 @@ export default function DatingProfileUploadScreen() {
                     >
                       <Image source={{ uri: slide.data.uri }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
                     </TouchableOpacity>
-                    
-                    {/* Rating controls */}
-                    <RNView style={{ marginTop: 16, alignItems: 'center' }}>
-                      <Text style={[styles.overlayText, { marginBottom: 12 }]}>Rate this photo:</Text>
-                      <RNView style={{ flexDirection: 'row', gap: 12, justifyContent: 'center' }}>
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <TouchableOpacity
-                            key={rating}
-                            onPress={() => setVideoReviewState(prev => ({ ...prev, photoRatings: { ...prev.photoRatings, [slide.data.uri]: rating } }))}
-                            style={[
-                              styles.ratingButton,
-                              videoReviewState.photoRatings[slide.data.uri] === rating && styles.ratingButtonSelected
-                            ]}
-                          >
-                            <Text style={[
-                              styles.ratingButtonText,
-                              videoReviewState.photoRatings[slide.data.uri] === rating && styles.ratingButtonTextSelected
-                            ]}>
-                              {rating}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </RNView>
-                    </RNView>
+                    <Text style={[styles.overlayText, { marginTop: 16 }]}>
+                      Share your thoughts out loud while recording. Swipe up to move to the next photo.
+                    </Text>
                   </RNView>
                 )}
                 
@@ -656,25 +645,42 @@ export default function DatingProfileUploadScreen() {
                         size="large"
                         showNumber={false}
                       />
-                      <RNView style={{ flexDirection: 'row', gap: 8, justifyContent: 'center', marginTop: 16 }}>
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <TouchableOpacity
-                            key={rating}
-                            onPress={() => setVideoReviewState(prev => ({ ...prev, overallRating: rating }))}
-                            style={[
-                              styles.ratingButton,
-                              videoReviewState.overallRating === rating && styles.ratingButtonSelected
-                            ]}
-                          >
-                            <Text style={[
-                              styles.ratingButtonText,
-                              videoReviewState.overallRating === rating && styles.ratingButtonTextSelected
-                            ]}>
-                              {rating}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
+                      <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 16 }}>
+                        {ratingSteps.map((rating) => {
+                          const isSelected = videoReviewState.overallRating === rating;
+                          return (
+                            <TouchableOpacity
+                              key={rating}
+                              onPress={() => setVideoReviewState(prev => ({ ...prev, overallRating: rating }))}
+                              style={[
+                                styles.ratingButton,
+                                isSelected && styles.ratingButtonSelected
+                              ]}
+                            >
+                              <Text style={[
+                                styles.ratingButtonText,
+                                isSelected && styles.ratingButtonTextSelected
+                              ]}>
+                                {rating.toFixed(rating % 1 === 0 ? 0 : 1)}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
                       </RNView>
+                    </RNView>
+
+                    <RNView style={{ marginTop: 20, width: '100%' }}>
+                      <Text style={[styles.overlayText, { marginBottom: 12 }]}>Overall Note</Text>
+                      <TextInput
+                        style={[styles.overallNoteInput, { minHeight: 100 }]}
+                        placeholder="Write a quick summary to pair with your video review"
+                        placeholderTextColor={Colors.brand.textSecondary}
+                        multiline
+                        value={videoReviewState.overallNote}
+                        onChangeText={(text) => setVideoReviewState(prev => ({ ...prev, overallNote: text }))}
+                        numberOfLines={4}
+                        textAlignVertical="top"
+                      />
                     </RNView>
                     
                     <TouchableOpacity
@@ -1052,8 +1058,10 @@ const styles = StyleSheet.create({
   },
   ratingButtons: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
     marginTop: 16,
+    justifyContent: 'center',
   },
   ratingButton: {
     width: 44,
@@ -1076,6 +1084,25 @@ const styles = StyleSheet.create({
   },
   ratingButtonTextSelected: {
     color: Colors.brand.textOnGradient,
+  },
+  overallNoteContainer: {
+    marginTop: 28,
+    width: '100%',
+  },
+  overallNoteLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.brand.textPrimary,
+    marginBottom: 8,
+  },
+  overallNoteInput: {
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 16,
+    padding: 16,
+    fontSize: 16,
+    color: Colors.brand.textPrimary,
+    borderWidth: 1,
+    borderColor: Colors.brand.divider,
   },
   backToHomeButton: {
     marginTop: 32,

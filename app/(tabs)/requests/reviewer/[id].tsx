@@ -57,15 +57,12 @@ export default function ReviewerRequestScreen() {
   const [expressUrl, setExpressUrl] = useState<string | null>(null);
 
   // Per-photo notes and ratings for video review
-  const [photoNotes, setPhotoNotes] = useState<Record<string, string>>({});
-  const [photoRatings, setPhotoRatings] = useState<Record<string, number>>({});
   const [overallRating, setOverallRating] = useState<number>(0);
-  const [noteModalOpen, setNoteModalOpen] = useState(false);
-  const [noteUri, setNoteUri] = useState<string | null>(null);
-  const [noteText, setNoteText] = useState('');
+  const [overallNote, setOverallNote] = useState<string>('');
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isVideoReviewMode, setIsVideoReviewMode] = useState(false);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const ratingSteps = React.useMemo(() => Array.from({ length: 9 }, (_, index) => 1 + index * 0.5), []);
 
   const frameMetrics = React.useMemo(() => {
     const horizontalMargin = 32;
@@ -292,7 +289,7 @@ export default function ReviewerRequestScreen() {
         requestId: request.id,
         review: {
           ratings: { overall: overallRating * 2 }, // Convert 1-5 scale to 2-10 scale for overall rating
-          feedback: { strengths: [], improvements: [], generalFeedback: 'Video review completed', sectionNotes: {}, photoNotes } as any,
+          feedback: { strengths: [], improvements: [], generalFeedback: overallNote.trim() || 'Video review completed', sectionNotes: {} } as any,
         },
         videoUrl: uploadedVideoUrl || null,
         imageUrl: null,
@@ -427,7 +424,7 @@ export default function ReviewerRequestScreen() {
           <View style={styles.section}>
             <Text style={styles.label}>Video Review</Text>
             <Text style={styles.sectionHint}>
-              Record a dating profile video review while you swipe through their photos. Drop quick notes or ratings as you go to keep everything fresh.
+              Record a dating profile video review while you swipe through their photos, then wrap with an overall rating and summary note.
             </Text>
             {Platform.OS !== 'web' && (
               <RNView style={{ marginTop: 16 }}>
@@ -524,46 +521,9 @@ export default function ReviewerRequestScreen() {
                     >
                       <Image source={{ uri: slide.data.uri }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
                     </TouchableOpacity>
-                    
-                    {/* Rating controls */}
-                    <RNView style={{ marginTop: 16, alignItems: 'center' }}>
-                      <Text style={[styles.overlayText, { marginBottom: 12 }]}>Rate this photo:</Text>
-                      <RNView style={{ flexDirection: 'row', gap: 12, justifyContent: 'center' }}>
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <TouchableOpacity
-                            key={rating}
-                            onPress={() => setPhotoRatings(prev => ({ ...prev, [slide.data.uri]: rating }))}
-                            style={[
-                              styles.ratingButton,
-                              photoRatings[slide.data.uri] === rating && styles.ratingButtonSelected
-                            ]}
-                          >
-                            <Text style={[
-                              styles.ratingButtonText,
-                              photoRatings[slide.data.uri] === rating && styles.ratingButtonTextSelected
-                            ]}>
-                              {rating}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </RNView>
-                    </RNView>
-
-                    {/* Note button - only show when not in video review mode */}
-                    {!isVideoReviewMode && (
-                      <TouchableOpacity
-                        onPress={() => {
-                          setNoteUri(slide.data.uri);
-                          setNoteText(photoNotes[slide.data.uri] || '');
-                          setNoteModalOpen(true);
-                        }}
-                        style={[styles.noteButton, photoNotes[slide.data.uri] && styles.noteButtonHasNote, { marginTop: 16 }]}
-                      >
-                        <Text style={[styles.noteButtonText, photoNotes[slide.data.uri] && styles.noteButtonTextHasNote]}>
-                          {photoNotes[slide.data.uri] ? '📝 Edit Note' : '📝 Add Note'}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
+                    <Text style={[styles.overlayText, { marginTop: 16 }]}>
+                      Talk through what stands out while you record. Swipe to continue through their profile.
+                    </Text>
                   </RNView>
                 )}
                 
@@ -603,25 +563,42 @@ export default function ReviewerRequestScreen() {
                         size="large"
                         showNumber={false}
                       />
-                      <RNView style={{ flexDirection: 'row', gap: 8, justifyContent: 'center', marginTop: 16 }}>
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <TouchableOpacity
-                            key={rating}
-                            onPress={() => setOverallRating(rating)}
-                            style={[
-                              styles.ratingButton,
-                              overallRating === rating && styles.ratingButtonSelected
-                            ]}
-                          >
-                            <Text style={[
-                              styles.ratingButtonText,
-                              overallRating === rating && styles.ratingButtonTextSelected
-                            ]}>
-                              {rating}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
+                      <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 16 }}>
+                        {ratingSteps.map((rating) => {
+                          const isSelected = overallRating === rating;
+                          return (
+                            <TouchableOpacity
+                              key={rating}
+                              onPress={() => setOverallRating(rating)}
+                              style={[
+                                styles.ratingButton,
+                                isSelected && styles.ratingButtonSelected
+                              ]}
+                            >
+                              <Text style={[
+                                styles.ratingButtonText,
+                                isSelected && styles.ratingButtonTextSelected
+                              ]}>
+                                {rating.toFixed(rating % 1 === 0 ? 0 : 1)}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
                       </RNView>
+                    </RNView>
+
+                    <RNView style={{ marginTop: 20, width: '100%' }}>
+                      <Text style={[styles.overlayText, { marginBottom: 12 }]}>Overall Note</Text>
+                      <TextInput
+                        style={styles.overallNoteInput}
+                        placeholder="Share a short summary to pair with your video review"
+                        placeholderTextColor={Colors.brand.textSecondary}
+                        multiline
+                        value={overallNote}
+                        onChangeText={setOverallNote}
+                        numberOfLines={4}
+                        textAlignVertical="top"
+                      />
                     </RNView>
                     
                     {/* Finish Video Review Button */}
@@ -687,30 +664,6 @@ export default function ReviewerRequestScreen() {
           </RNView>
         </RNView>
       </Modal>
-      {/* Per-photo note editor */}
-      <Modal visible={noteModalOpen} transparent animationType="fade" onRequestClose={() => setNoteModalOpen(false)}>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.label}>Add a note for this photo</Text>
-            <TextInput
-              value={noteText}
-              onChangeText={setNoteText}
-              placeholder="Type your note..."
-              placeholderTextColor={Colors.brand.textSecondary}
-              style={[styles.noteInput, { fontFamily: 'Poppins_400Regular' }]}
-              multiline
-            />
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <TouchableOpacity style={[styles.actionButton, styles.denyButton]} onPress={() => { setNoteModalOpen(false); setNoteText(''); setNoteUri(null); }}>
-                <Text style={[styles.actionButtonText, styles.denyButtonText]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.actionButton, styles.acceptButton]} onPress={() => { if (noteUri) { setPhotoNotes(prev => ({ ...prev, [noteUri]: noteText })); } setNoteModalOpen(false); }}>
-                <Text style={styles.actionButtonText}>Save Note</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
       <ImageGalleryModal visible={galleryOpen} uris={galleryUris} initialIndex={galleryIndex} onClose={() => setGalleryOpen(false)} />
       <SimplePhotoModal visible={photoModalOpen} uri={currentPhotoUri} onClose={() => setPhotoModalOpen(false)} />
     </SafeAreaView>
@@ -746,9 +699,6 @@ const styles = StyleSheet.create({
   denyButtonText: { color: Colors.brand.status.rejected },
   statusMessage: { fontSize: 16, fontWeight: '600', color: Colors.brand.textSecondary, textAlign: 'center', padding: 16 },
   emptyText: { color: Colors.brand.textSecondary },
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
-  modalCard: { width: '90%', backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 16 },
-  noteInput: { minHeight: 100, borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 12, padding: 12, color: Colors.brand.textPrimary, marginBottom: 12 },
   sectionHint: { fontSize: 15, color: Colors.brand.textSecondary, marginTop: 8, fontWeight: '500', lineHeight: 22, fontStyle: 'italic' },
 
   disabledButton: { backgroundColor: Colors.brand.border, opacity: 0.6 },
@@ -816,40 +766,13 @@ const styles = StyleSheet.create({
   ratingButtonTextSelected: { 
     color: '#fff' 
   },
-  noteButton: { 
-    paddingVertical: 14, 
-    paddingHorizontal: 24, 
-    borderRadius: 24, 
-    backgroundColor: 'rgba(255,255,255,0.15)', 
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.25)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2
-  },
-  noteButtonHasNote: { 
-    backgroundColor: Colors.brand.accentMagenta + '40',
-    borderColor: Colors.brand.accentMagenta
-  },
-  noteButtonText: { 
-    color: '#fff', 
-    fontWeight: '600', 
-    fontSize: 14 
-  },
-  noteButtonTextHasNote: { 
-    color: Colors.brand.accentMagenta 
-  },
-  progressText: { 
-    color: '#fff', 
-    fontSize: 14, 
-    fontWeight: '600',
-    textAlign: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20
+  overallNoteInput: {
+    minHeight: 110,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.brand.divider,
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    color: Colors.brand.textPrimary,
   },
 });

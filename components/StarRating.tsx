@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, View as RNView } from 'react-native';
+import { FontAwesome } from '@expo/vector-icons';
 import { View, Text } from './Themed';
 import Colors from '@/constants/Colors';
 
@@ -20,8 +21,11 @@ export default function StarRating({
   category,
   label
 }: Props) {
-  // Convert 0-10 scale to 0-5 scale for stars
-  const starRating = Math.round((rating / 10) * maxStars);
+  const normalizedRating = Math.max(0, Math.min(rating, 10));
+  const starValue = (normalizedRating / 10) * maxStars;
+  const fullStars = Math.floor(starValue);
+  const hasHalfStar = starValue - fullStars >= 0.5 && fullStars < maxStars;
+  const emptyStars = Math.max(maxStars - fullStars - (hasHalfStar ? 1 : 0), 0);
   
   const getRatingColor = (rating: number) => {
     if (rating >= 8) return Colors.brand.status.completed;
@@ -46,23 +50,35 @@ export default function StarRating({
       )}
       
       <RNView style={styles.starsContainer}>
-        {Array.from({ length: maxStars }, (_, index) => {
-          const isFilled = index < starRating;
-          return (
-            <Text 
-              key={index} 
-              style={[
-                styles.star, 
-                { 
-                  fontSize: starSize,
-                  color: isFilled ? getRatingColor(rating) : Colors.brand.border 
-                }
-              ]}
-            >
-              {isFilled ? '★' : '☆'}
-            </Text>
-          );
-        })}
+        {Array.from({ length: fullStars }).map((_, index) => (
+          <FontAwesome
+            key={`full-${index}`}
+            name="star"
+            size={starSize}
+            color={getRatingColor(normalizedRating)}
+            style={styles.starIcon}
+          />
+        ))}
+
+        {hasHalfStar && (
+          <FontAwesome
+            key="half"
+            name="star-half-full"
+            size={starSize}
+            color={getRatingColor(normalizedRating)}
+            style={styles.starIcon}
+          />
+        )}
+
+        {Array.from({ length: emptyStars }).map((_, index) => (
+          <FontAwesome
+            key={`empty-${index}`}
+            name="star-o"
+            size={starSize}
+            color={Colors.brand.border}
+            style={styles.starIcon}
+          />
+        ))}
         
         {showNumber && (
           <Text style={[styles.numberRating, { fontSize: starSize * 0.8, color: getRatingColor(rating) }]}>
@@ -76,7 +92,7 @@ export default function StarRating({
       )}
       
       {!label && (
-        <Text style={[styles.label, { fontSize: fontSize * 0.8, color: getRatingColor(rating) }]}>
+        <Text style={[styles.label, { fontSize: fontSize * 0.8, color: getRatingColor(normalizedRating) }]}>
           {getRatingLabel(rating)}
         </Text>
       )}
@@ -101,10 +117,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     gap: 2,
   },
-  star: {
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
   numberRating: {
     fontWeight: 'bold',
     marginLeft: 8,
@@ -112,5 +124,8 @@ const styles = StyleSheet.create({
   label: {
     color: Colors.brand.textSecondary,
     textAlign: 'center',
+  },
+  starIcon: {
+    marginHorizontal: 1,
   },
 });
