@@ -105,12 +105,14 @@ export default function ConfirmEmailScreen() {
   return (
     <View style={styles.container}>
       <ExpoLinearGradient
-        colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+        colors={[Colors.brand.background, Colors.brand.cardBackgroundLight]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
         style={styles.backgroundGradient}
       />
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <ExpoLinearGradient
-          colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+          colors={[Colors.brand.cardBackgroundLight, Colors.brand.cardBackground]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.header}
@@ -257,7 +259,7 @@ const styles = StyleSheet.create({
     shadowRadius: 24, 
     elevation: 12, 
     borderWidth: 1, 
-    borderColor: 'rgba(255, 111, 0, 0.1)',
+    borderColor: Colors.brand.divider,
   },
   iconContainer: {
     marginBottom: 20,

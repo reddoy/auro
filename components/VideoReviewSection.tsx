@@ -16,18 +16,27 @@ type Props = {
   onPhotoPress: (photos: string[], index: number) => void;
   currentSectionIndex?: number;
   currentPhotoIndex?: number;
+  showSectionHeaders?: boolean;
 };
 
-export default function VideoReviewSection({ sections, onPhotoPress, currentSectionIndex = 0, currentPhotoIndex = 0 }: Props) {
+export default function VideoReviewSection({
+  sections,
+  onPhotoPress,
+  currentSectionIndex = 0,
+  currentPhotoIndex = 0,
+  showSectionHeaders = true,
+}: Props) {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {sections.map((section, sectionIndex) => (
         <View key={section.category} style={styles.sectionContainer}>
-          <SectionTitleCard
-            title={section.title}
-            subtitle={section.subtitle}
-            isActive={sectionIndex === currentSectionIndex}
-          />
+          {showSectionHeaders && (
+            <SectionTitleCard
+              title={section.title}
+              subtitle={section.subtitle}
+              isActive={sectionIndex === currentSectionIndex}
+            />
+          )}
           {section.photos.length > 0 && (
             <View style={styles.carouselContainer}>
               <PhotoCarousel

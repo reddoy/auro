@@ -169,6 +169,10 @@ export interface ProfileLinks {
 export interface ProfilePreferences {
   email_notifications?: boolean;
   push_notifications?: boolean;
+  onboarding_role?: 'reviewer' | 'reviewee';
+  onboarding_step?: string | null;
+  onboarding_completed?: boolean;
+  onboarding_completed_at?: string | null;
   [key: string]: any;
 }
 

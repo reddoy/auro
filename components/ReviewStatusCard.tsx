@@ -9,6 +9,7 @@ interface ReviewStatusCardProps {
   // User info
   displayName: string;
   avatarUri?: string;
+  bio?: string;
   
   // Request info
   status: string;
@@ -33,6 +34,7 @@ interface ReviewStatusCardProps {
 export default function ReviewStatusCard({
   displayName,
   avatarUri,
+  bio,
   status,
   createdAt,
   hasConsent,
@@ -52,13 +54,19 @@ export default function ReviewStatusCard({
       <View style={styles.gradient}>
         {/* Header Section */}
         <RNView style={styles.header}>
-          <Avatar uri={avatarUri} name={displayName} size={80} />
+          <Avatar uri={avatarUri} name={displayName} size={120} />
           
           <RNView style={styles.statusBadge}>
             <StatusBadge status={status as any} />
           </RNView>
           
           <Text style={styles.displayName}>{displayName}</Text>
+
+          {bio ? (
+            <Text style={styles.bio} numberOfLines={6}>
+              {bio}
+            </Text>
+          ) : null}
           
           {statusMessage && (
             <Text style={styles.statusMessage}>{statusMessage}</Text>
@@ -193,6 +201,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     letterSpacing: 0.5,
     textAlign: 'center',
+  },
+  bio: {
+    fontSize: 15,
+    color: Colors.brand.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    fontStyle: 'italic',
+    marginBottom: 12,
+    paddingHorizontal: 16,
   },
   statusMessage: {
     fontSize: 14,

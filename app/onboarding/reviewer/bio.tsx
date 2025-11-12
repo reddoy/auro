@@ -5,7 +5,7 @@ import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import { updateProfile } from '@/lib/profile';
+import { updateProfile, updateProfilePreferences } from '@/lib/profile';
 
 export default function BioScreen() {
   const insets = useSafeAreaInsets();
@@ -21,6 +21,7 @@ export default function BioScreen() {
     try {
       setSaving(true);
       await updateProfile({ bio: bio.trim() });
+      await updateProfilePreferences({ onboarding_step: 'reviewer_rate' });
       router.push('/onboarding/reviewer/rate');
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to save bio');
@@ -36,7 +37,7 @@ export default function BioScreen() {
       keyboardVerticalOffset={100}
     >
       <ExpoLinearGradient
-        colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+        colors={[Colors.brand.background, Colors.brand.cardBackground]}
         style={styles.backgroundGradient}
       />
       <ScrollView 

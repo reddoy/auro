@@ -30,16 +30,22 @@ export default function RequestsScreen() {
 
   useEffect(() => {
     const run = async () => {
+      console.log('[my-reviews] initial load started');
       try {
         const profile = await getUserProfile();
         if (!profile?.id) {
           setRequests([]);
+          console.log('[my-reviews] no profile found during initial load');
           return;
         }
         const reviewerMode = !!(profile as any)?.is_reviewer;
         setIsReviewer(reviewerMode);
         const reqs = reviewerMode ? await getRequestsByReviewer(profile.id) : await getRequestsByUser(profile.id);
         setRequests(reqs);
+        console.log('[my-reviews] initial load fetched requests', {
+          count: reqs.length,
+          reviewerMode,
+        });
         if (reviewerMode) {
           // Build reviewee map for reviewer inbox
           const userIds = Array.from(new Set(reqs.map(r => r.userId).filter(Boolean))) as string[];
@@ -99,6 +105,7 @@ export default function RequestsScreen() {
 
       } finally {
         setLoading(false);
+        console.log('[my-reviews] initial load finished');
       }
     };
     run();
@@ -107,6 +114,7 @@ export default function RequestsScreen() {
   // Refresh data whenever this screen regains focus (e.g., after Accept/Deny)
   const refreshData = useCallback(() => {
     (async () => {
+      console.log('[my-reviews] refresh triggered');
       try {
         const profile = await getUserProfile();
         if (!profile?.id) {
@@ -117,6 +125,10 @@ export default function RequestsScreen() {
         setIsReviewer(reviewerMode);
         const reqs = reviewerMode ? await getRequestsByReviewer(profile.id) : await getRequestsByUser(profile.id);
         setRequests(reqs);
+        console.log('[my-reviews] refresh fetched requests', {
+          count: reqs.length,
+          reviewerMode,
+        });
 
         if (reviewerMode) {
           const userIds = Array.from(new Set(reqs.map(r => r.userId).filter(Boolean))) as string[];
@@ -176,9 +188,14 @@ export default function RequestsScreen() {
   }, []);
 
   useFocusEffect(useCallback(() => {
+  console.log('[my-reviews] screen focused, running refreshData');
     refreshData();
     return () => {};
   }, [refreshData]));
+
+useEffect(() => {
+  console.log('[my-reviews] loading state changed', { loading });
+}, [loading]);
 
   
 

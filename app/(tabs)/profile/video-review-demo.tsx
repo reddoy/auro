@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, Platform, TextInput, Linking, Dimensions } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, TextInput, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -60,6 +60,35 @@ export default function DatingProfileUploadScreen() {
   });
   const [revieweeName] = useState('Sarah'); // Demo reviewee name
   const [currentFlowStep, setCurrentFlowStep] = useState<'upload' | 'video-review' | 'submitted'>('upload');
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+
+  const frameMetrics = useMemo(() => {
+    const horizontalMargin = 32;
+    const desiredMaxWidth = 360;
+    const availableWidth = Math.max(windowWidth - horizontalMargin, 220);
+    const constrainedWidth = Math.min(availableWidth, desiredMaxWidth);
+    const availableHeight = Math.max(windowHeight - (insets.top + insets.bottom + 160), 480);
+    const heightLimitedWidth = availableHeight * (9 / 16);
+    const frameWidth = Math.max(220, Math.min(constrainedWidth, heightLimitedWidth));
+    const frameHeight = frameWidth * (16 / 9);
+    const slideHorizontalPadding = Math.max((windowWidth - frameWidth) / 2, 16);
+    const slideTopPadding = insets.top + 96;
+    const slideBottomPadding = insets.bottom + 36;
+    const paginationTop = slideTopPadding + frameHeight / 2 - 48;
+    const paginationLeft = Math.max(slideHorizontalPadding - 24, 12);
+
+    return {
+      frameWidth,
+      frameHeight,
+      slideHorizontalPadding,
+      slideTopPadding,
+      slideBottomPadding,
+      paginationTop,
+      paginationLeft,
+    };
+  }, [insets, windowHeight, windowWidth]);
+
+  const recorderTop = Math.max(insets.top + 16, frameMetrics.slideTopPadding - 96);
 
   const handlePhotoUpload = async (category: 'profile' | 'outfits' | 'room' | 'socials') => {
     try {
@@ -533,14 +562,26 @@ export default function DatingProfileUploadScreen() {
             style={{ flex: 1 }} 
             contentContainerStyle={{ alignItems: 'center' }}
             onMomentumScrollEnd={(event) => {
-              const index = Math.round(event.nativeEvent.contentOffset.y / Dimensions.get('window').height);
+              const index = Math.round(event.nativeEvent.contentOffset.y / windowHeight);
               setVideoReviewState(prev => ({ ...prev, currentPhotoIndex: index }));
             }}
           >
             {allSlides.map((slide, i) => (
-              <RNView key={`slide-${i}`} style={{ width: Dimensions.get('window').width, height: Dimensions.get('window').height, paddingHorizontal: 40, paddingTop: insets.top + 200, paddingBottom: insets.bottom + 20, justifyContent: 'center' }}>
+              <RNView
+                key={`slide-${i}`}
+                style={[
+                  styles.recordingSlide,
+                  {
+                    width: windowWidth,
+                    height: windowHeight,
+                    paddingHorizontal: frameMetrics.slideHorizontalPadding,
+                    paddingTop: frameMetrics.slideTopPadding,
+                    paddingBottom: frameMetrics.slideBottomPadding,
+                  },
+                ]}
+              >
                 {slide.type === 'profile' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', alignSelf: 'center' }]}>
+                  <RNView style={[styles.overlayCard, { width: frameMetrics.frameWidth, maxHeight: frameMetrics.frameHeight }]}>
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={styles.overlayTitle}>{slide.data.name}</Text>
                     {slide.data.message ? (<Text style={styles.overlayText}>{slide.data.message}</Text>) : null}
@@ -553,12 +594,12 @@ export default function DatingProfileUploadScreen() {
                     title={slide.data.title}
                     subtitle={slide.data.subtitle}
                     revieweeName={revieweeName}
-                    style={{ marginHorizontal: 0, width: '100%' }}
+                    style={{ marginHorizontal: 0, width: frameMetrics.frameWidth }}
                   />
                 )}
                 
                 {slide.type === 'photo' && (
-                  <RNView style={[styles.overlayPhotoCard, { width: '100%', alignSelf: 'center' }]}>
+                  <RNView style={[styles.overlayPhotoCard, { width: frameMetrics.frameWidth, maxHeight: frameMetrics.frameHeight }]}>
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 12, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={styles.overlayTitle}>{slide.data.category} - Photo {slide.data.photoIndex + 1}</Text>
                     <TouchableOpacity
@@ -594,7 +635,7 @@ export default function DatingProfileUploadScreen() {
                 )}
                 
                 {slide.type === 'overall' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', alignSelf: 'center' }]}>
+                  <RNView style={[styles.overlayCard, { width: frameMetrics.frameWidth, maxHeight: frameMetrics.frameHeight }]}>
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={styles.overlayTitle}>Overall Rating</Text>
                     <Text style={styles.overlayText}>Rate {slide.data.name} overall</Text>
@@ -657,7 +698,7 @@ export default function DatingProfileUploadScreen() {
           </ScrollView>
 
           {/* Circular video recorder centered at top-middle */}
-          <RNView style={{ position: 'absolute', top: insets.top + 20, left: 0, right: 0, alignItems: 'center', zIndex: 10, elevation: 10 }}>
+          <RNView style={{ position: 'absolute', top: recorderTop, left: 0, right: 0, alignItems: 'center', zIndex: 10, elevation: 10 }}>
             <MediaRecorder
               onRecorded={(uri) => {
                 setVideoReviewState(prev => ({ 
@@ -669,7 +710,7 @@ export default function DatingProfileUploadScreen() {
                 Alert.alert('Video Attached', 'Demo video recorded! In the real app, reviewers would submit their video review.');
               }}
               variant="centered"
-              circleSize={140}
+              circleSize={120}
             />
           </RNView>
 
@@ -681,7 +722,14 @@ export default function DatingProfileUploadScreen() {
           </RNView>
 
           {/* Vertical pagination dots */}
-          <RNView style={{ position: 'absolute', top: insets.top + 220, left: 12, zIndex: 10 }}>
+          <RNView
+            style={{
+              position: 'absolute',
+              top: Math.max(frameMetrics.paginationTop, frameMetrics.slideTopPadding + 16),
+              left: frameMetrics.paginationLeft,
+              zIndex: 10,
+            }}
+          >
             <PaginationDots
               totalItems={allSlides.length}
               currentIndex={videoReviewState.currentPhotoIndex}
@@ -1102,6 +1150,10 @@ const styles = StyleSheet.create({
   },
   denyButtonText: {
     color: Colors.brand.textPrimary,
+  },
+  recordingSlide: {
+    justifyContent: 'flex-start',
+    alignItems: 'center',
   },
 });
 

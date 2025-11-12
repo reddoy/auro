@@ -1,20 +1,53 @@
-import React from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
+import { updateProfilePreferences } from '@/lib/profile';
 
 export default function RoleSelectionScreen() {
   const insets = useSafeAreaInsets();
+  const [loadingChoice, setLoadingChoice] = useState<'reviewer' | 'reviewee' | null>(null);
 
-  const handleGetReviewed = () => {
-    router.push('/onboarding/discover-reviewers');
+  const handleError = (error: any) => {
+    const message = error?.message || 'Something went wrong. Please try again.';
+    Alert.alert('Unable to continue', message);
   };
 
-  const handleBeReviewer = () => {
-    router.push('/onboarding/reviewer/profile-picture');
+  const handleGetReviewed = async () => {
+    if (loadingChoice) return;
+    setLoadingChoice('reviewee');
+    try {
+      await updateProfilePreferences({
+        onboarding_role: 'reviewee',
+        onboarding_completed: false,
+        onboarding_step: 'reviewee_profile_picture',
+      });
+      router.replace('/onboarding/reviewee/profile-picture');
+    } catch (error: any) {
+      handleError(error);
+    } finally {
+      setLoadingChoice(null);
+    }
+  };
+
+  const handleBeReviewer = async () => {
+    if (loadingChoice) return;
+    setLoadingChoice('reviewer');
+    try {
+      await updateProfilePreferences({
+        onboarding_role: 'reviewer',
+        onboarding_completed: false,
+        onboarding_step: 'reviewer_bio',
+      });
+      router.replace('/onboarding/reviewer/bio');
+    } catch (error: any) {
+      handleError(error);
+    } finally {
+      setLoadingChoice(null);
+    }
   };
 
   return (
@@ -23,58 +56,62 @@ export default function RoleSelectionScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ExpoLinearGradient
-        colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+        colors={[Colors.brand.background, Colors.brand.cardBackground]}
         style={styles.backgroundGradient}
       />
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
-        showsVerticalScrollIndicator={false}
+      <View
+        style={[
+          styles.content,
+          {
+            paddingTop: Math.max(28, insets.top + 16),
+            paddingBottom: Math.max(28, insets.bottom + 16),
+          },
+        ]}
       >
-        <View style={styles.content}>
-          <Text style={styles.title}>Welcome to Auro! 🎉</Text>
-          <Text style={styles.subtitle}>What would you like to do?</Text>
-          <Text style={styles.description}>
-            Choose how you'd like to use Auro. You can always change this later.
-          </Text>
+        <Text style={styles.title}>Welcome to Auro! 🎉</Text>
+        <Text style={styles.subtitle}>What would you like to do?</Text>
+        <Text style={styles.description}>
+          Choose how you'd like to use Auro. You can always change this later.
+        </Text>
 
-          <View style={styles.optionsContainer}>
-            <TouchableOpacity 
-              style={styles.optionCard}
-              onPress={handleGetReviewed}
-              activeOpacity={0.8}
+        <View style={styles.optionsContainer}>
+          <TouchableOpacity 
+            style={styles.optionCard}
+            onPress={handleGetReviewed}
+            activeOpacity={0.85}
+            disabled={!!loadingChoice}
+          >
+            <ExpoLinearGradient
+              colors={[Colors.brand.cardBackground, Colors.brand.cardBackgroundLight]}
+              style={styles.optionGradient}
             >
-              <ExpoLinearGradient
-                colors={[Colors.brand.cardBackground, Colors.brand.cardBackgroundLight]}
-                style={styles.optionGradient}
-              >
-                <Text style={styles.optionEmoji}>📸</Text>
-                <Text style={styles.optionTitle}>Get Reviewed</Text>
-                <Text style={styles.optionDescription}>
-                  Request reviews from expert reviewers to improve your profile and get feedback
-                </Text>
-              </ExpoLinearGradient>
-            </TouchableOpacity>
+              <Text style={styles.optionEmoji}>📸</Text>
+              <Text style={styles.optionTitle}>Get Reviewed</Text>
+              <Text style={styles.optionDescription}>
+                Request reviews from expert reviewers to improve your profile and get feedback
+              </Text>
+            </ExpoLinearGradient>
+          </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.optionCard}
-              onPress={handleBeReviewer}
-              activeOpacity={0.8}
+          <TouchableOpacity 
+            style={styles.optionCard}
+            onPress={handleBeReviewer}
+            activeOpacity={0.85}
+            disabled={!!loadingChoice}
+          >
+            <ExpoLinearGradient
+              colors={[Colors.brand.cardBackground, Colors.brand.cardBackgroundLight]}
+              style={styles.optionGradient}
             >
-              <ExpoLinearGradient
-                colors={[Colors.brand.cardBackground, Colors.brand.cardBackgroundLight]}
-                style={styles.optionGradient}
-              >
-                <Text style={styles.optionEmoji}>⭐</Text>
-                <Text style={styles.optionTitle}>Be a Reviewer</Text>
-                <Text style={styles.optionDescription}>
-                  Join our community of reviewers and earn money by providing thoughtful reviews
-                </Text>
-              </ExpoLinearGradient>
-            </TouchableOpacity>
-          </View>
+              <Text style={styles.optionEmoji}>⭐</Text>
+              <Text style={styles.optionTitle}>Be a Reviewer</Text>
+              <Text style={styles.optionDescription}>
+                Join our community of reviewers and earn money by providing thoughtful reviews
+              </Text>
+            </ExpoLinearGradient>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -91,18 +128,12 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
   },
-  scrollView: {
+  content: {
     flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
+    width: '100%',
+    alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingTop: 60,
-  },
-  content: {
-    backgroundColor: 'transparent',
-    alignItems: 'center',
   },
   title: {
     fontSize: 32,
@@ -136,16 +167,18 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: 'hidden',
     shadowColor: Colors.brand.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
     elevation: 8,
   },
   optionGradient: {
     padding: 32,
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 111, 0, 0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    width: '100%',
+    borderRadius: 24,
   },
   optionEmoji: {
     fontSize: 48,

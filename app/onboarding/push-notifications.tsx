@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -7,27 +7,39 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { setupPushNotifications } from '@/lib/notifications';
 import { Ionicons } from '@expo/vector-icons';
+import { updateProfilePreferences } from '@/lib/profile';
 
-export default function PushNotificationsScreen() {
+export default function OnboardingWelcomeScreen() {
   const insets = useSafeAreaInsets();
-  const [loading, setLoading] = useState(false);
+  const [enabling, setEnabling] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+  useEffect(() => {
+    updateProfilePreferences({
+      onboarding_completed: false,
+      onboarding_step: 'role_selection',
+    }).catch(() => {});
+  }, []);
+
+  const handleGetStarted = () => {
+    router.replace('/onboarding/role-selection');
+  };
 
   const handleEnable = async () => {
-    setLoading(true);
+    setEnabling(true);
     try {
       const success = await setupPushNotifications();
       if (success) {
-        // Continue to the next step (either role selection or thank you)
-        router.replace('/onboarding/role-selection');
+        setNotificationsEnabled(true);
+        Alert.alert('Notifications Enabled', 'We will keep you posted on review updates.');
       } else {
         Alert.alert(
           'Permission Denied',
-          'Push notifications were not enabled. You can enable them later in your device settings.',
+          'We were not able to enable push notifications. You can enable them later in your device settings.',
           [
             {
-              text: 'Skip for Now',
-              style: 'cancel',
-              onPress: () => router.replace('/onboarding/role-selection'),
+              text: 'OK',
+              style: 'default',
             },
             {
               text: 'Try Again',
@@ -41,15 +53,11 @@ export default function PushNotificationsScreen() {
       Alert.alert(
         'Error',
         'There was an error setting up push notifications. You can enable them later in settings.',
-        [{ text: 'OK', onPress: () => router.replace('/onboarding/role-selection') }]
+        [{ text: 'OK' }]
       );
     } finally {
-      setLoading(false);
+      setEnabling(false);
     }
-  };
-
-  const handleSkip = () => {
-    router.replace('/onboarding/role-selection');
   };
 
   return (
@@ -58,84 +66,89 @@ export default function PushNotificationsScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ExpoLinearGradient
-        colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+        colors={[Colors.brand.background, Colors.brand.cardBackground]}
         style={styles.backgroundGradient}
       />
       <ScrollView 
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingBottom: insets.bottom + 24,
+            paddingTop: Math.max(24, insets.top + 12),
+          },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
-          {/* Icon */}
-          <View style={styles.iconContainer}>
-            <Ionicons name="notifications" size={80} color={Colors.brand.accentMagenta} />
-          </View>
-
-          <Text style={styles.title}>Stay Updated! 🔔</Text>
+          <Text style={styles.emoji}>🎉</Text>
+          <Text
+            style={styles.title}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+          >
+            Thanks for joining Auro!
+          </Text>
           <Text style={styles.subtitle}>
-            Enable push notifications to get great updates
+            Let’s get you set up. We’ll walk you through a few quick steps to tailor Auro to how you want to use it.
           </Text>
 
-          <View style={styles.benefitsContainer}>
-            <View style={styles.benefitItem}>
-              <Ionicons name="checkmark-circle" size={24} color={Colors.brand.success} />
-              <Text style={styles.benefitText}>
-                Get notified when your review is completed
-              </Text>
+          <View style={styles.stepsCard}>
+            <View style={styles.stepRow}>
+              <Ionicons name="checkmark-circle" size={22} color={Colors.brand.success} />
+              <Text style={styles.stepText}>Choose whether you want to review or get reviewed</Text>
             </View>
-
-            <View style={styles.benefitItem}>
-              <Ionicons name="checkmark-circle" size={24} color={Colors.brand.success} />
-              <Text style={styles.benefitText}>
-                Receive updates on new review requests (for reviewers)
-              </Text>
+            <View style={styles.stepRow}>
+              <Ionicons name="checkmark-circle" size={22} color={Colors.brand.success} />
+              <Text style={styles.stepText}>Add a few details so people know what to expect</Text>
             </View>
-
-            <View style={styles.benefitItem}>
-              <Ionicons name="checkmark-circle" size={24} color={Colors.brand.success} />
-              <Text style={styles.benefitText}>
-                Never miss important updates about your account
-              </Text>
-            </View>
-
-            <View style={styles.benefitItem}>
-              <Ionicons name="checkmark-circle" size={24} color={Colors.brand.success} />
-              <Text style={styles.benefitText}>
-                Get payment notifications when you receive payouts
-              </Text>
+            <View style={styles.stepRow}>
+              <Ionicons name="checkmark-circle" size={22} color={Colors.brand.success} />
+              <Text style={styles.stepText}>Share your profile and start connecting</Text>
             </View>
           </View>
 
-          <View style={styles.buttonContainer}>
+          <View style={styles.benefitsContainer}>
             <TouchableOpacity 
-              style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
-              onPress={handleEnable}
-              disabled={loading}
-              activeOpacity={0.8}
+              style={styles.primaryButton}
+              onPress={handleGetStarted}
+              activeOpacity={0.85}
             >
               <ExpoLinearGradient
                 colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
                 style={styles.buttonGradient}
               >
-                <Text style={styles.primaryButtonText}>
-                  {loading ? 'Setting up...' : 'Enable Notifications'}
-                </Text>
+                <Text style={styles.primaryButtonText}>Let’s build your profile</Text>
               </ExpoLinearGradient>
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={styles.skipButton}
-              onPress={handleSkip}
-              activeOpacity={0.8}
+              style={[styles.secondaryButton, enabling && styles.secondaryButtonDisabled]}
+              onPress={handleEnable}
+              disabled={enabling}
+              activeOpacity={0.85}
             >
-              <Text style={styles.skipButtonText}>Skip for Now</Text>
+              <Ionicons
+                name={notificationsEnabled ? 'notifications' : 'notifications-outline'}
+                size={20}
+                color={Colors.brand.accentMagenta}
+              />
+              <Text style={styles.secondaryButtonText}>
+                {notificationsEnabled ? 'Notifications enabled' : 'Enable push notifications'}
+              </Text>
             </TouchableOpacity>
-          </View>
 
-          <Text style={styles.privacyText}>
-            You can change this setting anytime in your device settings
-          </Text>
+            <Text style={styles.hintText}>
+              Notifications help you stay updated when reviews are submitted and when payouts hit your Stripe account.
+            </Text>
+            {notificationsEnabled && (
+              <View style={styles.successBadge}>
+                <Ionicons name="checkmark-circle" size={18} color={Colors.brand.success} />
+                <Text style={styles.successBadgeText}>All set! You can change this anytime in settings.</Text>
+              </View>
+            )}
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -160,27 +173,23 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingTop: 0,
   },
   content: {
     backgroundColor: 'transparent',
     alignItems: 'center',
   },
-  iconContainer: {
-    marginBottom: 32,
-    backgroundColor: 'rgba(255, 111, 0, 0.1)',
-    borderRadius: 60,
-    padding: 24,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 111, 0, 0.3)',
+  emoji: {
+    fontSize: 72,
+    marginBottom: 16,
   },
   title: {
     fontSize: 32,
     fontWeight: '700',
     color: Colors.brand.textPrimary,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
     fontFamily: 'Poppins_700Bold',
   },
   subtitle: {
@@ -188,35 +197,36 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.brand.textSecondary,
     textAlign: 'center',
-    marginBottom: 40,
-    paddingHorizontal: 20,
-    lineHeight: 26,
+    marginBottom: 24,
+    paddingHorizontal: 16,
+    lineHeight: 24,
+  },
+  stepsCard: {
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 26,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    gap: 12,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: 'transparent',
+  },
+  stepText: {
+    fontSize: 15,
+    color: Colors.brand.textSecondary,
+    flex: 1,
+    lineHeight: 22,
+    backgroundColor: 'transparent',
   },
   benefitsContainer: {
     width: '100%',
-    marginBottom: 40,
-    gap: 20,
-  },
-  benefitItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 111, 0, 0.2)',
-  },
-  benefitText: {
-    fontSize: 16,
-    color: Colors.brand.textSecondary,
-    marginLeft: 16,
-    flex: 1,
-    lineHeight: 22,
-  },
-  buttonContainer: {
-    width: '100%',
-    gap: 16,
-    marginBottom: 20,
+    gap: 14,
   },
   primaryButton: {
     width: '100%',
@@ -227,9 +237,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 16,
     elevation: 8,
-  },
-  primaryButtonDisabled: {
-    opacity: 0.6,
   },
   buttonGradient: {
     paddingVertical: 18,
@@ -242,23 +249,49 @@ const styles = StyleSheet.create({
     color: Colors.brand.textOnGradient,
     fontFamily: 'Poppins_700Bold',
   },
-  skipButton: {
+  secondaryButton: {
     width: '100%',
-    paddingVertical: 16,
+    borderRadius: 20,
+    paddingVertical: 14,
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    flexDirection: 'row',
+    gap: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 111, 0, 0.25)',
   },
-  skipButtonText: {
+  secondaryButtonDisabled: {
+    opacity: 0.6,
+  },
+  secondaryButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: Colors.brand.textSecondary,
+    fontWeight: '700',
+    color: Colors.brand.accentMagenta,
   },
-  privacyText: {
-    fontSize: 12,
-    color: Colors.brand.textLight,
+  hintText: {
+    fontSize: 13,
+    color: Colors.brand.textSecondary,
     textAlign: 'center',
     paddingHorizontal: 20,
-    lineHeight: 18,
+    lineHeight: 20,
+  },
+  successBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(61, 220, 132, 0.15)',
+    borderRadius: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(61, 220, 132, 0.35)',
+  },
+  successBadgeText: {
+    fontSize: 13,
+    color: Colors.brand.success,
+    textAlign: 'center',
   },
 });
 

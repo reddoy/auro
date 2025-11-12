@@ -5,7 +5,7 @@ import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import { updateProfile } from '@/lib/profile';
+import { updateProfile, updateProfilePreferences } from '@/lib/profile';
 
 export default function RateScreen() {
   const insets = useSafeAreaInsets();
@@ -23,7 +23,8 @@ export default function RateScreen() {
     try {
       setSaving(true);
       await updateProfile({ hourly_rate: rateNumber });
-      router.push('/onboarding/reviewer/stripe');
+      await updateProfilePreferences({ onboarding_step: 'reviewer_profile_picture' });
+      router.push('/onboarding/reviewer/profile-picture');
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to save rate');
     } finally {
@@ -43,7 +44,7 @@ export default function RateScreen() {
       keyboardVerticalOffset={100}
     >
       <ExpoLinearGradient
-        colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+        colors={[Colors.brand.background, Colors.brand.cardBackground]}
         style={styles.backgroundGradient}
       />
       <ScrollView 

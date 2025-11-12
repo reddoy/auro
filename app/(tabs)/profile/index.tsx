@@ -40,17 +40,23 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     const run = async () => {
+      console.log('[profile] initial load started');
       try {
         const p = await getCurrentProfile();
         setProfile(p);
+        if (!p) {
+          console.log('[profile] getCurrentProfile returned null');
+        }
         if (p?.id && p?.is_reviewer) {
           try {
             const link = await createStripeExpressLoginLink(p.id);
             setStripePortalUrl(link);
+            console.log('[profile] stripe portal link fetched');
           } catch {}
           // Fetch earnings data
           try {
             const requests = await getRequestsByReviewer(p.id);
+            console.log('[profile] fetched reviewer requests count', requests.length);
             
           // Helper function to calculate reviewer amount for a request
           // SIMPLE MODEL: Reviewer gets totalAmount - auroFee (Auro absorbs Stripe fee)
@@ -97,16 +103,26 @@ export default function ProfileScreen() {
               completedPaid: completedPaid / 100,
               completedCount: completedCount
             });
+            console.log('[profile] earnings updated', {
+              awaitingCompletion: awaitingCompletion / 100,
+              awaitingPayout: awaitingPayout / 100,
+              completedPaid: completedPaid / 100,
+              completedCount,
+            });
           } catch (e) {
             console.log('[earnings] error fetching', e);
           }
         } else {
           setStripePortalUrl(null);
           setEarnings({ awaitingCompletion: 0, awaitingPayout: 0, completedPaid: 0, completedCount: 0 });
+          if (p?.id) {
+            console.log('[profile] user is not a reviewer, resetting earnings');
+          }
         }
       } finally {
         // Mark initial load complete so pull-to-refresh becomes available
         setInitialLoad(false);
+        console.log('[profile] initial load finished');
       }
     };
     run();
@@ -215,6 +231,7 @@ export default function ProfileScreen() {
 
 
   const onRefresh = useCallback(async () => {
+    console.log('[profile] onRefresh start');
     try {
       setRefreshing(true);
       const p = await getCurrentProfile();
@@ -224,7 +241,7 @@ export default function ProfileScreen() {
           const link = await createStripeExpressLoginLink(p.id);
           setStripePortalUrl(link);
         } catch {}
-          // Refresh earnings data
+        // Refresh earnings data
         try {
           const requests = await getRequestsByReviewer(p.id);
           
@@ -268,11 +285,18 @@ export default function ProfileScreen() {
             completedPaid: completedPaid / 100,
             completedCount: completedCount
           });
+        console.log('[profile] onRefresh earnings updated', {
+          awaitingCompletion: awaitingCompletion / 100,
+          awaitingPayout: awaitingPayout / 100,
+          completedPaid: completedPaid / 100,
+          completedCount,
+        });
         } catch {}
       }
     } finally {
       setRefreshing(false);
       setInitialLoad(false);
+  console.log('[profile] onRefresh finished');
     }
   }, []);
 
@@ -281,10 +305,19 @@ export default function ProfileScreen() {
     useCallback(() => {
       // Only refresh if not initial load to prevent spacing issues
       if (!initialLoad) {
+        console.log('[profile] screen focused, triggering onRefresh');
         onRefresh();
       }
     }, [onRefresh, initialLoad])
   );
+
+  useEffect(() => {
+    console.log('[profile] initialLoad changed', { initialLoad });
+  }, [initialLoad]);
+
+  useEffect(() => {
+    console.log('[profile] refreshing changed', { refreshing });
+  }, [refreshing]);
 
   let sectionCursor = 0;
   const nextEntrance = () => cardEntrance(sectionCursor++);

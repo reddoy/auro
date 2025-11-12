@@ -1,15 +1,23 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
+import { updateProfilePreferences } from '@/lib/profile';
 
 export default function ThankYouScreen() {
   const insets = useSafeAreaInsets();
   const { type } = useLocalSearchParams<{ type?: string }>();
   const isReviewer = type === 'reviewer';
+
+  useEffect(() => {
+    updateProfilePreferences({
+      onboarding_completed: true,
+      onboarding_step: 'completed',
+    }).catch(() => {});
+  }, []);
 
   const handleGoHome = () => {
     if (isReviewer) {
@@ -27,7 +35,7 @@ export default function ThankYouScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ExpoLinearGradient
-        colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+        colors={[Colors.brand.background, Colors.brand.cardBackground]}
         style={styles.backgroundGradient}
       />
       <ScrollView 
@@ -42,8 +50,8 @@ export default function ThankYouScreen() {
           </Text>
           <Text style={styles.message}>
             {isReviewer 
-              ? "You're all set! You can now start receiving review requests and earning money. We're excited to have you as part of our reviewer community."
-              : "You're all set! You can now discover reviewers and request reviews whenever you're ready."
+              ? "You’re all set! Share your profile link on socials to start receiving review requests and climb the leaderboard."
+              : "You’re all set! Head to Discover Reviewers anytime to request feedback when you’re ready."
             }
           </Text>
 

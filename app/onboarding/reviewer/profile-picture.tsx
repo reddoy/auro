@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import AvatarUploader from '@/components/AvatarUploader';
-import { updateProfile } from '@/lib/profile';
+import { updateProfile, updateProfilePreferences } from '@/lib/profile';
 
 export default function ProfilePictureScreen() {
   const insets = useSafeAreaInsets();
@@ -26,7 +26,8 @@ export default function ProfilePictureScreen() {
       if (avatarPath) {
         await updateProfile({ avatar_url: avatarPath });
       }
-      router.push('/onboarding/reviewer/social-handles');
+      await updateProfilePreferences({ onboarding_step: 'reviewer_stripe' });
+      router.push('/onboarding/reviewer/stripe');
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to save profile picture');
     } finally {
@@ -45,7 +46,7 @@ export default function ProfilePictureScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ExpoLinearGradient
-        colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+        colors={[Colors.brand.background, Colors.brand.cardBackground]}
         style={styles.backgroundGradient}
       />
       <ScrollView 

@@ -5,7 +5,7 @@ import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import { getCurrentProfile, updateProfile } from '@/lib/profile';
+import { getCurrentProfile, updateProfile, updateProfilePreferences } from '@/lib/profile';
 import { createStripeExpressOnboardingLink } from '@/lib/payments';
 import type { Profile } from '@/types';
 import Spinner from '@/components/Spinner';
@@ -60,7 +60,8 @@ export default function StripeSetupScreen() {
       // After opening Stripe, wait a moment then proceed
       // The user will complete Stripe setup and can come back
       setTimeout(() => {
-        router.push('/onboarding/thank-you?type=reviewer');
+        updateProfilePreferences({ onboarding_step: 'reviewer_share_link' }).catch(() => {});
+        router.push('/onboarding/reviewer/share-link');
       }, 1000);
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to open Stripe setup');
@@ -82,7 +83,8 @@ export default function StripeSetupScreen() {
             if (profile && !profile.is_reviewer) {
               updateProfile({ is_reviewer: true }).catch(() => {});
             }
-            router.push('/onboarding/thank-you?type=reviewer');
+            updateProfilePreferences({ onboarding_step: 'reviewer_share_link' }).catch(() => {});
+            router.push('/onboarding/reviewer/share-link');
           }
         }
       ]
@@ -103,7 +105,7 @@ export default function StripeSetupScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ExpoLinearGradient
-        colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+        colors={[Colors.brand.background, Colors.brand.cardBackground]}
         style={styles.backgroundGradient}
       />
       <ScrollView 

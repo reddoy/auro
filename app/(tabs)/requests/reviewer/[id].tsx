@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Dimensions, Platform, Linking, Animated, Pressable, LayoutAnimation } from 'react-native';
+import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Platform, Linking, Animated, Pressable, LayoutAnimation, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,7 +13,6 @@ import StatusBadge from '@/components/StatusBadge';
 import { Image } from 'expo-image';
 import SimplePhotoModal from '@/components/SimplePhotoModal';
 import ImageGalleryModal from '@/components/ImageGalleryModal';
-import PhotoCarousel from '@/components/PhotoCarousel';
 import { signRequestMediaUrls, getSignedRequestMediaUrl } from '@/lib/uploads';
 import RatingBar from '@/components/RatingBar';
 import MediaRecorder from '@/components/MediaRecorder';
@@ -66,6 +65,35 @@ export default function ReviewerRequestScreen() {
   const [noteText, setNoteText] = useState('');
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isVideoReviewMode, setIsVideoReviewMode] = useState(false);
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+
+  const frameMetrics = React.useMemo(() => {
+    const horizontalMargin = 32;
+    const desiredMaxWidth = 360;
+    const availableWidth = Math.max(windowWidth - horizontalMargin, 220);
+    const constrainedWidth = Math.min(availableWidth, desiredMaxWidth);
+    const availableHeight = Math.max(windowHeight - (insets.top + insets.bottom + 160), 480);
+    const heightLimitedWidth = availableHeight * (9 / 16);
+    const frameWidth = Math.max(220, Math.min(constrainedWidth, heightLimitedWidth));
+    const frameHeight = frameWidth * (16 / 9);
+    const slideHorizontalPadding = Math.max((windowWidth - frameWidth) / 2, 16);
+    const slideTopPadding = insets.top + 96;
+    const slideBottomPadding = insets.bottom + 36;
+    const paginationTop = slideTopPadding + frameHeight / 2 - 48;
+    const paginationLeft = Math.max(slideHorizontalPadding - 24, 12);
+
+    return {
+      frameWidth,
+      frameHeight,
+      slideHorizontalPadding,
+      slideTopPadding,
+      slideBottomPadding,
+      paginationTop,
+      paginationLeft,
+    };
+  }, [insets, windowHeight, windowWidth]);
+
+  const recorderTop = Math.max(insets.top + 16, frameMetrics.slideTopPadding - 96);
   
   // Video review is now the only option - no individual section ratings needed
   const canSubmit = React.useMemo(() => !!videoUri && overallRating > 0, [videoUri, overallRating]);
@@ -304,6 +332,7 @@ export default function ReviewerRequestScreen() {
         <ReviewStatusCard
           displayName={reviewee?.displayName || 'User'}
           avatarUri={avatarUri}
+          bio={typeof parsedNotes?.message === 'string' ? parsedNotes.message : undefined}
           status={request.status}
           createdAt={request.createdAt}
           hasConsent={hasConsent}
@@ -323,31 +352,6 @@ export default function ReviewerRequestScreen() {
           }
         />
 
-        {parsedNotes?.message && (
-          <View style={styles.section}>
-            <Text style={styles.label}>Profile Bio</Text>
-            <Text style={[styles.value, { lineHeight: 26, fontStyle: 'italic' }]}>{parsedNotes.message}</Text>
-          </View>
-        )}
-
-        {avatarUri && (
-          <View style={[styles.section, styles.mediaSection]}>
-            <Text style={styles.label}>Profile Photo</Text>
-            <Text style={[styles.value, { fontSize: 14, color: Colors.brand.textSecondary, marginBottom: 12 }]}>
-              This is the hero photo they lead with on their dating profile.
-            </Text>
-            <TouchableOpacity onPress={() => { 
-              if (!isVideoReviewMode) {
-                setGalleryUris([avatarUri]); 
-                setGalleryIndex(0); 
-                setGalleryOpen(true); 
-              }
-            }}>
-              <Image source={{ uri: avatarUri }} style={styles.selfie} contentFit="cover" cachePolicy="none" />
-            </TouchableOpacity>
-          </View>
-        )}
-
         {/* Video Review Section with section cards */}
         {reviewSections.length > 0 && (
           <View style={[styles.section, styles.mediaSection]}>
@@ -357,29 +361,11 @@ export default function ReviewerRequestScreen() {
             </Text>
             <VideoReviewSection
               sections={reviewSections}
+              showSectionHeaders={false}
               onPhotoPress={(photos, index) => {
                 if (!isVideoReviewMode) {
                   setGalleryUris(photos);
                   setGalleryIndex(index);
-                  setGalleryOpen(true);
-                }
-              }}
-            />
-          </View>
-        )}
-
-        {signedProfilePhotos.length > 0 && (
-          <View style={[styles.section, styles.mediaSection]}>
-            <Text style={styles.label}>Dating Profile Gallery</Text>
-            <Text style={[styles.sectionHint, { marginTop: 0 }]}>
-              Swipe through their dating profile photos and tap any image to see the full resolution.
-            </Text>
-            <PhotoCarousel
-              uris={signedProfilePhotos}
-              onPressItem={(i) => {
-                if (!isVideoReviewMode) {
-                  setGalleryUris(signedProfilePhotos);
-                  setGalleryIndex(i);
                   setGalleryOpen(true);
                 }
               }}
@@ -480,15 +466,27 @@ export default function ReviewerRequestScreen() {
             style={{ flex: 1 }} 
             contentContainerStyle={{ alignItems: 'center' }}
             onMomentumScrollEnd={(event) => {
-              const index = Math.round(event.nativeEvent.contentOffset.y / Dimensions.get('window').height);
+              const index = Math.round(event.nativeEvent.contentOffset.y / windowHeight);
               setCurrentPhotoIndex(index);
             }}
           >
             {/* All slides: profile, section cards, and photos */}
             {allSlides.map((slide, i) => (
-              <RNView key={`slide-${i}`} style={{ width: Dimensions.get('window').width, height: Dimensions.get('window').height, paddingHorizontal: 40, paddingTop: insets.top + 200, paddingBottom: insets.bottom + 20, justifyContent: 'center' }}>
+              <RNView
+                key={`slide-${i}`}
+                style={[
+                  styles.recordingSlide,
+                  {
+                    width: windowWidth,
+                    height: windowHeight,
+                    paddingHorizontal: frameMetrics.slideHorizontalPadding,
+                    paddingTop: frameMetrics.slideTopPadding,
+                    paddingBottom: frameMetrics.slideBottomPadding,
+                  },
+                ]}
+              >
                 {slide.type === 'profile' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', alignSelf: 'center' }] }>
+                  <RNView style={[styles.overlayCard, { width: frameMetrics.frameWidth, maxHeight: frameMetrics.frameHeight }] }>
                     {/* Auro Logo */}
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={styles.overlayTitle}>{slide.data.name}</Text>
@@ -502,12 +500,12 @@ export default function ReviewerRequestScreen() {
                     title={slide.data.title}
                     subtitle={slide.data.subtitle}
                     revieweeName={reviewee?.displayName || 'User'}
-                    style={{ marginHorizontal: 0, width: '100%' }}
+                    style={{ marginHorizontal: 0, width: frameMetrics.frameWidth }}
                   />
                 )}
                 
                 {slide.type === 'photo' && (
-                  <RNView style={[styles.overlayPhotoCard, { width: '100%', alignSelf: 'center' }] }>
+                  <RNView style={[styles.overlayPhotoCard, { width: frameMetrics.frameWidth, maxHeight: frameMetrics.frameHeight }] }>
                     {/* Auro Logo */}
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 12, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={styles.overlayTitle}>{slide.data.category} - Photo {slide.data.photoIndex + 1}</Text>
@@ -570,7 +568,7 @@ export default function ReviewerRequestScreen() {
                 )}
                 
                 {slide.type === 'overall' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', alignSelf: 'center' }] }>
+                  <RNView style={[styles.overlayCard, { width: frameMetrics.frameWidth, maxHeight: frameMetrics.frameHeight }] }>
                     {/* Auro Logo */}
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={styles.overlayTitle}>Overall Rating</Text>
@@ -648,7 +646,7 @@ export default function ReviewerRequestScreen() {
           </ScrollView>
 
           {/* Circular video recorder centered at top-middle */}
-          <RNView style={{ position: 'absolute', top: insets.top + 20, left: 0, right: 0, alignItems: 'center', zIndex: 10, elevation: 10 }}>
+          <RNView style={{ position: 'absolute', top: recorderTop, left: 0, right: 0, alignItems: 'center', zIndex: 10, elevation: 10 }}>
             <MediaRecorder
               onRecorded={(uri) => {
                 setVideoUri(uri);
@@ -657,7 +655,7 @@ export default function ReviewerRequestScreen() {
                 Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
               }}
               variant="centered"
-              circleSize={140}
+              circleSize={120}
             />
           </RNView>
 
@@ -673,7 +671,14 @@ export default function ReviewerRequestScreen() {
           </RNView>
 
           {/* Vertical pagination dots on left side */}
-          <RNView style={{ position: 'absolute', top: insets.top + 220, left: 12, zIndex: 10 }}>
+          <RNView
+            style={{
+              position: 'absolute',
+              top: Math.max(frameMetrics.paginationTop, frameMetrics.slideTopPadding + 16),
+              left: frameMetrics.paginationLeft,
+              zIndex: 10,
+            }}
+          >
             <PaginationDots
               totalItems={allSlides.length}
               currentIndex={currentPhotoIndex}
@@ -747,6 +752,10 @@ const styles = StyleSheet.create({
   sectionHint: { fontSize: 15, color: Colors.brand.textSecondary, marginTop: 8, fontWeight: '500', lineHeight: 22, fontStyle: 'italic' },
 
   disabledButton: { backgroundColor: Colors.brand.border, opacity: 0.6 },
+  recordingSlide: {
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
   overlayCard: { 
     backgroundColor: Colors.brand.cardBackground, 
     borderRadius: 20, 

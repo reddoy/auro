@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { getReviewers } from '@/lib/api';
-import { getSignedAvatarUrl } from '@/lib/profile';
+import { getSignedAvatarUrl, updateProfilePreferences } from '@/lib/profile';
 import type { DbReviewerSummary } from '@/types';
 import Avatar from '@/components/Avatar';
 import Spinner from '@/components/Spinner';
@@ -53,11 +53,19 @@ export default function DiscoverReviewersScreen() {
     );
   }, [reviewers, search]);
 
-  const handleSelectReviewer = (reviewer: DbReviewerSummary) => {
+  const handleSelectReviewer = async (reviewer: DbReviewerSummary) => {
+    await updateProfilePreferences({
+      onboarding_step: 'completed',
+      onboarding_completed: true,
+    }).catch(() => {});
     router.push({ pathname: '/(tabs)/requests/reviewer/profile', params: { id: reviewer.id } } as any);
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    await updateProfilePreferences({
+      onboarding_step: 'completed',
+      onboarding_completed: true,
+    }).catch(() => {});
     router.push('/onboarding/thank-you?type=get-reviewed');
   };
 
@@ -90,12 +98,12 @@ export default function DiscoverReviewersScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ExpoLinearGradient
-        colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+        colors={[Colors.brand.background, Colors.brand.cardBackground]}
         style={styles.backgroundGradient}
       />
       <View style={styles.header}>
         <Text style={styles.title}>Discover Reviewers</Text>
-        <Text style={styles.subtitle}>Choose a reviewer to get started, or skip for now</Text>
+        <Text style={styles.subtitle}>Here’s the full list of Auro reviewers. Tap one to explore or skip for now.</Text>
         
         <View style={styles.searchContainer}>
           <TextInput
