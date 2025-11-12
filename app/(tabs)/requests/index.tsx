@@ -27,12 +27,20 @@ export default function RequestsScreen() {
   const [isReviewer, setIsReviewer] = useState(false);
   const receivedCount = requests.length;
   const [filter, setFilter] = useState<'active' | 'completed' | 'archived'>('active');
+  const [refreshing, setRefreshing] = useState(false);
   const skipNextFocusRefresh = useRef(true);
   const loadingRef = useRef(loading);
+  const [hasShownSkeleton, setHasShownSkeleton] = useState(false);
 
   useEffect(() => {
     loadingRef.current = loading;
   }, [loading]);
+
+  useEffect(() => {
+    if (!loading && !hasShownSkeleton) {
+      setHasShownSkeleton(true);
+    }
+  }, [loading, hasShownSkeleton]);
 
   useEffect(() => {
     const run = async () => {
@@ -118,13 +126,16 @@ export default function RequestsScreen() {
   }, []);
 
   // Refresh data whenever this screen regains focus (e.g., after Accept/Deny)
-  const refreshData = useCallback(() => {
+  const refreshData = useCallback((trigger: 'focus' | 'pull' = 'focus') => {
     if (loadingRef.current) {
       console.log('[my-reviews] refresh skipped because loading is in progress');
       return;
     }
+    if (trigger === 'pull') {
+      setRefreshing(true);
+    }
     (async () => {
-      console.log('[my-reviews] refresh triggered');
+      console.log('[my-reviews] refresh triggered', { trigger });
       try {
         const profile = await getUserProfile();
         if (!profile?.id) {
@@ -194,23 +205,30 @@ export default function RequestsScreen() {
           } catch {}
         }
       } catch {}
+      finally {
+        if (trigger === 'pull') {
+          setRefreshing(false);
+        }
+      }
     })();
   }, []);
 
-  useFocusEffect(useCallback(() => {
-    if (skipNextFocusRefresh.current) {
-      skipNextFocusRefresh.current = false;
-      console.log('[my-reviews] focus refresh skipped on first focus');
+  useFocusEffect(
+    useCallback(() => {
+      if (skipNextFocusRefresh.current) {
+        skipNextFocusRefresh.current = false;
+        console.log('[my-reviews] focus refresh skipped on first focus');
+        return () => {};
+      }
+      console.log('[my-reviews] screen focused, running refreshData');
+      refreshData('focus');
       return () => {};
-    }
-  console.log('[my-reviews] screen focused, running refreshData');
-    refreshData();
-    return () => {};
-  }, [refreshData]));
+    }, [refreshData])
+  );
 
-useEffect(() => {
-  console.log('[my-reviews] loading state changed', { loading });
-}, [loading]);
+  useEffect(() => {
+    console.log('[my-reviews] loading state changed', { loading });
+  }, [loading]);
 
   
 
@@ -345,8 +363,8 @@ useEffect(() => {
         renderItem={renderItem}
         refreshControl={
           <RefreshControl
-            refreshing={loading}
-            onRefresh={refreshData}
+            refreshing={refreshing}
+            onRefresh={() => refreshData('pull')}
             tintColor={Colors.brand.textPrimary}
             colors={[Colors.brand.accentMagenta]}
             progressBackgroundColor={Colors.brand.background}
@@ -404,7 +422,7 @@ useEffect(() => {
         )}
         ListEmptyComponent={(
           <View style={{ paddingHorizontal: 16, paddingTop: 24 }}>
-            {loading ? (
+            {!hasShownSkeleton && loading ? (
               <>
                 {[...Array(4)].map((_, i) => (
                   <SkeletonCard key={`s-${i}`} index={i} />
