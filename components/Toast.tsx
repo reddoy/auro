@@ -1,7 +1,9 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Platform, StyleSheet, TouchableOpacity } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
+import { FadeInDown, FadeOutUp } from 'react-native-reanimated';
 import { View, Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
+import { MotionDurations, MotionPressable, MotionSpring } from '@/components/motion';
 
 type ToastContextValue = {
   show: (message: string, durationMs?: number) => void;
@@ -11,14 +13,15 @@ const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [message, setMessage] = useState<string | null>(null);
-  const opacity = useRef(new Animated.Value(0)).current;
   const hideTimer = useRef<NodeJS.Timeout | null>(null);
 
   const hide = useCallback(() => {
-    Animated.timing(opacity, { toValue: 0, duration: 180, easing: Easing.out(Easing.ease), useNativeDriver: true }).start(() => {
-      setMessage(null);
-    });
-  }, [opacity]);
+    if (hideTimer.current) {
+      clearTimeout(hideTimer.current);
+      hideTimer.current = null;
+    }
+    setMessage(null);
+  }, []);
 
   const show = useCallback((msg: string, durationMs = 2200) => {
     if (hideTimer.current) {
@@ -26,25 +29,36 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       hideTimer.current = null;
     }
     setMessage(msg);
-    Animated.timing(opacity, { toValue: 1, duration: 180, easing: Easing.out(Easing.ease), useNativeDriver: true }).start();
     hideTimer.current = setTimeout(() => hide(), durationMs);
-  }, [hide, opacity]);
+  }, [hide]);
 
   const value = useMemo(() => ({ show }), [show]);
+
+  const toastEntering = FadeInDown.duration(MotionDurations.sm)
+    .springify()
+    .damping(MotionSpring.soft.damping)
+    .stiffness(MotionSpring.soft.stiffness)
+    .mass(MotionSpring.soft.mass);
+
+  const toastExiting = FadeOutUp.duration(MotionDurations.sm);
 
   return (
     <ToastContext.Provider value={value}>
       {children}
       {message ? (
-        <Animated.View style={[styles.container, { opacity }]}
-          pointerEvents="box-none"
-        >
-          <TouchableOpacity activeOpacity={0.9} onPress={hide} accessibilityLabel="Hide notification">
-            <View style={styles.toast}>
-              <Text style={styles.text}>{message}</Text>
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
+        <View style={styles.container} pointerEvents="box-none">
+          <MotionPressable
+            key={message}
+            entering={toastEntering}
+            exiting={toastExiting}
+            onPress={hide}
+            accessibilityRole="button"
+            accessibilityLabel="Hide notification"
+            style={styles.toast}
+          >
+            <Text style={styles.text}>{message}</Text>
+          </MotionPressable>
+        </View>
       ) : null}
     </ToastContext.Provider>
   );

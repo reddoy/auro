@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import Colors from '@/constants/Colors';
 
 interface SpinnerProps {
@@ -13,24 +14,25 @@ export default function Spinner({
   color = Colors.brand.accentMagenta, 
   borderColor = Colors.brand.border 
 }: SpinnerProps) {
-  const spinValue = useRef(new Animated.Value(0)).current;
+  const progress = useSharedValue(0);
 
   useEffect(() => {
-    const spin = () => {
-      spinValue.setValue(0);
-      Animated.timing(spinValue, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }).start(() => spin());
+    progress.value = withRepeat(
+      withTiming(1, {
+        duration: 900,
+        easing: Easing.linear,
+      }),
+      -1,
+      false,
+    );
+    return () => {
+      progress.value = 0;
     };
-    spin();
-  }, [spinValue]);
+  }, [progress]);
 
-  const spinAnimation = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${progress.value * 360}deg` }],
+  }));
 
   return (
     <View style={[styles.container, { width: size, height: size }]}>
@@ -43,8 +45,8 @@ export default function Spinner({
             borderWidth: size * 0.1, // 10% of size for border width
             borderColor: borderColor,
             borderTopColor: color,
-            transform: [{ rotate: spinAnimation }],
           },
+          animatedStyle,
         ]}
       />
     </View>

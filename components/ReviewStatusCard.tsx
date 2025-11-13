@@ -9,6 +9,7 @@ interface ReviewStatusCardProps {
   // User info
   displayName: string;
   avatarUri?: string;
+  bio?: string;
   
   // Request info
   status: string;
@@ -33,6 +34,7 @@ interface ReviewStatusCardProps {
 export default function ReviewStatusCard({
   displayName,
   avatarUri,
+  bio,
   status,
   createdAt,
   hasConsent,
@@ -52,13 +54,19 @@ export default function ReviewStatusCard({
       <View style={styles.gradient}>
         {/* Header Section */}
         <RNView style={styles.header}>
-          <Avatar uri={avatarUri} name={displayName} size={80} />
+          <Avatar uri={avatarUri} name={displayName} size={120} />
           
           <RNView style={styles.statusBadge}>
             <StatusBadge status={status as any} />
           </RNView>
           
           <Text style={styles.displayName}>{displayName}</Text>
+
+          {bio ? (
+            <Text style={styles.bio} numberOfLines={6}>
+              {bio}
+            </Text>
+          ) : null}
           
           {statusMessage && (
             <Text style={styles.statusMessage}>{statusMessage}</Text>
@@ -94,48 +102,39 @@ export default function ReviewStatusCard({
         )}
 
         {/* Earnings Section */}
-        {(amountCents || netAmountCents) && (
+        {amountCents && (
           <RNView style={styles.earningsSection}>
             <Text style={styles.earningsTitle}>Earnings Breakdown</Text>
             
             <RNView style={styles.earningsGrid}>
               {/* Price */}
-              {typeof amountCents === 'number' && (
-                <RNView style={styles.earningsRow}>
-                  <Text style={styles.earningsLabel}>Total Price</Text>
-                  <Text style={styles.earningsValue}>{formatCurrency(amountCents)}</Text>
-                </RNView>
-              )}
+              <RNView style={styles.earningsRow}>
+                <Text style={styles.earningsLabel}>Customer pays</Text>
+                <Text style={styles.earningsValue}>{formatCurrency(amountCents)}</Text>
+              </RNView>
               
-              {/* Auro Fee - 20% */}
-              {typeof amountCents === 'number' && (
-                <RNView style={styles.earningsRow}>
-                  <Text style={styles.earningsLabel}>Auro fee (20%)</Text>
-                  <Text style={[styles.earningsValue, styles.feeValue]}>
-                    -{formatCurrency(Math.round(amountCents * 0.2))}
-                  </Text>
-                </RNView>
-              )}
+              {/* Auro Fee - 20% for all reviewers */}
+              <RNView style={styles.earningsRow}>
+                <Text style={styles.earningsLabel}>Auro fee (20%)</Text>
+                <Text style={[styles.earningsValue, styles.feeValue]}>
+                  -{formatCurrency(auroFeeCents || Math.round(amountCents * 0.2))}
+                </Text>
+              </RNView>
               
-              {/* Stripe Fee - 2.9% + $0.30 */}
-              {typeof amountCents === 'number' && (
-                <RNView style={styles.earningsRow}>
-                  <Text style={styles.earningsLabel}>Stripe fee (2.9% + $0.30)</Text>
-                  <Text style={[styles.earningsValue, styles.feeValue]}>
-                    -{formatCurrency(Math.round(amountCents * 0.029 + 30))}
-                  </Text>
-                </RNView>
-              )}
+              {/* Net Amount - Simple: You get 80% */}
+              <RNView style={[styles.earningsRow, styles.netAmountRow]}>
+                <Text style={styles.netAmountLabel}>You receive</Text>
+                <Text style={styles.netAmountValue}>
+                  {formatCurrency(amountCents - (auroFeeCents || Math.round(amountCents * 0.2)))}
+                </Text>
+              </RNView>
               
-              {/* Net Amount - Correct calculation */}
-              {typeof amountCents === 'number' && (
-                <RNView style={[styles.earningsRow, styles.netAmountRow]}>
-                  <Text style={styles.netAmountLabel}>You receive</Text>
-                  <Text style={styles.netAmountValue}>
-                    {formatCurrency(Math.round(amountCents - (amountCents * 0.2) - (amountCents * 0.029 + 30)))}
-                  </Text>
-                </RNView>
-              )}
+              {/* Note about Stripe fee */}
+              <RNView style={styles.earningsRow}>
+                <Text style={[styles.earningsLabel, { fontSize: 12, fontStyle: 'italic', color: Colors.brand.textSecondary }]}>
+                  * Processing fees are covered by Auro
+                </Text>
+              </RNView>
             </RNView>
             
             {/* Stripe Dashboard Button */}
@@ -202,6 +201,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     letterSpacing: 0.5,
     textAlign: 'center',
+  },
+  bio: {
+    fontSize: 15,
+    color: Colors.brand.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    fontStyle: 'italic',
+    marginBottom: 12,
+    paddingHorizontal: 16,
   },
   statusMessage: {
     fontSize: 14,

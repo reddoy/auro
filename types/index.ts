@@ -86,6 +86,7 @@ export interface DbRequestSummary {
   influencerId: string;
   userId?: string;
   createdAt: string;
+  created_at?: string;
   status: 'pending' | 'accepted' | 'paid' | 'in_progress' | 'completed' | 'rejected';
   photos: string[];
   notes?: string | null;
@@ -125,6 +126,10 @@ export interface DbRequestSummary {
   stripe_transfer_id?: string | null;
   reviewer_amount_cents?: number | null;
   payment_distribution_error?: string | null;
+  completed_at?: string | null;
+  payment_status?: string | null;
+  requester_name?: string | null;
+  requester_username?: string | null;
 }
 
 export interface DbUserProfile {
@@ -146,9 +151,11 @@ export interface DbReviewerSummary {
   skills?: string[] | null;
   pricePerReview?: number | null;
   rating?: number | null;
+  reviewsGivenCount?: number | null;
   packages?: ReviewerPackage[] | null;
   links?: ProfileLinks | null;
   bio?: string | null;
+  createdAt?: string | null;
 }
 
 // Profile types for Profile/Settings screens
@@ -162,6 +169,10 @@ export interface ProfileLinks {
 export interface ProfilePreferences {
   email_notifications?: boolean;
   push_notifications?: boolean;
+  onboarding_role?: 'reviewer' | 'reviewee';
+  onboarding_step?: string | null;
+  onboarding_completed?: boolean;
+  onboarding_completed_at?: string | null;
   [key: string]: any;
 }
 
@@ -179,6 +190,8 @@ export interface Profile {
   hourly_rate?: number | null;
   availability?: string | null;
   pending_payout_balance_cents?: number | null;
+  awaiting_payout_balance_cents?: number | null;
+  completed_paid_total_cents?: number | null;
   stripe_connect_account_id?: string | null;
   // Derived stats (optional, may be selected via RPC/views)
   reviews_given_count?: number | null;

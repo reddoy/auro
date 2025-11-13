@@ -37,6 +37,16 @@ export async function POST(req: Request) {
           console.log('[stripe-webhook] Upload session ID:', uploadSessionId);
           console.log('[stripe-webhook] Metadata:', metadata);
           console.log('[stripe-webhook] Payment intent ID:', session.payment_intent);
+          // Get application fee from metadata first (since Connect may be disabled)
+          // Metadata has the correct fee calculated during checkout
+          let applicationFeeCentsFromMetadata: number | undefined = undefined;
+          if (metadata.auro_fee_cents) {
+            const parsed = parseInt(metadata.auro_fee_cents, 10);
+            if (!isNaN(parsed)) {
+              applicationFeeCentsFromMetadata = parsed;
+            }
+          }
+          
           // Retrieve PaymentIntent to compute Stripe fee and net (via balance transaction)
           let stripeFeeCents: number | undefined = undefined;
           let netAmountCents: number | undefined = undefined;
@@ -49,7 +59,11 @@ export async function POST(req: Request) {
                 ? await stripe.paymentIntents.retrieve(paymentIntentId, { stripeAccount: stripeAccountId })
                 : await stripe.paymentIntents.retrieve(paymentIntentId);
               amountCents = typeof pi.amount === 'number' ? pi.amount : undefined;
-              applicationFeeCents = typeof pi.application_fee_amount === 'number' ? pi.application_fee_amount : undefined;
+              
+              // Use PaymentIntent.application_fee_amount only if available (when Connect is enabled)
+              // Otherwise, use the value from metadata (set during checkout)
+              const piApplicationFee = typeof pi.application_fee_amount === 'number' ? pi.application_fee_amount : undefined;
+              applicationFeeCents = piApplicationFee || applicationFeeCentsFromMetadata;
               
               console.log(`[stripe-webhook] PaymentIntent ${paymentIntentId}: amount=${amountCents}, application_fee=${applicationFeeCents}, stripeAccount=${stripeAccountId}`);
               // List charges by payment_intent instead of reading from pi.charges (more stable types)
@@ -90,7 +104,9 @@ export async function POST(req: Request) {
               const admin = createClient(url, key);
               const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : (session.payment_intent as any)?.id;
               
-              const updateData = {
+              // Build update data - only update application_fee_cents if we have a valid value
+              // This prevents overwriting the correct value when Connect is disabled
+              const updateData: any = {
                 status: 'paid',
                 payment_status: 'paid',
                 stripe_session_id: session.id,
@@ -98,8 +114,17 @@ export async function POST(req: Request) {
                 stripe_fee_cents: typeof stripeFeeCents === 'number' ? stripeFeeCents : null,
                 net_amount_cents: typeof netAmountCents === 'number' ? netAmountCents : null,
                 amount_cents: typeof amountCents === 'number' ? amountCents : undefined,
-                application_fee_cents: typeof applicationFeeCents === 'number' ? applicationFeeCents : null,
               };
+              
+              // Only update application_fee_cents if we have a valid value
+              // Prefer metadata value (set during checkout) over PaymentIntent value
+              if (typeof applicationFeeCents === 'number') {
+                updateData.application_fee_cents = applicationFeeCents;
+              } else if (applicationFeeCentsFromMetadata) {
+                // Fallback to metadata if PaymentIntent doesn't have it
+                updateData.application_fee_cents = applicationFeeCentsFromMetadata;
+              }
+              // If neither is available, don't update application_fee_cents (preserve existing DB value)
               
               console.log('[stripe-webhook] Update data:', updateData);
               

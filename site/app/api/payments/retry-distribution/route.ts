@@ -104,8 +104,12 @@ export async function POST(req: Request) {
     }
 
     // Calculate the amount to transfer
+    // SIMPLE MODEL: Customer pays X, Reviewer gets 80%, Auro absorbs Stripe fee
+    // Standard fee: 20% for all reviewers
     const totalAmount = request.amount_cents || 0;
     const auroFee = request.application_fee_cents || 0;
+    
+    // Reviewer receives: total amount minus Auro's platform fee (80% of total)
     const reviewerAmount = totalAmount - auroFee;
 
     if (reviewerAmount <= 0) {

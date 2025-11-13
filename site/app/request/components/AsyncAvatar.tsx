@@ -16,8 +16,8 @@ function LoadingSpinner({ size }: { size: number }) {
       style={{
         width: size * 0.4,
         height: size * 0.4,
-        border: `${size * 0.05}px solid rgba(255, 111, 0, 0.3)`,
-        borderTop: `${size * 0.05}px solid #FF6F00`,
+        border: `${size * 0.05}px solid rgba(255, 255, 255, 0.15)`,
+        borderTop: `${size * 0.05}px solid rgba(255, 255, 255, 0.6)`,
         borderRadius: '50%',
         animation: 'spin 1s linear infinite',
       }}
@@ -82,12 +82,13 @@ export default function AsyncAvatar({ avatarPathOrUrl, alt, size = 64 }: Props) 
           height: dimension,
           borderRadius: '50%',
           overflow: 'hidden',
-          background: 'rgba(255, 111, 0, 0.2)',
+          background: 'rgba(255, 255, 255, 0.06)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          border: '2px solid rgba(255, 111, 0, 0.3)',
-          boxShadow: '0 4px 12px rgba(255, 111, 0, 0.2)'
+          boxSizing: 'border-box',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          boxShadow: '0 4px 12px rgba(12, 3, 37, 0.25)'
         }}
       >
         {loading ? (

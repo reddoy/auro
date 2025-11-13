@@ -94,7 +94,8 @@ export async function POST(req: Request) {
     // hourly_rate is what the customer pays, not what the reviewer gets
     let priceCents = 1000; // default $10 fallback
     let connectAccountId: string | undefined = undefined;
-    let auroFeeBps: number | undefined = undefined; // 15% founders (1500 bps) for first 100 creators; otherwise 20% (2000 bps)
+    // Standard fee: 20% for all reviewers (2000 basis points)
+    const auroFeeBps = 2000;
     try {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
       const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
@@ -104,7 +105,7 @@ export async function POST(req: Request) {
         if (creatorSlug) {
           const { data: profile } = await admin
             .from('profiles')
-            .select('id, hourly_rate, stripe_connect_account_id, created_at')
+            .select('id, hourly_rate, stripe_connect_account_id')
             .eq('username', creatorSlug)
             .eq('is_reviewer', true)
             .maybeSingle();
@@ -114,25 +115,13 @@ export async function POST(req: Request) {
               priceCents = Math.round(hr * 100); // Convert dollars to cents
             }
             connectAccountId = (profile as any)?.stripe_connect_account_id || undefined;
-            // Compute founders discount eligibility: first 100 reviewers by created_at
-            try {
-              if ((profile as any)?.created_at) {
-                const createdAt = (profile as any).created_at;
-                const { count } = await admin
-                  .from('profiles')
-                  .select('id', { count: 'exact', head: true })
-                  .eq('is_reviewer', true)
-                  .lte('created_at', createdAt);
-                auroFeeBps = typeof count === 'number' && count <= 100 ? 1500 : 2000;
-              }
-            } catch {}
           }
         }
         // If still default, try profiles by profile_id
         if (priceCents === 1000 && resolvedCreatorId) {
           const { data: profile2 } = await admin
             .from('profiles')
-            .select('hourly_rate, stripe_connect_account_id, created_at')
+            .select('hourly_rate, stripe_connect_account_id')
             .eq('id', resolvedCreatorId)
             .eq('is_reviewer', true)
             .maybeSingle();
@@ -142,18 +131,6 @@ export async function POST(req: Request) {
               priceCents = Math.round(hr2 * 100); // Convert dollars to cents
             }
             connectAccountId = (profile2 as any)?.stripe_connect_account_id || undefined;
-            // Fallback founders eligibility if we did not compute above
-            try {
-              if (!auroFeeBps && (profile2 as any)?.created_at) {
-                const createdAt = (profile2 as any).created_at;
-                const { count } = await admin
-                  .from('profiles')
-                  .select('id', { count: 'exact', head: true })
-                  .eq('is_reviewer', true)
-                  .lte('created_at', createdAt);
-                auroFeeBps = typeof count === 'number' && count <= 100 ? 1500 : 2000;
-              }
-            } catch {}
           }
         }
         // If connect account not found yet, try profiles table by profile id
@@ -161,24 +138,12 @@ export async function POST(req: Request) {
           try {
             const { data: profile } = await admin
               .from('profiles')
-              .select('stripe_connect_account_id, created_at')
+              .select('stripe_connect_account_id')
               .eq('id', resolvedCreatorId)
               .eq('is_reviewer', true)
               .maybeSingle();
             connectAccountId = (profile as any)?.stripe_connect_account_id || undefined;
-            if (!auroFeeBps && profile && (profile as any)?.created_at) {
-              const { count } = await admin
-                .from('profiles')
-                .select('id', { count: 'exact', head: true })
-                .eq('is_reviewer', true)
-                .lte('created_at', (profile as any).created_at);
-              auroFeeBps = typeof count === 'number' && count <= 100 ? 1500 : 2000;
-            }
           } catch {}
-        }
-        // Default auro fee bps to 2000 if not computed
-        if (!auroFeeBps) {
-          auroFeeBps = 2000;
         }
       }
     } catch {}
@@ -293,6 +258,44 @@ export async function POST(req: Request) {
           }
           if (insertError) throw insertError;
           ensuredRequestId = (inserted as any)?.id as string | undefined;
+          
+          // Send notification to reviewer about new request
+          if (ensuredRequestId && resolvedCreatorId) {
+            try {
+              // Get reviewer's push token
+              const { data: reviewerProfile } = await admin
+                .from('profiles')
+                .select('push_token')
+                .eq('id', resolvedCreatorId)
+                .maybeSingle();
+              
+              if (reviewerProfile?.push_token) {
+                // Send push notification via Expo API
+                await fetch('https://exp.host/--/api/v2/push/send', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Accept-Encoding': 'gzip, deflate',
+                  },
+                  body: JSON.stringify({
+                    to: reviewerProfile.push_token,
+                    sound: 'default',
+                    title: 'New Review Request! 🎉',
+                    body: 'Someone just requested a review from you!',
+                    data: {
+                      type: 'new_request',
+                      requestId: ensuredRequestId,
+                    },
+                    priority: 'high',
+                  }),
+                }).catch(err => console.error('Failed to send new request notification:', err));
+              }
+            } catch (notifError) {
+              // Don't fail the request creation if notification fails
+              console.error('Error sending notification:', notifError);
+            }
+          }
         }
       }
     } catch (e) {
@@ -300,7 +303,9 @@ export async function POST(req: Request) {
     }
 
     // Compute application fee from auroFeeBps based on customer price
-    const applicationFeeCents = Math.floor((priceCents * (auroFeeBps || 2000)) / 10000);
+    // SIMPLE MODEL: Customer pays X, Reviewer gets 80%, Auro absorbs Stripe fee
+    // Standard fee: 20% for all reviewers (2000 basis points)
+    const applicationFeeCents = Math.floor((priceCents * auroFeeBps) / 10000);
     
     // Ensure application fee doesn't exceed the total amount
     const finalApplicationFeeCents = Math.min(applicationFeeCents, priceCents - 50); // Leave at least 50 cents for the creator
@@ -330,7 +335,7 @@ export async function POST(req: Request) {
         creator_slug: creatorSlug || '',
         upload_session_id: uploadSessionId || '',
         auro_fee_cents: finalApplicationFeeCents.toString(),
-        auro_fee_bps: (auroFeeBps || 2000).toString(),
+        auro_fee_bps: auroFeeBps.toString(), // Always 2000 (20%) for all reviewers
       },
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com'}/checkout/success?rid={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com'}/checkout/cancel`,
@@ -396,7 +401,7 @@ export async function POST(req: Request) {
           .update({
             amount_cents: priceCents, // Customer pays this
             application_fee_cents: finalApplicationFeeCents,
-            auro_fee_bps: auroFeeBps || 2000,
+            auro_fee_bps: auroFeeBps, // Always 2000 (20%) for all reviewers
             stripe_connect_account_id: connectAccountId || null,
           })
           .eq('id', ensuredRequestId);

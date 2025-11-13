@@ -16,8 +16,8 @@ export default function LogoHeader({
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
 
-  // Don't render anything on auth pages
-  if (pathname?.startsWith('/auth')) {
+  // Don't render anything on auth or intro pages
+  if (pathname?.startsWith('/auth') || pathname?.startsWith('/intro')) {
     return null;
   }
 

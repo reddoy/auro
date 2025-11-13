@@ -1,10 +1,8 @@
 import React from 'react';
 import { StyleSheet, ScrollView } from 'react-native';
-import { View, Text } from '@/components/Themed';
+import { View } from '@/components/Themed';
 import SectionTitleCard from './SectionTitleCard';
 import PhotoCarousel from './PhotoCarousel';
-import PaginationDots from './PaginationDots';
-import Colors from '@/constants/Colors';
 
 type PhotoSection = {
   title: string;
@@ -18,18 +16,27 @@ type Props = {
   onPhotoPress: (photos: string[], index: number) => void;
   currentSectionIndex?: number;
   currentPhotoIndex?: number;
+  showSectionHeaders?: boolean;
 };
 
-export default function VideoReviewSection({ sections, onPhotoPress, currentSectionIndex = 0, currentPhotoIndex = 0 }: Props) {
+export default function VideoReviewSection({
+  sections,
+  onPhotoPress,
+  currentSectionIndex = 0,
+  currentPhotoIndex = 0,
+  showSectionHeaders = true,
+}: Props) {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {sections.map((section, sectionIndex) => (
         <View key={section.category} style={styles.sectionContainer}>
-          <SectionTitleCard
-            title={section.title}
-            subtitle={section.subtitle}
-            isActive={sectionIndex === currentSectionIndex}
-          />
+          {showSectionHeaders && (
+            <SectionTitleCard
+              title={section.title}
+              subtitle={section.subtitle}
+              isActive={sectionIndex === currentSectionIndex}
+            />
+          )}
           {section.photos.length > 0 && (
             <View style={styles.carouselContainer}>
               <PhotoCarousel
@@ -49,7 +56,7 @@ export default function VideoReviewSection({ sections, onPhotoPress, currentSect
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.brand.background,
+    backgroundColor: 'transparent',
   },
   sectionContainer: {
     marginBottom: 8,

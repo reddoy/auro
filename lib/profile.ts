@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import * as FileSystem from 'expo-file-system/legacy';
 import Constants from 'expo-constants';
-import type { Profile, UserReview, ReviewerPackage } from '@/types';
+import type { Profile, ProfilePreferences, UserReview, ReviewerPackage } from '@/types';
 
 function getFileExtensionFromUri(uri: string): string | null {
   const match = uri.match(/\.([a-zA-Z0-9]+)(?:\?.*)?$/);
@@ -32,7 +32,7 @@ export async function getCurrentProfile(): Promise<Profile | null> {
   if (!user) return null;
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, full_name, avatar_url, bio, is_reviewer, created_at, skills, links, preferences, hourly_rate, availability, reviews_given_count, reviews_received_count, rating_average, packages, pending_payout_balance_cents')
+    .select('id, username, full_name, avatar_url, bio, is_reviewer, created_at, skills, links, preferences, hourly_rate, availability, reviews_given_count, reviews_received_count, rating_average, packages, pending_payout_balance_cents, awaiting_payout_balance_cents, completed_paid_total_cents')
     .eq('id', user.id)
     .maybeSingle();
   if (error) throw error;
@@ -71,7 +71,7 @@ export async function updateProfile(partial: Partial<Profile>): Promise<Profile>
   try {
     const { data: existingRow } = await supabase
       .from('profiles')
-      .select('id, username, full_name, avatar_url')
+      .select('id, username, full_name, avatar_url, preferences')
       .eq('id', user.id)
       .maybeSingle();
     existing = existingRow || null;
@@ -92,14 +92,59 @@ export async function updateProfile(partial: Partial<Profile>): Promise<Profile>
     }
   }
 
-  const update = { id: user.id, ...seeded, ...partial } as Partial<Profile> & { id: string };
+  const mergedPartial: Partial<Profile> = { ...partial };
+  if (Object.prototype.hasOwnProperty.call(mergedPartial, 'preferences')) {
+    const incoming = mergedPartial.preferences as any;
+    if (incoming && typeof incoming === 'object') {
+      const existingPrefs = (existing?.preferences || {}) as Record<string, any>;
+      mergedPartial.preferences = { ...existingPrefs, ...incoming } as any;
+    }
+  }
+
+  const update = { id: user.id, ...seeded, ...mergedPartial } as Partial<Profile> & { id: string };
   const { data, error } = await supabase
     .from('profiles')
     .upsert(update, { onConflict: 'id' })
-    .select('id, username, full_name, avatar_url, bio, is_reviewer, created_at, skills, links, preferences, hourly_rate, availability, reviews_given_count, reviews_received_count, rating_average, packages, pending_payout_balance_cents')
+    .select('id, username, full_name, avatar_url, bio, is_reviewer, created_at, skills, links, preferences, hourly_rate, availability, reviews_given_count, reviews_received_count, rating_average, packages, pending_payout_balance_cents, awaiting_payout_balance_cents, completed_paid_total_cents')
     .single();
   if (error) throw error;
   return data as Profile;
+}
+
+export async function updateProfilePreferences(
+  partial: Partial<ProfilePreferences> | null
+): Promise<ProfilePreferences | null> {
+  const { data: userResult } = await supabase.auth.getUser();
+  const user = userResult.user;
+  if (!user) throw new Error('Not signed in');
+
+  let existingPreferences: ProfilePreferences | null = null;
+  try {
+    const { data: existingRow } = await supabase
+      .from('profiles')
+      .select('preferences')
+      .eq('id', user.id)
+      .maybeSingle();
+    existingPreferences = (existingRow?.preferences as ProfilePreferences) || null;
+  } catch {}
+
+  const merged =
+    partial === null
+      ? null
+      : ({
+          ...(existingPreferences || {}),
+          ...(partial || {}),
+        } as ProfilePreferences);
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ preferences: merged })
+    .eq('id', user.id)
+    .select('preferences')
+    .single();
+
+  if (error) throw error;
+  return (data?.preferences as ProfilePreferences) || null;
 }
 
 function decodeBase64ToBytes(base64: string): Uint8Array {
