@@ -10,6 +10,9 @@ import { getSignedAvatarUrl, updateProfilePreferences } from '@/lib/profile';
 import type { DbReviewerSummary } from '@/types';
 import Avatar from '@/components/Avatar';
 import Spinner from '@/components/Spinner';
+import { MotionView, MotionPressable, cardEntrance } from '@/components/motion';
+import { MotionDelays } from '@/components/motion/tokens';
+import { FadeInDown } from 'react-native-reanimated';
 
 export default function DiscoverReviewersScreen() {
   const insets = useSafeAreaInsets();
@@ -22,10 +25,14 @@ export default function DiscoverReviewersScreen() {
     const run = async () => {
       try {
         const list = await getReviewers();
-        setReviewers(list);
+        
+        // Limit to 100 reviewers to prevent system overload
+        const limitedList = list.slice(0, 100);
+        setReviewers(limitedList);
+        
         try {
           const pairs = await Promise.all(
-            list.map(async (r) => {
+            limitedList.map(async (r) => {
               let uri = r.avatarUrl || '';
               if (uri) {
                 try {
@@ -58,7 +65,7 @@ export default function DiscoverReviewersScreen() {
       onboarding_step: 'completed',
       onboarding_completed: true,
     }).catch(() => {});
-    router.push({ pathname: '/(tabs)/requests/reviewer/profile', params: { id: reviewer.id } } as any);
+    router.replace({ pathname: '/(tabs)/requests/reviewer/profile', params: { id: reviewer.id } } as any);
   };
 
   const handleSkip = async () => {
@@ -66,30 +73,31 @@ export default function DiscoverReviewersScreen() {
       onboarding_step: 'completed',
       onboarding_completed: true,
     }).catch(() => {});
-    router.push('/onboarding/thank-you?type=get-reviewed');
+    router.replace('/onboarding/thank-you?type=get-reviewed');
   };
 
-  const renderReviewer = ({ item }: { item: DbReviewerSummary }) => (
-    <TouchableOpacity 
-      style={styles.reviewerCard}
-      onPress={() => handleSelectReviewer(item)}
-      activeOpacity={0.7}
-    >
-      <Avatar 
-        uri={avatarMap[item.id]} 
-        size={64} 
-        name={item.displayName || item.username || 'Reviewer'}
-      />
-      <View style={styles.reviewerInfo}>
-        <Text style={styles.reviewerName}>{item.displayName || item.username || 'Reviewer'}</Text>
-        {item.bio && (
-          <Text style={styles.reviewerBio} numberOfLines={2}>{item.bio}</Text>
-        )}
-        {item.pricePerReview && (
-          <Text style={styles.reviewerPrice}>${item.pricePerReview.toFixed(2)} per review</Text>
-        )}
-      </View>
-    </TouchableOpacity>
+  const renderReviewer = ({ item, index }: { item: DbReviewerSummary; index: number }) => (
+    <MotionView entering={cardEntrance(index + 2)}>
+      <MotionPressable 
+        style={styles.reviewerCard}
+        onPress={() => handleSelectReviewer(item)}
+      >
+        <Avatar 
+          uri={avatarMap[item.id]} 
+          size={64} 
+          name={item.displayName || item.username || 'Reviewer'}
+        />
+        <View style={styles.reviewerInfo}>
+          <Text style={styles.reviewerName}>{item.displayName || item.username || 'Reviewer'}</Text>
+          {item.bio && (
+            <Text style={styles.reviewerBio} numberOfLines={2}>{item.bio}</Text>
+          )}
+          {item.pricePerReview && (
+            <Text style={styles.reviewerPrice}>${item.pricePerReview.toFixed(2)} per review</Text>
+          )}
+        </View>
+      </MotionPressable>
+    </MotionView>
   );
 
   return (
@@ -102,10 +110,14 @@ export default function DiscoverReviewersScreen() {
         style={styles.backgroundGradient}
       />
       <View style={styles.header}>
-        <Text style={styles.title}>Discover Reviewers</Text>
-        <Text style={styles.subtitle}>Here’s the full list of Auro reviewers. Tap one to explore or skip for now.</Text>
+        <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
+          <Text style={styles.title}>Discover Reviewers</Text>
+        </MotionView>
+        <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
+          <Text style={styles.subtitle}>Here's the full list of Auro reviewers. Tap one to explore or skip for now.</Text>
+        </MotionView>
         
-        <View style={styles.searchContainer}>
+        <MotionView entering={cardEntrance(2)} style={styles.searchContainer}>
           <TextInput
             style={styles.searchInput}
             placeholder="Search reviewers..."
@@ -113,7 +125,7 @@ export default function DiscoverReviewersScreen() {
             value={search}
             onChangeText={setSearch}
           />
-        </View>
+        </MotionView>
       </View>
 
       {loading ? (
@@ -126,21 +138,23 @@ export default function DiscoverReviewersScreen() {
             data={filteredReviewers}
             renderItem={renderReviewer}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[styles.listContent, { paddingBottom: 100 + insets.bottom }]}
+            style={styles.list}
+            showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyText}>No reviewers found</Text>
               </View>
             }
           />
-          <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
-            <TouchableOpacity 
+          <MotionView entering={cardEntrance(10)} style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+            <MotionPressable 
               style={styles.skipButton}
               onPress={handleSkip}
             >
               <Text style={styles.skipButtonText}>I'll do it later</Text>
-            </TouchableOpacity>
-          </View>
+            </MotionPressable>
+          </MotionView>
         </>
       )}
     </KeyboardAvoidingView>
@@ -160,7 +174,7 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   header: {
-    paddingTop: 60,
+    paddingTop: 8,
     paddingHorizontal: 24,
     paddingBottom: 20,
     backgroundColor: 'transparent',
@@ -196,19 +210,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
+  list: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
   listContent: {
     paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 100,
+    paddingTop: 8,
   },
   reviewerCard: {
     flexDirection: 'row',
     backgroundColor: Colors.brand.cardBackground,
     borderRadius: 20,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 111, 0, 0.2)',
+    borderColor: 'rgba(255, 111, 0, 0.15)',
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   reviewerInfo: {
     flex: 1,
@@ -247,7 +269,10 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 24,
     paddingTop: 16,
-    backgroundColor: 'transparent',
+    backgroundColor: Colors.brand.background,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 111, 0, 0.1)',
+    zIndex: 10,
   },
   skipButton: {
     backgroundColor: Colors.brand.cardBackground,

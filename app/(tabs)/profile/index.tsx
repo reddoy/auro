@@ -527,6 +527,79 @@ export default function ProfileScreen() {
           </MotionView>
         </MotionView>
 
+        {/* Reviewer Setup Completion Progress Bar */}
+        {profile?.is_reviewer && (
+          <MotionView entering={nextEntrance()} style={styles.setupProgressContainer}>
+            <View style={styles.setupProgressHeader}>
+              <Text style={styles.setupProgressTitle}>Reviewer Setup Completion</Text>
+              <Text style={styles.setupProgressSubtitle}>
+                {(() => {
+                  const hasStripe = !!profile?.stripe_connect_account_id;
+                  const hasRate = !!(profile?.hourly_rate && profile.hourly_rate > 0);
+                  const completed = (hasStripe ? 1 : 0) + (hasRate ? 1 : 0);
+                  return `${completed}/2 steps completed`;
+                })()}
+              </Text>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBar, {
+                width: `${(() => {
+                  const hasStripe = !!profile?.stripe_connect_account_id;
+                  const hasRate = !!(profile?.hourly_rate && profile.hourly_rate > 0);
+                  return ((hasStripe ? 1 : 0) + (hasRate ? 1 : 0)) * 50;
+                })()}%`
+              }]} />
+            </View>
+            
+            {/* Setup Indicators */}
+            {!profile?.stripe_connect_account_id && (
+              <MotionPressable
+                entering={cardEntrance(1)}
+                style={styles.setupIndicator}
+                onPress={async () => {
+                  if (!profile?.id) return;
+                  try {
+                    const url = await createStripeExpressOnboardingLink(profile.id);
+                    if (url) {
+                      await Linking.openURL(url);
+                    } else {
+                      Alert.alert('Error', 'Failed to create Stripe setup link');
+                    }
+                  } catch (e: any) {
+                    Alert.alert('Error', e?.message || 'Failed to open Stripe setup');
+                  }
+                }}
+              >
+                <View style={styles.setupIndicatorContent}>
+                  <Text style={styles.setupIndicatorIcon}>⚠️</Text>
+                  <View style={styles.setupIndicatorTextContainer}>
+                    <Text style={styles.setupIndicatorTitle}>Complete Stripe Connect Setup</Text>
+                    <Text style={styles.setupIndicatorSubtitle}>Required to receive payments</Text>
+                  </View>
+                  <Text style={styles.setupIndicatorArrow}>→</Text>
+                </View>
+              </MotionPressable>
+            )}
+            
+            {(!profile?.hourly_rate || profile.hourly_rate <= 0) && (
+              <MotionPressable
+                entering={cardEntrance(2)}
+                style={styles.setupIndicator}
+                onPress={() => router.push('/(tabs)/profile/set-rate')}
+              >
+                <View style={styles.setupIndicatorContent}>
+                  <Text style={styles.setupIndicatorIcon}>⚠️</Text>
+                  <View style={styles.setupIndicatorTextContainer}>
+                    <Text style={styles.setupIndicatorTitle}>Set Your Rate</Text>
+                    <Text style={styles.setupIndicatorSubtitle}>Required to appear in reviewer listings</Text>
+                  </View>
+                  <Text style={styles.setupIndicatorArrow}>→</Text>
+                </View>
+              </MotionPressable>
+            )}
+          </MotionView>
+        )}
+
         <MotionView entering={nextEntrance()} style={styles.bioSection}>
           <Text style={styles.sectionTitle}>Reviewer Settings</Text>
           <Text style={{ color: Colors.brand.textSecondary }}>Control your reviewer status and price per review.</Text>
@@ -1223,6 +1296,78 @@ const styles = StyleSheet.create({
   },
   modalButtonDisabled: {
     opacity: 0.6,
+  },
+  setupProgressContainer: {
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 111, 0, 0.2)',
+  },
+  setupProgressHeader: {
+    marginBottom: 12,
+    backgroundColor: 'transparent',
+  },
+  setupProgressTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+    marginBottom: 4,
+    fontFamily: 'Poppins_700Bold',
+  },
+  setupProgressSubtitle: {
+    fontSize: 14,
+    color: Colors.brand.textSecondary,
+  },
+  progressBarContainer: {
+    height: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: Colors.brand.accentOrange,
+    borderRadius: 4,
+  },
+  setupIndicator: {
+    backgroundColor: 'rgba(255, 111, 0, 0.1)',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 111, 0, 0.3)',
+  },
+  setupIndicatorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  setupIndicatorIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  setupIndicatorTextContainer: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  setupIndicatorTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.brand.textPrimary,
+    marginBottom: 2,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  setupIndicatorSubtitle: {
+    fontSize: 13,
+    color: Colors.brand.textSecondary,
+  },
+  setupIndicatorArrow: {
+    fontSize: 20,
+    color: Colors.brand.accentOrange,
+    fontWeight: '700',
   },
   modalButtonCancelText: {
     color: Colors.brand.textPrimary,

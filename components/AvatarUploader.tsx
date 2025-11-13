@@ -1,10 +1,11 @@
-import React, { useCallback, useMemo, useState, useEffect } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import React, { useCallback, useMemo, useState, useEffect, useRef } from 'react';
+import { Alert, Pressable, StyleSheet, View as RNView, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 
 import Colors from '@/constants/Colors';
 import { Text } from '@/components/Themed';
+import { Text as RNText } from 'react-native';
 import { uploadAvatar, removeAvatar } from '@/lib/profile';
 import Spinner from '@/components/Spinner';
 
@@ -23,8 +24,19 @@ export default function AvatarUploader(props: Props) {
   const { uri, onUploaded, onRemoved, size = 96, accessibilityLabel, previousPathOrUrl } = props;
   const [uploading, setUploading] = useState(false);
   const [showAddPhoto, setShowAddPhoto] = useState(false);
+  const avatarContainerRef = useRef<any>(null);
 
   const radius = useMemo(() => size / 2, [size]);
+
+  // Force background color on web using ref
+  useEffect(() => {
+    if (Platform.OS === 'web' && avatarContainerRef.current) {
+      const element = avatarContainerRef.current as HTMLElement;
+      if (element && element.style) {
+        element.style.backgroundColor = '#2A1B3D';
+      }
+    }
+  }, []);
 
   // Show "Add Photo" only after a delay if no URI is provided
   useEffect(() => {
@@ -101,13 +113,45 @@ export default function AvatarUploader(props: Props) {
       accessibilityLabel={accessibilityLabel || 'Change profile photo'}
       onPress={pickAndUpload}
       onLongPress={handleLongPress}
-      style={[styles.container, { width: size, height: size, borderRadius: radius }]}
+      style={[
+        styles.container, 
+        { 
+          width: size, 
+          height: size, 
+          borderRadius: radius,
+          backgroundColor: 'transparent', // Explicitly set transparent for web
+        }
+      ]}
     >
-      <View style={[styles.avatarContainer, { width: size, height: size, borderRadius: radius }]}>
+      <RNView 
+        ref={avatarContainerRef}
+        style={[
+          styles.avatarContainer, // Base styles first
+          { 
+            width: size, 
+            height: size, 
+            borderRadius: radius,
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            borderWidth: 2,
+            borderColor: Colors.brand.accentOrange,
+            // Force cardBackground color - use Platform.select to ensure web gets the right color
+            backgroundColor: Platform.select({
+              web: '#2A1B3D', // Direct hex for web to avoid any theme issues
+              default: Colors.brand.cardBackground,
+            }),
+          },
+        ]}
+        // Web-specific props to force background
+        {...(Platform.OS === 'web' && {
+          // @ts-ignore - web-specific prop
+          dataSet: { backgroundColor: '#2A1B3D' },
+        })}
+      >
         {uri ? (
           <Image source={{ uri }} style={{ width: size, height: size, borderRadius: radius }} contentFit="cover" transition={200} />
         ) : showAddPhoto ? (
-          <Text style={styles.placeholderText}>Add Photo</Text>
+          <RNText style={styles.placeholderText}>Add Photo</RNText>
         ) : (
           <Spinner 
             size={size * 0.4} 
@@ -115,27 +159,35 @@ export default function AvatarUploader(props: Props) {
             borderColor={Colors.brand.border}
           />
         )}
-      </View>
+      </RNView>
       
       {uploading && (
-        <View style={[styles.overlay, { borderRadius: radius }]}> 
+        <RNView style={[styles.overlay, { borderRadius: radius }]}> 
           <Spinner 
             size={size * 0.3} 
             color={Colors.brand.accentMagenta} 
             borderColor={Colors.brand.border}
           />
-        </View>
+        </RNView>
       )}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { overflow: 'hidden' },
+  container: { 
+    overflow: 'hidden',
+    backgroundColor: 'transparent', // Ensure no background color inheritance
+    borderWidth: 0, // Explicitly remove any border
+    borderColor: 'transparent',
+  },
   avatarContainer: { 
     alignItems: 'center', 
     justifyContent: 'center', 
-    backgroundColor: Colors.brand.background,
+    backgroundColor: Platform.select({
+      web: '#2A1B3D', // Force cardBackground on web
+      default: Colors.brand.cardBackground,
+    }),
     borderWidth: 2,
     borderColor: Colors.brand.accentOrange,
   },

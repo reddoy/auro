@@ -6,6 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { updateProfilePreferences } from '@/lib/profile';
+import { MotionView, MotionPressable, cardEntrance } from '@/components/motion';
+import { MotionDelays } from '@/components/motion/tokens';
+import { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 export default function ThankYouScreen() {
   const insets = useSafeAreaInsets();
@@ -44,31 +47,38 @@ export default function ThankYouScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
-          <Text style={styles.emoji}>🎉</Text>
-          <Text style={styles.title}>
-            {isReviewer ? 'Welcome to the Auro Community!' : 'Thank You for Signing Up!'}
-          </Text>
-          <Text style={styles.message}>
-            {isReviewer 
-              ? "You’re all set! Share your profile link on socials to start receiving review requests and climb the leaderboard."
-              : "You’re all set! Head to Discover Reviewers anytime to request feedback when you’re ready."
-            }
-          </Text>
+          <MotionView entering={ZoomIn.duration(500).delay(MotionDelays.quick)}>
+            <Text style={styles.emoji}>🎉</Text>
+          </MotionView>
+          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
+            <Text style={styles.title}>
+              {isReviewer ? 'Welcome to the Auro Community!' : 'Thank You for Signing Up!'}
+            </Text>
+          </MotionView>
+          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item * 2)}>
+            <Text style={styles.message}>
+              {isReviewer 
+                ? "You're all set! Share your profile link on socials to start receiving review requests and climb the leaderboard."
+                : "You're all set! Head to Discover Reviewers anytime to request feedback when you're ready."
+              }
+            </Text>
+          </MotionView>
 
-          <TouchableOpacity 
-            style={styles.primaryButton}
-            onPress={handleGoHome}
-            activeOpacity={0.8}
-          >
-            <ExpoLinearGradient
-              colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-              style={styles.buttonGradient}
+          <MotionView entering={cardEntrance(3)}>
+            <MotionPressable 
+              style={styles.primaryButton}
+              onPress={handleGoHome}
             >
-              <Text style={styles.primaryButtonText}>
-                {isReviewer ? 'Take Me to My Reviews' : 'Take Me to Home'}
-              </Text>
-            </ExpoLinearGradient>
-          </TouchableOpacity>
+              <ExpoLinearGradient
+                colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                style={styles.buttonGradient}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {isReviewer ? 'Take Me to My Reviews' : 'Take Me to Home'}
+                </Text>
+              </ExpoLinearGradient>
+            </MotionPressable>
+          </MotionView>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

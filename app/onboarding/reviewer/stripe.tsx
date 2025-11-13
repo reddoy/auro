@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, Linking } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, Linking, View as RNView } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +9,9 @@ import { getCurrentProfile, updateProfile, updateProfilePreferences } from '@/li
 import { createStripeExpressOnboardingLink } from '@/lib/payments';
 import type { Profile } from '@/types';
 import Spinner from '@/components/Spinner';
+import { MotionView, MotionPressable, cardEntrance, subtleFadeIn } from '@/components/motion';
+import { MotionDelays } from '@/components/motion/tokens';
+import { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 export default function StripeSetupScreen() {
   const insets = useSafeAreaInsets();
@@ -57,12 +60,37 @@ export default function StripeSetupScreen() {
 
       await Linking.openURL(url);
       
-      // After opening Stripe, wait a moment then proceed
-      // The user will complete Stripe setup and can come back
-      setTimeout(() => {
-        updateProfilePreferences({ onboarding_step: 'reviewer_share_link' }).catch(() => {});
-        router.push('/onboarding/reviewer/share-link');
-      }, 1000);
+      // Don't auto-advance - let the user complete Stripe setup and come back
+      // Show alert with options to continue or skip
+      Alert.alert(
+        'Stripe Setup Opened',
+        'Complete your Stripe setup in the browser. Once done, come back to the app to continue.',
+        [
+          {
+            text: 'Continue to Next Step',
+            onPress: () => {
+              // Mark as reviewer if not already
+              if (profile && !profile.is_reviewer) {
+                updateProfile({ is_reviewer: true }).catch(() => {});
+              }
+              updateProfilePreferences({ onboarding_step: 'reviewer_share_link' }).catch(() => {});
+              router.replace('/onboarding/reviewer/share-link');
+            }
+          },
+          {
+            text: 'Skip for Now',
+            style: 'cancel',
+            onPress: () => {
+              // Skip Stripe setup - mark as reviewer and continue
+              if (profile && !profile.is_reviewer) {
+                updateProfile({ is_reviewer: true }).catch(() => {});
+              }
+              updateProfilePreferences({ onboarding_step: 'reviewer_share_link' }).catch(() => {});
+              router.replace('/onboarding/reviewer/share-link');
+            }
+          }
+        ]
+      );
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to open Stripe setup');
     } finally {
@@ -84,7 +112,7 @@ export default function StripeSetupScreen() {
               updateProfile({ is_reviewer: true }).catch(() => {});
             }
             updateProfilePreferences({ onboarding_step: 'reviewer_share_link' }).catch(() => {});
-            router.push('/onboarding/reviewer/share-link');
+            router.replace('/onboarding/reviewer/share-link');
           }
         }
       ]
@@ -114,45 +142,69 @@ export default function StripeSetupScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
-          <Text style={styles.title}>Set Up Payments</Text>
-          <Text style={styles.description}>
-            Connect your Stripe account to receive payments for reviews. This is quick and secure.
-          </Text>
-
-          <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>Why Stripe?</Text>
-            <Text style={styles.infoText}>
-              • Secure payment processing{'\n'}
-              • Fast payouts to your bank account{'\n'}
-              • Industry-standard security{'\n'}
-              • Used by millions of businesses
+          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
+            <Text style={styles.title}>Set Up Payments</Text>
+          </MotionView>
+          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
+            <Text style={styles.description}>
+              Connect your Stripe account to receive payments for reviews. This is quick and secure.
             </Text>
-          </View>
+          </MotionView>
 
-          <TouchableOpacity 
-            style={[styles.setupButton, settingUp && styles.setupButtonDisabled]}
-            onPress={handleSetupStripe}
-            disabled={settingUp}
-            activeOpacity={0.8}
-          >
-            <ExpoLinearGradient
-              colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-              style={styles.buttonGradient}
+          <MotionView entering={cardEntrance(2)} style={styles.infoCard}>
+            <RNView style={styles.infoContent}>
+              <Text style={styles.infoTitle}>
+                Why{' '}<Text style={styles.stripeText}>Stripe</Text>?
+              </Text>
+              <RNView style={styles.benefitsList}>
+                <RNView style={styles.benefitRow}>
+                  <Text style={styles.bullet}>•</Text>
+                  <Text style={styles.benefitText}>Secure payment processing</Text>
+                </RNView>
+                <RNView style={styles.benefitRow}>
+                  <Text style={styles.bullet}>•</Text>
+                  <Text style={styles.benefitText}>Fast payouts to your bank account</Text>
+                </RNView>
+                <RNView style={styles.benefitRow}>
+                  <Text style={styles.bullet}>•</Text>
+                  <Text style={styles.benefitText}>Industry-standard security</Text>
+                </RNView>
+                <RNView style={styles.benefitRow}>
+                  <Text style={styles.bullet}>•</Text>
+                  <Text style={styles.benefitText}>Used by millions of businesses</Text>
+                </RNView>
+              </RNView>
+            </RNView>
+          </MotionView>
+
+          <MotionView entering={cardEntrance(4)}>
+            <MotionPressable 
+              style={[styles.setupButton, settingUp && styles.setupButtonDisabled]}
+              onPress={handleSetupStripe}
+              disabled={settingUp}
             >
-              {settingUp ? (
-                <Spinner size={20} color={Colors.brand.textOnGradient} />
-              ) : (
-                <Text style={styles.setupButtonText}>Set Up Stripe</Text>
-              )}
-            </ExpoLinearGradient>
-          </TouchableOpacity>
+              <ExpoLinearGradient
+                colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                style={styles.buttonGradient}
+              >
+                {settingUp ? (
+                  <Spinner size={20} color={Colors.brand.textOnGradient} />
+                ) : (
+                  <Text style={styles.setupButtonText}>Set Up Stripe</Text>
+                )}
+              </ExpoLinearGradient>
+            </MotionPressable>
+          </MotionView>
 
-          <TouchableOpacity 
-            style={styles.skipButton}
-            onPress={handleSkip}
-          >
-            <Text style={styles.skipButtonText}>I'll do this later</Text>
-          </TouchableOpacity>
+          <MotionView entering={subtleFadeIn().delay(MotionDelays.section)}>
+            <TouchableOpacity 
+              style={styles.skipButton}
+              onPress={handleSkip}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.skipButtonText}>I'll do this later</Text>
+            </TouchableOpacity>
+          </MotionView>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -183,44 +235,73 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 40,
   },
   content: {
     backgroundColor: 'transparent',
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
     color: Colors.brand.textPrimary,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
     fontFamily: 'Poppins_700Bold',
   },
   description: {
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.brand.textSecondary,
     textAlign: 'center',
     marginBottom: 32,
-    lineHeight: 24,
+    lineHeight: 22,
+    paddingHorizontal: 8,
   },
   infoCard: {
     backgroundColor: Colors.brand.cardBackground,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 20,
-    marginBottom: 32,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 111, 0, 0.2)',
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  infoContent: {
+    width: '100%',
   },
   infoTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: Colors.brand.textPrimary,
-    marginBottom: 12,
+    marginBottom: 16,
+    textAlign: 'center',
+    letterSpacing: 0,
   },
-  infoText: {
+  stripeText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#635BFF', // Stripe brand color
+    letterSpacing: 0,
+  },
+  benefitsList: {
+    gap: 12,
+    alignItems: 'center',
+  },
+  benefitRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    justifyContent: 'center',
+    maxWidth: '90%',
+  },
+  bullet: {
     fontSize: 16,
+    color: Colors.brand.accentOrange,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  benefitText: {
+    fontSize: 15,
     color: Colors.brand.textSecondary,
-    lineHeight: 24,
+    lineHeight: 22,
+    textAlign: 'center',
   },
   setupButton: {
     width: '100%',

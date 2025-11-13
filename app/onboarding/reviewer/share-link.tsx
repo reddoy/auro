@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, View as RNView } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +10,9 @@ import { copyToClipboard } from '@/lib/clipboard';
 import { getCurrentProfile, updateProfilePreferences } from '@/lib/profile';
 import type { Profile } from '@/types';
 import { Ionicons } from '@expo/vector-icons';
+import { MotionView, MotionPressable, cardEntrance } from '@/components/motion';
+import { MotionDelays } from '@/components/motion/tokens';
+import { FadeInDown } from 'react-native-reanimated';
 
 function buildProfileUrl(profile: Profile | null): string | null {
   if (!profile) return null;
@@ -22,6 +25,12 @@ function buildProfileUrl(profile: Profile | null): string | null {
   const slug = profile.username || profile.id;
   if (!slug) return null;
   return `${trimmedBase}/${slug}`;
+}
+
+function formatProfileUrl(url: string | null): string {
+  if (!url) return '';
+  // Remove https://www. or https:// or http://www. or http://
+  return url.replace(/^https?:\/\/(www\.)?/i, '');
 }
 
 export default function ReviewerShareLinkScreen() {
@@ -37,6 +46,17 @@ export default function ReviewerShareLinkScreen() {
       try {
         const current = await getCurrentProfile();
         setProfile(current);
+        // Only update step if not already set to this step or a later step
+        const currentStep = current?.preferences?.onboarding_step;
+        if (!currentStep || 
+            currentStep === 'reviewer_stripe' || 
+            currentStep === 'reviewer_share_link' ||
+            currentStep === 'completed') {
+          // Step is valid, no need to update
+        } else {
+          // Update to this step if we're coming from an earlier step
+          updateProfilePreferences({ onboarding_step: 'reviewer_share_link' }).catch(() => {});
+        }
       } catch (error) {
         console.warn('Failed to load profile for share link', error);
         Alert.alert('Error', 'We were not able to load your profile. Please try again.');
@@ -45,7 +65,6 @@ export default function ReviewerShareLinkScreen() {
       }
     };
     run();
-    updateProfilePreferences({ onboarding_step: 'reviewer_share_link' }).catch(() => {});
   }, []);
 
   const profileUrl = useMemo(() => buildProfileUrl(profile), [profile]);
@@ -94,29 +113,25 @@ export default function ReviewerShareLinkScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
-          <Text style={styles.title}>Share Your Profile</Text>
-          <Text style={styles.description}>
-            Your Auro profile link lets people request reviews directly from you. Share it on your socials to start receiving requests.
-          </Text>
-
-          <View style={styles.card}>
-            <View style={styles.iconRow}>
-              <Ionicons name="link" size={22} color={Colors.brand.accentOrange} />
-              <Text style={styles.cardTitle}>Your unique link</Text>
-            </View>
-            <View style={styles.linkBox}>
-              <Text style={styles.linkText} numberOfLines={1}>
-                {loading ? 'Loading…' : profileUrl || 'We’ll create this once your profile is ready'}
-              </Text>
-            </View>
-            <Text style={styles.cardHint}>
-              Copy it and drop it on LinkTree, Instagram bio, Twitter, or wherever your audience hangs out.
+          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
+            <Text style={styles.title}>Share Your Profile</Text>
+          </MotionView>
+          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
+            <Text style={styles.description}>
+              Your Auro profile link lets people request reviews directly from you. Share it on your socials to start receiving requests.
             </Text>
-            <TouchableOpacity
+          </MotionView>
+
+          <MotionView entering={cardEntrance(2)} style={styles.card}>
+            <RNView style={styles.linkBox}>
+              <Text style={styles.linkText} numberOfLines={1}>
+                {loading ? 'Loading...' : (profileUrl ? formatProfileUrl(profileUrl) : "We'll create this once your profile is ready")}
+              </Text>
+            </RNView>
+            <MotionPressable
               style={[styles.copyButton, (!profileUrl || copying) && styles.copyButtonDisabled]}
               onPress={handleCopy}
               disabled={!profileUrl || copying}
-              activeOpacity={0.85}
             >
               <Ionicons
                 name={copied ? 'checkmark-circle' : 'copy-outline'}
@@ -126,40 +141,25 @@ export default function ReviewerShareLinkScreen() {
               <Text style={styles.copyButtonText}>
                 {copied ? 'Link copied!' : 'Copy my profile link'}
               </Text>
-            </TouchableOpacity>
-          </View>
+            </MotionPressable>
+          </MotionView>
 
-          <View style={styles.tipsContainer}>
-            <Text style={styles.tipsTitle}>Quick boost tips</Text>
-            <View style={styles.tipRow}>
-              <Ionicons name="sparkles" size={18} color={Colors.brand.accentMagenta} />
-              <Text style={styles.tipText}>Pin your link to TikTok and IG highlights</Text>
-            </View>
-            <View style={styles.tipRow}>
-              <Ionicons name="paper-plane" size={18} color={Colors.brand.accentMagenta} />
-              <Text style={styles.tipText}>Send it to past clients to spark repeat requests</Text>
-            </View>
-            <View style={styles.tipRow}>
-              <Ionicons name="megaphone" size={18} color={Colors.brand.accentMagenta} />
-              <Text style={styles.tipText}>Share with group chats to get your first reviews fast</Text>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.continueButton, continuing && styles.continueButtonDisabled]}
-            onPress={handleContinue}
-            disabled={continuing}
-            activeOpacity={0.85}
-          >
-            <ExpoLinearGradient
-              colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-              style={styles.buttonGradient}
+          <MotionView entering={cardEntrance(4)}>
+            <MotionPressable
+              style={[styles.continueButton, continuing && styles.continueButtonDisabled]}
+              onPress={handleContinue}
+              disabled={continuing}
             >
-              <Text style={styles.continueButtonText}>
-                {continuing ? 'Finishing...' : 'I’m ready – take me to my dashboard'}
-              </Text>
-            </ExpoLinearGradient>
-          </TouchableOpacity>
+              <ExpoLinearGradient
+                colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                style={styles.buttonGradient}
+              >
+                <Text style={styles.continueButtonText}>
+                  {continuing ? 'Finishing...' : "I'm ready - take me to my dashboard"}
+                </Text>
+              </ExpoLinearGradient>
+            </MotionPressable>
+          </MotionView>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -184,74 +184,61 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 40,
   },
   content: {
     backgroundColor: 'transparent',
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
     color: Colors.brand.textPrimary,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
     fontFamily: 'Poppins_700Bold',
   },
   description: {
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.brand.textSecondary,
     textAlign: 'center',
     marginBottom: 32,
-    lineHeight: 24,
-    paddingHorizontal: 12,
+    lineHeight: 22,
+    paddingHorizontal: 8,
   },
   card: {
     backgroundColor: Colors.brand.cardBackground,
     borderRadius: 20,
     padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 111, 0, 0.18)',
     marginBottom: 24,
-  },
-  iconRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 16,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.brand.textPrimary,
   },
   linkBox: {
     borderRadius: 16,
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
     borderColor: 'rgba(255, 111, 0, 0.2)',
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 16,
-    marginBottom: 12,
+    marginBottom: 16,
+    width: '100%',
+    alignItems: 'center',
   },
   linkText: {
     fontSize: 16,
     fontWeight: '600',
     color: Colors.brand.textPrimary,
-  },
-  cardHint: {
-    fontSize: 14,
-    color: Colors.brand.textSecondary,
-    marginBottom: 16,
-    lineHeight: 20,
+    textAlign: 'center',
   },
   copyButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    borderRadius: 18,
-    paddingVertical: 12,
+    gap: 10,
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
     backgroundColor: Colors.brand.accentMagenta,
+    width: '100%',
   },
   copyButtonDisabled: {
     opacity: 0.5,
@@ -260,31 +247,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: Colors.brand.textOnGradient,
-  },
-  tipsContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 111, 0, 0.12)',
-    marginBottom: 32,
-    gap: 12,
-  },
-  tipsTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.brand.textPrimary,
-  },
-  tipRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  tipText: {
-    fontSize: 14,
-    color: Colors.brand.textSecondary,
-    flex: 1,
-    lineHeight: 20,
   },
   continueButton: {
     width: '100%',

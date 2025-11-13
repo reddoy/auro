@@ -6,6 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { updateProfile, updateProfilePreferences } from '@/lib/profile';
+import { MotionView, MotionPressable, cardEntrance } from '@/components/motion';
+import { MotionDelays } from '@/components/motion/tokens';
+import { FadeInDown } from 'react-native-reanimated';
 
 export default function BioScreen() {
   const insets = useSafeAreaInsets();
@@ -22,7 +25,7 @@ export default function BioScreen() {
       setSaving(true);
       await updateProfile({ bio: bio.trim() });
       await updateProfilePreferences({ onboarding_step: 'reviewer_rate' });
-      router.push('/onboarding/reviewer/rate');
+      router.replace('/onboarding/reviewer/rate');
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to save bio');
     } finally {
@@ -47,12 +50,16 @@ export default function BioScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
-          <Text style={styles.title}>Tell Us About Your Reviews</Text>
-          <Text style={styles.description}>
-            Write a bio so reviewees can know what your reviews are like. What makes your reviews unique?
-          </Text>
+          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
+            <Text style={styles.title}>Tell Us About Your Reviews</Text>
+          </MotionView>
+          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
+            <Text style={styles.description}>
+              Write a bio so reviewees can know what your reviews are like. What makes your reviews unique?
+            </Text>
+          </MotionView>
 
-          <View style={styles.inputContainer}>
+          <MotionView entering={cardEntrance(2)} style={styles.inputContainer}>
             <TextInput
               style={styles.textArea}
               placeholder="Describe your review style, what you focus on, and what makes you a great reviewer..."
@@ -65,23 +72,24 @@ export default function BioScreen() {
               maxLength={500}
             />
             <Text style={styles.charCount}>{bio.length}/500</Text>
-          </View>
+          </MotionView>
 
-          <TouchableOpacity 
-            style={[styles.nextButton, saving && styles.nextButtonDisabled]}
-            onPress={handleNext}
-            disabled={saving}
-            activeOpacity={0.8}
-          >
-            <ExpoLinearGradient
-              colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-              style={styles.buttonGradient}
+          <MotionView entering={cardEntrance(3)}>
+            <MotionPressable 
+              style={[styles.nextButton, saving && styles.nextButtonDisabled]}
+              onPress={handleNext}
+              disabled={saving}
             >
-              <Text style={styles.nextButtonText}>
-                {saving ? 'Saving...' : 'Next'}
-              </Text>
-            </ExpoLinearGradient>
-          </TouchableOpacity>
+              <ExpoLinearGradient
+                colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                style={styles.buttonGradient}
+              >
+                <Text style={styles.nextButtonText}>
+                  {saving ? 'Saving...' : 'Next'}
+                </Text>
+              </ExpoLinearGradient>
+            </MotionPressable>
+          </MotionView>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

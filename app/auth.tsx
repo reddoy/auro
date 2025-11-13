@@ -13,6 +13,9 @@ import { Text, View } from '@/components/Themed';
 import { useLocalSearchParams, router } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { ensureProfileForCurrentUser } from '@/lib/api';
+import { MotionView, MotionPressable, cardEntrance, subtleFadeIn } from '@/components/motion';
+import { MotionDelays } from '@/components/motion/tokens';
+import { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -583,17 +586,41 @@ export default function AuthScreen() {
   const shouldShowDOB = !isLogin && signupStep === 2;
   const shouldShowPhone = !isLogin && signupStep === 3;
 
+  const scrollViewRef = useRef<ScrollView>(null);
+  const inputRefs = useRef<{ [key: string]: any }>({});
+
+  // Auto-scroll to focused input on mobile
+  const handleInputFocus = (inputKey: string) => {
+    if (Platform.OS !== 'web' && inputRefs.current[inputKey]) {
+      setTimeout(() => {
+        inputRefs.current[inputKey]?.measureLayout?.(
+          scrollViewRef.current?.getInnerViewNode?.() || scrollViewRef.current,
+          (x: number, y: number) => {
+            scrollViewRef.current?.scrollTo?.({ y: y - 20, animated: true });
+          },
+          () => {}
+        );
+      }, 100);
+    }
+  };
+
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={12}>
+    <KeyboardAvoidingView 
+      style={styles.container} 
+      behavior={Platform.OS === 'ios' ? 'padding' : Platform.OS === 'android' ? 'height' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : Platform.OS === 'android' ? 20 : 0}
+    >
       <View style={styles.container}>
       <StatusBar style="light" translucent />
       <ScrollView
+        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={[
           { 
             flexGrow: 1, 
             justifyContent: 'center', 
-            paddingBottom: isCompact ? insets.bottom : 0 
+            paddingBottom: isCompact ? insets.bottom + 20 : insets.bottom + 40,
+            paddingTop: Platform.OS === 'ios' ? insets.top : 0
           },
           Platform.OS === 'web' && styles.scrollContentWeb
         ]}
@@ -601,7 +628,8 @@ export default function AuthScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.select({ ios: 'interactive', default: 'on-drag' })}
-        contentInsetAdjustmentBehavior="never"
+        contentInsetAdjustmentBehavior="automatic"
+        enableAutomaticScroll={Platform.OS === 'ios'}
       >
 
       <Animated.View 
@@ -617,122 +645,132 @@ export default function AuthScreen() {
         ]}
       >
         {/* Logo and Brand Name */}
-        <View style={[styles.logoContainer, isCompact && styles.logoContainerCompact]}>
-          <Image 
-            source={require('../auro_aura_logo_nobg.png')} 
-            style={[styles.logoImage, isCompact && styles.logoImageCompact]}
-            resizeMode="contain"
-          />
-          <Text style={[styles.brandText, isCompact && styles.brandTextCompact]}>Auro</Text>
-        </View>
+        <MotionView entering={ZoomIn.duration(400).delay(MotionDelays.quick)}>
+          <View style={[styles.logoContainer, isCompact && styles.logoContainerCompact]}>
+            <Image 
+              source={require('../auro_aura_logo_nobg.png')} 
+              style={[styles.logoImage, isCompact && styles.logoImageCompact]}
+              resizeMode="contain"
+            />
+            <Text style={[styles.brandText, isCompact && styles.brandTextCompact]}>Auro</Text>
+          </View>
+        </MotionView>
 
         {!forgotPasswordMode ? (
           <>
-            <View style={[styles.toggleContainer, isCompact && styles.toggleContainerCompact]}>
-              <TouchableOpacity
-                style={[styles.toggleButton, isLogin && styles.activeToggle]}
-                onPress={() => { 
-                  setIsLogin(true); 
-                  setSignupStep(0);
-                  setForgotPasswordMode(false);
-                  // Reset signup fields when switching to login
-                  setFirstName('');
-                  setLastName('');
-                  setDateOfBirth(null);
-                  setPhone('');
-                }}
-              >
-                <Text style={[styles.toggleText, isLogin && styles.activeToggleText]}>
-                  Login
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.toggleButton, !isLogin && styles.activeToggle]}
-                onPress={() => { 
-                  setIsLogin(false); 
-                  setSignupStep(0);
-                  setForgotPasswordMode(false);
-                  // Reset login-specific fields when switching to signup
-                  setConfirmPassword('');
-                }}
-              >
-                <Text style={[styles.toggleText, !isLogin && styles.activeToggleText]}>
-                  Sign Up
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
+              <View style={[styles.toggleContainer, isCompact && styles.toggleContainerCompact]}>
+                <MotionPressable
+                  style={[styles.toggleButton, isLogin && styles.activeToggle]}
+                  onPress={() => { 
+                    setIsLogin(true); 
+                    setSignupStep(0);
+                    setForgotPasswordMode(false);
+                    // Reset signup fields when switching to login
+                    setFirstName('');
+                    setLastName('');
+                    setDateOfBirth(null);
+                    setPhone('');
+                  }}
+                >
+                  <Text style={[styles.toggleText, isLogin && styles.activeToggleText]}>
+                    Login
+                  </Text>
+                </MotionPressable>
+                <MotionPressable
+                  style={[styles.toggleButton, !isLogin && styles.activeToggle]}
+                  onPress={() => { 
+                    setIsLogin(false); 
+                    setSignupStep(0);
+                    setForgotPasswordMode(false);
+                    // Reset login-specific fields when switching to signup
+                    setConfirmPassword('');
+                  }}
+                >
+                  <Text style={[styles.toggleText, !isLogin && styles.activeToggleText]}>
+                    Sign Up
+                  </Text>
+                </MotionPressable>
+              </View>
+            </MotionView>
           </>
         ) : (
-          <View style={styles.forgotPasswordHeader}>
-            <TouchableOpacity 
-              style={styles.backButton} 
-              onPress={() => {
-                setForgotPasswordMode(false);
-                setForgotPasswordEmail('');
-                setForgotPasswordSent(false);
-              }}
-            >
-              <Ionicons name="arrow-back" size={20} color={Colors.brand.accentMagenta} />
-              <Text style={styles.backButtonText}> Back to {isLogin ? 'Login' : 'Sign Up'}</Text>
-            </TouchableOpacity>
-            <Text style={styles.forgotPasswordTitle}>Reset Password</Text>
-            <Text style={styles.forgotPasswordSubtitle}>
-              Enter your email address and we'll send you instructions to reset your password.
-            </Text>
-          </View>
+          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
+            <View style={styles.forgotPasswordHeader}>
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={() => {
+                  setForgotPasswordMode(false);
+                  setForgotPasswordEmail('');
+                  setForgotPasswordSent(false);
+                }}
+              >
+                <Ionicons name="arrow-back" size={20} color={Colors.brand.accentMagenta} />
+                <Text style={styles.backButtonText}> Back to {isLogin ? 'Login' : 'Sign Up'}</Text>
+              </TouchableOpacity>
+              <Text style={styles.forgotPasswordTitle}>Reset Password</Text>
+              <Text style={styles.forgotPasswordSubtitle}>
+                Enter your email address and we'll send you instructions to reset your password.
+              </Text>
+            </View>
+          </MotionView>
         )}
 
         {forgotPasswordMode && (
-          <View style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
-            <Text style={[styles.label, isCompact && styles.labelCompact]}>Email</Text>
-            <TextInput
-              style={[styles.input, isCompact && styles.inputCompact]}
-              value={forgotPasswordEmail}
-              onChangeText={setForgotPasswordEmail}
-              placeholder="Enter your email"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              editable={!loading && !forgotPasswordSent}
-            />
-            {forgotPasswordSent && (
-              <View style={styles.successMessage}>
-                <Ionicons name="checkmark-circle" size={20} color={Colors.brand.success} />
-                <Text style={styles.successText}>
-                  Password reset email sent! Check your inbox.
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
+          <>
+            <MotionView entering={cardEntrance(2)} style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
+              <Text style={[styles.label, isCompact && styles.labelCompact]}>Email</Text>
+              <TextInput
+                style={[styles.input, isCompact && styles.inputCompact]}
+                value={forgotPasswordEmail}
+                onChangeText={setForgotPasswordEmail}
+                placeholder="Enter your email"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                editable={!loading && !forgotPasswordSent}
+              />
+              {forgotPasswordSent && (
+                <View style={styles.successMessage}>
+                  <Ionicons name="checkmark-circle" size={20} color={Colors.brand.success} />
+                  <Text style={styles.successText}>
+                    Password reset email sent! Check your inbox.
+                  </Text>
+                </View>
+              )}
+            </MotionView>
 
-        {forgotPasswordMode && (
-          <TouchableOpacity
-            style={[styles.submitButton, isCompact && styles.submitButtonCompact, loading && styles.submitButtonDisabled]}
-            disabled={loading || forgotPasswordSent}
-            onPress={handleForgotPassword}
-          >
-            <ExpoLinearGradient
-              colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 28 }}
-            />
-            {loading ? (
-              <Text style={styles.submitButtonText}>Sending...</Text>
-            ) : forgotPasswordSent ? (
-              <Text style={styles.submitButtonText}>Email Sent ✓</Text>
-            ) : (
-              <Text style={styles.submitButtonText}>Send Reset Link</Text>
-            )}
-          </TouchableOpacity>
+            <MotionView entering={cardEntrance(3)}>
+              <MotionPressable
+                style={[styles.submitButton, isCompact && styles.submitButtonCompact, loading && styles.submitButtonDisabled]}
+                disabled={loading || forgotPasswordSent}
+                onPress={handleForgotPassword}
+              >
+                <ExpoLinearGradient
+                  colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 28 }}
+                />
+                {loading ? (
+                  <Text style={styles.submitButtonText}>Sending...</Text>
+                ) : forgotPasswordSent ? (
+                  <Text style={styles.submitButtonText}>Email Sent ✓</Text>
+                ) : (
+                  <Text style={styles.submitButtonText}>Send Reset Link</Text>
+                )}
+              </MotionPressable>
+            </MotionView>
+          </>
         )}
 
         {shouldShowName && (
           <>
-            <TouchableOpacity style={styles.backButton} onPress={handleBackSignupStep}>
-              <Text style={styles.backButtonText}>Back</Text>
-            </TouchableOpacity>
-            <View style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
+            <MotionView entering={subtleFadeIn().delay(MotionDelays.quick)}>
+              <TouchableOpacity style={styles.backButton} onPress={handleBackSignupStep}>
+                <Text style={styles.backButtonText}>Back</Text>
+              </TouchableOpacity>
+            </MotionView>
+            <MotionView entering={cardEntrance(2)} style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
               {!isUltraCompact && (
                 <Text style={[styles.label, isCompact && styles.labelCompact]}>First Name</Text>
               )}
@@ -747,9 +785,9 @@ export default function AuthScreen() {
                 blurOnSubmit={false}
                 onSubmitEditing={() => lastNameRef.current?.focus()}
               />
-            </View>
+            </MotionView>
 
-            <View style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
+            <MotionView entering={cardEntrance(3)} style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
               {!isUltraCompact && (
                 <Text style={[styles.label, isCompact && styles.labelCompact]}>Last Name</Text>
               )}
@@ -764,16 +802,18 @@ export default function AuthScreen() {
                 blurOnSubmit={false}
                 onSubmitEditing={handleNextSignupStep}
               />
-            </View>
+            </MotionView>
           </>
         )}
 
         {shouldShowDOB && (
           <>
-            <TouchableOpacity style={styles.backButton} onPress={handleBackSignupStep}>
-              <Text style={styles.backButtonText}>Back</Text>
-            </TouchableOpacity>
-            <View style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
+            <MotionView entering={subtleFadeIn().delay(MotionDelays.quick)}>
+              <TouchableOpacity style={styles.backButton} onPress={handleBackSignupStep}>
+                <Text style={styles.backButtonText}>Back</Text>
+              </TouchableOpacity>
+            </MotionView>
+            <MotionView entering={cardEntrance(2)} style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
               {!isUltraCompact && (
                 <Text style={[styles.label, isCompact && styles.labelCompact]}>Date of Birth</Text>
               )}
@@ -792,7 +832,7 @@ export default function AuthScreen() {
                   Age: {calculateAge(dateOfBirth)} years old
                 </Text>
               )}
-            </View>
+            </MotionView>
 
             {Platform.OS === 'ios' && showDatePicker && (
               <Modal
@@ -872,10 +912,12 @@ export default function AuthScreen() {
 
         {shouldShowPhone && (
           <>
-            <TouchableOpacity style={styles.backButton} onPress={handleBackSignupStep}>
-              <Text style={styles.backButtonText}>Back</Text>
-            </TouchableOpacity>
-            <View style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
+            <MotionView entering={subtleFadeIn().delay(MotionDelays.quick)}>
+              <TouchableOpacity style={styles.backButton} onPress={handleBackSignupStep}>
+                <Text style={styles.backButtonText}>Back</Text>
+              </TouchableOpacity>
+            </MotionView>
+            <MotionView entering={cardEntrance(2)} style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
               {!isUltraCompact && (
                 <Text style={[styles.label, isCompact && styles.labelCompact]}>Phone Number</Text>
               )}
@@ -890,13 +932,13 @@ export default function AuthScreen() {
                 blurOnSubmit
                 onSubmitEditing={handleSubmit}
               />
-            </View>
+            </MotionView>
           </>
         )}
 
         {shouldShowEmailPassword && (
           <>
-            <View style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
+            <MotionView entering={cardEntrance(2)} style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
               {!isUltraCompact && (
                 <Text style={[styles.label, isCompact && styles.labelCompact]}>Email</Text>
               )}
@@ -910,10 +952,14 @@ export default function AuthScreen() {
                 placeholder={isUltraCompact ? 'Email' : 'Enter your email'}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                ref={emailRef}
+                ref={(ref) => {
+                  emailRef.current = ref;
+                  inputRefs.current.email = ref;
+                }}
                 returnKeyType="next"
                 blurOnSubmit={false}
                 onSubmitEditing={() => passwordRef.current?.focus()}
+                onFocus={() => handleInputFocus('email')}
                 editable={!checkingEmail}
               />
               {checkingEmail && (
@@ -922,9 +968,9 @@ export default function AuthScreen() {
               {emailError && (
                 <Text style={styles.errorText}>{emailError}</Text>
               )}
-            </View>
+            </MotionView>
 
-            <View style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
+            <MotionView entering={cardEntrance(3)} style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
               {!isUltraCompact && (
                 <Text style={[styles.label, isCompact && styles.labelCompact]}>Password</Text>
               )}
@@ -935,10 +981,14 @@ export default function AuthScreen() {
                   onChangeText={setPassword}
                   placeholder={isUltraCompact ? 'Password' : 'Enter your password'}
                   secureTextEntry={!showPassword}
-                  ref={passwordRef}
+                  ref={(ref) => {
+                    passwordRef.current = ref;
+                    inputRefs.current.password = ref;
+                  }}
                   returnKeyType={isLogin ? 'go' : 'next'}
                   blurOnSubmit={isLogin}
                   onSubmitEditing={isLogin ? handleSubmit : () => confirmPasswordRef.current?.focus()}
+                  onFocus={() => handleInputFocus('password')}
                 />
                 <TouchableOpacity
                   style={styles.eyeIcon}
@@ -960,10 +1010,10 @@ export default function AuthScreen() {
                   <PasswordRequirement met={validatePassword(password).special} text="Special character" />
                 </View>
               )}
-            </View>
+            </MotionView>
 
             {!isLogin && (
-              <View style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
+              <MotionView entering={cardEntrance(4)} style={[styles.inputGroup, isCompact && styles.inputGroupCompact]}>
                 {!isUltraCompact && (
                   <Text style={[styles.label, isCompact && styles.labelCompact]}>Confirm Password</Text>
                 )}
@@ -997,85 +1047,95 @@ export default function AuthScreen() {
                     </Text>
                   </View>
                 )}
-              </View>
+              </MotionView>
             )}
           </>
         )}
 
         {!forgotPasswordMode && (
-          <TouchableOpacity
-            style={[styles.submitButton, isCompact && styles.submitButtonCompact, (loading || (!isLogin && cooldownSec > 0) || checkingEmail) && styles.submitButtonDisabled]}
-            disabled={loading || (!isLogin && cooldownSec > 0) || checkingEmail}
-            onPress={isLogin ? handleSubmit : (signupStep < 3 ? handleNextSignupStep : handleSubmit)}
-          >
-            <ExpoLinearGradient
-              colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 28 }}
-            />
-            {loading ? (
-              <Text style={styles.submitButtonText}>
-                {isLogin ? 'Signing in...' : 'Creating account...'}
-              </Text>
-            ) : (
-              <Text style={styles.submitButtonText}>
-                {isLogin ? 'Login' : (signupStep === 0 || signupStep === 1 || signupStep === 2) ? (checkingEmail ? 'Checking...' : 'Next') : (cooldownSec > 0 ? `Create Account (${cooldownSec}s)` : 'Create Account')}
-              </Text>
-            )}
-          </TouchableOpacity>
+          <MotionView entering={cardEntrance(shouldShowEmailPassword ? 5 : 2)}>
+            <MotionPressable
+              style={[styles.submitButton, isCompact && styles.submitButtonCompact, (loading || (!isLogin && cooldownSec > 0) || checkingEmail) && styles.submitButtonDisabled]}
+              disabled={loading || (!isLogin && cooldownSec > 0) || checkingEmail}
+              onPress={isLogin ? handleSubmit : (signupStep < 3 ? handleNextSignupStep : handleSubmit)}
+            >
+              <ExpoLinearGradient
+                colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 28 }}
+              />
+              {loading ? (
+                <Text style={styles.submitButtonText}>
+                  {isLogin ? 'Signing in...' : 'Creating account...'}
+                </Text>
+              ) : (
+                <Text style={styles.submitButtonText}>
+                  {isLogin ? 'Login' : (signupStep === 0 || signupStep === 1 || signupStep === 2) ? (checkingEmail ? 'Checking...' : 'Next') : (cooldownSec > 0 ? `Create Account (${cooldownSec}s)` : 'Create Account')}
+                </Text>
+              )}
+            </MotionPressable>
+          </MotionView>
         )}
 
         {/* Only show Google sign-in on login or first signup step */}
         {!forgotPasswordMode && (isLogin || signupStep === 0) && (
           <>
             {/* Divider */}
-            <View style={[styles.divider, isCompact && styles.dividerCompact]}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
+            <MotionView entering={subtleFadeIn().delay(MotionDelays.section)}>
+              <View style={[styles.divider, isCompact && styles.dividerCompact]}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or</Text>
+                <View style={styles.dividerLine} />
+              </View>
+            </MotionView>
 
             {/* Google Sign In Button */}
-            <TouchableOpacity
-              style={[
-                styles.googleButton, 
-                isCompact && styles.googleButtonCompact,
-                isGoogleHovered && Platform.OS === 'web' && styles.googleButtonHover
-              ]}
-              onPress={handleGoogleSignIn}
-              {...(Platform.OS === 'web' && {
-                onMouseEnter: () => setIsGoogleHovered(true),
-                onMouseLeave: () => setIsGoogleHovered(false),
-              } as any)}
-            >
-              <View style={styles.googleIconContainer}>
-                <GoogleLogo />
-              </View>
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
-            </TouchableOpacity>
+            <MotionView entering={cardEntrance(shouldShowEmailPassword ? 6 : 3)}>
+              <MotionPressable
+                style={[
+                  styles.googleButton, 
+                  isCompact && styles.googleButtonCompact,
+                  isGoogleHovered && Platform.OS === 'web' && styles.googleButtonHover
+                ]}
+                onPress={handleGoogleSignIn}
+                {...(Platform.OS === 'web' && {
+                  onMouseEnter: () => setIsGoogleHovered(true),
+                  onMouseLeave: () => setIsGoogleHovered(false),
+                } as any)}
+              >
+                <View style={styles.googleIconContainer}>
+                  <GoogleLogo />
+                </View>
+                <Text style={styles.googleButtonText}>Continue with Google</Text>
+              </MotionPressable>
+            </MotionView>
           </>
         )}
 
         {isLogin && !isCompact && !forgotPasswordMode && (
-          <TouchableOpacity 
-            style={styles.forgotPassword}
-            onPress={() => {
-              setForgotPasswordEmail(email);
-              setForgotPasswordMode(true);
-            }}
-          >
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
+          <MotionView entering={subtleFadeIn().delay(MotionDelays.section * 1.5)}>
+            <TouchableOpacity 
+              style={styles.forgotPassword}
+              onPress={() => {
+                setForgotPasswordEmail(email);
+                setForgotPasswordMode(true);
+              }}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
+          </MotionView>
         )}
         </Animated.View>
 
       {!isCompact && (
-        <View style={[styles.footer, Platform.OS === 'web' && styles.footerWeb, { marginBottom: insets.bottom + 6 }]}>
-          <Text style={styles.footerText}>
-            By continuing, you agree to our Terms of Service and Privacy Policy
-          </Text>
-        </View>
+        <MotionView entering={subtleFadeIn().delay(MotionDelays.section * 2)}>
+          <View style={[styles.footer, Platform.OS === 'web' && styles.footerWeb, { marginBottom: insets.bottom + 6 }]}>
+            <Text style={styles.footerText}>
+              By continuing, you agree to our Terms of Service and Privacy Policy
+            </Text>
+          </View>
+        </MotionView>
       )}
       </ScrollView>
       </View>

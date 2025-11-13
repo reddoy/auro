@@ -426,7 +426,8 @@ export default function ReviewerRequestScreen() {
             <Text style={styles.sectionHint}>
               Record a dating profile video review while you swipe through their photos, then wrap with an overall rating and summary note.
             </Text>
-            {Platform.OS !== 'web' && (
+            {/* Temporarily enabled for testing on web */}
+            {/* {Platform.OS !== 'web' && ( */}
               <RNView style={{ marginTop: 16 }}>
                 <TouchableOpacity style={[styles.actionButton, styles.primaryButton]} onPress={() => {
                   setIsVideoReviewMode(true);
@@ -435,7 +436,7 @@ export default function ReviewerRequestScreen() {
                   <Text style={styles.actionButtonText}>Start Video Review</Text>
                 </TouchableOpacity>
               </RNView>
-            )}
+            {/* )} */}
             {videoUri && (
               <RNView style={{ marginTop: 16, padding: 16, backgroundColor: Colors.brand.status.completed + '15', borderRadius: 16, borderWidth: 2, borderColor: Colors.brand.status.completed }}>
                 <Text style={{ color: Colors.brand.status.completed, fontWeight: '700', textAlign: 'center', fontSize: 16 }}>✅ Video Review Complete</Text>

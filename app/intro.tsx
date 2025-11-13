@@ -1,112 +1,267 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Image, Platform, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
-import { VideoView, useVideoPlayer } from 'expo-video';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withTiming, 
+  withRepeat, 
+  withSequence,
+  interpolate,
+  Easing
+} from 'react-native-reanimated';
 
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import { MotionPressable, MotionView, MotionZoomIn, cardEntrance, subtleFadeIn } from '@/components/motion';
+import { MotionPressable, MotionView, cardEntrance, subtleFadeIn } from '@/components/motion';
 
 export default function IntroScreen() {
   const insets = useSafeAreaInsets();
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
   const isCompact = screenHeight <= 900;
   
-  // ============================================================================
-  // VIDEO CROPPING CONFIGURATION
-  // ============================================================================
-  // Adjust these values to control how the video is cropped/positioned:
+  // Notification badge animations for each app
+  const [hingeCount, setHingeCount] = useState(10);
+  const [bumbleCount, setBumbleCount] = useState(10);
+  const [tinderCount, setTinderCount] = useState(10);
   
-  // Aspect ratio of the video container (width / height)
-  // Common ratios: 9/16 (vertical), 16/9 (horizontal), 3/4 (portrait), 4/3 (landscape), 1/1 (square)
-  const VIDEO_ASPECT_RATIO = 3 / 4; // Currently set to 3:4 portrait
+  const hingeScale = useSharedValue(1);
+  const bumbleScale = useSharedValue(1);
+  const tinderScale = useSharedValue(1);
   
-  // Maximum width of the video container (in pixels or percentage)
-  const VIDEO_MAX_WIDTH = 400; // Maximum width in pixels
+  const hingePulse = useSharedValue(0);
+  const bumblePulse = useSharedValue(0);
+  const tinderPulse = useSharedValue(0);
   
-  // Content fit mode for the video:
-  // - "cover": Fills container, may crop video (default - good for full screen effect)
-  // - "contain": Shows entire video, may have letterboxing
-  // - "fill": Stretches video to fill (may distort)
-  const VIDEO_CONTENT_FIT: "cover" | "contain" | "fill" = "cover";
+  // Animate notification counts from 10 to 99, then restart (with slight delays for variety)
+  useEffect(() => {
+    const hingeInterval = setInterval(() => {
+      setHingeCount((prev) => {
+        if (prev >= 99) {
+          return 10;
+        }
+        return prev + 1;
+      });
+    }, 150);
+    
+    const bumbleInterval = setInterval(() => {
+      setBumbleCount((prev) => {
+        if (prev >= 99) {
+          return 10;
+        }
+        return prev + 1;
+      });
+    }, 180); // Slightly different timing
+    
+    const tinderInterval = setInterval(() => {
+      setTinderCount((prev) => {
+        if (prev >= 99) {
+          return 10;
+        }
+        return prev + 1;
+      });
+    }, 170); // Slightly different timing
+    
+    return () => {
+      clearInterval(hingeInterval);
+      clearInterval(bumbleInterval);
+      clearInterval(tinderInterval);
+    };
+  }, []);
   
-  // Scale multiplier for video (1.0 = normal, >1.0 = zoom in, <1.0 = zoom out)
-  // Useful for fine-tuning if you need to zoom in/out on the video
-  const VIDEO_SCALE = 1.0;
+  // Start pulse animations immediately
+  useEffect(() => {
+    hingePulse.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 1000, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      false
+    );
+    
+    bumblePulse.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 1100, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      false
+    );
+    
+    tinderPulse.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 1050, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration: 1050, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      false
+    );
+  }, []);
   
-  // Vertical position adjustment (0 = center, negative = shift up, positive = shift down)
-  // Useful if you want to focus on a specific part (e.g., -20 = show more top, 20 = show more bottom)
-  const VIDEO_Y_OFFSET = 5; // Shift down 5px to crop top slightly
+  // Animate scale when counts change
+  useEffect(() => {
+    hingeScale.value = withSequence(
+      withTiming(1.3, { duration: 200, easing: Easing.out(Easing.quad) }),
+      withTiming(1, { duration: 200, easing: Easing.in(Easing.quad) })
+    );
+  }, [hingeCount]);
   
-  // Horizontal position adjustment (0 = center, negative = shift left, positive = shift right)
-  // Useful for horizontal positioning (e.g., -20 = show more left, 20 = show more right)
-  const VIDEO_X_OFFSET = 0;
+  useEffect(() => {
+    bumbleScale.value = withSequence(
+      withTiming(1.3, { duration: 200, easing: Easing.out(Easing.quad) }),
+      withTiming(1, { duration: 200, easing: Easing.in(Easing.quad) })
+    );
+  }, [bumbleCount]);
   
-  // ============================================================================
-  
-  // Load the video
-  const videoPlayer = useVideoPlayer(require('../katie_demo.mov'), (player) => {
-    player.loop = true;
-    player.play();
-  });
+  useEffect(() => {
+    tinderScale.value = withSequence(
+      withTiming(1.3, { duration: 200, easing: Easing.out(Easing.quad) }),
+      withTiming(1, { duration: 200, easing: Easing.in(Easing.quad) })
+    );
+  }, [tinderCount]);
 
   const handleGetStarted = () => {
     router.replace('/auth');
   };
 
   const buttonBorderRadius = isCompact ? 22 : 24;
+  
+  // Animated styles for notification badges
+  const hingeBadgeStyle = useAnimatedStyle(() => {
+    const pulseScale = 1 + (hingePulse.value * 0.1);
+    return {
+      transform: [
+        { scale: hingeScale.value * pulseScale }
+      ],
+    };
+  });
+  
+  const bumbleBadgeStyle = useAnimatedStyle(() => {
+    const pulseScale = 1 + (bumblePulse.value * 0.1);
+    return {
+      transform: [
+        { scale: bumbleScale.value * pulseScale }
+      ],
+    };
+  });
+  
+  const tinderBadgeStyle = useAnimatedStyle(() => {
+    const pulseScale = 1 + (tinderPulse.value * 0.1);
+    return {
+      transform: [
+        { scale: tinderScale.value * pulseScale }
+      ],
+    };
+  });
+  
+  const hingeGlowStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(hingePulse.value, [0, 1], [0.3, 0.7]);
+    return { opacity };
+  });
+  
+  const bumbleGlowStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(bumblePulse.value, [0, 1], [0.3, 0.7]);
+    return { opacity };
+  });
+  
+  const tinderGlowStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(tinderPulse.value, [0, 1], [0.3, 0.7]);
+    return { opacity };
+  });
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" translucent />
       
       {/* Logo and Brand Name */}
-      <MotionView entering={subtleFadeIn()} style={[styles.logoContainer, { paddingTop: insets.top + 20 }]}>
-        <Image 
-          source={require('../auro_aura_logo_nobg.png')} 
-          style={[styles.logoImage, isCompact && styles.logoImageCompact]}
-          resizeMode="contain"
-        />
-        <Text style={[styles.brandText, isCompact && styles.brandTextCompact]}>Auro</Text>
-      </MotionView>
-
-      {/* Video Container */}
-      <View style={styles.videoContainer}>
-        <MotionView entering={MotionZoomIn} style={[
-          styles.videoWrapper,
-          { 
-            maxWidth: VIDEO_MAX_WIDTH,
-            aspectRatio: VIDEO_ASPECT_RATIO,
-          }
-        ]}>
-          <VideoView
-            style={[
-              styles.video,
-              (VIDEO_SCALE !== 1.0 || VIDEO_X_OFFSET !== 0 || VIDEO_Y_OFFSET !== 0) && {
-                transform: [
-                  ...(VIDEO_SCALE !== 1.0 ? [{ scale: VIDEO_SCALE }] : []),
-                  ...(VIDEO_X_OFFSET !== 0 ? [{ translateX: VIDEO_X_OFFSET }] : []),
-                  ...(VIDEO_Y_OFFSET !== 0 ? [{ translateY: VIDEO_Y_OFFSET }] : []),
-                ],
-              },
-            ]}
-            player={videoPlayer}
-            contentFit={VIDEO_CONTENT_FIT}
-            nativeControls={true}
-            allowsFullscreen={true}
+      <View style={{ paddingTop: insets.top + 10 }}>
+        <MotionView entering={subtleFadeIn()} style={styles.logoContainer}>
+          <Image 
+            source={require('../auro_aura_logo_nobg.png')} 
+            style={[styles.logoImage, isCompact && styles.logoImageCompact]}
+            resizeMode="contain"
           />
+          <Text style={[styles.brandText, isCompact && styles.brandTextCompact]}>Auro</Text>
         </MotionView>
       </View>
 
-      {/* Tagline Text */}
-      <MotionView entering={subtleFadeIn()} style={styles.taglineContainer}>
-        <Text style={[styles.taglineText, isCompact && styles.taglineTextCompact]}>
-          Real women, Real reviews, More matches
-        </Text>
-      </MotionView>
+      {/* App Logos in Fan Layout */}
+      <View style={styles.logoImageContainer}>
+        <View style={styles.fanContainer}>
+          {/* Bumble (Left) */}
+          <MotionView entering={subtleFadeIn()} style={[styles.appLogoWrapper, styles.bumbleWrapper]}>
+            <View style={styles.imageContainer}>
+              <Image 
+                source={require('../bumble_logo.png')} 
+                style={styles.appLogo}
+                resizeMode="cover"
+              />
+            </View>
+            <Animated.View style={[styles.notificationBadge, bumbleBadgeStyle]}>
+              <Animated.View style={[styles.notificationGlow, bumbleGlowStyle]} />
+              <Text style={styles.notificationText}>
+                {bumbleCount > 99 ? '99+' : bumbleCount}
+              </Text>
+            </Animated.View>
+          </MotionView>
+          
+          {/* Hinge (Center) */}
+          <MotionView entering={subtleFadeIn()} style={[styles.appLogoWrapper, styles.hingeWrapper]}>
+            <View style={styles.imageContainer}>
+              <Image 
+                source={require('../hinge-dating-app-icon-hd.jpg')} 
+                style={styles.appLogo}
+                resizeMode="cover"
+              />
+            </View>
+            <Animated.View style={[styles.notificationBadge, hingeBadgeStyle]}>
+              <Animated.View style={[styles.notificationGlow, hingeGlowStyle]} />
+              <Text style={styles.notificationText}>
+                {hingeCount > 99 ? '99+' : hingeCount}
+              </Text>
+            </Animated.View>
+          </MotionView>
+          
+          {/* Tinder (Right) */}
+          <MotionView entering={subtleFadeIn()} style={[styles.appLogoWrapper, styles.tinderWrapper]}>
+            <View style={styles.imageContainer}>
+              <Image 
+                source={require('../tinder_logo.png')} 
+                style={styles.appLogo}
+                resizeMode="cover"
+              />
+            </View>
+            <Animated.View style={[styles.notificationBadge, tinderBadgeStyle]}>
+              <Animated.View style={[styles.notificationGlow, tinderGlowStyle]} />
+              <Text style={styles.notificationText}>
+                {tinderCount > 99 ? '99+' : tinderCount}
+              </Text>
+            </Animated.View>
+          </MotionView>
+        </View>
+        
+        {/* Tagline Text - Below the logos */}
+        <MotionView entering={subtleFadeIn()} style={styles.taglineContainer}>
+          <Text style={[styles.taglineText, isCompact && styles.taglineTextCompact]}>
+            Real women.
+          </Text>
+          <Text style={[styles.taglineText, isCompact && styles.taglineTextCompact]}>
+            Real reviews.
+          </Text>
+          <View style={styles.matchesRow}>
+            <Text style={[styles.taglineText, isCompact && styles.taglineTextCompact]}>
+              More{' '}
+            </Text>
+            <Text style={[styles.taglineText, styles.matchesText, isCompact && styles.taglineTextCompact]}>
+              matches.
+            </Text>
+          </View>
+        </MotionView>
+      </View>
 
       {/* Get Started Button */}
       <View style={[styles.buttonContainer, { paddingBottom: insets.bottom + 20 }]}>
@@ -137,9 +292,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    backgroundColor: 'transparent',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    backgroundColor: 'transparent', // Removed background
+    marginHorizontal: 20,
+    marginBottom: 16,
   },
   logoImage: {
     width: 48,
@@ -160,41 +317,126 @@ const styles = StyleSheet.create({
   brandTextCompact: {
     fontSize: 28,
   },
-  videoContainer: {
+  logoImageContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 0,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
     backgroundColor: 'transparent',
+    gap: 24, // Space between logos and tagline
   },
-  videoWrapper: {
+  fanContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     width: '100%',
-    backgroundColor: '#000',
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginHorizontal: 20,
+    position: 'relative',
+    height: 140,
   },
-  video: {
+  appLogoWrapper: {
+    width: 100, // App icon size (similar to iOS home screen)
+    height: 100,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 22, // iOS app icon corner radius
+    overflow: 'hidden', // Clip any overflow
+    backgroundColor: 'transparent',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  appLogo: {
     width: '100%',
     height: '100%',
+    borderRadius: 22, // iOS app icon corner radius
+    minWidth: 100,
+    minHeight: 100,
+  },
+  bumbleWrapper: {
+    transform: [{ rotate: '-20deg' }], // Rotate left for fan effect
+    marginRight: -15, // Overlap slightly
+    zIndex: 1,
+  },
+  hingeWrapper: {
+    zIndex: 3, // Center logo on top
+  },
+  tinderWrapper: {
+    transform: [{ rotate: '20deg' }], // Rotate right for fan effect
+    marginLeft: -15, // Overlap slightly
+    zIndex: 1,
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -12, // Hang off more from the top edge (iPhone style)
+    right: -12, // Hang off more from the right edge (iPhone style)
+    backgroundColor: '#FF3B30',
+    borderRadius: 18,
+    minWidth: 36,
+    height: 36,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    shadowColor: '#FF3B30',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.8,
+    shadowRadius: 12,
+    elevation: 12,
+    zIndex: 10,
+  },
+  notificationGlow: {
+    position: 'absolute',
+    top: -4,
+    left: -4,
+    right: -4,
+    bottom: -4,
+    borderRadius: 20,
+    backgroundColor: '#FF3B30',
+    opacity: 0.5,
+  },
+  notificationText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: 'Poppins_700Bold',
+    textAlign: 'center',
   },
   taglineContainer: {
-    paddingHorizontal: 28,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
     paddingTop: 24,
-    paddingBottom: 8,
+    paddingBottom: 20,
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    backgroundColor: 'transparent', // Removed background
+    marginHorizontal: 20,
+    gap: 8, // Space between lines
   },
   taglineText: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: Colors.brand.textPrimary,
     fontFamily: 'Poppins_600SemiBold',
     textAlign: 'center',
     letterSpacing: 0.5,
+    lineHeight: 32,
+  },
+  matchesRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+  },
+  matchesText: {
+    color: Colors.brand.accentOrange,
   },
   taglineTextCompact: {
-    fontSize: 16,
+    fontSize: 20,
   },
   buttonContainer: {
     paddingHorizontal: 28,

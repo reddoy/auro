@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert, View as RNView } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { updateProfile, updateProfilePreferences } from '@/lib/profile';
+import { MotionView, MotionPressable, cardEntrance } from '@/components/motion';
+import { MotionDelays } from '@/components/motion/tokens';
+import { FadeInDown } from 'react-native-reanimated';
 
 export default function RateScreen() {
   const insets = useSafeAreaInsets();
@@ -24,7 +27,7 @@ export default function RateScreen() {
       setSaving(true);
       await updateProfile({ hourly_rate: rateNumber });
       await updateProfilePreferences({ onboarding_step: 'reviewer_profile_picture' });
-      router.push('/onboarding/reviewer/profile-picture');
+      router.replace('/onboarding/reviewer/profile-picture');
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to save rate');
     } finally {
@@ -54,12 +57,16 @@ export default function RateScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
-          <Text style={styles.title}>Set Your Rate</Text>
-          <Text style={styles.description}>
-            Set your price per review (what customers pay). You'll receive 80% of this amount - Auro covers all processing fees.
-          </Text>
+          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
+            <Text style={styles.title}>Set Your Rate</Text>
+          </MotionView>
+          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
+            <Text style={styles.description}>
+              Set your price per review (what customers pay). You'll receive 80% of this amount - Auro covers all processing fees.
+            </Text>
+          </MotionView>
 
-          <View style={styles.inputContainer}>
+          <MotionView entering={cardEntrance(2)} style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Price per Review (USD)</Text>
             <View style={styles.inputWrapper}>
               <Text style={styles.currencyPrefix}>$</Text>
@@ -72,50 +79,51 @@ export default function RateScreen() {
                 keyboardType="numeric"
               />
             </View>
-          </View>
+          </MotionView>
 
           {rateNumber && rateNumber > 0 && (
-            <View style={styles.breakdownContainer}>
+            <MotionView entering={cardEntrance(3)} style={styles.breakdownContainer}>
               <Text style={styles.breakdownTitle}>Rate Breakdown</Text>
-              <View style={styles.breakdownCard}>
-                <View style={styles.breakdownRow}>
+              <RNView style={styles.breakdownCard}>
+                <RNView style={styles.breakdownRow}>
                   <Text style={styles.breakdownLabel}>Customer pays</Text>
                   <Text style={styles.breakdownValue}>${rateNumber.toFixed(2)}</Text>
-                </View>
-                <View style={styles.breakdownDivider} />
-                <View style={styles.breakdownRow}>
+                </RNView>
+                <RNView style={styles.breakdownDivider} />
+                <RNView style={styles.breakdownRow}>
                   <Text style={styles.breakdownLabel}>Auro fee (20%)</Text>
                   <Text style={[styles.breakdownValue, styles.breakdownFee]}>-${auroFee.toFixed(2)}</Text>
-                </View>
-                <View style={[styles.breakdownDivider, { marginTop: 8 }]} />
-                <View style={styles.breakdownRow}>
+                </RNView>
+                <RNView style={[styles.breakdownDivider, { marginTop: 8 }]} />
+                <RNView style={styles.breakdownRow}>
                   <Text style={styles.breakdownTotalLabel}>Your take-home</Text>
                   <Text style={styles.breakdownTotalValue}>${takeHome.toFixed(2)} (80%)</Text>
-                </View>
-                <View style={styles.breakdownRow}>
+                </RNView>
+                <RNView style={styles.breakdownRow}>
                   <Text style={[styles.breakdownLabel, { fontSize: 12, fontStyle: 'italic', color: Colors.brand.textSecondary }]}>
                     * Processing fees are covered by Auro
                   </Text>
-                </View>
-              </View>
-            </View>
+                </RNView>
+              </RNView>
+            </MotionView>
           )}
 
-          <TouchableOpacity 
-            style={[styles.nextButton, saving && styles.nextButtonDisabled]}
-            onPress={handleNext}
-            disabled={saving}
-            activeOpacity={0.8}
-          >
-            <ExpoLinearGradient
-              colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-              style={styles.buttonGradient}
+          <MotionView entering={cardEntrance(4)}>
+            <MotionPressable 
+              style={[styles.nextButton, saving && styles.nextButtonDisabled]}
+              onPress={handleNext}
+              disabled={saving}
             >
-              <Text style={styles.nextButtonText}>
-                {saving ? 'Saving...' : 'Next'}
-              </Text>
-            </ExpoLinearGradient>
-          </TouchableOpacity>
+              <ExpoLinearGradient
+                colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                style={styles.buttonGradient}
+              >
+                <Text style={styles.nextButtonText}>
+                  {saving ? 'Saving...' : 'Next'}
+                </Text>
+              </ExpoLinearGradient>
+            </MotionPressable>
+          </MotionView>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -140,28 +148,29 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
+    paddingTop: 20,
   },
   content: {
     backgroundColor: 'transparent',
   },
   title: {
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: '700',
     color: Colors.brand.textPrimary,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
     fontFamily: 'Poppins_700Bold',
   },
   description: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.brand.textSecondary,
     textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 24,
+    marginBottom: 20,
+    lineHeight: 20,
+    paddingHorizontal: 8,
   },
   inputContainer: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   inputLabel: {
     fontSize: 16,
@@ -179,31 +188,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   currencyPrefix: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: Colors.brand.textPrimary,
     marginRight: 8,
   },
   input: {
     flex: 1,
-    paddingVertical: 16,
-    fontSize: 24,
+    paddingVertical: 12,
+    fontSize: 20,
     fontWeight: '700',
     color: Colors.brand.textPrimary,
   },
   breakdownContainer: {
-    marginBottom: 32,
+    marginBottom: 16,
   },
   breakdownTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: Colors.brand.textPrimary,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   breakdownCard: {
     backgroundColor: Colors.brand.cardBackground,
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
@@ -211,19 +220,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   breakdownDivider: {
     height: 1,
     backgroundColor: Colors.brand.divider,
-    marginVertical: 8,
+    marginVertical: 6,
   },
   breakdownLabel: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.brand.textSecondary,
   },
   breakdownValue: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: Colors.brand.textPrimary,
   },
@@ -231,12 +240,12 @@ const styles = StyleSheet.create({
     color: '#ef4444',
   },
   breakdownTotalLabel: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: Colors.brand.textPrimary,
   },
   breakdownTotalValue: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '800',
     color: '#10b981',
   },
@@ -254,7 +263,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   buttonGradient: {
-    paddingVertical: 18,
+    paddingVertical: 14,
     paddingHorizontal: 32,
     alignItems: 'center',
   },

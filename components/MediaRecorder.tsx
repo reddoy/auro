@@ -65,14 +65,15 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
     }
   };
 
-  if (Platform.OS === 'web') {
-    return (
-      <View style={{ gap: 12 }}>
-        <Text style={{ fontWeight: '700', color: Colors.brand.textPrimary }}>Recording not supported in web preview</Text>
-        <Text style={{ opacity: 0.8, color: Colors.brand.textSecondary }}>Open this screen in the mobile app to record a video review, or proceed without a video.</Text>
-      </View>
-    );
-  }
+  // Temporarily disabled for testing on web
+  // if (Platform.OS === 'web') {
+  //   return (
+  //     <View style={{ gap: 12 }}>
+  //       <Text style={{ fontWeight: '700', color: Colors.brand.textPrimary }}>Recording not supported in web preview</Text>
+  //       <Text style={{ opacity: 0.8, color: Colors.brand.textSecondary }}>Open this screen in the mobile app to record a video review, or proceed without a video.</Text>
+  //     </View>
+  //   );
+  // }
 
   if (variant === 'overlay') {
     return (

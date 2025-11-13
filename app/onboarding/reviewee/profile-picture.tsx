@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, View as RNView } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,9 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import AvatarUploader from '@/components/AvatarUploader';
 import { updateProfile, updateProfilePreferences } from '@/lib/profile';
+import { MotionView, MotionPressable, cardEntrance } from '@/components/motion';
+import { MotionDelays } from '@/components/motion/tokens';
+import { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 export default function RevieweeProfilePictureScreen() {
   const insets = useSafeAreaInsets();
@@ -50,43 +53,50 @@ export default function RevieweeProfilePictureScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
-          <Text style={styles.title}>Set Up Your Profile</Text>
-          <Text style={styles.description}>
-            Reviewers love putting a face to the name. Add a photo so they know who they’re giving feedback to.
-          </Text>
+          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
+            <Text style={styles.title}>Set Your Profile Picture</Text>
+          </MotionView>
+          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
+            <Text style={styles.description} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+              Reviewer or reviewee, everyone likes a face to a name.
+            </Text>
+          </MotionView>
 
-          <View style={styles.avatarContainer}>
-            <AvatarUploader
-              uri={avatarUri}
-              previousPathOrUrl={null}
-              onUploaded={({ publicUrl, path }) => {
-                setAvatarUri(publicUrl);
-                setAvatarPath(path);
-              }}
-              onRemoved={() => {
-                setAvatarUri(undefined);
-                setAvatarPath(null);
-              }}
-              size={160}
-              accessibilityLabel="Upload profile photo"
-            />
-          </View>
+          <MotionView entering={ZoomIn.duration(500).delay(MotionDelays.item * 2)}>
+            <RNView style={styles.avatarContainer}>
+              <AvatarUploader
+                uri={avatarUri}
+                previousPathOrUrl={null}
+                onUploaded={({ publicUrl, path }) => {
+                  setAvatarUri(publicUrl);
+                  setAvatarPath(path);
+                }}
+                onRemoved={() => {
+                  setAvatarUri(undefined);
+                  setAvatarPath(null);
+                }}
+                size={160}
+                accessibilityLabel="Upload profile photo"
+              />
+            </RNView>
+          </MotionView>
 
-          <TouchableOpacity
-            style={[styles.nextButton, uploading && styles.nextButtonDisabled]}
-            onPress={handleNext}
-            disabled={uploading}
-            activeOpacity={0.85}
-          >
-            <ExpoLinearGradient
-              colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-              style={styles.buttonGradient}
+          <MotionView entering={cardEntrance(3)}>
+            <MotionPressable
+              style={[styles.nextButton, uploading && styles.nextButtonDisabled]}
+              onPress={handleNext}
+              disabled={uploading}
             >
-              <Text style={styles.nextButtonText}>
-                {uploading ? 'Saving...' : 'Discover reviewers'}
-              </Text>
-            </ExpoLinearGradient>
-          </TouchableOpacity>
+              <ExpoLinearGradient
+                colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                style={styles.buttonGradient}
+              >
+                <Text style={styles.nextButtonText}>
+                  {uploading ? 'Saving...' : 'Continue'}
+                </Text>
+              </ExpoLinearGradient>
+            </MotionPressable>
+          </MotionView>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -127,15 +137,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins_700Bold',
   },
   description: {
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.brand.textSecondary,
     textAlign: 'center',
     marginBottom: 40,
-    paddingHorizontal: 20,
-    lineHeight: 24,
+    paddingHorizontal: 12,
+    lineHeight: 22,
+    numberOfLines: 1,
   },
   avatarContainer: {
     marginBottom: 40,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   nextButton: {
     width: '100%',

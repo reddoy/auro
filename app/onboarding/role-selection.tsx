@@ -6,6 +6,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { updateProfilePreferences } from '@/lib/profile';
+import { MotionView, MotionPressable, cardEntrance } from '@/components/motion';
+import { MotionDelays } from '@/components/motion/tokens';
+import { FadeInDown } from 'react-native-reanimated';
 
 export default function RoleSelectionScreen() {
   const insets = useSafeAreaInsets();
@@ -63,53 +66,58 @@ export default function RoleSelectionScreen() {
         style={[
           styles.content,
           {
-            paddingTop: Math.max(28, insets.top + 16),
-            paddingBottom: Math.max(28, insets.bottom + 16),
+            paddingTop: Math.max(20, insets.top + 12),
+            paddingBottom: Math.max(20, insets.bottom + 12),
           },
         ]}
       >
-        <Text style={styles.title}>Welcome to Auro! 🎉</Text>
-        <Text style={styles.subtitle}>What would you like to do?</Text>
-        <Text style={styles.description}>
-          Choose how you'd like to use Auro. You can always change this later.
-        </Text>
+        <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
+          <Text style={styles.title}>What would you like to do?</Text>
+        </MotionView>
+        <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
+          <Text style={styles.description}>
+            Choose how you'd like to use Auro. You can always change this later.
+          </Text>
+        </MotionView>
 
         <View style={styles.optionsContainer}>
-          <TouchableOpacity 
-            style={styles.optionCard}
-            onPress={handleGetReviewed}
-            activeOpacity={0.85}
-            disabled={!!loadingChoice}
-          >
-            <ExpoLinearGradient
-              colors={[Colors.brand.cardBackground, Colors.brand.cardBackgroundLight]}
-              style={styles.optionGradient}
+          <MotionView entering={cardEntrance(2)}>
+            <MotionPressable 
+              style={styles.optionCard}
+              onPress={handleGetReviewed}
+              disabled={!!loadingChoice}
             >
-              <Text style={styles.optionEmoji}>📸</Text>
-              <Text style={styles.optionTitle}>Get Reviewed</Text>
-              <Text style={styles.optionDescription}>
-                Request reviews from expert reviewers to improve your profile and get feedback
-              </Text>
-            </ExpoLinearGradient>
-          </TouchableOpacity>
+              <ExpoLinearGradient
+                colors={[Colors.brand.cardBackground, Colors.brand.cardBackgroundLight]}
+                style={styles.optionGradient}
+              >
+                <Text style={styles.optionEmoji}>📸</Text>
+                <Text style={styles.optionTitle}>Get Reviewed</Text>
+                <Text style={styles.optionDescription}>
+                  Request reviews from expert reviewers to improve your profile and get feedback
+                </Text>
+              </ExpoLinearGradient>
+            </MotionPressable>
+          </MotionView>
 
-          <TouchableOpacity 
-            style={styles.optionCard}
-            onPress={handleBeReviewer}
-            activeOpacity={0.85}
-            disabled={!!loadingChoice}
-          >
-            <ExpoLinearGradient
-              colors={[Colors.brand.cardBackground, Colors.brand.cardBackgroundLight]}
-              style={styles.optionGradient}
+          <MotionView entering={cardEntrance(3)}>
+            <MotionPressable 
+              style={styles.optionCard}
+              onPress={handleBeReviewer}
+              disabled={!!loadingChoice}
             >
-              <Text style={styles.optionEmoji}>⭐</Text>
-              <Text style={styles.optionTitle}>Be a Reviewer</Text>
-              <Text style={styles.optionDescription}>
-                Join our community of reviewers and earn money by providing thoughtful reviews
-              </Text>
-            </ExpoLinearGradient>
-          </TouchableOpacity>
+              <ExpoLinearGradient
+                colors={[Colors.brand.cardBackground, Colors.brand.cardBackgroundLight]}
+                style={styles.optionGradient}
+              >
+                <Text style={styles.optionEmoji}>⭐</Text>
+                <Text style={styles.optionTitle}>Be a Reviewer</Text>
+                <Text style={styles.optionDescription}>
+                  Join our community of reviewers and earn money by providing thoughtful reviews
+                </Text>
+              </ExpoLinearGradient>
+            </MotionPressable>
+          </MotionView>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -132,71 +140,66 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 24,
   },
   title: {
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: '700',
     color: Colors.brand.textPrimary,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
     fontFamily: 'Poppins_700Bold',
   },
-  subtitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: Colors.brand.textSecondary,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
   description: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.brand.textSecondary,
     textAlign: 'center',
-    marginBottom: 40,
-    paddingHorizontal: 20,
-    lineHeight: 24,
+    marginBottom: 20,
+    paddingHorizontal: 16,
+    lineHeight: 20,
   },
   optionsContainer: {
     width: '100%',
-    gap: 20,
+    gap: 14,
+    flex: 1,
+    justifyContent: 'center',
   },
   optionCard: {
     width: '100%',
-    borderRadius: 24,
+    borderRadius: 20,
     overflow: 'hidden',
     shadowColor: Colors.brand.shadow,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.28,
-    shadowRadius: 18,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
   optionGradient: {
-    padding: 32,
+    padding: 20,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
     width: '100%',
-    borderRadius: 24,
+    borderRadius: 20,
   },
   optionEmoji: {
-    fontSize: 48,
-    marginBottom: 16,
+    fontSize: 40,
+    marginBottom: 10,
   },
   optionTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '700',
     color: Colors.brand.textPrimary,
-    marginBottom: 12,
+    marginBottom: 8,
     textAlign: 'center',
     fontFamily: 'Poppins_700Bold',
   },
   optionDescription: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.brand.textSecondary,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 20,
   },
 });
 

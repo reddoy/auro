@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, View as RNView } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,9 @@ import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import AvatarUploader from '@/components/AvatarUploader';
 import { updateProfile, updateProfilePreferences } from '@/lib/profile';
+import { MotionView, MotionPressable, cardEntrance } from '@/components/motion';
+import { MotionDelays } from '@/components/motion/tokens';
+import { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 export default function ProfilePictureScreen() {
   const insets = useSafeAreaInsets();
@@ -27,7 +30,7 @@ export default function ProfilePictureScreen() {
         await updateProfile({ avatar_url: avatarPath });
       }
       await updateProfilePreferences({ onboarding_step: 'reviewer_stripe' });
-      router.push('/onboarding/reviewer/stripe');
+      router.replace('/onboarding/reviewer/stripe');
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to save profile picture');
     } finally {
@@ -55,40 +58,49 @@ export default function ProfilePictureScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
-          <Text style={styles.title}>Set Your Profile Picture</Text>
-          <Text style={styles.description}>
-            Add a profile picture so reviewees can see who they're working with
-          </Text>
+          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
+            <Text style={styles.title}>Set Your Profile Picture</Text>
+          </MotionView>
+          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
+            <Text style={styles.description}>
+              Add a profile picture so reviewees can see who they're working with
+            </Text>
+          </MotionView>
 
-          <View style={styles.avatarContainer}>
-            <AvatarUploader
-              uri={avatarUri}
-              previousPathOrUrl={null}
-              onUploaded={handleUploaded}
-              onRemoved={() => {
-                setAvatarUri(undefined);
-                setAvatarPath(null);
-              }}
-              size={160}
-              accessibilityLabel="Upload profile picture"
-            />
-          </View>
+          <MotionView entering={ZoomIn.duration(500).delay(MotionDelays.item * 2)}>
+            <RNView style={styles.avatarContainerWrapper}>
+              <RNView style={styles.avatarContainer}>
+                <AvatarUploader
+                  uri={avatarUri}
+                  previousPathOrUrl={null}
+                  onUploaded={handleUploaded}
+                  onRemoved={() => {
+                    setAvatarUri(undefined);
+                    setAvatarPath(null);
+                  }}
+                  size={160}
+                  accessibilityLabel="Upload profile picture"
+                />
+              </RNView>
+            </RNView>
+          </MotionView>
 
-          <TouchableOpacity 
-            style={[styles.nextButton, uploading && styles.nextButtonDisabled]}
-            onPress={handleNext}
-            disabled={uploading}
-            activeOpacity={0.8}
-          >
-            <ExpoLinearGradient
-              colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-              style={styles.buttonGradient}
+          <MotionView entering={cardEntrance(3)}>
+            <MotionPressable 
+              style={[styles.nextButton, uploading && styles.nextButtonDisabled]}
+              onPress={handleNext}
+              disabled={uploading}
             >
-              <Text style={styles.nextButtonText}>
-                {uploading ? 'Saving...' : 'Next'}
-              </Text>
-            </ExpoLinearGradient>
-          </TouchableOpacity>
+              <ExpoLinearGradient
+                colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                style={styles.buttonGradient}
+              >
+                <Text style={styles.nextButtonText}>
+                  {uploading ? 'Saving...' : 'Next'}
+                </Text>
+              </ExpoLinearGradient>
+            </MotionPressable>
+          </MotionView>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -136,8 +148,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     lineHeight: 24,
   },
-  avatarContainer: {
+  avatarContainerWrapper: {
     marginBottom: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent', // Explicitly transparent
+  },
+  avatarContainer: {
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 92, // Half of 184 (160 size + 12 padding * 2)
+    padding: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 111, 0, 0.25)',
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
   nextButton: {
     width: '100%',

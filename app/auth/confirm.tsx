@@ -7,6 +7,9 @@ import Colors from '@/constants/Colors';
 import { supabase } from '@/lib/supabase';
 import { ensureProfileForCurrentUser } from '@/lib/api';
 import { Ionicons } from '@expo/vector-icons';
+import { MotionView, MotionPressable, cardEntrance, subtleFadeIn } from '@/components/motion';
+import { MotionDelays } from '@/components/motion/tokens';
+import { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 export default function ConfirmEmailScreen() {
   const { email, token_hash, type } = useLocalSearchParams<{ email?: string; token_hash?: string; type?: string }>();
@@ -132,105 +135,142 @@ export default function ConfirmEmailScreen() {
             },
           ]}
         >
-          <Image source={require('@/Auro_side_side_no_bg.png')} style={styles.logo} resizeMode="contain" />
+          <MotionView entering={ZoomIn.duration(400).delay(MotionDelays.quick)}>
+            <Image source={require('@/Auro_side_side_no_bg.png')} style={styles.logo} resizeMode="contain" />
+          </MotionView>
           
           {isConfirming && (
             <>
-              <View style={styles.iconContainer}>
-                <ActivityIndicator color={Colors.brand.accentMagenta} size="large" />
-              </View>
-              <Text style={styles.title}>Confirming your email...</Text>
-              <Text style={styles.body}>Please wait while we verify your email address.</Text>
+              <MotionView entering={ZoomIn.duration(400).delay(MotionDelays.item)}>
+                <View style={styles.iconContainer}>
+                  <ActivityIndicator color={Colors.brand.accentMagenta} size="large" />
+                </View>
+              </MotionView>
+              <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item * 2)}>
+                <Text style={styles.title}>Confirming your email...</Text>
+              </MotionView>
+              <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item * 3)}>
+                <Text style={styles.body}>Please wait while we verify your email address.</Text>
+              </MotionView>
             </>
           )}
 
           {confirmationStatus === 'success' && !isConfirming && (
             <>
-              <View style={styles.iconContainer}>
-                <Ionicons name="checkmark-circle" size={64} color={Colors.brand.success} />
-              </View>
-              <Text style={styles.title}>Email confirmed! 🎉</Text>
-              <Text style={styles.body}>Welcome to Auro! Let's get you started with onboarding.</Text>
+              <MotionView entering={ZoomIn.duration(500).delay(MotionDelays.item)}>
+                <View style={styles.iconContainer}>
+                  <Ionicons name="checkmark-circle" size={64} color={Colors.brand.success} />
+                </View>
+              </MotionView>
+              <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item * 2)}>
+                <Text style={styles.title}>Email confirmed! 🎉</Text>
+              </MotionView>
+              <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item * 3)}>
+                <Text style={styles.body}>Welcome to Auro! Let's get you started with onboarding.</Text>
+              </MotionView>
 
-              <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/onboarding/push-notifications')}>
-                <ExpoLinearGradient
-                  colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.primaryBtnGradient}
-                />
-                <Text style={styles.primaryBtnText}>Continue to Onboarding</Text>
-              </TouchableOpacity>
+              <MotionView entering={cardEntrance(4)}>
+                <MotionPressable style={styles.primaryBtn} onPress={() => router.replace('/onboarding/push-notifications')}>
+                  <ExpoLinearGradient
+                    colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.primaryBtnGradient}
+                  />
+                  <Text style={styles.primaryBtnText}>Continue to Onboarding</Text>
+                </MotionPressable>
+              </MotionView>
 
-              <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.replace('/(tabs)/requests')}>
-                <Text style={styles.secondaryBtnText}>Skip to App</Text>
-              </TouchableOpacity>
+              <MotionView entering={subtleFadeIn().delay(MotionDelays.section)}>
+                <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.replace('/(tabs)/requests')}>
+                  <Text style={styles.secondaryBtnText}>Skip to App</Text>
+                </TouchableOpacity>
+              </MotionView>
             </>
           )}
 
           {confirmationStatus === 'error' && !isConfirming && (
             <>
-              <View style={styles.iconContainer}>
-                <Ionicons name="close-circle" size={64} color={Colors.brand.error} />
-              </View>
-              <Text style={styles.title}>Confirmation failed</Text>
-              <Text style={styles.body}>We couldn't verify your email. The link may have expired or been used already.</Text>
-              <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/auth')}>
-                <ExpoLinearGradient
-                  colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.primaryBtnGradient}
-                />
-                <Text style={styles.primaryBtnText}>Back to Sign In</Text>
-              </TouchableOpacity>
+              <MotionView entering={ZoomIn.duration(500).delay(MotionDelays.item)}>
+                <View style={styles.iconContainer}>
+                  <Ionicons name="close-circle" size={64} color={Colors.brand.error} />
+                </View>
+              </MotionView>
+              <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item * 2)}>
+                <Text style={styles.title}>Confirmation failed</Text>
+              </MotionView>
+              <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item * 3)}>
+                <Text style={styles.body}>We couldn't verify your email. The link may have expired or been used already.</Text>
+              </MotionView>
+              <MotionView entering={cardEntrance(4)}>
+                <MotionPressable style={styles.primaryBtn} onPress={() => router.replace('/auth')}>
+                  <ExpoLinearGradient
+                    colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.primaryBtnGradient}
+                  />
+                  <Text style={styles.primaryBtnText}>Back to Sign In</Text>
+                </MotionPressable>
+              </MotionView>
             </>
           )}
 
           {confirmationStatus === 'pending' && !isConfirming && (
             <>
-              <View style={styles.iconContainer}>
-                <Ionicons name="mail-outline" size={64} color={Colors.brand.accentMagenta} />
-              </View>
-              <Text style={styles.title}>Please confirm your email</Text>
-              {!!email && <Text style={styles.body}>We sent a confirmation link to <Text style={styles.emailHighlight}>{email}</Text>. Please check your inbox and click the link to verify your email address.</Text>}
-              {!email && <Text style={styles.body}>We sent a confirmation link to your inbox. Please check your email and click the link to verify your email address.</Text>}
-              
-              <Text style={[styles.body, { marginTop: 8, fontSize: 14, opacity: 0.8 }]}>
-                After verifying your email, you'll be able to continue with onboarding.
-              </Text>
+              <MotionView entering={ZoomIn.duration(500).delay(MotionDelays.item)}>
+                <View style={styles.iconContainer}>
+                  <Ionicons name="mail-outline" size={64} color={Colors.brand.accentMagenta} />
+                </View>
+              </MotionView>
+              <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item * 2)}>
+                <Text style={styles.title}>Please confirm your email</Text>
+              </MotionView>
+              <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item * 3)}>
+                {!!email && <Text style={styles.body}>We sent a confirmation link to <Text style={styles.emailHighlight}>{email}</Text>. Please check your inbox and click the link to verify your email address.</Text>}
+                {!email && <Text style={styles.body}>We sent a confirmation link to your inbox. Please check your email and click the link to verify your email address.</Text>}
+              </MotionView>
+              <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item * 4)}>
+                <Text style={[styles.body, { marginTop: 8, fontSize: 14, opacity: 0.8 }]}>
+                  After verifying your email, you'll be able to continue with onboarding.
+                </Text>
+              </MotionView>
 
-              <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/auth')}>
-                <ExpoLinearGradient
-                  colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.primaryBtnGradient}
-                />
-                <Text style={styles.primaryBtnText}>Back to Sign In</Text>
-              </TouchableOpacity>
+              <MotionView entering={cardEntrance(5)}>
+                <MotionPressable style={styles.primaryBtn} onPress={() => router.replace('/auth')}>
+                  <ExpoLinearGradient
+                    colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.primaryBtnGradient}
+                  />
+                  <Text style={styles.primaryBtnText}>Back to Sign In</Text>
+                </MotionPressable>
+              </MotionView>
 
-              <TouchableOpacity 
-                style={[styles.secondaryBtn, (sending || cooldownSec > 0) && { opacity: 0.7 }]} 
-                disabled={sending || cooldownSec > 0} 
-                onPress={handleResend}
-              >
-                {sending ? (
-                  <ActivityIndicator color={Colors.brand.textPrimary} />
-                ) : (
-                  <View style={styles.resendButtonContent}>
-                    <Ionicons 
-                      name="refresh-outline" 
-                      size={18} 
-                      color={Colors.brand.textPrimary} 
-                      style={{ marginRight: 8 }}
-                    />
-                    <Text style={styles.secondaryBtnText}>
-                      {cooldownSec > 0 ? `Resend in ${cooldownSec}s` : 'Resend verification email'}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+              <MotionView entering={subtleFadeIn().delay(MotionDelays.section)}>
+                <TouchableOpacity 
+                  style={[styles.secondaryBtn, (sending || cooldownSec > 0) && { opacity: 0.7 }]} 
+                  disabled={sending || cooldownSec > 0} 
+                  onPress={handleResend}
+                >
+                  {sending ? (
+                    <ActivityIndicator color={Colors.brand.textPrimary} />
+                  ) : (
+                    <View style={styles.resendButtonContent}>
+                      <Ionicons 
+                        name="refresh-outline" 
+                        size={18} 
+                        color={Colors.brand.textPrimary} 
+                        style={{ marginRight: 8 }}
+                      />
+                      <Text style={styles.secondaryBtnText}>
+                        {cooldownSec > 0 ? `Resend in ${cooldownSec}s` : 'Resend verification email'}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </MotionView>
             </>
           )}
         </Animated.View>

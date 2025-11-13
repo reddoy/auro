@@ -28,9 +28,7 @@ export {
   ErrorBoundary,
 } from 'expo-router';
 
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present
-};
+// unstable_settings removed - no longer needed in current Expo Router version
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -128,7 +126,7 @@ function RootLayoutNav() {
       const onAuth = pathname?.startsWith('/auth');
       const onIntro = pathname?.startsWith('/intro');
       if (!isSignedIn && !onAuth && !onIntro) {
-        router.replace('/intro');
+        router.replace('/intro' as any);
       }
     } catch {}
   }, [sessionChecked, isSignedIn, pathname]);

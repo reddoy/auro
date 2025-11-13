@@ -36,9 +36,14 @@ export default function IndexGate() {
           return '/onboarding/discover-reviewers';
         case 'role_selection':
           return '/onboarding/role-selection';
+        case 'push_notifications':
+        case 'push-notifications':
+          return '/onboarding/push-notifications';
         case 'completed':
           return '/(tabs)/requests';
         default:
+          // For new users with no step, go directly to role selection
+          // Push notifications can be handled later or made optional
           return '/onboarding/push-notifications';
       }
     };
