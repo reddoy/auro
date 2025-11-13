@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, TouchableOpacity, FlatList, RefreshControl, Platform, Alert, Linking } from 'react-native';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
+import { StyleSheet, TouchableOpacity, FlatList, RefreshControl, Platform, Alert, Linking, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,8 @@ import Colors from '@/constants/Colors';
 import { getRequestsByReviewer } from '@/lib/api';
 import { createStripeExpressLoginLink, createStripeExpressOnboardingLink } from '@/lib/payments';
 import type { Profile } from '@/types';
+import { MotionView, cardEntrance, subtleFadeIn } from '@/components/motion';
+import { SkeletonBlock, SkeletonCircle, SkeletonParagraph } from '@/components/Skeletons';
 
 interface TransactionItem {
   id: string;
@@ -19,13 +21,13 @@ interface TransactionItem {
   application_fee_cents: number;
   reviewer_amount_cents?: number;
   payment_distributed: boolean;
-  payment_distributed_at?: string;
-  payment_distribution_error?: string;
-  payment_status?: string;
+  payment_distributed_at?: string | null;
+  payment_distribution_error?: string | null;
+  payment_status?: string | null;
   created_at: string;
-  completed_at?: string;
-  requester_name?: string;
-  requester_username?: string;
+  completed_at?: string | null;
+  requester_name?: string | null;
+  requester_username?: string | null;
 }
 
 export default function TransactionBreakdownScreen() {
@@ -35,8 +37,86 @@ export default function TransactionBreakdownScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [stripePortalUrl, setStripePortalUrl] = useState<string | null>(null);
+  const skipNextFocusRefresh = useRef(true);
+  const loadInFlightRef = useRef(false);
 
-  const loadTransactions = useCallback(async () => {
+  const renderSkeleton = (overlay = false) => {
+    const header = (
+      <MotionView entering={subtleFadeIn()} style={[styles.header, { paddingTop: 12 }]}>
+        <View style={{ marginRight: 12 }}>
+          <SkeletonCircle size={40} />
+        </View>
+        <SkeletonBlock width={180} height={24} radius={12} />
+      </MotionView>
+    );
+
+    const body = (
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32, gap: 16 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <MotionView entering={cardEntrance(0)} style={styles.summaryCard}>
+          <SkeletonBlock width="50%" height={18} />
+          <SkeletonParagraph
+            lines={2}
+            lineHeight={12}
+            widths={['100%', '75%']}
+            style={{ marginTop: 12 }}
+          />
+        </MotionView>
+        {[...Array(3)].map((_, idx) => (
+          <MotionView key={idx} entering={cardEntrance(idx + 1)} style={styles.transactionCard}>
+            <View style={styles.transactionSkeletonHeader}>
+              <View style={{ flex: 1 }}>
+                <SkeletonBlock width="70%" height={18} />
+                <SkeletonBlock width="45%" height={12} style={{ marginTop: 8 }} />
+              </View>
+              <SkeletonBlock width={72} height={26} radius={12} />
+            </View>
+            <SkeletonBlock width="80%" height={12} style={{ marginBottom: 16 }} />
+            <SkeletonParagraph
+              lines={4}
+              lineHeight={12}
+              widths={['55%', '60%', '65%', '70%']}
+            />
+          </MotionView>
+        ))}
+      </ScrollView>
+    );
+
+    if (overlay) {
+      return (
+        <View style={styles.refreshOverlay}>
+          {header}
+          {body}
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.container}>
+        {header}
+        {body}
+      </View>
+    );
+  };
+
+  const loadTransactions = useCallback(
+  async (reason: 'initial' | 'focus' | 'pull' = 'initial') => {
+    if (loadInFlightRef.current) {
+      console.log('[transactions] load skipped', { reason, inFlight: true });
+      return;
+    }
+
+    loadInFlightRef.current = true;
+    if (reason === 'initial') {
+      setLoading(true);
+    } else if (reason === 'pull') {
+      setRefreshing(true);
+    }
+    console.log('[transactions] load started', { reason });
+
     try {
       const p = await supabase.auth.getUser();
       if (!p.data.user) return;
@@ -49,7 +129,6 @@ export default function TransactionBreakdownScreen() {
 
       setProfile(profileData);
 
-      // Load Stripe portal URL if user is a reviewer
       if (profileData?.is_reviewer && profileData.stripe_connect_account_id) {
         try {
           const url = await createStripeExpressLoginLink(profileData.id);
@@ -58,14 +137,15 @@ export default function TransactionBreakdownScreen() {
           console.log('[stripe-portal] error', e);
           setStripePortalUrl(null);
         }
+      } else {
+        setStripePortalUrl(null);
       }
 
       if (profileData?.is_reviewer) {
         const requests = await getRequestsByReviewer(profileData.id);
-        
-        // Transform requests into transaction items
+
         const transactionItems: TransactionItem[] = requests
-          .filter(r => r.amount_cents) // Only include requests with amounts
+          .filter(r => r.amount_cents)
           .map(r => ({
             id: r.id,
             status: r.status,
@@ -76,30 +156,47 @@ export default function TransactionBreakdownScreen() {
             payment_distributed_at: r.payment_distributed_at,
             payment_distribution_error: r.payment_distribution_error,
             payment_status: r.payment_status,
-            created_at: r.created_at,
-            completed_at: r.completed_at,
-            requester_name: r.requester_name,
-            requester_username: r.requester_username,
+            created_at: r.created_at ?? r.createdAt,
+            completed_at: r.completed_at ?? null,
+            requester_name: r.requester_name ?? null,
+            requester_username: r.requester_username ?? null,
           }))
-          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          .sort((a, b) => {
+            const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+            const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+            return bTime - aTime;
+          });
 
         setTransactions(transactionItems);
+        console.log('[transactions] load finished', { reason, count: transactionItems.length });
+      } else {
+        setTransactions([]);
+        console.log('[transactions] load finished', { reason, count: 0, reviewer: false });
       }
     } catch (error) {
       console.error('Error loading transactions:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
+      loadInFlightRef.current = false;
     }
-  }, []);
+  },
+  []
+  );
 
   useEffect(() => {
-    loadTransactions();
+    loadTransactions('initial');
   }, [loadTransactions]);
 
   useFocusEffect(
     useCallback(() => {
-      loadTransactions();
+    if (skipNextFocusRefresh.current) {
+      skipNextFocusRefresh.current = false;
+      console.log('[transactions] focus refresh skipped on first focus');
+      return () => {};
+    }
+    loadTransactions('focus');
+    return () => {};
     }, [loadTransactions])
   );
 
@@ -175,26 +272,35 @@ export default function TransactionBreakdownScreen() {
   };
 
   const getAmountDisplay = (transaction: TransactionItem) => {
-    // Correct calculation: amount - auro fee (20%) - stripe fee (2.9% + $0.30)
+    // Use reviewer_amount_cents if available (set by payment distribution)
+    if (transaction.reviewer_amount_cents) {
+      return (transaction.reviewer_amount_cents / 100).toFixed(2);
+    }
+    // SIMPLE MODEL: Calculate reviewer amount as totalAmount - auroFee (Auro absorbs Stripe fee)
     const amount = transaction.amount_cents;
-    const auroFee = Math.round(amount * 0.2); // 20% Auro fee
-    const stripeFee = Math.round(amount * 0.029 + 30); // 2.9% + $0.30 Stripe fee
-    const reviewerAmount = amount - auroFee - stripeFee;
+    const auroFee = transaction.application_fee_cents || 0;
+    const reviewerAmount = amount - auroFee;
     return (reviewerAmount / 100).toFixed(2);
   };
 
   const renderTransaction = ({ item }: { item: TransactionItem }) => {
     const paymentStatus = getPaymentStatus(item);
     const amount = getAmountDisplay(item);
-    const createdDate = new Date(item.created_at).toLocaleDateString();
-    const completedDate = item.completed_at ? new Date(item.completed_at).toLocaleDateString() : null;
+    const createdTimestamp = item.created_at ?? null;
+    const completedTimestamp = item.completed_at ?? null;
+    const createdDate = createdTimestamp ? new Date(createdTimestamp).toLocaleDateString() : 'Unknown date';
+    const completedDate = completedTimestamp ? new Date(completedTimestamp).toLocaleDateString() : null;
+    const requesterDisplayName =
+      item.requester_name ??
+      item.requester_username ??
+      'Unknown User';
 
     return (
       <View style={styles.transactionCard}>
         <View style={styles.transactionHeader}>
           <View style={styles.transactionInfo}>
             <Text style={styles.transactionTitle}>
-              {item.requester_name || item.requester_username || 'Unknown User'}
+              {requesterDisplayName}
             </Text>
             <Text style={styles.transactionDate}>
               Created: {createdDate}
@@ -222,20 +328,23 @@ export default function TransactionBreakdownScreen() {
 
         <View style={styles.transactionDetails}>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Total Amount:</Text>
+            <Text style={styles.detailLabel}>Customer pays:</Text>
             <Text style={styles.detailValue}>${(item.amount_cents / 100).toFixed(2)}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Auro fee (20%):</Text>
-            <Text style={styles.detailValue}>-${(Math.round(item.amount_cents * 0.2) / 100).toFixed(2)}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Stripe fee (2.9% + $0.30):</Text>
-            <Text style={styles.detailValue}>-${(Math.round(item.amount_cents * 0.029 + 30) / 100).toFixed(2)}</Text>
+            <Text style={styles.detailValue}>
+              -${((item.application_fee_cents || Math.round(item.amount_cents * 0.2)) / 100).toFixed(2)}
+            </Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Your Earnings:</Text>
             <Text style={[styles.detailValue, styles.earningsValue]}>${amount}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Text style={[styles.detailLabel, { fontSize: 12, fontStyle: 'italic', color: Colors.brand.textSecondary }]}>
+              * Processing fees are covered by Auro
+            </Text>
           </View>
         </View>
       </View>
@@ -243,22 +352,7 @@ export default function TransactionBreakdownScreen() {
   };
 
   if (loading) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color={Colors.brand.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Transaction History</Text>
-        </View>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading transactions...</Text>
-        </View>
-      </View>
-    );
+    return renderSkeleton();
   }
 
   return (
@@ -328,8 +422,7 @@ export default function TransactionBreakdownScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => {
-                setRefreshing(true);
-                loadTransactions();
+                loadTransactions('pull');
               }}
               tintColor={Colors.brand.textPrimary}
             />
@@ -338,6 +431,7 @@ export default function TransactionBreakdownScreen() {
           showsVerticalScrollIndicator={false}
         />
       </View>
+      {refreshing ? renderSkeleton(true) : null}
     </View>
   );
 }
@@ -376,6 +470,19 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  transactionSkeletonHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    backgroundColor: 'transparent',
+  },
+  refreshOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Colors.brand.background,
+    zIndex: 5,
+    paddingTop: 0,
   },
   loadingText: {
     color: Colors.brand.textSecondary,

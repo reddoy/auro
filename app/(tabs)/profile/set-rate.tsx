@@ -1,18 +1,21 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, TouchableOpacity, Alert, View, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { getCurrentProfile, updateProfile } from '@/lib/profile';
 import type { Profile } from '@/types';
+import { MotionView, cardEntrance } from '@/components/motion';
+import { SkeletonBlock, SkeletonCircle, SkeletonParagraph } from '@/components/Skeletons';
 
 export default function SetRateScreen() {
   const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [editingRate, setEditingRate] = useState('');
   const [savingRate, setSavingRate] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -22,6 +25,8 @@ export default function SetRateScreen() {
         setEditingRate(p?.hourly_rate != null ? String(p.hourly_rate) : '');
       } catch (e: any) {
         Alert.alert('Error', 'Failed to load profile');
+      } finally {
+        setLoading(false);
       }
     };
     loadProfile();
@@ -41,16 +46,15 @@ export default function SetRateScreen() {
       const updated = await updateProfile({ hourly_rate: rateNumber });
       setProfile(updated);
       
-              // Show confirmation with detailed calculation
+              // Show confirmation with simple calculation
       if (rateNumber !== null && rateNumber > 0) {
-        // rateNumber is what the customer pays, calculate reviewer's take-home
-        const auroFee = rateNumber * 0.2;
-        const stripeFee = rateNumber * 0.029 + 0.30;
-        const reviewerTakeHome = rateNumber - auroFee - stripeFee;
+        // SIMPLE MODEL: Customer pays X, Reviewer gets 80%, Auro absorbs Stripe fee
+        const auroFee = rateNumber * 0.2; // 20% platform fee
+        const reviewerTakeHome = rateNumber - auroFee; // Reviewer gets 80%
         
         Alert.alert(
           'Rate Updated!', 
-          `Your price per review: $${rateNumber.toFixed(2)}\n\nAuro fee (20%): -$${auroFee.toFixed(2)}\nStripe fee (2.9% + $0.30): -$${stripeFee.toFixed(2)}\n\nYour take-home: $${reviewerTakeHome.toFixed(2)}`,
+          `Your price per review: $${rateNumber.toFixed(2)}\n\nAuro fee (20%): -$${auroFee.toFixed(2)}\n\nYour take-home: $${reviewerTakeHome.toFixed(2)} (80%)\n\n* Processing fees are covered by Auro`,
           [{ text: 'OK', onPress: () => router.back() }]
         );
       } else {
@@ -63,13 +67,59 @@ export default function SetRateScreen() {
     }
   }, [editingRate]);
 
+  if (loading) {
+    return (
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <View style={[styles.header, { paddingTop: 12 }]}>
+          <View style={{ marginRight: 12 }}>
+            <SkeletonCircle size={40} />
+          </View>
+          <SkeletonBlock width={160} height={24} radius={12} />
+          <View style={styles.headerSpacer} />
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={{ paddingBottom: 68 + insets.bottom + 24, paddingHorizontal: 20, paddingTop: 20 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <MotionView entering={cardEntrance(0)} style={styles.skeletonCard}>
+            <SkeletonParagraph lines={3} widths={['100%', '90%', '85%']} />
+          </MotionView>
+
+          <MotionView entering={cardEntrance(1)} style={styles.skeletonCard}>
+            <SkeletonBlock width="60%" height={16} />
+            <SkeletonBlock width="100%" height={52} radius={18} style={{ marginTop: 16 }} />
+          </MotionView>
+
+          <MotionView entering={cardEntrance(2)} style={styles.skeletonCard}>
+            <SkeletonBlock width="40%" height={18} />
+            <SkeletonParagraph
+              lines={4}
+              lineHeight={14}
+              widths={['95%', '85%', '75%', '65%']}
+              style={{ marginTop: 16 }}
+            />
+          </MotionView>
+
+          <MotionView entering={cardEntrance(3)} style={[styles.saveButton, styles.saveButtonDisabled, styles.skeletonButton]}>
+            <SkeletonBlock width="60%" height={18} />
+          </MotionView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
+
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
       style={styles.container}
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: 12 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Text style={styles.backButtonText}>‹</Text>
         </TouchableOpacity>
@@ -79,12 +129,12 @@ export default function SetRateScreen() {
 
       <ScrollView 
         style={styles.scrollView} 
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: 68 + insets.bottom + 24 }}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
           <Text style={styles.description}>
-            Set your price per review (what customers pay). Fees and processing costs will be deducted to calculate your take-home.
+            Set your price per review (what customers pay). You'll receive 80% of this amount - Auro covers all processing fees.
           </Text>
 
           <View style={styles.inputContainer}>
@@ -103,9 +153,8 @@ export default function SetRateScreen() {
             <View style={styles.breakdownContainer}>
               {(() => {
                 const customerPrice = Number(editingRate);
-                const auroFee = customerPrice * 0.2;
-                const stripeFee = customerPrice * 0.029 + 0.30;
-                const reviewerTakeHome = customerPrice - auroFee - stripeFee;
+                const auroFee = customerPrice * 0.2; // 20% platform fee
+                const reviewerTakeHome = customerPrice - auroFee; // Reviewer gets 80%
                 return (
                   <>
                     <Text style={styles.breakdownTitle}>Rate Breakdown</Text>
@@ -119,14 +168,15 @@ export default function SetRateScreen() {
                         <Text style={styles.breakdownLabel}>Auro fee (20%)</Text>
                         <Text style={[styles.breakdownValue, styles.breakdownFee]}>-${auroFee.toFixed(2)}</Text>
                       </View>
-                      <View style={styles.breakdownRow}>
-                        <Text style={styles.breakdownLabel}>Stripe fee (2.9% + $0.30)</Text>
-                        <Text style={[styles.breakdownValue, styles.breakdownFee]}>-${stripeFee.toFixed(2)}</Text>
-                      </View>
                       <View style={[styles.breakdownDivider, { marginTop: 8 }]} />
                       <View style={styles.breakdownRow}>
                         <Text style={styles.breakdownTotalLabel}>Your take-home</Text>
-                        <Text style={styles.breakdownTotalValue}>${reviewerTakeHome.toFixed(2)}</Text>
+                        <Text style={styles.breakdownTotalValue}>${reviewerTakeHome.toFixed(2)} (80%)</Text>
+                      </View>
+                      <View style={styles.breakdownRow}>
+                        <Text style={[styles.breakdownLabel, { fontSize: 12, fontStyle: 'italic', color: Colors.brand.textSecondary }]}>
+                          * Processing fees are covered by Auro
+                        </Text>
                       </View>
                     </View>
                   </>
@@ -136,9 +186,9 @@ export default function SetRateScreen() {
           )}
 
           <TouchableOpacity 
-            style={[styles.saveButton, savingRate && styles.saveButtonDisabled]} 
+            style={[styles.saveButton, (savingRate || loading) && styles.saveButtonDisabled]} 
             onPress={handleSaveRate}
-            disabled={savingRate}
+            disabled={savingRate || loading}
           >
             <Text style={styles.saveButtonText}>
               {savingRate ? 'Saving...' : 'Save Rate'}
@@ -160,26 +210,30 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: Colors.brand.cardBackground,
+    paddingBottom: 16,
+    paddingTop: 12,
+    backgroundColor: Colors.brand.background,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.brand.divider
+    borderBottomColor: Colors.brand.border
   },
   backButton: { 
     width: 40, 
     height: 40, 
     justifyContent: 'center', 
-    alignItems: 'center' 
+    alignItems: 'center',
+    borderRadius: 20,
+    backgroundColor: Colors.brand.cardBackground
   },
   backButtonText: { 
-    fontSize: 32, 
-    color: Colors.brand.textPrimary, 
-    lineHeight: 40 
+    fontSize: 24, 
+    color: Colors.brand.textPrimary,
+    fontWeight: '300'
   },
   headerTitle: { 
     fontSize: 20, 
     fontWeight: '700', 
-    color: Colors.brand.textPrimary 
+    color: Colors.brand.textPrimary,
+    fontFamily: 'Poppins_700Bold'
   },
   headerSpacer: { 
     width: 40 
@@ -280,6 +334,17 @@ const styles = StyleSheet.create({
   },
   saveButtonDisabled: {
     opacity: 0.6,
+  },
+  skeletonCard: {
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    marginBottom: 20,
+  },
+  skeletonButton: {
+    marginTop: 4,
   },
   saveButtonText: {
     color: Colors.brand.textOnGradient,

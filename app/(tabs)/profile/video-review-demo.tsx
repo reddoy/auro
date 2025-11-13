@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, Platform, TextInput, Linking, Dimensions } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, TextInput, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,12 +28,8 @@ type VideoReviewState = {
   recordingModeOpen: boolean;
   videoUri: string | null;
   currentPhotoIndex: number;
-  photoRatings: Record<string, number>;
-  photoNotes: Record<string, string>;
   overallRating: number;
-  noteModalOpen: boolean;
-  noteUri: string | null;
-  noteText: string;
+  overallNote: string;
 };
 
 export default function DatingProfileUploadScreen() {
@@ -51,15 +47,41 @@ export default function DatingProfileUploadScreen() {
     recordingModeOpen: false,
     videoUri: null,
     currentPhotoIndex: 0,
-    photoRatings: {},
-    photoNotes: {},
     overallRating: 0,
-    noteModalOpen: false,
-    noteUri: null,
-    noteText: ''
+    overallNote: '',
   });
   const [revieweeName] = useState('Sarah'); // Demo reviewee name
   const [currentFlowStep, setCurrentFlowStep] = useState<'upload' | 'video-review' | 'submitted'>('upload');
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+
+  const frameMetrics = useMemo(() => {
+    const horizontalMargin = 32;
+    const desiredMaxWidth = 360;
+    const availableWidth = Math.max(windowWidth - horizontalMargin, 220);
+    const constrainedWidth = Math.min(availableWidth, desiredMaxWidth);
+    const availableHeight = Math.max(windowHeight - (insets.top + insets.bottom + 160), 480);
+    const heightLimitedWidth = availableHeight * (9 / 16);
+    const frameWidth = Math.max(220, Math.min(constrainedWidth, heightLimitedWidth));
+    const frameHeight = frameWidth * (16 / 9);
+    const slideHorizontalPadding = Math.max((windowWidth - frameWidth) / 2, 16);
+    const slideTopPadding = Math.max(insets.top + 56, 48);
+    const slideBottomPadding = Math.max(insets.bottom + 48, 36);
+    const paginationTop = slideTopPadding + frameHeight / 2 - 40;
+    const paginationLeft = Math.max(slideHorizontalPadding - 16, 16);
+
+    return {
+      frameWidth,
+      frameHeight,
+      slideHorizontalPadding,
+      slideTopPadding,
+      slideBottomPadding,
+      paginationTop,
+      paginationLeft,
+    };
+  }, [insets, windowHeight, windowWidth]);
+
+  const recorderTop = Math.max(insets.top + 16, frameMetrics.slideTopPadding - 96);
+  const ratingSteps = useMemo(() => Array.from({ length: 9 }, (_, index) => 1 + index * 0.5), []);
 
   const handlePhotoUpload = async (category: 'profile' | 'outfits' | 'room' | 'socials') => {
     try {
@@ -371,7 +393,7 @@ export default function DatingProfileUploadScreen() {
       <View style={styles.demoInfo}>
         <Text style={styles.demoTitle}>🎥 Video Review Interface</Text>
         <Text style={styles.demoDescription}>
-          This is what reviewers see when recording a video review. They can swipe through your photos, rate each one, add notes, and record their feedback.
+          This is what reviewers see when recording a video review. They swipe through your photos while filming, then finish with an overall rating and summary note.
         </Text>
       </View>
 
@@ -394,14 +416,14 @@ export default function DatingProfileUploadScreen() {
         {videoReviewState.videoUri && (
           <View style={styles.videoCompleteContainer}>
             <Text style={styles.videoCompleteText}>✅ Video Review Complete</Text>
-            <Text style={styles.videoCompleteSubtext}>Ready to submit with ratings and notes</Text>
+            <Text style={styles.videoCompleteSubtext}>Ready to submit with an overall rating and note</Text>
           </View>
         )}
       </View>
 
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>Rating System</Text>
-        <Text style={styles.sectionSubtitle}>Reviewers rate each photo and give an overall rating</Text>
+        <Text style={styles.sectionSubtitle}>Reviewers leave an overall rating with optional notes</Text>
         
         <View style={styles.ratingDemoContainer}>
           <Text style={styles.ratingDemoLabel}>Overall Rating:</Text>
@@ -412,24 +434,41 @@ export default function DatingProfileUploadScreen() {
             showNumber={false}
           />
           <View style={styles.ratingButtons}>
-            {[1, 2, 3, 4, 5].map((rating) => (
-              <TouchableOpacity
-                key={rating}
-                onPress={() => setVideoReviewState(prev => ({ ...prev, overallRating: rating }))}
-                style={[
-                  styles.ratingButton,
-                  videoReviewState.overallRating === rating && styles.ratingButtonSelected
-                ]}
-              >
-                <Text style={[
-                  styles.ratingButtonText,
-                  videoReviewState.overallRating === rating && styles.ratingButtonTextSelected
-                ]}>
-                  {rating}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {ratingSteps.map((rating) => {
+              const isSelected = videoReviewState.overallRating === rating;
+              return (
+                <TouchableOpacity
+                  key={rating}
+                  onPress={() => setVideoReviewState(prev => ({ ...prev, overallRating: rating }))}
+                  style={[
+                    styles.ratingButton,
+                    isSelected && styles.ratingButtonSelected
+                  ]}
+                >
+                  <Text style={[
+                    styles.ratingButtonText,
+                    isSelected && styles.ratingButtonTextSelected
+                  ]}>
+                    {rating.toFixed(rating % 1 === 0 ? 0 : 1)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
+        </View>
+
+        <View style={styles.overallNoteContainer}>
+          <Text style={styles.overallNoteLabel}>Overall Note</Text>
+          <TextInput
+            style={styles.overallNoteInput}
+            placeholder="Share a quick summary of your feedback"
+            placeholderTextColor={Colors.brand.textSecondary}
+            multiline
+            value={videoReviewState.overallNote}
+            onChangeText={(text) => setVideoReviewState(prev => ({ ...prev, overallNote: text }))}
+            numberOfLines={4}
+            textAlignVertical="top"
+          />
         </View>
       </View>
 
@@ -463,7 +502,7 @@ export default function DatingProfileUploadScreen() {
       <View style={styles.thankYouContainer}>
         <Text style={styles.thankYouTitle}>🎉 Review Complete!</Text>
         <Text style={styles.thankYouMessage}>
-          Thank you for experiencing the video review demo! In the real app, reviewers would submit their video review with ratings and notes, and you could share it to social media.
+          Thank you for experiencing the video review demo! In the real app, reviewers would submit their video review with an overall rating and note, and you could share it to social media.
             </Text>
             
             <View style={styles.shareButtonsContainer}>
@@ -533,14 +572,26 @@ export default function DatingProfileUploadScreen() {
             style={{ flex: 1 }} 
             contentContainerStyle={{ alignItems: 'center' }}
             onMomentumScrollEnd={(event) => {
-              const index = Math.round(event.nativeEvent.contentOffset.y / Dimensions.get('window').height);
+              const index = Math.round(event.nativeEvent.contentOffset.y / windowHeight);
               setVideoReviewState(prev => ({ ...prev, currentPhotoIndex: index }));
             }}
           >
             {allSlides.map((slide, i) => (
-              <RNView key={`slide-${i}`} style={{ width: Dimensions.get('window').width, height: Dimensions.get('window').height, paddingHorizontal: 40, paddingTop: insets.top + 200, paddingBottom: insets.bottom + 20, justifyContent: 'center' }}>
+              <RNView
+                key={`slide-${i}`}
+                style={[
+                  styles.recordingSlide,
+                  {
+                    width: windowWidth,
+                    height: windowHeight,
+                    paddingHorizontal: frameMetrics.slideHorizontalPadding,
+                    paddingTop: frameMetrics.slideTopPadding,
+                    paddingBottom: frameMetrics.slideBottomPadding,
+                  },
+                ]}
+              >
                 {slide.type === 'profile' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', alignSelf: 'center' }]}>
+                  <RNView style={[styles.overlayCard, { width: frameMetrics.frameWidth, maxHeight: frameMetrics.frameHeight }]}>
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={styles.overlayTitle}>{slide.data.name}</Text>
                     {slide.data.message ? (<Text style={styles.overlayText}>{slide.data.message}</Text>) : null}
@@ -553,12 +604,12 @@ export default function DatingProfileUploadScreen() {
                     title={slide.data.title}
                     subtitle={slide.data.subtitle}
                     revieweeName={revieweeName}
-                    style={{ marginHorizontal: 0, width: '100%' }}
+                    style={{ marginHorizontal: 0, width: frameMetrics.frameWidth }}
                   />
                 )}
                 
                 {slide.type === 'photo' && (
-                  <RNView style={[styles.overlayPhotoCard, { width: '100%', alignSelf: 'center' }]}>
+                  <RNView style={[styles.overlayPhotoCard, { width: frameMetrics.frameWidth, maxHeight: frameMetrics.frameHeight }]}>
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 12, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={styles.overlayTitle}>{slide.data.category} - Photo {slide.data.photoIndex + 1}</Text>
                     <TouchableOpacity
@@ -566,90 +617,134 @@ export default function DatingProfileUploadScreen() {
                     >
                       <Image source={{ uri: slide.data.uri }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
                     </TouchableOpacity>
-                    
-                    {/* Rating controls */}
-                    <RNView style={{ marginTop: 16, alignItems: 'center' }}>
-                      <Text style={[styles.overlayText, { marginBottom: 12 }]}>Rate this photo:</Text>
-                      <RNView style={{ flexDirection: 'row', gap: 12, justifyContent: 'center' }}>
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <TouchableOpacity
-                            key={rating}
-                            onPress={() => setVideoReviewState(prev => ({ ...prev, photoRatings: { ...prev.photoRatings, [slide.data.uri]: rating } }))}
-                            style={[
-                              styles.ratingButton,
-                              videoReviewState.photoRatings[slide.data.uri] === rating && styles.ratingButtonSelected
-                            ]}
-                          >
-                            <Text style={[
-                              styles.ratingButtonText,
-                              videoReviewState.photoRatings[slide.data.uri] === rating && styles.ratingButtonTextSelected
-                            ]}>
-                              {rating}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </RNView>
-                    </RNView>
+                    <Text style={[styles.overlayText, { marginTop: 16 }]}>
+                      Share your thoughts out loud while recording. Swipe up to move to the next photo.
+                    </Text>
                   </RNView>
                 )}
                 
                 {slide.type === 'overall' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', alignSelf: 'center' }]}>
-                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
-                    <Text style={styles.overlayTitle}>Overall Rating</Text>
-                    <Text style={styles.overlayText}>Rate {slide.data.name} overall</Text>
-                    
-                    {slide.data.profilePicture ? (
-                      <TouchableOpacity
-                        style={{ width: '100%', aspectRatio: 1, borderRadius: 12, marginTop: 16, marginBottom: 16, overflow: 'hidden' }}
-                      >
-                        <Image source={{ uri: slide.data.profilePicture }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
-                      </TouchableOpacity>
-                    ) : null}
-                    
-                    <RNView style={{ marginTop: 16, alignItems: 'center' }}>
-                      <Text style={[styles.overlayText, { marginBottom: 16 }]}>Overall Rating:</Text>
-                      <StarRating 
-                        rating={videoReviewState.overallRating * 2}
-                        category="Overall"
-                        size="large"
-                        showNumber={false}
-                      />
-                      <RNView style={{ flexDirection: 'row', gap: 8, justifyContent: 'center', marginTop: 16 }}>
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <TouchableOpacity
-                            key={rating}
-                            onPress={() => setVideoReviewState(prev => ({ ...prev, overallRating: rating }))}
-                            style={[
-                              styles.ratingButton,
-                              videoReviewState.overallRating === rating && styles.ratingButtonSelected
-                            ]}
-                          >
-                            <Text style={[
-                              styles.ratingButtonText,
-                              videoReviewState.overallRating === rating && styles.ratingButtonTextSelected
-                            ]}>
-                              {rating}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </RNView>
-                    </RNView>
-                    
-                    <TouchableOpacity
-                      onPress={handleSubmitReview}
-                      disabled={!canSubmitReview}
-                      style={[
-                        styles.actionButton, 
-                        styles.acceptButton, 
-                        { marginTop: 24 },
-                        !canSubmitReview && styles.disabledButton
-                      ]}
+                  <RNView style={[
+                    styles.overallCardWrapper,
+                    { width: frameMetrics.frameWidth, height: frameMetrics.frameHeight }
+                  ]}>
+                    <LinearGradient
+                      colors={['rgba(255,138,76,0.24)', 'rgba(61,30,125,0.65)']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.overallGradient}
                     >
-                      <Text style={styles.actionButtonText}>
-                        Finish Video Review
+                      <RNView style={styles.overallCardHeader}>
+                        <Image
+                          source={require('@/auro_aura_logo_nobg.png')}
+                          style={styles.overallLogo}
+                          contentFit="contain"
+                        />
+                        <RNView style={styles.ratingBadge}>
+                          <Text style={styles.ratingBadgeNumber}>
+                            {videoReviewState.overallRating > 0
+                              ? videoReviewState.overallRating.toFixed(1)
+                              : '—'}
+                          </Text>
+                          <Text style={styles.ratingBadgeSuffix}>/5</Text>
+                        </RNView>
+                      </RNView>
+
+                      <Text style={[styles.overlayTitle, styles.overallTitle]}>Overall Rating</Text>
+                      <Text style={[styles.overlayText, styles.overallSubtitle]}>
+                        Give {slide.data.name} your final score
                       </Text>
-                    </TouchableOpacity>
+
+                      <RNView style={styles.overallAvatarBlock}>
+                        {slide.data.profilePicture ? (
+                          <LinearGradient
+                            colors={[Colors.brand.accentOrange, Colors.brand.primary]}
+                            style={styles.overallAvatarRing}
+                          >
+                            <Image
+                              source={{ uri: slide.data.profilePicture }}
+                              style={styles.overallAvatarImage}
+                              contentFit="cover"
+                            />
+                          </LinearGradient>
+                        ) : (
+                          <RNView style={[styles.overallAvatarRing, styles.overallAvatarFallback]}>
+                            <Text style={styles.overallAvatarInitial}>
+                              {slide.data.name ? slide.data.name.charAt(0).toUpperCase() : '?'}
+                            </Text>
+                          </RNView>
+                        )}
+                      </RNView>
+
+                      <RNView style={styles.overallStars}>
+                        <StarRating
+                          rating={videoReviewState.overallRating * 2}
+                          category="Overall"
+                          size="large"
+                          showNumber={false}
+                        />
+                      </RNView>
+
+                      <RNView style={styles.overallButtonsGrid}>
+                        {ratingSteps.map((rating) => {
+                          const isSelected = videoReviewState.overallRating === rating;
+                          return (
+                            <TouchableOpacity
+                              key={rating}
+                              onPress={() =>
+                                setVideoReviewState(prev => ({ ...prev, overallRating: rating }))
+                              }
+                              style={[
+                                styles.ratingButton,
+                                styles.overallRatingButton,
+                                isSelected && styles.ratingButtonSelected
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.ratingButtonText,
+                                  styles.overallRatingButtonText,
+                                  isSelected && styles.ratingButtonTextSelected
+                                ]}
+                              >
+                                {rating.toFixed(rating % 1 === 0 ? 0 : 1)}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </RNView>
+
+                      <RNView style={styles.overallNoteWrapper}>
+                        <Text style={styles.overallNoteLabel}>Overall Note</Text>
+                        <TextInput
+                          style={[styles.overallNoteInput, styles.overallNoteInputDark]}
+                          placeholder="Drop a quick summary that pairs perfectly with your video"
+                          placeholderTextColor="rgba(255,255,255,0.6)"
+                          multiline
+                          value={videoReviewState.overallNote}
+                          onChangeText={(text) =>
+                            setVideoReviewState(prev => ({ ...prev, overallNote: text }))
+                          }
+                          numberOfLines={4}
+                          textAlignVertical="top"
+                        />
+                      </RNView>
+
+                      <TouchableOpacity
+                        onPress={handleSubmitReview}
+                        disabled={!canSubmitReview}
+                        style={[
+                          styles.actionButton,
+                          styles.acceptButton,
+                          styles.finishButton,
+                          !canSubmitReview && styles.disabledButton
+                        ]}
+                      >
+                        <Text style={styles.actionButtonText}>
+                          Finish Video Review
+                        </Text>
+                      </TouchableOpacity>
+                    </LinearGradient>
                   </RNView>
                 )}
               </RNView>
@@ -657,7 +752,7 @@ export default function DatingProfileUploadScreen() {
           </ScrollView>
 
           {/* Circular video recorder centered at top-middle */}
-          <RNView style={{ position: 'absolute', top: insets.top + 20, left: 0, right: 0, alignItems: 'center', zIndex: 10, elevation: 10 }}>
+          <RNView style={{ position: 'absolute', top: recorderTop, left: 0, right: 0, alignItems: 'center', zIndex: 10, elevation: 10 }}>
             <MediaRecorder
               onRecorded={(uri) => {
                 setVideoReviewState(prev => ({ 
@@ -669,7 +764,7 @@ export default function DatingProfileUploadScreen() {
                 Alert.alert('Video Attached', 'Demo video recorded! In the real app, reviewers would submit their video review.');
               }}
               variant="centered"
-              circleSize={140}
+              circleSize={120}
             />
           </RNView>
 
@@ -681,7 +776,14 @@ export default function DatingProfileUploadScreen() {
           </RNView>
 
           {/* Vertical pagination dots */}
-          <RNView style={{ position: 'absolute', top: insets.top + 220, left: 12, zIndex: 10 }}>
+          <RNView
+            style={{
+              position: 'absolute',
+              top: Math.max(frameMetrics.paginationTop, frameMetrics.slideTopPadding + 16),
+              left: frameMetrics.paginationLeft,
+              zIndex: 10,
+            }}
+          >
             <PaginationDots
               totalItems={allSlides.length}
               currentIndex={videoReviewState.currentPhotoIndex}
@@ -1004,8 +1106,10 @@ const styles = StyleSheet.create({
   },
   ratingButtons: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
     marginTop: 16,
+    justifyContent: 'center',
   },
   ratingButton: {
     width: 44,
@@ -1020,6 +1124,11 @@ const styles = StyleSheet.create({
   ratingButtonSelected: {
     backgroundColor: Colors.brand.accentOrange,
     borderColor: Colors.brand.accentOrange,
+    shadowColor: Colors.brand.accentOrange,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.32,
+    shadowRadius: 16,
+    elevation: 10,
   },
   ratingButtonText: {
     fontSize: 18,
@@ -1028,6 +1137,140 @@ const styles = StyleSheet.create({
   },
   ratingButtonTextSelected: {
     color: Colors.brand.textOnGradient,
+  },
+  overallNoteContainer: {
+    marginTop: 28,
+    width: '100%',
+  },
+  overallNoteLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.brand.textPrimary,
+    marginBottom: 8,
+  },
+  overallNoteInput: {
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 16,
+    padding: 16,
+    fontSize: 16,
+    color: Colors.brand.textPrimary,
+    borderWidth: 1,
+    borderColor: Colors.brand.divider,
+  },
+  overallCardWrapper: {
+    borderRadius: 28,
+    overflow: 'hidden',
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.35,
+    shadowRadius: 28,
+    elevation: 12,
+  },
+  overallGradient: {
+    flex: 1,
+    borderRadius: 28,
+    paddingVertical: 24,
+    paddingHorizontal: 24,
+    justifyContent: 'space-between',
+  },
+  overallCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  overallLogo: {
+    width: 72,
+    height: 34,
+  },
+  ratingBadge: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
+  ratingBadgeNumber: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: Colors.brand.textOnGradient,
+    lineHeight: 32,
+  },
+  ratingBadgeSuffix: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.brand.textOnGradient,
+    marginLeft: 4,
+    marginBottom: 4,
+  },
+  overallTitle: {
+    marginTop: 8,
+    fontSize: 26,
+    color: Colors.brand.textOnGradient,
+  },
+  overallSubtitle: {
+    color: 'rgba(255,255,255,0.72)',
+  },
+  overallAvatarBlock: {
+    alignItems: 'center',
+  },
+  overallAvatarRing: {
+    width: 132,
+    height: 132,
+    borderRadius: 66,
+    padding: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  overallAvatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 62,
+  },
+  overallAvatarFallback: {
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.25)',
+  },
+  overallAvatarInitial: {
+    fontSize: 52,
+    fontWeight: '800',
+    color: Colors.brand.textOnGradient,
+  },
+  overallStars: {
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  overallButtonsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  overallRatingButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  overallRatingButtonText: {
+    color: Colors.brand.textOnGradient,
+    fontSize: 16,
+  },
+  overallNoteWrapper: {
+    marginTop: 8,
+    width: '100%',
+  },
+  overallNoteInputDark: {
+    backgroundColor: 'rgba(0,0,0,0.22)',
+    borderColor: 'rgba(255,255,255,0.18)',
+    color: Colors.brand.textOnGradient,
+    borderRadius: 18,
+  },
+  finishButton: {
+    marginTop: 18,
   },
   backToHomeButton: {
     marginTop: 32,
@@ -1102,6 +1345,10 @@ const styles = StyleSheet.create({
   },
   denyButtonText: {
     color: Colors.brand.textPrimary,
+  },
+  recordingSlide: {
+    justifyContent: 'flex-start',
+    alignItems: 'center',
   },
 });
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Dimensions, Platform, Linking, Animated, Pressable, LayoutAnimation } from 'react-native';
+import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Platform, Linking, Animated, LayoutAnimation, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,7 +13,6 @@ import StatusBadge from '@/components/StatusBadge';
 import { Image } from 'expo-image';
 import SimplePhotoModal from '@/components/SimplePhotoModal';
 import ImageGalleryModal from '@/components/ImageGalleryModal';
-import PhotoCarousel from '@/components/PhotoCarousel';
 import { signRequestMediaUrls, getSignedRequestMediaUrl } from '@/lib/uploads';
 import RatingBar from '@/components/RatingBar';
 import MediaRecorder from '@/components/MediaRecorder';
@@ -25,7 +24,6 @@ import VideoReviewSection from '@/components/VideoReviewSection';
 import PaginationDots from '@/components/PaginationDots';
 import SectionSlideCard from '@/components/SectionSlideCard';
 import ReviewStatusCard from '@/components/ReviewStatusCard';
-import { LinearGradient } from 'expo-linear-gradient';
 import StarRating from '@/components/StarRating';
 
 // Removed unused URL helper functions since we're not showing social links in this screen
@@ -42,10 +40,7 @@ export default function ReviewerRequestScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [videoUri, setVideoUri] = useState<string | null>(null);
 
-  const [signedPhotos, setSignedPhotos] = useState<string[]>([]); // fallback when categories aren't present
-  const [signedOutfits, setSignedOutfits] = useState<string[]>([]);
-  const [signedRoom, setSignedRoom] = useState<string[]>([]);
-  const [signedSocials, setSignedSocials] = useState<string[]>([]);
+  const [signedProfilePhotos, setSignedProfilePhotos] = useState<string[]>([]);
   // Removed signedSelfie - now using user's profile picture from avatarUri
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [recordingModeOpen, setRecordingModeOpen] = useState(false);
@@ -62,15 +57,40 @@ export default function ReviewerRequestScreen() {
   const [expressUrl, setExpressUrl] = useState<string | null>(null);
 
   // Per-photo notes and ratings for video review
-  const [photoNotes, setPhotoNotes] = useState<Record<string, string>>({});
-  const [photoRatings, setPhotoRatings] = useState<Record<string, number>>({});
   const [overallRating, setOverallRating] = useState<number>(0);
-  const [noteModalOpen, setNoteModalOpen] = useState(false);
-  const [noteUri, setNoteUri] = useState<string | null>(null);
-  const [noteText, setNoteText] = useState('');
+  const [overallNote, setOverallNote] = useState<string>('');
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isVideoReviewMode, setIsVideoReviewMode] = useState(false);
-  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const ratingSteps = React.useMemo(() => Array.from({ length: 9 }, (_, index) => 1 + index * 0.5), []);
+
+  const frameMetrics = React.useMemo(() => {
+    const horizontalMargin = 32;
+    const desiredMaxWidth = 360;
+    const availableWidth = Math.max(windowWidth - horizontalMargin, 220);
+    const constrainedWidth = Math.min(availableWidth, desiredMaxWidth);
+    const availableHeight = Math.max(windowHeight - (insets.top + insets.bottom + 160), 480);
+    const heightLimitedWidth = availableHeight * (9 / 16);
+    const frameWidth = Math.max(220, Math.min(constrainedWidth, heightLimitedWidth));
+    const frameHeight = frameWidth * (16 / 9);
+    const slideHorizontalPadding = Math.max((windowWidth - frameWidth) / 2, 16);
+    const slideTopPadding = insets.top + 96;
+    const slideBottomPadding = insets.bottom + 36;
+    const paginationTop = slideTopPadding + frameHeight / 2 - 48;
+    const paginationLeft = Math.max(slideHorizontalPadding - 24, 12);
+
+    return {
+      frameWidth,
+      frameHeight,
+      slideHorizontalPadding,
+      slideTopPadding,
+      slideBottomPadding,
+      paginationTop,
+      paginationLeft,
+    };
+  }, [insets, windowHeight, windowWidth]);
+
+  const recorderTop = Math.max(insets.top + 16, frameMetrics.slideTopPadding - 96);
   
   // Video review is now the only option - no individual section ratings needed
   const canSubmit = React.useMemo(() => !!videoUri && overallRating > 0, [videoUri, overallRating]);
@@ -89,109 +109,50 @@ export default function ReviewerRequestScreen() {
   const allSlides = React.useMemo(() => {
     const slides: Array<{type: 'profile' | 'section' | 'photo' | 'overall', data: any, index: number}> = [];
     let slideIndex = 0;
-    
-    // Add profile slide
+
     slides.push({
       type: 'profile',
       data: { name: reviewee?.displayName || 'User', message: parsedNotes?.message, profilePicture: avatarUri },
       index: slideIndex++
     });
-    
-    // Add sections with their photos
-    if (signedOutfits.length > 0) {
-      // Section card
+
+    if (signedProfilePhotos.length > 0) {
       slides.push({
         type: 'section',
-        data: { title: 'Outfits', subtitle: "These are {name}'s best outfits" },
+        data: { title: 'Dating Profile', subtitle: "Let's explore {name}'s dating profile" },
         index: slideIndex++
       });
-      // Outfit photos
-      signedOutfits.forEach((uri, i) => {
+
+      signedProfilePhotos.forEach((uri, i) => {
         slides.push({
           type: 'photo',
-          data: { uri, category: 'Outfits', photoIndex: i, totalPhotos: signedOutfits.length },
+          data: { uri, category: 'Dating Profile', photoIndex: i, totalPhotos: signedProfilePhotos.length },
           index: slideIndex++
         });
       });
     }
-    
-    if (signedRoom.length > 0) {
-      // Section card
-      slides.push({
-        type: 'section',
-        data: { title: 'Room Tour', subtitle: "Here are some pictures of {name}'s room" },
-        index: slideIndex++
-      });
-      // Room photos
-      signedRoom.forEach((uri, i) => {
-        slides.push({
-          type: 'photo',
-          data: { uri, category: 'Room Tour', photoIndex: i, totalPhotos: signedRoom.length },
-          index: slideIndex++
-        });
-      });
-    }
-    
-    if (signedSocials.length > 0) {
-      // Section card
-      slides.push({
-        type: 'section',
-        data: { title: 'Socials', subtitle: "Here are {name}'s social media highlights" },
-        index: slideIndex++
-      });
-      // Social photos
-      signedSocials.forEach((uri, i) => {
-        slides.push({
-          type: 'photo',
-          data: { uri, category: 'Socials', photoIndex: i, totalPhotos: signedSocials.length },
-          index: slideIndex++
-        });
-      });
-    }
-    
-    // Add overall rating slide at the end
+
     slides.push({
       type: 'overall',
-      data: { name: reviewee?.displayName || 'User', profilePicture: avatarUri }, // Use profile picture instead of selfie
+      data: { name: reviewee?.displayName || 'User', profilePicture: avatarUri },
       index: slideIndex++
     });
-    
+
     return slides;
-  }, [signedOutfits, signedRoom, signedSocials, avatarUri, reviewee?.displayName, parsedNotes?.message]);
+  }, [signedProfilePhotos, avatarUri, reviewee?.displayName, parsedNotes?.message]);
 
   // Create sections for VideoReviewSection
   const reviewSections = React.useMemo(() => {
-    const sections = [];
-    
-    if (signedOutfits.length > 0) {
-      sections.push({
-        title: 'Outfits',
-        subtitle: 'Rate and review their outfit choices',
-        photos: signedOutfits,
-        category: 'outfits'
-      });
-    }
-    
-    if (signedRoom.length > 0) {
-      sections.push({
-        title: 'Room Tour',
-        subtitle: 'Evaluate their living space and style',
-        photos: signedRoom,
-        category: 'room'
-      });
-    }
-    
-    if (signedSocials.length > 0) {
-      sections.push({
-        title: 'Socials',
-        subtitle: 'Review their social media presence',
-        photos: signedSocials,
-        category: 'socials'
-      });
-    }
-    
-    return sections;
-  }, [signedOutfits, signedRoom, signedSocials]);
+    if (!signedProfilePhotos.length) return [];
+    return [
+      {
+        title: 'Dating Profile',
+        subtitle: 'Review their dating profile photos and share what stands out',
+        photos: signedProfilePhotos,
+        category: 'datingProfile'
+      },
+    ];
+  }, [signedProfilePhotos]);
 
   const hasConsent = React.useMemo(() => typeof parsedNotes?.consent?.shareOnSocial === 'boolean', [parsedNotes]);
   const shareConsent = React.useMemo(() => !!parsedNotes?.consent?.shareOnSocial, [parsedNotes]);
@@ -225,19 +186,16 @@ export default function ReviewerRequestScreen() {
         try {
           const n = req?.notes ? (typeof req.notes === 'string' ? JSON.parse(req.notes) : req.notes) : null;
           const basePhotos = Array.isArray((req as any)?.photos) ? ((req as any).photos as string[]) : [];
-          const outfits: string[] = Array.isArray(n?.media?.outfits) ? (n.media.outfits as string[]) : [];
-          const room: string[] = Array.isArray(n?.media?.roomTourPhotos) ? (n.media.roomTourPhotos as string[]) : [];
-          const socials: string[] = Array.isArray(n?.media?.datingProfileScreenshots) ? (n.media.datingProfileScreenshots as string[]) : [];
+          const datingProfilePhotos: string[] = Array.isArray(n?.media?.datingProfileScreenshots)
+            ? (n.media.datingProfileScreenshots as string[])
+            : [];
 
-          if (outfits.length) setSignedOutfits(await signRequestMediaUrls(outfits)); else setSignedOutfits([]);
-          if (room.length) setSignedRoom(await signRequestMediaUrls(room)); else setSignedRoom([]);
-          if (socials.length) setSignedSocials(await signRequestMediaUrls(socials)); else setSignedSocials([]);
+          const photosToSign = datingProfilePhotos.length ? datingProfilePhotos : basePhotos;
 
-          // Fallback: if no categorized media present, show whatever is in basePhotos under a generic section
-          if (!outfits.length && !room.length && !socials.length && basePhotos.length) {
-            setSignedPhotos(await signRequestMediaUrls(basePhotos));
+          if (photosToSign.length) {
+            setSignedProfilePhotos(await signRequestMediaUrls(photosToSign));
           } else {
-            setSignedPhotos([]);
+            setSignedProfilePhotos([]);
           }
 
           // No longer loading selfie - using user's profile picture instead
@@ -331,7 +289,7 @@ export default function ReviewerRequestScreen() {
         requestId: request.id,
         review: {
           ratings: { overall: overallRating * 2 }, // Convert 1-5 scale to 2-10 scale for overall rating
-          feedback: { strengths: [], improvements: [], generalFeedback: 'Video review completed', sectionNotes: {}, photoNotes } as any,
+          feedback: { strengths: [], improvements: [], generalFeedback: overallNote.trim() || 'Video review completed', sectionNotes: {} } as any,
         },
         videoUrl: uploadedVideoUrl || null,
         imageUrl: null,
@@ -371,6 +329,7 @@ export default function ReviewerRequestScreen() {
         <ReviewStatusCard
           displayName={reviewee?.displayName || 'User'}
           avatarUri={avatarUri}
+          bio={typeof parsedNotes?.message === 'string' ? parsedNotes.message : undefined}
           status={request.status}
           createdAt={request.createdAt}
           hasConsent={hasConsent}
@@ -390,37 +349,16 @@ export default function ReviewerRequestScreen() {
           }
         />
 
-        {parsedNotes?.message && (
-          <View style={styles.section}>
-            <Text style={styles.label}>About Me</Text>
-            <Text style={[styles.value, { lineHeight: 26, fontStyle: 'italic' }]}>{parsedNotes.message}</Text>
-          </View>
-        )}
-
-        {avatarUri && (
-          <View style={[styles.section, styles.mediaSection]}>
-            <Text style={styles.label}>Profile Picture</Text>
-            <Text style={[styles.value, { fontSize: 14, color: Colors.brand.textSecondary, marginBottom: 12 }]}>
-              This is the profile picture that will be used in reviews
-            </Text>
-            <TouchableOpacity onPress={() => { 
-              if (!isVideoReviewMode) {
-                setGalleryUris([avatarUri]); 
-                setGalleryIndex(0); 
-                setGalleryOpen(true); 
-              }
-            }}>
-              <Image source={{ uri: avatarUri }} style={styles.selfie} contentFit="cover" cachePolicy="none" />
-            </TouchableOpacity>
-          </View>
-        )}
-
         {/* Video Review Section with section cards */}
         {reviewSections.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.label}>Photo Review</Text>
+          <View style={[styles.section, styles.mediaSection]}>
+            <Text style={styles.label}>Dating Profile Photos</Text>
+            <Text style={[styles.sectionHint, { marginTop: 0 }]}>
+              Browse their uploaded dating profile shots while you plan your feedback.
+            </Text>
             <VideoReviewSection
               sections={reviewSections}
+              showSectionHeaders={false}
               onPhotoPress={(photos, index) => {
                 if (!isVideoReviewMode) {
                   setGalleryUris(photos);
@@ -428,21 +366,7 @@ export default function ReviewerRequestScreen() {
                   setGalleryOpen(true);
                 }
               }}
-              currentSectionIndex={currentSectionIndex}
             />
-          </View>
-        )}
-
-        {signedPhotos.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.label}>Photos</Text>
-            <PhotoCarousel uris={signedPhotos} onPressItem={(i) => { 
-              if (!isVideoReviewMode) {
-                setGalleryUris(signedPhotos); 
-                setGalleryIndex(i); 
-                setGalleryOpen(true); 
-              }
-            }} />
           </View>
         )}
 
@@ -499,7 +423,9 @@ export default function ReviewerRequestScreen() {
         {request.status === 'in_progress' && (
           <View style={styles.section}>
             <Text style={styles.label}>Video Review</Text>
-            <Text style={styles.sectionHint}>Record a video review while swiping through photos. You can rate and add notes to each photo during the recording.</Text>
+            <Text style={styles.sectionHint}>
+              Record a dating profile video review while you swipe through their photos, then wrap with an overall rating and summary note.
+            </Text>
             {Platform.OS !== 'web' && (
               <RNView style={{ marginTop: 16 }}>
                 <TouchableOpacity style={[styles.actionButton, styles.primaryButton]} onPress={() => {
@@ -537,15 +463,27 @@ export default function ReviewerRequestScreen() {
             style={{ flex: 1 }} 
             contentContainerStyle={{ alignItems: 'center' }}
             onMomentumScrollEnd={(event) => {
-              const index = Math.round(event.nativeEvent.contentOffset.y / Dimensions.get('window').height);
+              const index = Math.round(event.nativeEvent.contentOffset.y / windowHeight);
               setCurrentPhotoIndex(index);
             }}
           >
             {/* All slides: profile, section cards, and photos */}
             {allSlides.map((slide, i) => (
-              <RNView key={`slide-${i}`} style={{ width: Dimensions.get('window').width, height: Dimensions.get('window').height, paddingHorizontal: 40, paddingTop: insets.top + 200, paddingBottom: insets.bottom + 20, justifyContent: 'center' }}>
+              <RNView
+                key={`slide-${i}`}
+                style={[
+                  styles.recordingSlide,
+                  {
+                    width: windowWidth,
+                    height: windowHeight,
+                    paddingHorizontal: frameMetrics.slideHorizontalPadding,
+                    paddingTop: frameMetrics.slideTopPadding,
+                    paddingBottom: frameMetrics.slideBottomPadding,
+                  },
+                ]}
+              >
                 {slide.type === 'profile' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', alignSelf: 'center' }] }>
+                  <RNView style={[styles.overlayCard, { width: frameMetrics.frameWidth, maxHeight: frameMetrics.frameHeight }] }>
                     {/* Auro Logo */}
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={styles.overlayTitle}>{slide.data.name}</Text>
@@ -559,12 +497,12 @@ export default function ReviewerRequestScreen() {
                     title={slide.data.title}
                     subtitle={slide.data.subtitle}
                     revieweeName={reviewee?.displayName || 'User'}
-                    style={{ marginHorizontal: 0, width: '100%' }}
+                    style={{ marginHorizontal: 0, width: frameMetrics.frameWidth }}
                   />
                 )}
                 
                 {slide.type === 'photo' && (
-                  <RNView style={[styles.overlayPhotoCard, { width: '100%', alignSelf: 'center' }] }>
+                  <RNView style={[styles.overlayPhotoCard, { width: frameMetrics.frameWidth, maxHeight: frameMetrics.frameHeight }] }>
                     {/* Auro Logo */}
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 12, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={styles.overlayTitle}>{slide.data.category} - Photo {slide.data.photoIndex + 1}</Text>
@@ -583,51 +521,14 @@ export default function ReviewerRequestScreen() {
                     >
                       <Image source={{ uri: slide.data.uri }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
                     </TouchableOpacity>
-                    
-                    {/* Rating controls */}
-                    <RNView style={{ marginTop: 16, alignItems: 'center' }}>
-                      <Text style={[styles.overlayText, { marginBottom: 12 }]}>Rate this photo:</Text>
-                      <RNView style={{ flexDirection: 'row', gap: 12, justifyContent: 'center' }}>
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <TouchableOpacity
-                            key={rating}
-                            onPress={() => setPhotoRatings(prev => ({ ...prev, [slide.data.uri]: rating }))}
-                            style={[
-                              styles.ratingButton,
-                              photoRatings[slide.data.uri] === rating && styles.ratingButtonSelected
-                            ]}
-                          >
-                            <Text style={[
-                              styles.ratingButtonText,
-                              photoRatings[slide.data.uri] === rating && styles.ratingButtonTextSelected
-                            ]}>
-                              {rating}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </RNView>
-                    </RNView>
-
-                    {/* Note button - only show when not in video review mode */}
-                    {!isVideoReviewMode && (
-                      <TouchableOpacity
-                        onPress={() => {
-                          setNoteUri(slide.data.uri);
-                          setNoteText(photoNotes[slide.data.uri] || '');
-                          setNoteModalOpen(true);
-                        }}
-                        style={[styles.noteButton, photoNotes[slide.data.uri] && styles.noteButtonHasNote, { marginTop: 16 }]}
-                      >
-                        <Text style={[styles.noteButtonText, photoNotes[slide.data.uri] && styles.noteButtonTextHasNote]}>
-                          {photoNotes[slide.data.uri] ? '📝 Edit Note' : '📝 Add Note'}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
+                    <Text style={[styles.overlayText, { marginTop: 16 }]}>
+                      Talk through what stands out while you record. Swipe to continue through their profile.
+                    </Text>
                   </RNView>
                 )}
                 
                 {slide.type === 'overall' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', alignSelf: 'center' }] }>
+                  <RNView style={[styles.overlayCard, { width: frameMetrics.frameWidth, maxHeight: frameMetrics.frameHeight }] }>
                     {/* Auro Logo */}
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={styles.overlayTitle}>Overall Rating</Text>
@@ -662,25 +563,42 @@ export default function ReviewerRequestScreen() {
                         size="large"
                         showNumber={false}
                       />
-                      <RNView style={{ flexDirection: 'row', gap: 8, justifyContent: 'center', marginTop: 16 }}>
-                        {[1, 2, 3, 4, 5].map((rating) => (
-                          <TouchableOpacity
-                            key={rating}
-                            onPress={() => setOverallRating(rating)}
-                            style={[
-                              styles.ratingButton,
-                              overallRating === rating && styles.ratingButtonSelected
-                            ]}
-                          >
-                            <Text style={[
-                              styles.ratingButtonText,
-                              overallRating === rating && styles.ratingButtonTextSelected
-                            ]}>
-                              {rating}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
+                      <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 16 }}>
+                        {ratingSteps.map((rating) => {
+                          const isSelected = overallRating === rating;
+                          return (
+                            <TouchableOpacity
+                              key={rating}
+                              onPress={() => setOverallRating(rating)}
+                              style={[
+                                styles.ratingButton,
+                                isSelected && styles.ratingButtonSelected
+                              ]}
+                            >
+                              <Text style={[
+                                styles.ratingButtonText,
+                                isSelected && styles.ratingButtonTextSelected
+                              ]}>
+                                {rating.toFixed(rating % 1 === 0 ? 0 : 1)}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
                       </RNView>
+                    </RNView>
+
+                    <RNView style={{ marginTop: 20, width: '100%' }}>
+                      <Text style={[styles.overlayText, { marginBottom: 12 }]}>Overall Note</Text>
+                      <TextInput
+                        style={styles.overallNoteInput}
+                        placeholder="Share a short summary to pair with your video review"
+                        placeholderTextColor={Colors.brand.textSecondary}
+                        multiline
+                        value={overallNote}
+                        onChangeText={setOverallNote}
+                        numberOfLines={4}
+                        textAlignVertical="top"
+                      />
                     </RNView>
                     
                     {/* Finish Video Review Button */}
@@ -705,7 +623,7 @@ export default function ReviewerRequestScreen() {
           </ScrollView>
 
           {/* Circular video recorder centered at top-middle */}
-          <RNView style={{ position: 'absolute', top: insets.top + 20, left: 0, right: 0, alignItems: 'center', zIndex: 10, elevation: 10 }}>
+          <RNView style={{ position: 'absolute', top: recorderTop, left: 0, right: 0, alignItems: 'center', zIndex: 10, elevation: 10 }}>
             <MediaRecorder
               onRecorded={(uri) => {
                 setVideoUri(uri);
@@ -714,7 +632,7 @@ export default function ReviewerRequestScreen() {
                 Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
               }}
               variant="centered"
-              circleSize={140}
+              circleSize={120}
             />
           </RNView>
 
@@ -730,7 +648,14 @@ export default function ReviewerRequestScreen() {
           </RNView>
 
           {/* Vertical pagination dots on left side */}
-          <RNView style={{ position: 'absolute', top: insets.top + 220, left: 12, zIndex: 10 }}>
+          <RNView
+            style={{
+              position: 'absolute',
+              top: Math.max(frameMetrics.paginationTop, frameMetrics.slideTopPadding + 16),
+              left: frameMetrics.paginationLeft,
+              zIndex: 10,
+            }}
+          >
             <PaginationDots
               totalItems={allSlides.length}
               currentIndex={currentPhotoIndex}
@@ -738,30 +663,6 @@ export default function ReviewerRequestScreen() {
             />
           </RNView>
         </RNView>
-      </Modal>
-      {/* Per-photo note editor */}
-      <Modal visible={noteModalOpen} transparent animationType="fade" onRequestClose={() => setNoteModalOpen(false)}>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.label}>Add a note for this photo</Text>
-            <TextInput
-              value={noteText}
-              onChangeText={setNoteText}
-              placeholder="Type your note..."
-              placeholderTextColor={Colors.brand.textSecondary}
-              style={[styles.noteInput, { fontFamily: 'Poppins_400Regular' }]}
-              multiline
-            />
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <TouchableOpacity style={[styles.actionButton, styles.denyButton]} onPress={() => { setNoteModalOpen(false); setNoteText(''); setNoteUri(null); }}>
-                <Text style={[styles.actionButtonText, styles.denyButtonText]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.actionButton, styles.acceptButton]} onPress={() => { if (noteUri) { setPhotoNotes(prev => ({ ...prev, [noteUri]: noteText })); } setNoteModalOpen(false); }}>
-                <Text style={styles.actionButtonText}>Save Note</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
       </Modal>
       <ImageGalleryModal visible={galleryOpen} uris={galleryUris} initialIndex={galleryIndex} onClose={() => setGalleryOpen(false)} />
       <SimplePhotoModal visible={photoModalOpen} uri={currentPhotoUri} onClose={() => setPhotoModalOpen(false)} />
@@ -771,28 +672,40 @@ export default function ReviewerRequestScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
-  section: { marginHorizontal: 20, marginVertical: 12, backgroundColor: Colors.brand.cardBackground, borderRadius: 20, padding: 20, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 4 },
-  mediaSection: { alignItems: 'stretch' },
-  label: { fontSize: 20, color: Colors.brand.textPrimary, marginBottom: 12, fontWeight: '800', letterSpacing: 0.3 },
-  value: { fontSize: 16, color: Colors.brand.textPrimary, lineHeight: 24, fontWeight: '500' },
-  selfie: { width: '100%', aspectRatio: 1.2, borderRadius: 12, marginTop: 8, maxHeight: 280 },
-  photosGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 8, justifyContent: 'center' },
-  photo: { width: '31%', aspectRatio: 1, borderRadius: 8 },
+  section: {
+    marginHorizontal: 20,
+    marginVertical: 12,
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.22,
+    shadowRadius: 24,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  mediaSection: { alignItems: 'stretch', gap: 16 },
+  label: { fontSize: 22, color: Colors.brand.textPrimary, marginBottom: 12, fontWeight: '900', letterSpacing: 0.4 },
+  value: { fontSize: 16, color: Colors.brand.textPrimary, lineHeight: 26, fontWeight: '500' },
+  selfie: { width: '100%', aspectRatio: 1, borderRadius: 16, marginTop: 8, maxHeight: 320 },
   actionsSection: { marginHorizontal: 20, marginVertical: 16, gap: 16 },
-  actionButton: { paddingVertical: 18, paddingHorizontal: 24, borderRadius: 16, alignItems: 'center', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
+  actionButton: { paddingVertical: 18, paddingHorizontal: 24, borderRadius: 18, alignItems: 'center', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.18, shadowRadius: 10, elevation: 4 },
   acceptButton: { backgroundColor: Colors.brand.status.completed },
   primaryButton: { backgroundColor: Colors.brand.accentOrange },
   denyButton: { backgroundColor: 'transparent', borderWidth: 2, borderColor: Colors.brand.status.rejected },
-  actionButtonText: { fontSize: 17, fontWeight: '700', color: Colors.brand.textOnGradient, letterSpacing: 0.3 },
+  actionButtonText: { fontSize: 17, fontWeight: '700', color: Colors.brand.textOnGradient, letterSpacing: 0.35 },
   denyButtonText: { color: Colors.brand.status.rejected },
   statusMessage: { fontSize: 16, fontWeight: '600', color: Colors.brand.textSecondary, textAlign: 'center', padding: 16 },
   emptyText: { color: Colors.brand.textSecondary },
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
-  modalCard: { width: '90%', backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 16 },
-  noteInput: { minHeight: 100, borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 12, padding: 12, color: Colors.brand.textPrimary, marginBottom: 12 },
-  sectionHint: { fontSize: 14, color: Colors.brand.textSecondary, marginTop: 8, fontWeight: '500', lineHeight: 20, fontStyle: 'italic' },
+  sectionHint: { fontSize: 15, color: Colors.brand.textSecondary, marginTop: 8, fontWeight: '500', lineHeight: 22, fontStyle: 'italic' },
 
   disabledButton: { backgroundColor: Colors.brand.border, opacity: 0.6 },
+  recordingSlide: {
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
   overlayCard: { 
     backgroundColor: Colors.brand.cardBackground, 
     borderRadius: 20, 
@@ -853,40 +766,13 @@ const styles = StyleSheet.create({
   ratingButtonTextSelected: { 
     color: '#fff' 
   },
-  noteButton: { 
-    paddingVertical: 14, 
-    paddingHorizontal: 24, 
-    borderRadius: 24, 
-    backgroundColor: 'rgba(255,255,255,0.15)', 
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.25)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2
-  },
-  noteButtonHasNote: { 
-    backgroundColor: Colors.brand.accentMagenta + '40',
-    borderColor: Colors.brand.accentMagenta
-  },
-  noteButtonText: { 
-    color: '#fff', 
-    fontWeight: '600', 
-    fontSize: 14 
-  },
-  noteButtonTextHasNote: { 
-    color: Colors.brand.accentMagenta 
-  },
-  progressText: { 
-    color: '#fff', 
-    fontSize: 14, 
-    fontWeight: '600',
-    textAlign: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20
+  overallNoteInput: {
+    minHeight: 110,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.brand.divider,
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    color: Colors.brand.textPrimary,
   },
 });

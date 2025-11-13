@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { StyleSheet, TouchableOpacity, Alert, View as RNView, FlatList, Platform, RefreshControl } from 'react-native';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { StyleSheet, Alert, View as RNView, FlatList, Platform, RefreshControl } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -13,6 +13,7 @@ import type { DbReviewerSummary, DbRequestSummary } from '@/types';
 import StatusBadge from '@/components/StatusBadge';
 import { useToast } from '@/components/Toast';
 import Avatar from '@/components/Avatar';
+import { MotionPressable, MotionView, cardEntrance, cardExit, subtleFadeIn } from '@/components/motion';
 
 export default function RequestsScreen() {
   const insets = useSafeAreaInsets();
@@ -26,19 +27,39 @@ export default function RequestsScreen() {
   const [isReviewer, setIsReviewer] = useState(false);
   const receivedCount = requests.length;
   const [filter, setFilter] = useState<'active' | 'completed' | 'archived'>('active');
+  const [refreshing, setRefreshing] = useState(false);
+  const skipNextFocusRefresh = useRef(true);
+  const loadingRef = useRef(loading);
+  const [hasShownSkeleton, setHasShownSkeleton] = useState(false);
+
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
+
+  useEffect(() => {
+    if (!loading && !hasShownSkeleton) {
+      setHasShownSkeleton(true);
+    }
+  }, [loading, hasShownSkeleton]);
 
   useEffect(() => {
     const run = async () => {
+      console.log('[my-reviews] initial load started');
       try {
         const profile = await getUserProfile();
         if (!profile?.id) {
           setRequests([]);
+          console.log('[my-reviews] no profile found during initial load');
           return;
         }
         const reviewerMode = !!(profile as any)?.is_reviewer;
         setIsReviewer(reviewerMode);
         const reqs = reviewerMode ? await getRequestsByReviewer(profile.id) : await getRequestsByUser(profile.id);
         setRequests(reqs);
+        console.log('[my-reviews] initial load fetched requests', {
+          count: reqs.length,
+          reviewerMode,
+        });
         if (reviewerMode) {
           // Build reviewee map for reviewer inbox
           const userIds = Array.from(new Set(reqs.map(r => r.userId).filter(Boolean))) as string[];
@@ -98,14 +119,23 @@ export default function RequestsScreen() {
 
       } finally {
         setLoading(false);
+        console.log('[my-reviews] initial load finished');
       }
     };
     run();
   }, []);
 
   // Refresh data whenever this screen regains focus (e.g., after Accept/Deny)
-  const refreshData = useCallback(() => {
+  const refreshData = useCallback((trigger: 'focus' | 'pull' = 'focus') => {
+    if (loadingRef.current) {
+      console.log('[my-reviews] refresh skipped because loading is in progress');
+      return;
+    }
+    if (trigger === 'pull') {
+      setRefreshing(true);
+    }
     (async () => {
+      console.log('[my-reviews] refresh triggered', { trigger });
       try {
         const profile = await getUserProfile();
         if (!profile?.id) {
@@ -116,6 +146,10 @@ export default function RequestsScreen() {
         setIsReviewer(reviewerMode);
         const reqs = reviewerMode ? await getRequestsByReviewer(profile.id) : await getRequestsByUser(profile.id);
         setRequests(reqs);
+        console.log('[my-reviews] refresh fetched requests', {
+          count: reqs.length,
+          reviewerMode,
+        });
 
         if (reviewerMode) {
           const userIds = Array.from(new Set(reqs.map(r => r.userId).filter(Boolean))) as string[];
@@ -171,13 +205,30 @@ export default function RequestsScreen() {
           } catch {}
         }
       } catch {}
+      finally {
+        if (trigger === 'pull') {
+          setRefreshing(false);
+        }
+      }
     })();
   }, []);
 
-  useFocusEffect(useCallback(() => {
-    refreshData();
-    return () => {};
-  }, [refreshData]));
+  useFocusEffect(
+    useCallback(() => {
+      if (skipNextFocusRefresh.current) {
+        skipNextFocusRefresh.current = false;
+        console.log('[my-reviews] focus refresh skipped on first focus');
+        return () => {};
+      }
+      console.log('[my-reviews] screen focused, running refreshData');
+      refreshData('focus');
+      return () => {};
+    }, [refreshData])
+  );
+
+  useEffect(() => {
+    console.log('[my-reviews] loading state changed', { loading });
+  }, [loading]);
 
   
 
@@ -198,7 +249,7 @@ export default function RequestsScreen() {
 
   // Payment is handled on web only. In-app pay is disabled.
 
-  const renderReceivedItem = ({ item }: { item: DbRequestSummary }) => {
+  const renderReceivedItem = ({ item, index }: { item: DbRequestSummary; index: number }) => {
     const reviewer = revMap[item.influencerId];
     const reviewee = item.userId ? userMap[item.userId] : undefined;
     const avatarUri = isReviewer
@@ -208,10 +259,14 @@ export default function RequestsScreen() {
       ? (reviewee?.displayName || 'User')
       : (reviewer?.displayName || 'Reviewer');
     return (
-      <TouchableOpacity
+      <MotionPressable
         key={item.id}
         style={styles.requestCard}
         onPress={() => handleRequestPress(item.id)}
+        entering={cardEntrance(index)}
+        exiting={cardExit()}
+        accessibilityRole="button"
+        accessibilityLabel={`Open request with ${displayName}`}
       >
         <View style={styles.requestHeader}>
           <RNView style={styles.influencerImageWrapper}>
@@ -258,26 +313,29 @@ export default function RequestsScreen() {
         {item.status === 'completed' && (
           <RNView style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
             {!item.archived_at ? (
-              <TouchableOpacity onPress={async () => {
+              <MotionPressable scaleEffect={false} onPress={async () => {
                 try { await archiveRequest(item.id); setRequests(prev => prev.map(r => r.id === item.id ? { ...r, archived_at: new Date().toISOString() } as any : r)); } catch {}
               }}>
                 <Text style={{ color: Colors.brand.textSecondary }}>Archive</Text>
-              </TouchableOpacity>
+              </MotionPressable>
             ) : (
-              <TouchableOpacity onPress={async () => {
+              <MotionPressable scaleEffect={false} onPress={async () => {
                 try { await unarchiveRequest(item.id); setRequests(prev => prev.map(r => r.id === item.id ? { ...r, archived_at: null } as any : r)); } catch {}
               }}>
                 <Text style={{ color: Colors.brand.textSecondary }}>Unarchive</Text>
-              </TouchableOpacity>
+              </MotionPressable>
             )}
           </RNView>
         )}
-      </TouchableOpacity>
+      </MotionPressable>
     );
   };
 
-  const SkeletonCard = () => (
-    <View style={[styles.requestCard, { backgroundColor: Colors.brand.cardBackground }]}> 
+  const SkeletonCard = ({ index }: { index: number }) => (
+    <MotionView
+      entering={cardEntrance(index)}
+      style={[styles.requestCard, { backgroundColor: Colors.brand.cardBackground }]}
+    > 
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View style={[styles.influencerImage, { backgroundColor: 'rgba(255,255,255,0.1)' }]} />
         <View style={{ flex: 1 }}>
@@ -286,7 +344,7 @@ export default function RequestsScreen() {
         </View>
       </View>
       <View style={{ height: 10, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 6, marginTop: 16, width: '80%' }} />
-    </View>
+    </MotionView>
   );
 
   const data = requests.filter(r => {
@@ -305,8 +363,8 @@ export default function RequestsScreen() {
         renderItem={renderItem}
         refreshControl={
           <RefreshControl
-            refreshing={loading}
-            onRefresh={refreshData}
+            refreshing={refreshing}
+            onRefresh={() => refreshData('pull')}
             tintColor={Colors.brand.textPrimary}
             colors={[Colors.brand.accentMagenta]}
             progressBackgroundColor={Colors.brand.background}
@@ -316,26 +374,41 @@ export default function RequestsScreen() {
         contentContainerStyle={{ paddingBottom: 24, paddingHorizontal: 16, paddingTop: 0 }}
         ListHeaderComponent={(
           <>
-            <View style={styles.headerPlain}>
-              <View style={styles.headerContentPlain}>
+            <MotionView entering={subtleFadeIn()} style={styles.headerPlain}>
+              <MotionView entering={subtleFadeIn()} style={styles.headerContentPlain}>
                 <Text style={styles.titlePlain}>My Reviews</Text>
                 <Text style={styles.subtitlePlain} numberOfLines={1}>Track your review requests and feedback</Text>
 
                 <RNView style={[styles.countersRowPlain, { justifyContent: 'center' }]}>
-                  <TouchableOpacity onPress={() => setFilter('active')} style={[styles.counterPillPlain, filter === 'active' ? styles.counterPillActive : styles.counterPillInactive]}>
+                  <MotionPressable
+                    onPress={() => setFilter('active')}
+                    style={[styles.counterPillPlain, filter === 'active' ? styles.counterPillActive : styles.counterPillInactive]}
+                    scaleEffect={false}
+                    accessibilityRole="button"
+                  >
                     <Text style={styles.counterTextPlain}>Active {requests.filter(r => (r.status === 'pending' || r.status === 'accepted' || r.status === 'paid' || r.status === 'in_progress') && !r.archived_at).length}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setFilter('completed')} style={[styles.counterPillPlain, filter === 'completed' ? styles.counterPillActive : styles.counterPillInactive]}>
+                  </MotionPressable>
+                  <MotionPressable
+                    onPress={() => setFilter('completed')}
+                    style={[styles.counterPillPlain, filter === 'completed' ? styles.counterPillActive : styles.counterPillInactive]}
+                    scaleEffect={false}
+                    accessibilityRole="button"
+                  >
                     <Text style={styles.counterTextPlain}>Completed {requests.filter(r => r.status === 'completed' && !r.archived_at).length}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setFilter('archived')} style={[styles.counterPillPlain, filter === 'archived' ? styles.counterPillActive : styles.counterPillInactive]}>
+                  </MotionPressable>
+                  <MotionPressable
+                    onPress={() => setFilter('archived')}
+                    style={[styles.counterPillPlain, filter === 'archived' ? styles.counterPillActive : styles.counterPillInactive]}
+                    scaleEffect={false}
+                    accessibilityRole="button"
+                  >
                     <Text style={styles.counterTextPlain}>Archived {requests.filter(r => !!r.archived_at).length}</Text>
-                  </TouchableOpacity>
+                  </MotionPressable>
                 </RNView>
-              </View>
-            </View>
-            <View style={styles.discoverButtonContainer}>
-              <TouchableOpacity style={styles.newRequestButton} onPress={handleNewRequest}>
+              </MotionView>
+            </MotionView>
+            <MotionView entering={cardEntrance(0)} style={styles.discoverButtonContainer}>
+              <MotionPressable style={styles.newRequestButton} onPress={handleNewRequest}>
                 <ExpoLinearGradient
                   colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
                   start={{ x: 0, y: 0 }}
@@ -343,23 +416,23 @@ export default function RequestsScreen() {
                   style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 14 }}
                 />
                 <Text style={styles.newRequestButtonText}>Discover Reviewers</Text>
-              </TouchableOpacity>
-            </View>
+              </MotionPressable>
+            </MotionView>
           </>
         )}
         ListEmptyComponent={(
           <View style={{ paddingHorizontal: 16, paddingTop: 24 }}>
-            {loading ? (
+            {!hasShownSkeleton && loading ? (
               <>
                 {[...Array(4)].map((_, i) => (
-                  <SkeletonCard key={`s-${i}`} />
+                  <SkeletonCard key={`s-${i}`} index={i} />
                 ))}
               </>
             ) : (
-              <View style={styles.emptyStateMinimal}>
+              <MotionView entering={subtleFadeIn()} style={styles.emptyStateMinimal}>
                 <Text style={styles.emptyStateTitle}>No reviews yet</Text>
                 <Text style={styles.emptyStateText}>Start your journey by requesting your first review from an influencer!</Text>
-              </View>
+              </MotionView>
             )}
           </View>
         )}

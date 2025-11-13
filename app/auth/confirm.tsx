@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Linking } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Linking, Animated } from 'react-native';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { supabase } from '@/lib/supabase';
+import { ensureProfileForCurrentUser } from '@/lib/api';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ConfirmEmailScreen() {
   const { email, token_hash, type } = useLocalSearchParams<{ email?: string; token_hash?: string; type?: string }>();
@@ -12,6 +14,24 @@ export default function ConfirmEmailScreen() {
   const [cooldownSec, setCooldownSec] = useState(0);
   const [isConfirming, setIsConfirming] = useState(false);
   const [confirmationStatus, setConfirmationStatus] = useState<'pending' | 'success' | 'error'>('pending');
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [confirmationStatus, fadeAnim, scaleAnim]);
 
   useEffect(() => {
     if (cooldownSec <= 0) return;
@@ -32,8 +52,20 @@ export default function ConfirmEmailScreen() {
           if (error) {
             setConfirmationStatus('error');
           } else {
+            // Ensure profile exists after email confirmation
+            // This should create the profile if it doesn't exist (new signups)
+            try {
+              await ensureProfileForCurrentUser();
+            } catch (profileErr) {
+              console.warn('Profile creation warning:', profileErr);
+              // Continue even if profile creation fails
+            }
             setConfirmationStatus('success');
-            // Stay on this page and show next-step options rather than auto-redirect
+            // Auto-redirect to push notifications screen after 2 seconds
+            // All new users (email/password signup) go through onboarding
+            setTimeout(() => {
+              router.replace('/onboarding/push-notifications');
+            }, 2000);
           }
         } catch (err) {
           setConfirmationStatus('error');
@@ -73,12 +105,14 @@ export default function ConfirmEmailScreen() {
   return (
     <View style={styles.container}>
       <ExpoLinearGradient
-        colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+        colors={[Colors.brand.background, Colors.brand.cardBackgroundLight]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
         style={styles.backgroundGradient}
       />
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <ExpoLinearGradient
-          colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+          colors={[Colors.brand.cardBackgroundLight, Colors.brand.cardBackground]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.header}
@@ -89,12 +123,22 @@ export default function ConfirmEmailScreen() {
           </View>
         </ExpoLinearGradient>
 
-        <View style={styles.card}>
+        <Animated.View 
+          style={[
+            styles.card,
+            {
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }],
+            },
+          ]}
+        >
           <Image source={require('@/Auro_side_side_no_bg.png')} style={styles.logo} resizeMode="contain" />
           
           {isConfirming && (
             <>
-              <ActivityIndicator color={Colors.brand.accentMagenta} size="large" />
+              <View style={styles.iconContainer}>
+                <ActivityIndicator color={Colors.brand.accentMagenta} size="large" />
+              </View>
               <Text style={styles.title}>Confirming your email...</Text>
               <Text style={styles.body}>Please wait while we verify your email address.</Text>
             </>
@@ -102,34 +146,42 @@ export default function ConfirmEmailScreen() {
 
           {confirmationStatus === 'success' && !isConfirming && (
             <>
+              <View style={styles.iconContainer}>
+                <Ionicons name="checkmark-circle" size={64} color={Colors.brand.success} />
+              </View>
               <Text style={styles.title}>Email confirmed! 🎉</Text>
-              <Text style={styles.body}>Welcome to Auro — you’re all set. Choose a next step below.</Text>
+              <Text style={styles.body}>Welcome to Auro! Let's get you started with onboarding.</Text>
 
-              <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/auth')}>
-                <Text style={styles.primaryBtnText}>Open the app</Text>
+              <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/onboarding/push-notifications')}>
+                <ExpoLinearGradient
+                  colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.primaryBtnGradient}
+                />
+                <Text style={styles.primaryBtnText}>Continue to Onboarding</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.replace('/requests/new')}>
-                <Text style={styles.secondaryBtnText}>Request a review</Text>
-              </TouchableOpacity>
-
-              <View style={{ height: 8 }} />
-
-              <TouchableOpacity style={styles.storeBtn} onPress={() => Linking.openURL('https://apps.apple.com/') }>
-                <Text style={styles.storeBtnText}>Download on the App Store</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.storeBtn} onPress={() => Linking.openURL('https://play.google.com/store') }>
-                <Text style={styles.storeBtnText}>Get it on Google Play</Text>
+              <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.replace('/(tabs)/requests')}>
+                <Text style={styles.secondaryBtnText}>Skip to App</Text>
               </TouchableOpacity>
             </>
           )}
 
           {confirmationStatus === 'error' && !isConfirming && (
             <>
+              <View style={styles.iconContainer}>
+                <Ionicons name="close-circle" size={64} color={Colors.brand.error} />
+              </View>
               <Text style={styles.title}>Confirmation failed</Text>
               <Text style={styles.body}>We couldn't verify your email. The link may have expired or been used already.</Text>
               <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/auth')}>
+                <ExpoLinearGradient
+                  colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.primaryBtnGradient}
+                />
                 <Text style={styles.primaryBtnText}>Back to Sign In</Text>
               </TouchableOpacity>
             </>
@@ -137,24 +189,51 @@ export default function ConfirmEmailScreen() {
 
           {confirmationStatus === 'pending' && !isConfirming && (
             <>
+              <View style={styles.iconContainer}>
+                <Ionicons name="mail-outline" size={64} color={Colors.brand.accentMagenta} />
+              </View>
               <Text style={styles.title}>Please confirm your email</Text>
-              {!!email && <Text style={styles.body}>We sent a link to {email}.</Text>}
-              {!email && <Text style={styles.body}>We sent a confirmation link to your inbox.</Text>}
+              {!!email && <Text style={styles.body}>We sent a confirmation link to <Text style={styles.emailHighlight}>{email}</Text>. Please check your inbox and click the link to verify your email address.</Text>}
+              {!email && <Text style={styles.body}>We sent a confirmation link to your inbox. Please check your email and click the link to verify your email address.</Text>}
+              
+              <Text style={[styles.body, { marginTop: 8, fontSize: 14, opacity: 0.8 }]}>
+                After verifying your email, you'll be able to continue with onboarding.
+              </Text>
 
               <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/auth')}>
+                <ExpoLinearGradient
+                  colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.primaryBtnGradient}
+                />
                 <Text style={styles.primaryBtnText}>Back to Sign In</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={[styles.secondaryBtn, (sending || cooldownSec > 0) && { opacity: 0.7 }]} disabled={sending || cooldownSec > 0} onPress={handleResend}>
+              <TouchableOpacity 
+                style={[styles.secondaryBtn, (sending || cooldownSec > 0) && { opacity: 0.7 }]} 
+                disabled={sending || cooldownSec > 0} 
+                onPress={handleResend}
+              >
                 {sending ? (
-                  <ActivityIndicator color={Colors.brand.textOnGradient} />
+                  <ActivityIndicator color={Colors.brand.textPrimary} />
                 ) : (
-                  <Text style={styles.secondaryBtnText}>{cooldownSec > 0 ? `Resend in ${cooldownSec}s` : 'Resend verification email'}</Text>
+                  <View style={styles.resendButtonContent}>
+                    <Ionicons 
+                      name="refresh-outline" 
+                      size={18} 
+                      color={Colors.brand.textPrimary} 
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text style={styles.secondaryBtnText}>
+                      {cooldownSec > 0 ? `Resend in ${cooldownSec}s` : 'Resend verification email'}
+                    </Text>
+                  </View>
                 )}
               </TouchableOpacity>
             </>
           )}
-        </View>
+        </Animated.View>
       </ScrollView>
     </View>
   );
@@ -168,14 +247,97 @@ const styles = StyleSheet.create({
   headerContent: { alignItems: 'center', backgroundColor: 'transparent', width: '100%' },
   logoTop: { width: 120, height: 48, marginBottom: 10 },
   tagline: { fontSize: 16, color: Colors.brand.textOnGradient, textAlign: 'center', opacity: 0.9, fontWeight: '500' },
-  card: { margin: 28, backgroundColor: Colors.brand.cardBackground, borderRadius: 32, padding: 28, alignItems: 'center', shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 12, borderWidth: 0 },
-  logo: { width: 200, height: 80, marginBottom: 12 },
-  title: { color: Colors.brand.textPrimary, fontSize: 22, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
-  body: { color: Colors.brand.textSecondary, textAlign: 'center', marginBottom: 16 },
-  primaryBtn: { backgroundColor: Colors.brand.accentMagenta, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 24, marginTop: 8, width: 260, alignItems: 'center' },
-  primaryBtnText: { color: Colors.brand.textOnGradient, fontSize: 16, fontWeight: '600' },
-  secondaryBtn: { backgroundColor: Colors.brand.cardBackground, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 24, marginTop: 12, width: 260, alignItems: 'center', borderWidth: 1, borderColor: Colors.brand.divider },
-  secondaryBtnText: { color: Colors.brand.textPrimary, fontSize: 16, fontWeight: '600' },
+  card: { 
+    margin: 28, 
+    backgroundColor: Colors.brand.cardBackground, 
+    borderRadius: 32, 
+    padding: 32, 
+    alignItems: 'center', 
+    shadowColor: Colors.brand.shadow, 
+    shadowOffset: { width: 0, height: 8 }, 
+    shadowOpacity: 0.15, 
+    shadowRadius: 24, 
+    elevation: 12, 
+    borderWidth: 1, 
+    borderColor: Colors.brand.divider,
+  },
+  iconContainer: {
+    marginBottom: 20,
+    backgroundColor: 'transparent',
+  },
+  logo: { width: 180, height: 72, marginBottom: 24 },
+  title: { 
+    color: Colors.brand.textPrimary, 
+    fontSize: 24, 
+    fontWeight: '700', 
+    textAlign: 'center', 
+    marginBottom: 12,
+    fontFamily: 'Poppins_700Bold',
+  },
+  body: { 
+    color: Colors.brand.textSecondary, 
+    textAlign: 'center', 
+    marginBottom: 24,
+    fontSize: 15,
+    lineHeight: 22,
+    paddingHorizontal: 8,
+  },
+  emailHighlight: {
+    color: Colors.brand.accentMagenta,
+    fontWeight: '600',
+  },
+  primaryBtn: { 
+    backgroundColor: Colors.brand.accentMagenta, 
+    paddingVertical: 14, 
+    paddingHorizontal: 24, 
+    borderRadius: 24, 
+    marginTop: 8, 
+    width: '100%',
+    maxWidth: 280,
+    alignItems: 'center',
+    overflow: 'hidden',
+    shadowColor: Colors.brand.accentMagenta,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  primaryBtnGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 24,
+  },
+  primaryBtnText: { 
+    color: Colors.brand.textOnGradient, 
+    fontSize: 16, 
+    fontWeight: '600',
+    zIndex: 1,
+  },
+  secondaryBtn: { 
+    backgroundColor: Colors.brand.cardBackground, 
+    paddingVertical: 14, 
+    paddingHorizontal: 24, 
+    borderRadius: 24, 
+    marginTop: 12, 
+    width: '100%',
+    maxWidth: 280,
+    alignItems: 'center', 
+    borderWidth: 1, 
+    borderColor: Colors.brand.divider,
+  },
+  secondaryBtnText: { 
+    color: Colors.brand.textPrimary, 
+    fontSize: 16, 
+    fontWeight: '600',
+  },
+  resendButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
   storeBtn: { backgroundColor: Colors.brand.cardBackground, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 24, marginTop: 12, width: 260, alignItems: 'center', borderWidth: 1, borderColor: Colors.brand.divider },
   storeBtnText: { color: Colors.brand.textPrimary, fontSize: 16, fontWeight: '600' },
 });

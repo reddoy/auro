@@ -6,10 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import Spinner from '@/components/Spinner';
 import AvatarUploader from '@/components/AvatarUploader';
 import { getCurrentProfile, updateProfile, getSignedAvatarUrl } from '@/lib/profile';
 import type { Profile } from '@/types';
+import { MotionView, cardEntrance } from '@/components/motion';
+import { SkeletonBlock, SkeletonCircle, SkeletonParagraph } from '@/components/Skeletons';
 
 export default function ProfileSettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -163,8 +164,63 @@ export default function ProfileSettingsScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer]}> 
-        <Spinner size={40} color={Colors.brand.accentMagenta} />
+      <View style={styles.container}>
+        <View style={[styles.header, { paddingTop: 12 }]}>
+          <View style={{ marginRight: 12 }}>
+            <SkeletonCircle size={40} />
+          </View>
+          <SkeletonBlock width={140} height={24} />
+          <View style={styles.headerSpacer} />
+        </View>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={{ paddingBottom: 120 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <MotionView entering={cardEntrance(0)} style={styles.card}>
+            <SkeletonBlock width="50%" height={24} />
+            <View style={{ alignItems: 'center', marginTop: 24 }}>
+              <SkeletonCircle size={120} />
+              <SkeletonBlock width="60%" height={14} style={{ marginTop: 16 }} />
+            </View>
+          </MotionView>
+
+          <MotionView entering={cardEntrance(1)} style={styles.card}>
+            <SkeletonBlock width="45%" height={24} />
+            <SkeletonParagraph
+              lines={5}
+              lineHeight={14}
+              widths={['100%', '98%', '95%', '90%', '60%']}
+              style={{ marginTop: 20 }}
+            />
+          </MotionView>
+
+          <MotionView entering={cardEntrance(2)} style={styles.card}>
+            <SkeletonBlock width="50%" height={24} />
+            <SkeletonParagraph
+              lines={4}
+              lineHeight={14}
+              widths={['100%', '95%', '92%', '70%']}
+              style={{ marginTop: 20 }}
+            />
+          </MotionView>
+
+          <MotionView entering={cardEntrance(3)} style={styles.card}>
+            <SkeletonBlock width="60%" height={24} />
+            <SkeletonParagraph
+              lines={2}
+              lineHeight={14}
+              widths={['80%', '60%']}
+              style={{ marginTop: 20 }}
+            />
+          </MotionView>
+
+          <View style={styles.saveBar}>
+            <MotionView entering={cardEntrance(4)} style={[styles.saveButton, styles.saveButtonDisabled]}>
+              <SkeletonBlock width="40%" height={18} />
+            </MotionView>
+          </View>
+        </ScrollView>
       </View>
     );
   }

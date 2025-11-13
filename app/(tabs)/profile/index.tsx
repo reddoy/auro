@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { StyleSheet, TouchableOpacity, Alert, FlatList, Platform, Linking, Switch, View as RNView, Image, RefreshControl, ScrollView } from 'react-native';
+import { StyleSheet, Alert, FlatList, Platform, Linking, Switch, View as RNView, Image, RefreshControl, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -13,6 +13,8 @@ import { getCurrentProfile, updateProfile, getSignedAvatarUrl } from '@/lib/prof
 import type { Profile } from '@/types';
 import { createStripeExpressLoginLink, createStripeExpressOnboardingLink } from '@/lib/payments';
 import { getRequestsByReviewer } from '@/lib/api';
+import { MotionPressable, MotionView, cardEntrance, subtleFadeIn } from '@/components/motion';
+import { SkeletonBlock, SkeletonCircle, SkeletonParagraph } from '@/components/Skeletons';
 
 const socialIcons = {
   instagram: require('../../../Instagram_icon-removebg-preview.png'),
@@ -33,35 +35,44 @@ export default function ProfileScreen() {
     completedPaid: 0,           // Money fully paid out to reviewer's Stripe account
     completedCount: 0           // Total number of completed reviews
   });
+  const skipNextFocusRefresh = useRef(true);
+  const refreshInFlight = useRef(false);
   
 
 
   useEffect(() => {
     const run = async () => {
+      refreshInFlight.current = true;
+      console.log('[profile] initial load started');
       try {
         const p = await getCurrentProfile();
         setProfile(p);
+        if (!p) {
+          console.log('[profile] getCurrentProfile returned null');
+        }
         if (p?.id && p?.is_reviewer) {
           try {
             const link = await createStripeExpressLoginLink(p.id);
             setStripePortalUrl(link);
+            console.log('[profile] stripe portal link fetched');
           } catch {}
           // Fetch earnings data
           try {
             const requests = await getRequestsByReviewer(p.id);
+            console.log('[profile] fetched reviewer requests count', requests.length);
             
-            // Helper function to calculate reviewer amount for a request
-            const calculateReviewerAmount = (r: any) => {
-              if (r.reviewer_amount_cents) return r.reviewer_amount_cents;
-              // Fallback: amount - auro fee (20%) - stripe fee (2.9% + $0.30)
-              const amount = r.amount_cents || 0;
-              const auroFee = Math.round(amount * 0.2);
-              const stripeFee = Math.round(amount * 0.029 + 30);
-              return amount - auroFee - stripeFee;
-            };
+          // Helper function to calculate reviewer amount for a request
+          // SIMPLE MODEL: Reviewer gets totalAmount - auroFee (Auro absorbs Stripe fee)
+          const calculateReviewerAmount = (r: any) => {
+            if (r.reviewer_amount_cents) return r.reviewer_amount_cents;
+            // Fallback: amount - application_fee_cents
+            const amount = r.amount_cents || 0;
+            const auroFee = r.application_fee_cents || 0;
+            return amount - auroFee;
+          };
             
-            // Awaiting completion: paid reviews not yet completed (status = 'paid')
-            const awaitingCompletionRequests = requests.filter(r => r.status === 'paid' && r.amount_cents);
+            // Awaiting completion: paid reviews not yet completed (status = 'paid' or 'in_progress')
+            const awaitingCompletionRequests = requests.filter(r => (r.status === 'paid' || r.status === 'in_progress') && r.amount_cents);
             const awaitingCompletion = awaitingCompletionRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
             
             // Awaiting payout: completed reviews that haven't been distributed yet
@@ -82,7 +93,7 @@ export default function ProfileScreen() {
             const completedPaid = completedPaidRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
             
             // Total completed count
-            const completedCount = requests.filter(r => r.status === 'completed' && r.amount_cents).length;
+            const completedCount = requests.filter(r => r.status === 'completed').length;
             
             console.log('[earnings-calc] Awaiting completion:', awaitingCompletion / 100);
             console.log('[earnings-calc] Awaiting payout:', awaitingPayout / 100);
@@ -95,16 +106,27 @@ export default function ProfileScreen() {
               completedPaid: completedPaid / 100,
               completedCount: completedCount
             });
+            console.log('[profile] earnings updated', {
+              awaitingCompletion: awaitingCompletion / 100,
+              awaitingPayout: awaitingPayout / 100,
+              completedPaid: completedPaid / 100,
+              completedCount,
+            });
           } catch (e) {
             console.log('[earnings] error fetching', e);
           }
         } else {
           setStripePortalUrl(null);
           setEarnings({ awaitingCompletion: 0, awaitingPayout: 0, completedPaid: 0, completedCount: 0 });
+          if (p?.id) {
+            console.log('[profile] user is not a reviewer, resetting earnings');
+          }
         }
       } finally {
         // Mark initial load complete so pull-to-refresh becomes available
         setInitialLoad(false);
+        refreshInFlight.current = false;
+        console.log('[profile] initial load finished');
       }
     };
     run();
@@ -212,79 +234,223 @@ export default function ProfileScreen() {
 
 
 
-  const onRefresh = useCallback(async () => {
-    try {
-      setRefreshing(true);
-      const p = await getCurrentProfile();
-      setProfile(p);
-      if (p?.id && p?.is_reviewer) {
-        try {
-          const link = await createStripeExpressLoginLink(p.id);
-          setStripePortalUrl(link);
-        } catch {}
-          // Refresh earnings data
-        try {
-          const requests = await getRequestsByReviewer(p.id);
-          
-          // Helper function to calculate reviewer amount for a request
-          const calculateReviewerAmount = (r: any) => {
-            if (r.reviewer_amount_cents) return r.reviewer_amount_cents;
-            // Fallback: amount - auro fee (20%) - stripe fee (2.9% + $0.30)
-            const amount = r.amount_cents || 0;
-            const auroFee = Math.round(amount * 0.2);
-            const stripeFee = Math.round(amount * 0.029 + 30);
-            return amount - auroFee - stripeFee;
-          };
-          
-          // Awaiting completion: paid reviews not yet completed (status = 'paid')
-          const awaitingCompletionRequests = requests.filter(r => r.status === 'paid' && r.amount_cents);
-          const awaitingCompletion = awaitingCompletionRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
-          
-          // Awaiting payout: completed reviews that haven't been distributed yet
-          // This includes both pending distributions and failed distributions
-          const awaitingPayoutRequests = requests.filter(r => 
-            r.status === 'completed' && 
-            r.amount_cents && 
-            !r.payment_distributed
-          );
-          const awaitingPayout = awaitingPayoutRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
-          
-          // Completed & paid: fully paid out to reviewer (status = 'completed', payment_distributed = true)
-          const completedPaidRequests = requests.filter(r => 
-            r.status === 'completed' && 
-            r.amount_cents && 
-            r.payment_distributed === true
-          );
-          const completedPaid = completedPaidRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
-          
-          // Total completed count
-          const completedCount = requests.filter(r => r.status === 'completed' && r.amount_cents).length;
-          
-          setEarnings({ 
-            awaitingCompletion: awaitingCompletion / 100,
-            awaitingPayout: awaitingPayout / 100,
-            completedPaid: completedPaid / 100,
-            completedCount: completedCount
-          });
-        } catch {}
+  const refreshProfile = useCallback(
+    async (trigger: 'focus' | 'pull') => {
+      if (refreshInFlight.current) {
+        console.log('[profile] refresh skipped', { trigger, reason: 'in-flight' });
+        return;
       }
-    } finally {
-      setRefreshing(false);
-      setInitialLoad(false);
-    }
-  }, []);
+      if (trigger === 'focus' && initialLoad) {
+        console.log('[profile] refresh skipped', { trigger, reason: 'initial load still running' });
+        return;
+      }
+
+      refreshInFlight.current = true;
+      console.log('[profile] refresh start', { trigger });
+      try {
+        if (trigger === 'pull') {
+          setRefreshing(true);
+        }
+        const p = await getCurrentProfile();
+        setProfile(p);
+        if (p?.id && p?.is_reviewer) {
+          try {
+            const link = await createStripeExpressLoginLink(p.id);
+            setStripePortalUrl(link);
+          } catch {}
+          // Refresh earnings data
+          try {
+            const requests = await getRequestsByReviewer(p.id);
+
+            // Helper function to calculate reviewer amount for a request
+            // SIMPLE MODEL: Reviewer gets totalAmount - auroFee (Auro absorbs Stripe fee)
+            const calculateReviewerAmount = (r: any) => {
+              if (r.reviewer_amount_cents) return r.reviewer_amount_cents;
+              // Fallback: amount - application_fee_cents
+              const amount = r.amount_cents || 0;
+              const auroFee = r.application_fee_cents || 0;
+              return amount - auroFee;
+            };
+
+            // Awaiting completion: paid reviews not yet completed (status = 'paid' or 'in_progress')
+            const awaitingCompletionRequests = requests.filter(r => (r.status === 'paid' || r.status === 'in_progress') && r.amount_cents);
+            const awaitingCompletion = awaitingCompletionRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
+
+            // Awaiting payout: completed reviews that haven't been distributed yet
+            // This includes both pending distributions and failed distributions
+            const awaitingPayoutRequests = requests.filter(r =>
+              r.status === 'completed' &&
+              r.amount_cents &&
+              !r.payment_distributed
+            );
+            const awaitingPayout = awaitingPayoutRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
+
+            // Completed & paid: fully paid out to reviewer (status = 'completed', payment_distributed = true)
+            const completedPaidRequests = requests.filter(r =>
+              r.status === 'completed' &&
+              r.amount_cents &&
+              r.payment_distributed === true
+            );
+            const completedPaid = completedPaidRequests.reduce((sum, r) => sum + calculateReviewerAmount(r), 0);
+
+            // Total completed count
+            const completedCount = requests.filter(r => r.status === 'completed').length;
+
+            setEarnings({
+              awaitingCompletion: awaitingCompletion / 100,
+              awaitingPayout: awaitingPayout / 100,
+              completedPaid: completedPaid / 100,
+              completedCount: completedCount
+            });
+            console.log('[profile] refresh earnings updated', {
+              trigger,
+              awaitingCompletion: awaitingCompletion / 100,
+              awaitingPayout: awaitingPayout / 100,
+              completedPaid: completedPaid / 100,
+              completedCount,
+            });
+          } catch {}
+        } else {
+          setStripePortalUrl(null);
+          setEarnings({ awaitingCompletion: 0, awaitingPayout: 0, completedPaid: 0, completedCount: 0 });
+          if (p?.id) {
+            console.log('[profile] refresh reset earnings for non-reviewer', { trigger });
+          }
+        }
+      } finally {
+        if (trigger === 'pull') {
+          setRefreshing(false);
+        }
+        refreshInFlight.current = false;
+        setInitialLoad(false);
+        console.log('[profile] refresh finished', { trigger });
+      }
+    },
+    [initialLoad]
+  );
+
+  const onRefresh = useCallback(() => {
+    refreshProfile('pull');
+  }, [refreshProfile]);
 
   // Refresh profile when screen gains focus so recent changes (e.g., become reviewer) show up
   useFocusEffect(
     useCallback(() => {
-      // Only refresh if not initial load to prevent spacing issues
-      if (!initialLoad) {
-        onRefresh();
+      if (skipNextFocusRefresh.current) {
+        skipNextFocusRefresh.current = false;
+        console.log('[profile] focus refresh skipped on first focus');
+        return () => {};
       }
-    }, [onRefresh, initialLoad])
+      console.log('[profile] screen focused, triggering refresh');
+      refreshProfile('focus');
+      return () => {};
+    }, [refreshProfile])
   );
 
-  
+  useEffect(() => {
+    console.log('[profile] initialLoad changed', { initialLoad });
+  }, [initialLoad]);
+
+  useEffect(() => {
+    console.log('[profile] refreshing changed', { refreshing });
+  }, [refreshing]);
+
+  let sectionCursor = 0;
+  const nextEntrance = () => cardEntrance(sectionCursor++);
+
+  const renderSkeleton = (overlay = false) => {
+    const content = (
+      <ScrollView
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: 24,
+          paddingHorizontal: 16,
+          paddingTop: overlay ? 0 : insets.top,
+        }}
+      >
+        <MotionView entering={subtleFadeIn()} style={styles.header}>
+          <MotionView entering={subtleFadeIn()} style={styles.headerContent}>
+            <MotionView entering={subtleFadeIn()} style={styles.profileSection}>
+              <View style={{ marginRight: 20 }}>
+                <SkeletonCircle size={94} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <SkeletonBlock width="75%" height={32} />
+                <SkeletonBlock width="50%" height={16} style={{ marginTop: 10 }} />
+              </View>
+            </MotionView>
+            <SkeletonBlock width="60%" height={50} radius={24} />
+          </MotionView>
+        </MotionView>
+
+        <MotionView entering={cardEntrance(1)} style={styles.bioSection}>
+          <SkeletonBlock width="45%" height={26} />
+          <SkeletonParagraph
+            lines={3}
+            lineHeight={14}
+            widths={['95%', '85%', '70%']}
+            style={{ marginTop: 18 }}
+          />
+          <SkeletonBlock width="100%" height={48} radius={18} style={{ marginTop: 20 }} />
+        </MotionView>
+
+        <MotionView entering={cardEntrance(2)} style={styles.bioSection}>
+          <SkeletonBlock width="35%" height={24} />
+          <SkeletonParagraph
+            lines={4}
+            lineHeight={14}
+            widths={['90%', '80%', '70%', '50%']}
+            style={{ marginTop: 16 }}
+          />
+        </MotionView>
+
+        <MotionView entering={cardEntrance(3)} style={styles.actionsSection}>
+          {[0, 1].map((index) => (
+            <View
+              key={index}
+              style={[
+                styles.actionItem,
+                { borderBottomWidth: index === 1 ? 0 : StyleSheet.hairlineWidth },
+              ]}
+            >
+              <View style={styles.actionIconContainer}>
+                <SkeletonCircle size={44} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <SkeletonBlock width="60%" height={18} />
+              </View>
+              <SkeletonBlock width={18} height={18} radius={9} />
+            </View>
+          ))}
+        </MotionView>
+
+        <MotionView entering={cardEntrance(4)} style={styles.dangerSection}>
+          <View style={styles.logoutButtonDark}>
+            <SkeletonBlock width="40%" height={18} />
+          </View>
+        </MotionView>
+      </ScrollView>
+    );
+
+    if (overlay) {
+      return (
+        <View style={styles.profileRefreshOverlay}>
+          {content}
+        </View>
+      );
+    }
+
+    return (
+      <View style={[styles.container, { paddingTop: 0 }]}>
+        {content}
+      </View>
+    );
+  };
+
+  if (initialLoad) {
+    return renderSkeleton();
+  }
 
   return (
     <View style={[styles.container, { paddingTop: 0 }]}>
@@ -307,10 +473,10 @@ export default function ProfileScreen() {
         bounces={true}
         alwaysBounceVertical={true}
       >
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <View style={styles.profileSection}>
-              <View style={styles.avatarContainer}>
+        <MotionView entering={nextEntrance()} style={styles.header}>
+          <MotionView entering={subtleFadeIn()} style={styles.headerContent}>
+            <MotionView entering={subtleFadeIn()} style={styles.profileSection}>
+              <MotionView entering={subtleFadeIn()} style={styles.avatarContainer}>
                 <AvatarUploader
                   uri={avatarUri}
                   previousPathOrUrl={profile?.avatar_url || undefined as any}
@@ -339,24 +505,29 @@ export default function ProfileScreen() {
                   size={94}
                   accessibilityLabel="Change avatar"
                 />
-              </View>
-              <View style={styles.userInfo}>
+              </MotionView>
+              <MotionView entering={subtleFadeIn()} style={styles.userInfo}>
                 <Text style={styles.userName}>
                   {profile ? (profile.full_name || profile.username || 'User') : 'Loading...'}
                 </Text>
                 {!!profile?.created_at && (
                   <Text style={styles.userEmail}>Joined {new Date(profile.created_at).toLocaleDateString()}</Text>
                 )}
-              </View>
-            </View>
+              </MotionView>
+            </MotionView>
 
-            <TouchableOpacity style={styles.editButton} onPress={() => router.push('/(tabs)/profile/settings')} accessibilityLabel="Edit profile">
+            <MotionPressable
+              entering={subtleFadeIn()}
+              style={styles.editButton}
+              onPress={() => router.push('/(tabs)/profile/settings')}
+              accessibilityLabel="Edit profile"
+            >
               <Text style={styles.editButtonText}>Edit Profile</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+            </MotionPressable>
+          </MotionView>
+        </MotionView>
 
-        <View style={styles.bioSection}>
+        <MotionView entering={nextEntrance()} style={styles.bioSection}>
           <Text style={styles.sectionTitle}>Reviewer Settings</Text>
           <Text style={{ color: Colors.brand.textSecondary }}>Control your reviewer status and price per review.</Text>
           
@@ -406,16 +577,16 @@ export default function ProfileScreen() {
                     </Text>
                   </View>
                   
-                  <View style={[styles.paymentButtonsContainer, { marginTop: 16 }]}>
-                    <TouchableOpacity
+                  <MotionView entering={subtleFadeIn()} style={[styles.paymentButtonsContainer, { marginTop: 16 }]}>
+                    <MotionPressable
                       onPress={() => router.push('/(tabs)/profile/transaction-history')}
                       style={styles.transactionHistoryButton}
                     >
                       <Text style={styles.transactionHistoryText}>
                         📊 Transaction History
                       </Text>
-                    </TouchableOpacity>
-                  </View>
+                    </MotionPressable>
+                  </MotionView>
                 </View>
               </View>
                 </>
@@ -424,12 +595,12 @@ export default function ProfileScreen() {
               {/* Reviewer Status Toggle */}
               <View style={styles.reviewerStatusRow}>
                 <Text style={styles.reviewerStatusLabel}>Reviewer Status</Text>
-                <View style={styles.reviewerStatusControls}>
-                  <View style={[styles.statusIndicator, profile?.is_reviewer && styles.statusIndicatorActive]}>
+                <MotionView entering={subtleFadeIn()} style={styles.reviewerStatusControls}>
+                  <MotionView entering={subtleFadeIn()} style={[styles.statusIndicator, profile?.is_reviewer && styles.statusIndicatorActive]}>
                     <Text style={[styles.statusIndicatorText, profile?.is_reviewer && styles.statusIndicatorTextActive]}>
                       {profile?.is_reviewer ? '● Active' : '● Inactive'}
                     </Text>
-                  </View>
+                  </MotionView>
                   <Switch
                     value={!!profile?.is_reviewer}
                     onValueChange={async (val) => {
@@ -449,38 +620,42 @@ export default function ProfileScreen() {
                     thumbColor={profile?.is_reviewer ? '#ffffff' : '#f4f3f4'}
                     style={styles.reviewerSwitch}
                   />
-                </View>
+                </MotionView>
               </View>
               {profile?.is_reviewer ? (
                 <>
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
                     <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Share Your Reviewer Profile</Text>
-                    <TouchableOpacity onPress={handleCopyReviewerLink} accessibilityLabel="Copy reviewer link" style={styles.shareProfileButton}>
+                    <MotionPressable
+                      onPress={handleCopyReviewerLink}
+                      accessibilityLabel="Copy reviewer link"
+                      style={styles.shareProfileButton}
+                    >
                       <Text style={styles.shareProfileButtonText}>🔗 Share Profile Link</Text>
-                    </TouchableOpacity>
+                    </MotionPressable>
                   </View>
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
                     <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Price per Review</Text>
                     <View style={styles.priceCard}>
                       <Text style={styles.priceText}>{profile?.hourly_rate != null ? `$${profile.hourly_rate}/review` : 'Tap to set your rate →'}</Text>
-                      <TouchableOpacity onPress={handleEditRate} accessibilityLabel="Edit rate" style={styles.editRateButton}>
+                      <MotionPressable onPress={handleEditRate} accessibilityLabel="Edit rate" style={styles.editRateButton}>
                         <Text style={styles.editRateButtonText}>Edit</Text>
-                      </TouchableOpacity>
+                      </MotionPressable>
                     </View>
                   </View>
                 </>
               ) : null}
-            </View>
+            </MotionView>
 
             {profile?.bio && (
-              <View style={styles.bioSection}>
+              <MotionView entering={nextEntrance()} style={styles.bioSection}>
                 <Text style={styles.sectionTitle}>Bio</Text>
                 <Text style={styles.bioText}>{profile.bio}</Text>
-              </View>
+              </MotionView>
             )}
 
             {!!profile?.links && (
-              <View style={styles.bioSection}>
+              <MotionView entering={nextEntrance()} style={styles.bioSection}>
                 <Text style={styles.sectionTitle}>Socials</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', backgroundColor: Colors.brand.cardBackground }}>
                   {(() => {
@@ -493,48 +668,48 @@ export default function ProfileScreen() {
                     if (tt) items.push({ label: 'TikTok', url: `https://www.tiktok.com/@${tt.replace(/^@+/, '')}`, key: 'tiktok' });
                     if (lt) items.push({ label: 'Linktree', url: `https://linktr.ee/${lt.replace(/^@+/, '')}`, key: 'linktree' });
                     return items.map((it, idx) => (
-                      <TouchableOpacity key={`${it.label}-${idx}`} onPress={() => Linking.openURL(it.url)} style={styles.socialLinkBtn}>
+                      <MotionPressable key={`${it.label}-${idx}`} onPress={() => Linking.openURL(it.url)} style={styles.socialLinkBtn}>
                         <Image source={socialIcons[it.key]} style={styles.socialIcon} resizeMode="contain" />
                         <Text style={styles.socialLinkText}>{it.label}</Text>
-                      </TouchableOpacity>
+                      </MotionPressable>
                     ));
                   })()}
                 </View>
-              </View>
+              </MotionView>
             )}
 
             {/* Removed separate payouts banner; consolidated into Reviewer Settings card above */}
 
             {!!profile?.skills?.length && (
-              <View style={styles.bioSection}>
+              <MotionView entering={nextEntrance()} style={styles.bioSection}>
                 <Text style={styles.sectionTitle}>Skills</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                   {profile.skills!.map((s, idx) => (
                     <View key={`${s}-${idx}`} style={styles.skillChip}><Text style={styles.skillChipText}>{s}</Text></View>
                   ))}
                 </View>
-              </View>
+              </MotionView>
             )}
 
             {!!(profile?.links?.twitter || profile?.links?.linkedin || profile?.links?.github) && (
-              <View style={styles.bioSection}>
+              <MotionView entering={nextEntrance()} style={styles.bioSection}>
                 <Text style={styles.sectionTitle}>Links</Text>
                 <View style={{ flexDirection: 'row' }}>
                   {profile?.links?.twitter ? (
-                    <TouchableOpacity onPress={() => Linking.openURL(profile.links!.twitter!)} style={styles.socialLinkBtn}><Text style={styles.socialLinkText}>Twitter</Text></TouchableOpacity>
+                    <MotionPressable onPress={() => Linking.openURL(profile.links!.twitter!)} style={styles.socialLinkBtn}><Text style={styles.socialLinkText}>Twitter</Text></MotionPressable>
                   ) : null}
                   {profile?.links?.linkedin ? (
-                    <TouchableOpacity onPress={() => Linking.openURL(profile.links!.linkedin!)} style={styles.socialLinkBtn}><Text style={styles.socialLinkText}>LinkedIn</Text></TouchableOpacity>
+                    <MotionPressable onPress={() => Linking.openURL(profile.links!.linkedin!)} style={styles.socialLinkBtn}><Text style={styles.socialLinkText}>LinkedIn</Text></MotionPressable>
                   ) : null}
                   {profile?.links?.github ? (
-                    <TouchableOpacity onPress={() => Linking.openURL(profile.links!.github!)} style={styles.socialLinkBtn}><Text style={styles.socialLinkText}>GitHub</Text></TouchableOpacity>
+                    <MotionPressable onPress={() => Linking.openURL(profile.links!.github!)} style={styles.socialLinkBtn}><Text style={styles.socialLinkText}>GitHub</Text></MotionPressable>
                   ) : null}
                 </View>
-              </View>
+              </MotionView>
             )}
 
-        <View style={styles.actionsSection}>
-          <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/settings')} accessibilityLabel="Open account settings">
+        <MotionView entering={nextEntrance()} style={styles.actionsSection}>
+          <MotionPressable style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/settings')} accessibilityLabel="Open account settings">
             <View style={styles.actionIconContainer}>
               <ExpoLinearGradient
                 colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
@@ -546,10 +721,10 @@ export default function ProfileScreen() {
             </View>
             <Text style={styles.actionText}>Account Settings</Text>
             <Text style={styles.actionArrow}>›</Text>
-          </TouchableOpacity>
+          </MotionPressable>
 
 
-          <TouchableOpacity style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/hinge-clone')} accessibilityLabel="Open Hinge profile clone">
+          <MotionPressable style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/hinge-clone')} accessibilityLabel="Open Hinge profile clone">
             <View style={styles.actionIconContainer}>
               <ExpoLinearGradient
                 colors={['#FF6B6B', '#FF8E8E']}
@@ -561,22 +736,40 @@ export default function ProfileScreen() {
             </View>
             <Text style={styles.actionText}>Hinge Profile Clone</Text>
             <Text style={styles.actionArrow}>›</Text>
-          </TouchableOpacity>
-        </View>
+          </MotionPressable>
+        </MotionView>
 
-        <View style={styles.dangerSection}>
-          <TouchableOpacity style={styles.logoutButtonDark} onPress={handleLogout}>
+        <MotionView entering={nextEntrance()} style={styles.dangerSection}>
+          <MotionPressable style={styles.logoutButtonDark} onPress={handleLogout}>
             <View style={styles.logoutButtonBorder} />
             <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
-        </View>
+          </MotionPressable>
+        </MotionView>
       </ScrollView>
-
+      {refreshing ? renderSkeleton(true) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: Colors.brand.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.brand.textSecondary,
+  },
+  profileRefreshOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Colors.brand.background,
+    zIndex: 6,
+  },
   container: { flex: 1, backgroundColor: Colors.brand.background },
   scrollView: { flex: 1, backgroundColor: 'transparent' },
   header: { paddingTop: 20, paddingBottom: 40, paddingHorizontal: 0, backgroundColor: Colors.brand.cardBackground, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 24, elevation: 12 },

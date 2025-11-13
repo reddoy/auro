@@ -21,6 +21,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
+import { setupNotificationListeners } from '@/lib/notifications';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -79,7 +80,20 @@ function RootLayoutNav() {
           // Clear any corrupted session data
           await supabase.auth.signOut();
         }
-        setIsSignedIn(!!data.session);
+        
+        // Check if user has a session but email is not verified
+        if (data.session?.user && !data.session.user.email_confirmed_at) {
+          // Email not verified - sign out and redirect to confirmation
+          await supabase.auth.signOut();
+          setIsSignedIn(false);
+          // Redirect to confirmation screen if not already there
+          const currentPath = pathname || '';
+          if (!currentPath.startsWith('/auth/confirm')) {
+            router.replace({ pathname: '/auth/confirm', params: { email: data.session.user.email || '' } });
+          }
+        } else {
+          setIsSignedIn(!!data.session);
+        }
       } catch (err) {
         console.warn('Failed to get session:', err);
         setIsSignedIn(false);
@@ -89,19 +103,32 @@ function RootLayoutNav() {
     };
     init();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsSignedIn(!!session);
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      // Check email verification on auth state change
+      if (session?.user && !session.user.email_confirmed_at) {
+        // Email not verified - sign out
+        await supabase.auth.signOut();
+        setIsSignedIn(false);
+        // Redirect to confirmation screen if not already there
+        const currentPath = pathname || '';
+        if (!currentPath.startsWith('/auth/confirm') && !currentPath.startsWith('/auth')) {
+          router.replace({ pathname: '/auth/confirm', params: { email: session.user.email || '' } });
+        }
+      } else {
+        setIsSignedIn(!!session);
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // Redirect unauthenticated users to /auth, except when already on /auth
+  // Redirect unauthenticated users to /intro, except when already on /intro or /auth
   useEffect(() => {
     if (!sessionChecked) return;
     try {
       const onAuth = pathname?.startsWith('/auth');
-      if (!isSignedIn && !onAuth) {
-        router.replace('/auth');
+      const onIntro = pathname?.startsWith('/intro');
+      if (!isSignedIn && !onAuth && !onIntro) {
+        router.replace('/intro');
       }
     } catch {}
   }, [sessionChecked, isSignedIn, pathname]);
@@ -148,6 +175,43 @@ function RootLayoutNav() {
     return () => sub.remove();
   }, []);
 
+  // Setup push notification listeners
+  useEffect(() => {
+    if (!isSignedIn) return;
+
+    const cleanup = setupNotificationListeners(
+      // Handle notification received while app is in foreground
+      (notification) => {
+        console.log('Notification received in foreground:', notification);
+        // You can show a custom toast or handle the notification here
+      },
+      // Handle notification tapped
+      (response) => {
+        console.log('Notification tapped:', response);
+        const data = response.notification.request.content.data;
+        // Handle navigation based on notification data
+        if (data?.type === 'review_completed' && data?.requestId) {
+          router.push(`/review/${data.requestId}`);
+        } else if (data?.type === 'request_accepted' && data?.requestId) {
+          router.push(`/(tabs)/requests/reviewer/${data.requestId}`);
+        } else if (data?.type === 'payment_received' && data?.requestId) {
+          router.push(`/(tabs)/profile`);
+        } else if (data?.type === 'new_request' && data?.requestId) {
+          router.push(`/(tabs)/requests/reviewer/${data.requestId}`);
+        } else if (data?.type === 'review_submitted' && data?.requestId) {
+          router.push(`/(tabs)/requests/reviewer/${data.requestId}`);
+        }
+      }
+    );
+
+    // Note: We don't automatically call setupPushNotifications here
+    // because that would trigger permission prompts on every app load.
+    // Instead, users are prompted during onboarding, and the token
+    // will be registered when they grant permission.
+
+    return cleanup;
+  }, [isSignedIn, router]);
+
   if (!sessionChecked) return null;
 
   return (
@@ -165,6 +229,7 @@ function RootLayoutNav() {
               <LogoHeader />
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="index" />
+                <Stack.Screen name="intro" />
                 <Stack.Screen name="auth" />
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
