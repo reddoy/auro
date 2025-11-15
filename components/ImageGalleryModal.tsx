@@ -1,16 +1,8 @@
 import React from 'react';
-import { Modal, Pressable, StyleSheet, View, FlatList, Dimensions, Platform, PanGestureHandler, PinchGestureHandler, State } from 'react-native';
+import { Modal, Pressable, StyleSheet, View, FlatList, Dimensions, Platform } from 'react-native';
 import { Text } from '@/components/Themed';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring, 
-  runOnJS,
-  interpolate,
-  Extrapolate
-} from 'react-native-reanimated';
 
 type Props = {
   visible: boolean;
@@ -26,77 +18,18 @@ type ZoomableImageProps = {
 };
 
 export function ZoomableImage({ uri, width, height }: ZoomableImageProps) {
-  const scale = useSharedValue(1);
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
-  const savedScale = useSharedValue(1);
-  const savedTranslateX = useSharedValue(0);
-  const savedTranslateY = useSharedValue(0);
-
-  const pinchGestureHandler = (event: any) => {
-    'worklet';
-    if (event.state === State.BEGAN) {
-      savedScale.value = scale.value;
-    } else if (event.state === State.ACTIVE) {
-      scale.value = Math.max(0.5, Math.min(3, savedScale.value * event.scale));
-    } else if (event.state === State.END || event.state === State.CANCELLED) {
-      savedScale.value = scale.value;
-      if (scale.value < 1) {
-        scale.value = withSpring(1);
-        translateX.value = withSpring(0);
-        translateY.value = withSpring(0);
-        savedScale.value = 1;
-        savedTranslateX.value = 0;
-        savedTranslateY.value = 0;
-      }
-    }
-  };
-
-  const panGestureHandler = (event: any) => {
-    'worklet';
-    if (event.state === State.BEGAN) {
-      savedTranslateX.value = translateX.value;
-      savedTranslateY.value = translateY.value;
-    } else if (event.state === State.ACTIVE) {
-      if (scale.value > 1) {
-        const maxTranslateX = (width * (scale.value - 1)) / 2;
-        const maxTranslateY = (height * (scale.value - 1)) / 2;
-        
-        translateX.value = Math.max(-maxTranslateX, Math.min(maxTranslateX, savedTranslateX.value + event.translationX));
-        translateY.value = Math.max(-maxTranslateY, Math.min(maxTranslateY, savedTranslateY.value + event.translationY));
-      }
-    } else if (event.state === State.END || event.state === State.CANCELLED) {
-      savedTranslateX.value = translateX.value;
-      savedTranslateY.value = translateY.value;
-    }
-  };
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { translateX: translateX.value },
-        { translateY: translateY.value },
-        { scale: scale.value },
-      ],
-    };
-  });
-
+  // Simple web-compatible version without gesture handlers
+  // For native platforms, you'd want to add react-native-gesture-handler support
   return (
-    <PanGestureHandler onGestureEvent={panGestureHandler} minPointers={1} maxPointers={1}>
-      <Animated.View style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>
-        <PinchGestureHandler onGestureEvent={pinchGestureHandler}>
-          <Animated.View style={animatedStyle}>
-            <Image
-              source={{ uri }}
-              style={{ width, height, resizeMode: 'contain' }}
-              contentFit="contain"
-              cachePolicy="none"
-              transition={200}
-            />
-          </Animated.View>
-        </PinchGestureHandler>
-      </Animated.View>
-    </PanGestureHandler>
+    <View style={{ width, height, justifyContent: 'center', alignItems: 'center' }}>
+      <Image
+        source={{ uri }}
+        style={{ width, height }}
+        contentFit="contain"
+        cachePolicy="none"
+        transition={200}
+      />
+    </View>
   );
 }
 

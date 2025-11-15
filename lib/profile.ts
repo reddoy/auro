@@ -32,7 +32,7 @@ export async function getCurrentProfile(): Promise<Profile | null> {
   if (!user) return null;
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, full_name, avatar_url, bio, is_reviewer, created_at, skills, links, preferences, hourly_rate, availability, reviews_given_count, reviews_received_count, rating_average, packages, pending_payout_balance_cents, awaiting_payout_balance_cents, completed_paid_total_cents')
+    .select('id, username, full_name, avatar_url, bio, is_reviewer, created_at, skills, links, preferences, hourly_rate, availability, reviews_given_count, reviews_received_count, rating_average, packages, pending_payout_balance_cents, awaiting_payout_balance_cents, completed_paid_total_cents, stripe_connect_account_id')
     .eq('id', user.id)
     .maybeSingle();
   if (error) throw error;

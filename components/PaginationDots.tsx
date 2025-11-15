@@ -51,12 +51,19 @@ const styles = StyleSheet.create({
     transition: 'all 0.3s ease',
   },
   activeDot: {
-    backgroundColor: Colors.brand.primary,
+    backgroundColor: Colors.brand.accentOrange,
     width: 8,
-    height: 6,
-    borderRadius: 3,
+    height: 8,
+    borderRadius: 4,
+    shadowColor: Colors.brand.accentOrange,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.6,
+    shadowRadius: 4,
+    elevation: 4,
   },
   inactiveDot: {
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    width: 6,
+    height: 6,
   },
 });

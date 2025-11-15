@@ -24,6 +24,7 @@ import VideoReviewSection from '@/components/VideoReviewSection';
 import PaginationDots from '@/components/PaginationDots';
 import SectionSlideCard from '@/components/SectionSlideCard';
 import ReviewStatusCard from '@/components/ReviewStatusCard';
+import DatingProfilePhotoGallery from '@/components/DatingProfilePhotoGallery';
 import StarRating from '@/components/StarRating';
 
 // Removed unused URL helper functions since we're not showing social links in this screen
@@ -61,36 +62,44 @@ export default function ReviewerRequestScreen() {
   const [overallNote, setOverallNote] = useState<string>('');
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isVideoReviewMode, setIsVideoReviewMode] = useState(false);
+  const scrollViewRef = useRef<ScrollView | null>(null);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const ratingSteps = React.useMemo(() => Array.from({ length: 9 }, (_, index) => 1 + index * 0.5), []);
 
   const frameMetrics = React.useMemo(() => {
-    const horizontalMargin = 32;
-    const desiredMaxWidth = 360;
-    const availableWidth = Math.max(windowWidth - horizontalMargin, 220);
-    const constrainedWidth = Math.min(availableWidth, desiredMaxWidth);
-    const availableHeight = Math.max(windowHeight - (insets.top + insets.bottom + 160), 480);
-    const heightLimitedWidth = availableHeight * (9 / 16);
-    const frameWidth = Math.max(220, Math.min(constrainedWidth, heightLimitedWidth));
-    const frameHeight = frameWidth * (16 / 9);
-    const slideHorizontalPadding = Math.max((windowWidth - frameWidth) / 2, 16);
-    const slideTopPadding = insets.top + 96;
-    const slideBottomPadding = insets.bottom + 36;
-    const paginationTop = slideTopPadding + frameHeight / 2 - 48;
-    const paginationLeft = Math.max(slideHorizontalPadding - 24, 12);
+    // Optimize for TikTok vertical video - content fills screen, no card background
+    // Top-left camera, maximize content size
+    const horizontalMargin = 12; // Minimal horizontal padding for bigger content
+    
+    // Content should fill more of the screen - bigger width
+    const availableWidth = windowWidth - horizontalMargin * 2;
+    
+    // Calculate vertical spacing - minimal padding to maximize content size
+    const topSpace = Math.max(insets.top + 90, 100); // Space for top-left camera
+    const bottomSpace = insets.bottom + 8; // Minimal bottom padding
+    
+    // Calculate available height for content - fills most of screen
+    const availableHeight = windowHeight - topSpace - bottomSpace;
+    
+    // Calculate pagination position - center it in the content area
+    const contentCenterY = topSpace + availableHeight / 2;
+    const paginationTop = contentCenterY - 40;
+    const paginationRight = 16;
 
     return {
-      frameWidth,
-      frameHeight,
-      slideHorizontalPadding,
-      slideTopPadding,
-      slideBottomPadding,
+      contentWidth: availableWidth,
+      contentHeight: availableHeight,
+      slideHorizontalPadding: horizontalMargin,
+      slideTopPadding: topSpace,
+      slideBottomPadding: bottomSpace,
       paginationTop,
-      paginationLeft,
+      paginationRight,
     };
   }, [insets, windowHeight, windowWidth]);
 
-  const recorderTop = Math.max(insets.top + 16, frameMetrics.slideTopPadding - 96);
+  // Position recorder at top-left corner for TikTok-style composition
+  const recorderTop = insets.top + 16;
+  const recorderLeft = 16;
   
   // Video review is now the only option - no individual section ratings needed
   const canSubmit = React.useMemo(() => !!videoUri && overallRating > 0, [videoUri, overallRating]);
@@ -105,9 +114,9 @@ export default function ReviewerRequestScreen() {
     }
   }, [request?.notes]);
   
-  // Create combined slides array: profile + section cards + photos + overall rating
+  // Create combined slides array: profile + section cards + photos + rating input + overall summary
   const allSlides = React.useMemo(() => {
-    const slides: Array<{type: 'profile' | 'section' | 'photo' | 'overall', data: any, index: number}> = [];
+    const slides: Array<{type: 'profile' | 'section' | 'photo' | 'rating' | 'overall', data: any, index: number}> = [];
     let slideIndex = 0;
 
     slides.push({
@@ -132,6 +141,14 @@ export default function ReviewerRequestScreen() {
       });
     }
 
+    // First: Rating input slide (no photo, just rating and notes input)
+    slides.push({
+      type: 'rating',
+      data: { name: reviewee?.displayName || 'User' },
+      index: slideIndex++
+    });
+
+    // Second: Overall summary slide (profile photo with rating and notes displayed)
     slides.push({
       type: 'overall',
       data: { name: reviewee?.displayName || 'User', profilePicture: avatarUri },
@@ -190,10 +207,31 @@ export default function ReviewerRequestScreen() {
             ? (n.media.datingProfileScreenshots as string[])
             : [];
 
-          const photosToSign = datingProfilePhotos.length ? datingProfilePhotos : basePhotos;
+          let photosToSign = datingProfilePhotos.length ? datingProfilePhotos : basePhotos;
+          
+          // Add fake placeholder images for testing (always add for now to see the gallery)
+          // In production, remove this and uncomment the conditional check below
+          photosToSign = [
+            'https://picsum.photos/seed/dating1/400/600',
+            'https://picsum.photos/seed/dating2/400/600',
+            'https://picsum.photos/seed/dating3/400/600',
+            'https://picsum.photos/seed/dating4/400/600',
+            'https://picsum.photos/seed/dating5/400/600',
+            'https://picsum.photos/seed/dating6/400/600',
+          ];
+          // Original logic (for production):
+          // if (photosToSign.length === 0) {
+          //   photosToSign = [...];
+          // }
 
           if (photosToSign.length) {
-            setSignedProfilePhotos(await signRequestMediaUrls(photosToSign));
+            // If using placeholder images, use them directly (they're already URLs)
+            // Otherwise sign the URLs
+            if (photosToSign.some(url => url.includes('picsum.photos'))) {
+              setSignedProfilePhotos(photosToSign);
+            } else {
+              setSignedProfilePhotos(await signRequestMediaUrls(photosToSign));
+            }
           } else {
             setSignedProfilePhotos([]);
           }
@@ -349,19 +387,18 @@ export default function ReviewerRequestScreen() {
           }
         />
 
-        {/* Video Review Section with section cards */}
-        {reviewSections.length > 0 && (
+        {/* Modern Dating Profile Photo Gallery */}
+        {signedProfilePhotos.length > 0 && (
           <View style={[styles.section, styles.mediaSection]}>
             <Text style={styles.label}>Dating Profile Photos</Text>
             <Text style={[styles.sectionHint, { marginTop: 0 }]}>
               Browse their uploaded dating profile shots while you plan your feedback.
             </Text>
-            <VideoReviewSection
-              sections={reviewSections}
-              showSectionHeaders={false}
-              onPhotoPress={(photos, index) => {
+            <DatingProfilePhotoGallery
+              uris={signedProfilePhotos}
+              onPhotoPress={(index) => {
                 if (!isVideoReviewMode) {
-                  setGalleryUris(photos);
+                  setGalleryUris(signedProfilePhotos);
                   setGalleryIndex(index);
                   setGalleryOpen(true);
                 }
@@ -421,36 +458,68 @@ export default function ReviewerRequestScreen() {
         )}
 
         {request.status === 'in_progress' && (
-          <View style={styles.section}>
-            <Text style={styles.label}>Video Review</Text>
-            <Text style={styles.sectionHint}>
-              Record a dating profile video review while you swipe through their photos, then wrap with an overall rating and summary note.
-            </Text>
-            {/* Temporarily enabled for testing on web */}
-            {/* {Platform.OS !== 'web' && ( */}
-              <RNView style={{ marginTop: 16 }}>
-                <TouchableOpacity style={[styles.actionButton, styles.primaryButton]} onPress={() => {
-                  setIsVideoReviewMode(true);
-                  setRecordingModeOpen(true);
-                }}>
-                  <Text style={styles.actionButtonText}>Start Video Review</Text>
+          <RNView style={styles.videoReviewSection}>
+            <RNView style={styles.videoReviewHeader}>
+              <RNView style={styles.videoReviewIconContainer}>
+                <Text style={styles.videoReviewIcon}>🎥</Text>
+              </RNView>
+              <RNView style={styles.videoReviewTitleContainer}>
+                <Text style={styles.videoReviewTitle}>Video Review</Text>
+                <Text style={styles.videoReviewSubtitle}>
+                  Record your review while swiping through their photos
+                </Text>
+              </RNView>
+            </RNView>
+            
+            {!videoUri ? (
+              <RNView style={styles.videoReviewContent}>
+                <RNView style={styles.videoReviewFeatureList}>
+                  <RNView style={styles.videoReviewFeature}>
+                    <Text style={styles.videoReviewFeatureIcon}>📸</Text>
+                    <Text style={styles.videoReviewFeatureText}>Swipe through photos while recording</Text>
+                  </RNView>
+                  <RNView style={styles.videoReviewFeature}>
+                    <Text style={styles.videoReviewFeatureIcon}>⭐</Text>
+                    <Text style={styles.videoReviewFeatureText}>Add ratings and notes as you go</Text>
+                  </RNView>
+                  <RNView style={styles.videoReviewFeature}>
+                    <Text style={styles.videoReviewFeatureIcon}>🚀</Text>
+                    <Text style={styles.videoReviewFeatureText}>Share directly to TikTok & Instagram</Text>
+                  </RNView>
+                </RNView>
+                <TouchableOpacity 
+                  style={styles.videoReviewStartButton} 
+                  onPress={() => {
+                    setIsVideoReviewMode(true);
+                    setRecordingModeOpen(true);
+                  }}
+                >
+                  <Text style={styles.videoReviewStartButtonIcon}>▶</Text>
+                  <Text style={styles.videoReviewStartButtonText}>Start Video Review</Text>
                 </TouchableOpacity>
               </RNView>
-            {/* )} */}
-            {videoUri && (
-              <RNView style={{ marginTop: 16, padding: 16, backgroundColor: Colors.brand.status.completed + '15', borderRadius: 16, borderWidth: 2, borderColor: Colors.brand.status.completed }}>
-                <Text style={{ color: Colors.brand.status.completed, fontWeight: '700', textAlign: 'center', fontSize: 16 }}>✅ Video Review Complete</Text>
+            ) : (
+              <RNView style={styles.videoReviewCompleteContainer}>
+                <RNView style={styles.videoReviewCompleteBadge}>
+                  <Text style={styles.videoReviewCompleteIcon}>✅</Text>
+                  <Text style={styles.videoReviewCompleteText}>Video Review Complete</Text>
+                </RNView>
+                <Text style={styles.videoReviewCompleteHint}>
+                  Ready to submit! Your video will be attached to the review.
+                </Text>
               </RNView>
             )}
 
             <TouchableOpacity
-              style={[styles.actionButton, canSubmit ? styles.primaryButton : styles.disabledButton, { marginTop: 20 }]}
+              style={[styles.videoReviewSubmitButton, canSubmit ? styles.videoReviewSubmitButtonActive : styles.videoReviewSubmitButtonDisabled]}
               onPress={handleSubmitReview}
               disabled={!canSubmit || submitting}
             >
-              <Text style={styles.actionButtonText}>{submitting ? 'Submitting...' : 'Submit Review'}</Text>
+              <Text style={styles.videoReviewSubmitButtonText}>
+                {submitting ? 'Submitting...' : 'Submit Review'}
+              </Text>
             </TouchableOpacity>
-          </View>
+          </RNView>
         )}
       </ScrollView>
       {/* Immersive recording modal with rating and note controls */}
@@ -459,13 +528,25 @@ export default function ReviewerRequestScreen() {
           
           {/* Vertical photo carousel with rating and note controls */}
           <ScrollView 
+            ref={scrollViewRef}
             pagingEnabled 
             showsVerticalScrollIndicator={false} 
             style={{ flex: 1 }} 
             contentContainerStyle={{ alignItems: 'center' }}
+            onScroll={(event) => {
+              const offsetY = event.nativeEvent.contentOffset.y;
+              const index = Math.round(offsetY / windowHeight);
+              if (index !== currentPhotoIndex && index >= 0 && index < allSlides.length) {
+                setCurrentPhotoIndex(index);
+              }
+            }}
+            scrollEventThrottle={16}
             onMomentumScrollEnd={(event) => {
-              const index = Math.round(event.nativeEvent.contentOffset.y / windowHeight);
-              setCurrentPhotoIndex(index);
+              const offsetY = event.nativeEvent.contentOffset.y;
+              const index = Math.round(offsetY / windowHeight);
+              if (index >= 0 && index < allSlides.length) {
+                setCurrentPhotoIndex(index);
+              }
             }}
           >
             {/* All slides: profile, section cards, and photos */}
@@ -477,94 +558,94 @@ export default function ReviewerRequestScreen() {
                   {
                     width: windowWidth,
                     height: windowHeight,
-                    paddingHorizontal: frameMetrics.slideHorizontalPadding,
+                    paddingLeft: frameMetrics.slideHorizontalPadding,
+                    paddingRight: frameMetrics.slideHorizontalPadding,
                     paddingTop: frameMetrics.slideTopPadding,
                     paddingBottom: frameMetrics.slideBottomPadding,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
                   },
                 ]}
               >
                 {slide.type === 'profile' && (
-                  <RNView style={[styles.overlayCard, { width: frameMetrics.frameWidth, maxHeight: frameMetrics.frameHeight }] }>
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center', flex: 1 }] }>
                     {/* Auro Logo */}
-                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
-                    <Text style={styles.overlayTitle}>{slide.data.name}</Text>
-                    {slide.data.message ? (<Text style={styles.overlayText}>{slide.data.message}</Text>) : null}
-                    {slide.data.profilePicture ? (<Image source={{ uri: slide.data.profilePicture }} style={{ width: '100%', aspectRatio: 1, borderRadius: 12, marginTop: 12 }} contentFit="cover" />) : null}
+                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 20, alignSelf: 'center' }} contentFit="contain" />
+                    <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', fontSize: 28, marginBottom: 8 }]}>{slide.data.name}</Text>
+                    {slide.data.message ? (<Text style={[styles.overlayText, { marginTop: 8, marginBottom: 24, lineHeight: 22, textAlign: 'center', width: '100%', fontSize: 16 }]}>{slide.data.message}</Text>) : null}
+                    {slide.data.profilePicture ? (
+                      <Image 
+                        source={{ uri: slide.data.profilePicture }} 
+                        style={{ width: '85%', maxWidth: 380, aspectRatio: 1, borderRadius: 16, marginTop: 8, alignSelf: 'center' }} 
+                        contentFit="cover" 
+                      />
+                    ) : null}
                   </RNView>
                 )}
                 
                 {slide.type === 'section' && (
-                  <SectionSlideCard
-                    title={slide.data.title}
-                    subtitle={slide.data.subtitle}
-                    revieweeName={reviewee?.displayName || 'User'}
-                    style={{ marginHorizontal: 0, width: frameMetrics.frameWidth }}
-                  />
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center' }] }>
+                    <SectionSlideCard
+                      title={slide.data.title}
+                      subtitle={slide.data.subtitle}
+                      revieweeName={reviewee?.displayName || 'User'}
+                      style={{ marginHorizontal: 0, width: '100%', maxWidth: '100%' }}
+                    />
+                  </RNView>
                 )}
                 
                 {slide.type === 'photo' && (
-                  <RNView style={[styles.overlayPhotoCard, { width: frameMetrics.frameWidth, maxHeight: frameMetrics.frameHeight }] }>
+                  <RNView style={[styles.overlayPhotoCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center' }] }>
                     {/* Auro Logo */}
-                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 12, alignSelf: 'center' }} contentFit="contain" />
-                    <Text style={styles.overlayTitle}>{slide.data.category} - Photo {slide.data.photoIndex + 1}</Text>
+                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 64, height: 32, marginBottom: 10, alignSelf: 'center' }} contentFit="contain" />
+                    <Text style={[styles.overlayTitle, { marginBottom: 6, fontSize: 20, textAlign: 'center', width: '100%' }]}>{slide.data.category} - Photo {slide.data.photoIndex + 1}</Text>
                     <TouchableOpacity
                       style={{ 
-                        width: '100%', 
+                        width: '95%', 
+                        maxWidth: 450,
                         aspectRatio: 3/4, 
-                        borderRadius: 12, 
-                        marginTop: 8,
-                        overflow: 'hidden'
+                        borderRadius: 16, 
+                        marginTop: 0,
+                        marginBottom: 8,
+                        overflow: 'hidden',
+                        alignSelf: 'center',
+                        shadowColor: Colors.brand.shadow,
+                        shadowOffset: { width: 0, height: 8 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 12,
+                        elevation: 8,
                       }}
                       onPress={() => {
                         setCurrentPhotoUri(slide.data.uri);
                         setPhotoModalOpen(true);
                       }}
                     >
-                      <Image source={{ uri: slide.data.uri }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
+                      <Image source={{ uri: slide.data.uri }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                     </TouchableOpacity>
-                    <Text style={[styles.overlayText, { marginTop: 16 }]}>
-                      Talk through what stands out while you record. Swipe to continue through their profile.
+                    <Text style={[styles.overlayText, { marginTop: 6, fontSize: 13, paddingHorizontal: 8, lineHeight: 18, textAlign: 'center', width: '100%' }]}>
+                      Talk through what stands out while you record. Swipe up to continue through their profile.
                     </Text>
                   </RNView>
                 )}
                 
-                {slide.type === 'overall' && (
-                  <RNView style={[styles.overlayCard, { width: frameMetrics.frameWidth, maxHeight: frameMetrics.frameHeight }] }>
+                {slide.type === 'rating' && (
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center' }] }>
                     {/* Auro Logo */}
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
-                    <Text style={styles.overlayTitle}>Overall Rating</Text>
-                    <Text style={styles.overlayText}>Rate {slide.data.name} overall</Text>
-                    
-                    {/* Profile Picture display */}
-                    {slide.data.profilePicture ? (
-                      <TouchableOpacity
-                        style={{ 
-                          width: '100%', 
-                          aspectRatio: 1, 
-                          borderRadius: 12, 
-                          marginTop: 16,
-                          marginBottom: 16,
-                          overflow: 'hidden'
-                        }}
-                        onPress={() => {
-                          setCurrentPhotoUri(slide.data.profilePicture);
-                          setPhotoModalOpen(true);
-                        }}
-                      >
-                        <Image source={{ uri: slide.data.profilePicture }} style={{ width: '100%', height: '100%', borderRadius: 12 }} contentFit="cover" />
-                      </TouchableOpacity>
-                    ) : null}
+                    <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 8 }]}>Overall Rating</Text>
+                    <Text style={[styles.overlayText, { marginBottom: 20, textAlign: 'center', width: '100%' }]}>Rate {slide.data.name} overall</Text>
                     
                     {/* Overall Rating with Stars */}
-                    <RNView style={{ marginTop: 16, alignItems: 'center' }}>
-                      <Text style={[styles.overlayText, { marginBottom: 16 }]}>Overall Rating:</Text>
+                    <RNView style={{ marginTop: 4, alignItems: 'center', width: '100%' }}>
+                      <Text style={[styles.overlayText, { marginBottom: 12, fontSize: 15, textAlign: 'center' }]}>Overall Rating:</Text>
                       <StarRating 
                         rating={overallRating * 2} // Convert 1-5 to 2-10 scale for StarRating component
                         category="Overall"
                         size="large"
                         showNumber={false}
                       />
-                      <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 16 }}>
+                      <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 16, width: '100%' }}>
                         {ratingSteps.map((rating) => {
                           const isSelected = overallRating === rating;
                           return (
@@ -588,10 +669,10 @@ export default function ReviewerRequestScreen() {
                       </RNView>
                     </RNView>
 
-                    <RNView style={{ marginTop: 20, width: '100%' }}>
-                      <Text style={[styles.overlayText, { marginBottom: 12 }]}>Overall Note</Text>
+                    <RNView style={{ marginTop: 20, width: '100%', alignItems: 'center' }}>
+                      <Text style={[styles.overlayText, { marginBottom: 10, fontSize: 15, textAlign: 'center', width: '100%' }]}>Overall Note</Text>
                       <TextInput
-                        style={styles.overallNoteInput}
+                        style={[styles.overallNoteInput, { width: '100%', maxHeight: 120 }]}
                         placeholder="Share a short summary to pair with your video review"
                         placeholderTextColor={Colors.brand.textSecondary}
                         multiline
@@ -601,6 +682,69 @@ export default function ReviewerRequestScreen() {
                         textAlignVertical="top"
                       />
                     </RNView>
+                  </RNView>
+                )}
+                
+                {slide.type === 'overall' && (
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center' }] }>
+                    {/* Auro Logo */}
+                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 72, height: 36, marginBottom: 12, alignSelf: 'center' }} contentFit="contain" />
+                    <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 6 }]}>Review Summary</Text>
+                    <Text style={[styles.overlayText, { marginBottom: 16, textAlign: 'center', width: '100%' }]}>Your final review for {slide.data.name}</Text>
+                    
+                    {/* Profile Picture display */}
+                    {slide.data.profilePicture ? (
+                      <TouchableOpacity
+                        style={{ 
+                          width: '70%', 
+                          maxWidth: 280,
+                          aspectRatio: 1, 
+                          borderRadius: 16, 
+                          marginTop: 4,
+                          marginBottom: 16,
+                          overflow: 'hidden',
+                          alignSelf: 'center',
+                          shadowColor: Colors.brand.shadow,
+                          shadowOffset: { width: 0, height: 8 },
+                          shadowOpacity: 0.3,
+                          shadowRadius: 12,
+                          elevation: 8,
+                        }}
+                        onPress={() => {
+                          setCurrentPhotoUri(slide.data.profilePicture);
+                          setPhotoModalOpen(true);
+                        }}
+                      >
+                        <Image source={{ uri: slide.data.profilePicture }} style={{ width: '100%', height: '100%', borderRadius: 16 }} contentFit="cover" />
+                      </TouchableOpacity>
+                    ) : null}
+                    
+                    {/* Overall Rating Display (Read-only) */}
+                    {overallRating > 0 && (
+                      <RNView style={{ marginTop: 4, alignItems: 'center', width: '100%', marginBottom: 16 }}>
+                        <Text style={[styles.overlayText, { marginBottom: 8, fontSize: 15, fontWeight: '600', textAlign: 'center' }]}>Your Rating:</Text>
+                        <RNView style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
+                          <Text style={[styles.overlayTitle, { fontSize: 28, marginRight: 6 }]}>{overallRating.toFixed(overallRating % 1 === 0 ? 0 : 1)}</Text>
+                          <Text style={[styles.overlayText, { fontSize: 16 }]}>/ 5</Text>
+                        </RNView>
+                        <StarRating 
+                          rating={overallRating * 2} // Convert 1-5 to 2-10 scale for StarRating component
+                          category="Overall"
+                          size="large"
+                          showNumber={false}
+                        />
+                      </RNView>
+                    )}
+
+                    {/* Overall Note Display (Read-only) */}
+                    {overallNote.trim() && (
+                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center' }}>
+                        <Text style={[styles.overlayText, { marginBottom: 8, fontSize: 15, fontWeight: '600', textAlign: 'center', width: '100%' }]}>Your Note:</Text>
+                        <RNView style={[styles.overallNoteInput, { backgroundColor: Colors.brand.cardBackgroundLight, padding: 12, width: '100%', maxHeight: 100 }]}>
+                          <Text style={[styles.overlayText, { textAlign: 'left', fontSize: 14, lineHeight: 20 }]} numberOfLines={4}>{overallNote}</Text>
+                        </RNView>
+                      </RNView>
+                    )}
                     
                     {/* Finish Video Review Button */}
                     <TouchableOpacity
@@ -609,7 +753,7 @@ export default function ReviewerRequestScreen() {
                       style={[
                         styles.actionButton, 
                         styles.acceptButton, 
-                        { marginTop: 24 },
+                        { marginTop: 20, alignSelf: 'center' },
                         (!canSubmit || submitting) && styles.disabledButton
                       ]}
                     >
@@ -623,8 +767,8 @@ export default function ReviewerRequestScreen() {
             ))}
           </ScrollView>
 
-          {/* Circular video recorder centered at top-middle */}
-          <RNView style={{ position: 'absolute', top: recorderTop, left: 0, right: 0, alignItems: 'center', zIndex: 10, elevation: 10 }}>
+          {/* Circular video recorder in top-left corner - TikTok style */}
+          <RNView style={{ position: 'absolute', top: recorderTop, left: recorderLeft, zIndex: 10, elevation: 10 }}>
             <MediaRecorder
               onRecorded={(uri) => {
                 setVideoUri(uri);
@@ -632,29 +776,64 @@ export default function ReviewerRequestScreen() {
                 setIsVideoReviewMode(false);
                 Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
               }}
-              variant="centered"
-              circleSize={120}
+              variant="corner"
+              circleSize={90}
             />
           </RNView>
 
 
-          {/* Close button - positioned to the left of camera circle */}
-          <RNView style={{ position: 'absolute', top: insets.top + 12, left: 16, zIndex: 11, elevation: 11 }}>
-            <TouchableOpacity onPress={() => {
-              setRecordingModeOpen(false);
-              setIsVideoReviewMode(false);
-            }} style={[styles.actionButton, styles.denyButton, { paddingHorizontal: 14, paddingVertical: 8 }]}>
-              <Text style={[styles.actionButtonText, styles.denyButtonText]}>Close</Text>
+          {/* Close button - positioned at top right for better accessibility */}
+          <RNView style={{ position: 'absolute', top: insets.top + 12, right: 16, zIndex: 11, elevation: 11 }}>
+            <TouchableOpacity 
+              onPress={() => {
+                if (videoUri) {
+                  Alert.alert(
+                    'Exit Video Review?',
+                    'Your recorded video will be saved. You can continue reviewing later.',
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      {
+                        text: 'Exit',
+                        style: 'destructive',
+                        onPress: () => {
+                          setRecordingModeOpen(false);
+                          setIsVideoReviewMode(false);
+                        }
+                      }
+                    ]
+                  );
+                } else {
+                  setRecordingModeOpen(false);
+                  setIsVideoReviewMode(false);
+                }
+              }} 
+              style={[
+                styles.actionButton, 
+                styles.denyButton, 
+                { 
+                  paddingHorizontal: 16, 
+                  paddingVertical: 10,
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                  borderColor: 'rgba(255,255,255,0.3)',
+                  borderRadius: 20
+                }
+              ]}
+            >
+              <Text style={[styles.actionButtonText, styles.denyButtonText, { color: '#fff', fontWeight: '700' }]}>✕</Text>
             </TouchableOpacity>
           </RNView>
 
-          {/* Vertical pagination dots on left side */}
+          {/* Vertical pagination dots on right side (left side has camera) */}
           <RNView
             style={{
               position: 'absolute',
-              top: Math.max(frameMetrics.paginationTop, frameMetrics.slideTopPadding + 16),
-              left: frameMetrics.paginationLeft,
+              top: frameMetrics.paginationTop,
+              right: frameMetrics.paginationRight,
               zIndex: 10,
+              backgroundColor: 'rgba(0,0,0,0.3)',
+              borderRadius: 16,
+              paddingVertical: 8,
+              paddingHorizontal: 6,
             }}
           >
             <PaginationDots
@@ -663,6 +842,7 @@ export default function ReviewerRequestScreen() {
               orientation="vertical"
             />
           </RNView>
+          
         </RNView>
       </Modal>
       <ImageGalleryModal visible={galleryOpen} uris={galleryUris} initialIndex={galleryIndex} onClose={() => setGalleryOpen(false)} />
@@ -687,7 +867,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.12)',
   },
-  mediaSection: { alignItems: 'stretch', gap: 16 },
+  mediaSection: { 
+    alignItems: 'stretch', 
+    gap: 16,
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    elevation: 0,
+    borderWidth: 0,
+    padding: 0,
+    marginHorizontal: 20,
+    marginVertical: 12,
+  },
   label: { fontSize: 22, color: Colors.brand.textPrimary, marginBottom: 12, fontWeight: '900', letterSpacing: 0.4 },
   value: { fontSize: 16, color: Colors.brand.textPrimary, lineHeight: 26, fontWeight: '500' },
   selfie: { width: '100%', aspectRatio: 1, borderRadius: 16, marginTop: 8, maxHeight: 320 },
@@ -704,35 +894,45 @@ const styles = StyleSheet.create({
 
   disabledButton: { backgroundColor: Colors.brand.border, opacity: 0.6 },
   recordingSlide: {
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
   overlayCard: { 
-    backgroundColor: Colors.brand.cardBackground, 
-    borderRadius: 20, 
-    padding: 24, 
-    borderWidth: 2,
-    borderColor: Colors.brand.accentOrange,
-    shadowColor: Colors.brand.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12
+    backgroundColor: 'transparent', // Removed card background for TikTok-style clean look
+    borderRadius: 0, 
+    padding: 0, 
+    borderWidth: 0,
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    maxWidth: '100%',
+    flex: 1,
+    overflow: 'hidden',
   },
   overlayPhotoCard: { 
-    backgroundColor: Colors.brand.cardBackground, 
-    borderRadius: 20, 
-    padding: 24, 
-    borderWidth: 2,
-    borderColor: Colors.brand.accentOrange,
-    shadowColor: Colors.brand.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 12
+    backgroundColor: 'transparent', // Removed card background for TikTok-style clean look
+    borderRadius: 0, 
+    padding: 0, 
+    borderWidth: 0,
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    maxWidth: '100%',
+    overflow: 'hidden',
   },
-  overlayTitle: { fontSize: 20, fontWeight: '900', color: Colors.brand.textPrimary, marginBottom: 8 },
-  overlayText: { fontSize: 15, color: Colors.brand.textSecondary, lineHeight: 21 },
+  overlayTitle: { fontSize: 24, fontWeight: '900', color: Colors.brand.textPrimary, marginBottom: 12, textAlign: 'center', letterSpacing: 0.3 },
+  overlayText: { fontSize: 15, color: Colors.brand.textSecondary, lineHeight: 24, textAlign: 'center', fontWeight: '500' },
   
   // New styles for video review interface
   ratingButton: { 
@@ -775,5 +975,157 @@ const styles = StyleSheet.create({
     borderColor: Colors.brand.divider,
     backgroundColor: Colors.brand.cardBackgroundLight,
     color: Colors.brand.textPrimary,
+  },
+  
+  // Modern Video Review Section Styles
+  videoReviewSection: {
+    marginHorizontal: 20,
+    marginVertical: 12,
+    backgroundColor: 'transparent',
+    borderRadius: 24,
+    padding: 0,
+    shadowOpacity: 0,
+    elevation: 0,
+    borderWidth: 0,
+  },
+  videoReviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  videoReviewIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: Colors.brand.accentOrange + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  videoReviewIcon: {
+    fontSize: 28,
+  },
+  videoReviewTitleContainer: {
+    flex: 1,
+  },
+  videoReviewTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: Colors.brand.textPrimary,
+    marginBottom: 6,
+    letterSpacing: 0.4,
+  },
+  videoReviewSubtitle: {
+    fontSize: 15,
+    color: Colors.brand.textSecondary,
+    fontWeight: '500',
+    lineHeight: 22,
+  },
+  videoReviewContent: {
+    marginTop: 8,
+  },
+  videoReviewFeatureList: {
+    marginBottom: 20,
+  },
+  videoReviewFeature: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    marginBottom: 4,
+  },
+  videoReviewFeatureIcon: {
+    fontSize: 20,
+    marginRight: 12,
+    width: 28,
+  },
+  videoReviewFeatureText: {
+    fontSize: 15,
+    color: Colors.brand.textPrimary,
+    fontWeight: '500',
+    flex: 1,
+  },
+  videoReviewStartButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.brand.accentOrange,
+    borderRadius: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    shadowColor: Colors.brand.accentOrange,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 0,
+  },
+  videoReviewStartButtonIcon: {
+    fontSize: 20,
+    color: Colors.brand.textOnGradient,
+    marginRight: 10,
+    fontWeight: '900',
+  },
+  videoReviewStartButtonText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: Colors.brand.textOnGradient,
+    letterSpacing: 0.5,
+  },
+  videoReviewCompleteContainer: {
+    marginTop: 8,
+    marginBottom: 8,
+    padding: 20,
+    backgroundColor: Colors.brand.status.completed + '15',
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: Colors.brand.status.completed,
+    alignItems: 'center',
+  },
+  videoReviewCompleteBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  videoReviewCompleteIcon: {
+    fontSize: 24,
+    marginRight: 10,
+  },
+  videoReviewCompleteText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: Colors.brand.status.completed,
+    letterSpacing: 0.3,
+  },
+  videoReviewCompleteHint: {
+    fontSize: 14,
+    color: Colors.brand.textSecondary,
+    textAlign: 'center',
+    fontWeight: '500',
+    marginTop: 4,
+  },
+  videoReviewSubmitButton: {
+    marginTop: 20,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    borderRadius: 18,
+    alignItems: 'center',
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  videoReviewSubmitButtonActive: {
+    backgroundColor: Colors.brand.accentOrange,
+  },
+  videoReviewSubmitButtonDisabled: {
+    backgroundColor: Colors.brand.border,
+    opacity: 0.6,
+  },
+  videoReviewSubmitButtonText: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: Colors.brand.textOnGradient,
+    letterSpacing: 0.35,
   },
 });

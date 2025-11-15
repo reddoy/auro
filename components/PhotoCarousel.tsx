@@ -1,7 +1,6 @@
 import React from 'react';
-import { FlatList, Pressable, StyleSheet } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
-import { View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 
 type Props = {
@@ -52,23 +51,15 @@ export default function PhotoCarousel({ uris, onPressItem, onLongPressItem, heig
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.brand.cardBackground,
-    borderRadius: 16,
-    padding: 12,
-    marginHorizontal: 16,
-    shadowColor: Colors.brand.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
+    backgroundColor: 'transparent',
+    paddingHorizontal: 0,
+    marginHorizontal: 0,
   },
   thumbWrap: {
     marginRight: 10,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: Colors.brand.cardBackground,
-    borderWidth: 1,
-    borderColor: Colors.brand.border,
+    backgroundColor: 'transparent',
   },
 });
 

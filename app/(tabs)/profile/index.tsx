@@ -156,22 +156,6 @@ export default function ProfileScreen() {
     return () => { cancelled = true; };
   }, [profile?.avatar_url, avatarUri]);
 
-  // Debug: expose the current access token and user id when the profile tab loads
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        const userId = session?.user?.id;
-        console.log('[profile] auth session', { userId, hasToken: !!token });
-        if (Platform.OS === 'web' && typeof window !== 'undefined') {
-          (window as any).__auroSession = { token, userId };
-        }
-      } catch (e) {
-        console.log('[profile] getSession error', e);
-      }
-    })();
-  }, []);
 
   
 
@@ -528,31 +512,33 @@ export default function ProfileScreen() {
         </MotionView>
 
         {/* Reviewer Setup Completion Progress Bar */}
-        {profile?.is_reviewer && (
-          <MotionView entering={nextEntrance()} style={styles.setupProgressContainer}>
-            <View style={styles.setupProgressHeader}>
-              <Text style={styles.setupProgressTitle}>Reviewer Setup Completion</Text>
-              <Text style={styles.setupProgressSubtitle}>
-                {(() => {
-                  const hasStripe = !!profile?.stripe_connect_account_id;
-                  const hasRate = !!(profile?.hourly_rate && profile.hourly_rate > 0);
-                  const completed = (hasStripe ? 1 : 0) + (hasRate ? 1 : 0);
-                  return `${completed}/2 steps completed`;
-                })()}
-              </Text>
-            </View>
-            <View style={styles.progressBarContainer}>
-              <View style={[styles.progressBar, {
-                width: `${(() => {
-                  const hasStripe = !!profile?.stripe_connect_account_id;
-                  const hasRate = !!(profile?.hourly_rate && profile.hourly_rate > 0);
-                  return ((hasStripe ? 1 : 0) + (hasRate ? 1 : 0)) * 50;
-                })()}%`
-              }]} />
-            </View>
-            
-            {/* Setup Indicators */}
-            {!profile?.stripe_connect_account_id && (
+        {profile?.is_reviewer && (() => {
+          const hasStripe = !!profile?.stripe_connect_account_id;
+          const hasRate = !!(profile?.hourly_rate && profile.hourly_rate > 0);
+          const isComplete = hasStripe && hasRate;
+          
+          // Hide the entire section once both steps are completed
+          if (isComplete) return null;
+          
+          return (
+            <MotionView entering={nextEntrance()} style={styles.setupProgressContainer}>
+              <View style={styles.setupProgressHeader}>
+                <Text style={styles.setupProgressTitle}>Reviewer Setup Completion</Text>
+                <Text style={styles.setupProgressSubtitle}>
+                  {(() => {
+                    const completed = (hasStripe ? 1 : 0) + (hasRate ? 1 : 0);
+                    return `${completed}/2 steps completed`;
+                  })()}
+                </Text>
+              </View>
+              <View style={styles.progressBarContainer}>
+                <View style={[styles.progressBar, {
+                  width: `${((hasStripe ? 1 : 0) + (hasRate ? 1 : 0)) * 50}%`
+                }]} />
+              </View>
+              
+              {/* Setup Indicators */}
+              {!profile?.stripe_connect_account_id && (
               <MotionPressable
                 entering={cardEntrance(1)}
                 style={styles.setupIndicator}
@@ -597,8 +583,9 @@ export default function ProfileScreen() {
                 </View>
               </MotionPressable>
             )}
-          </MotionView>
-        )}
+            </MotionView>
+          );
+        })()}
 
         <MotionView entering={nextEntrance()} style={styles.bioSection}>
           <Text style={styles.sectionTitle}>Reviewer Settings</Text>
@@ -656,7 +643,7 @@ export default function ProfileScreen() {
                       style={styles.transactionHistoryButton}
                     >
                       <Text style={styles.transactionHistoryText}>
-                        📊 Transaction History
+                        📊 Stripe Transactions
                       </Text>
                     </MotionPressable>
                   </MotionView>

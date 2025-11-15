@@ -364,7 +364,7 @@ export default function TransactionBreakdownScreen() {
         >
           <Ionicons name="arrow-back" size={24} color={Colors.brand.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Transaction History</Text>
+        <Text style={styles.headerTitle}>Stripe Transactions</Text>
       </View>
 
       <View style={styles.content}>

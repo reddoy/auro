@@ -7,8 +7,7 @@ import ReviewerCounter from '../../../components/ReviewerCounter';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
-import { ArrowLeft, ArrowRight, Check, Star, DollarSign, Users, Clock, Shield, Mail, Lock, User, FileText, Target, Phone, Camera, Instagram, Music } from 'lucide-react';
-import WebAvatarUploader from '../../../components/WebAvatarUploader';
+import { ArrowLeft, ArrowRight, Check, Star, DollarSign, Users, Clock, Shield, Mail, Lock, User, FileText, Target, Phone, Instagram, Music } from 'lucide-react';
 
 
 export default function FoundingReviewerApplyPage() {
@@ -634,7 +633,7 @@ export default function FoundingReviewerApplyPage() {
       return;
     }
     if (step === 4) {
-      // Phone number step - go to profile picture step
+      // Phone number step - submit application (profile picture step removed)
       if (!phone || phone.trim().length === 0) { 
         setError('Please enter your phone number'); 
         return; 
@@ -646,18 +645,12 @@ export default function FoundingReviewerApplyPage() {
         return;
       }
       
-      setStep(5);
-      return;
-    }
-    if (step === 5) {
-      // Profile picture and social handles step - submit application
-      
       // Submit the application
       try {
         setLoading(true);
         setError(''); // Clear any previous errors
         
-        console.log('[ReviewerApply] Submitting application at step 5');
+        console.log('[ReviewerApply] Submitting application at step 4');
         
         // Always use the signup endpoint for simplicity - it handles both authenticated and unauthenticated cases
         const signupUserId = localStorage.getItem('auro_signup_user_id');
@@ -758,7 +751,6 @@ export default function FoundingReviewerApplyPage() {
       }
       return;
     }
-    // Step 5 was removed - we now go directly from step 4 to step 6
   };
 
   // Modern Stepper Component - Mobile optimized
@@ -768,9 +760,12 @@ export default function FoundingReviewerApplyPage() {
       { id: 2, label: 'Account', shortLabel: 'Account', icon: User },
       { id: 3, label: 'Password', shortLabel: 'Pass', icon: Lock },
       { id: 4, label: 'Phone', shortLabel: 'Phone', icon: Phone },
-      { id: 5, label: 'Profile', shortLabel: 'Profile', icon: Camera },
       { id: 6, label: 'Done', shortLabel: 'Done', icon: Check }
     ];
+
+    // Calculate progress percentage, capping at 100%
+    const lastStepId = Math.max(...steps.map(s => s.id));
+    const progressPercent = Math.min(100, ((step - 1) / (lastStepId - 1)) * 100);
 
     return (
       <div className="w-full px-2 py-3 md:px-4 md:py-6 bg-gradient-to-b from-[#0c0325]/50 to-transparent">
@@ -779,7 +774,7 @@ export default function FoundingReviewerApplyPage() {
           <div className="absolute top-4 md:top-6 left-0 right-0 h-0.5 bg-white/10">
             <div 
               className="h-full bg-gradient-to-r from-orange-500 to-purple-600 transition-all duration-500 ease-out shadow-sm shadow-orange-500/50"
-              style={{ width: `${((step - 1) / (steps.length - 1)) * 100}%` }}
+              style={{ width: `${progressPercent}%` }}
             />
           </div>
           
@@ -1366,79 +1361,10 @@ export default function FoundingReviewerApplyPage() {
                 <p className="text-xs text-gray-400">
                   We'll use this to notify you about new review requests and payment updates.
                 </p>
-                
-                {/* Payment Processing Notice */}
-                <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                  <p className="text-xs text-blue-300 text-center">
-                    💳 <strong>Payment Processing:</strong> Payments are processed within 5-7 business days after review completion
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setStep(isGoogleAuthed ? 2 : 3)}
-                className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <Button
-                onClick={handleNext}
-                disabled={loading || !phone}
-                className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
-              >
-                {loading ? 'Please wait...' : 'Continue'}
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        </div>
-      )}
-
-      {step === 5 && (
-        <div className="flex-1 flex items-center justify-center px-4 py-4 md:py-8 min-h-[calc(100vh-120px)]">
-          <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
-            <CardHeader className="text-center space-y-1 md:space-y-2 py-4 md:py-6">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-purple-500/20 to-purple-600/20 rounded-full flex items-center justify-center mx-auto">
-                <Camera className="w-6 h-6 md:w-8 md:h-8 text-purple-400" />
-              </div>
-              <CardTitle className="text-xl md:text-2xl font-bold text-white">Complete Your Profile</CardTitle>
-              <CardDescription className="text-sm md:text-base text-gray-300">
-                Add a profile picture and social media handles to help guys connect with you
-              </CardDescription>
-            </CardHeader>
-          
-          <CardContent className="space-y-6 py-4 md:py-6">
-            {error && (
-              <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-3 py-2 md:px-4 md:py-3 rounded-lg text-xs md:text-sm">
-                {error}
-              </div>
-            )}
-            
-            <div className="space-y-6">
-              {/* Profile Picture Upload */}
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-gray-300">Profile Picture</label>
-                <WebAvatarUploader
-                  currentAvatarUrl={avatarUrl}
-                  onAvatarChange={(url, path) => {
-                    setAvatarUrl(url);
-                    setAvatarPath(path);
-                  }}
-                  size={120}
-                />
-                <p className="text-xs text-gray-400 text-center">
-                  Optional: A clear photo helps guys feel more comfortable requesting reviews
-                </p>
               </div>
 
               {/* Social Media Handles */}
-              <div className="space-y-4">
+              <div className="space-y-4 pt-2">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
                     <Instagram className="w-4 h-4 text-pink-400" />
@@ -1479,7 +1405,7 @@ export default function FoundingReviewerApplyPage() {
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                onClick={() => setStep(4)}
+                onClick={() => setStep(isGoogleAuthed ? 2 : 3)}
                 className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -1487,7 +1413,7 @@ export default function FoundingReviewerApplyPage() {
               </Button>
               <Button
                 onClick={handleNext}
-                disabled={loading}
+                disabled={loading || !phone}
                 className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
               >
                 {loading ? 'Submitting...' : 'Complete Application'}

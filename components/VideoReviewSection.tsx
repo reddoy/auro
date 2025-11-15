@@ -1,6 +1,5 @@
 import React from 'react';
-import { StyleSheet, ScrollView } from 'react-native';
-import { View } from '@/components/Themed';
+import { StyleSheet, ScrollView, View } from 'react-native';
 import SectionTitleCard from './SectionTitleCard';
 import PhotoCarousel from './PhotoCarousel';
 
