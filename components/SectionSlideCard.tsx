@@ -14,8 +14,8 @@ type Props = {
 export default function SectionSlideCard({ title, subtitle, revieweeName, style }: Props) {
   return (
     <View style={[styles.card, style]}>
-      {/* Auro Logo */}
-      <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
+      {/* Minimal Auro Logo */}
+      <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 64, height: 32, marginBottom: 24, alignSelf: 'center', opacity: 0.9 }} contentFit="contain" />
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>
         {subtitle.replace('{name}', revieweeName)}
@@ -43,19 +43,19 @@ const styles = StyleSheet.create({
     minHeight: 200,
   },
   title: {
-    fontSize: 26,
+    fontSize: 32,
     fontWeight: '900',
     color: Colors.brand.textPrimary,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
     letterSpacing: 0.5,
   },
   subtitle: {
-    fontSize: 17,
+    fontSize: 18,
     color: Colors.brand.textSecondary,
     textAlign: 'center',
-    lineHeight: 26,
-    fontWeight: '500',
-    paddingHorizontal: 8,
+    lineHeight: 28,
+    fontWeight: '600',
+    paddingHorizontal: 24,
   },
 });

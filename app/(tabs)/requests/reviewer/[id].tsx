@@ -34,6 +34,8 @@ export default function ReviewerRequestScreen() {
   const insets = useSafeAreaInsets();
   const [request, setRequest] = useState<DbRequestSummary | null>(null);
   const [reviewee, setReviewee] = useState<any>(null);
+  const [reviewer, setReviewer] = useState<any>(null);
+  const [reviewerAvatarUri, setReviewerAvatarUri] = useState<string | undefined>(undefined);
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [acceptLoading, setAcceptLoading] = useState(false);
@@ -62,33 +64,50 @@ export default function ReviewerRequestScreen() {
   const [overallNote, setOverallNote] = useState<string>('');
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isVideoReviewMode, setIsVideoReviewMode] = useState(false);
+  const [photoNotes, setPhotoNotes] = useState<Record<number, string>>({});
+  const [selectedPros, setSelectedPros] = useState<string[]>([]);
+  const [selectedCons, setSelectedCons] = useState<string[]>([]);
+  const [recordingDuration, setRecordingDuration] = useState<number>(0);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const scrollViewRef = useRef<ScrollView | null>(null);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const ratingSteps = React.useMemo(() => Array.from({ length: 9 }, (_, index) => 1 + index * 0.5), []);
 
+  // Pros and cons tag options
+  const prosTags = ['Great photos', 'Great lighting', 'Clever prompts', 'Strong style', 'Good variety', 'Authentic', 'Well composed', 'Eye-catching'];
+  const consTags = ['Work on prompts', 'Bad lighting', 'Group photos', 'Bad style', 'Too similar', 'Low quality', 'Needs variety', 'Unclear photos'];
+
   const frameMetrics = React.useMemo(() => {
-    // Optimize for TikTok vertical video - content fills screen, no card background
-    // Top-left camera, maximize content size
-    const horizontalMargin = 12; // Minimal horizontal padding for bigger content
+    // Optimize for TikTok vertical video (9:16) - maximize photo size
+    // Photos should fill 90% of screen height for TikTok-friendly composition
+    const horizontalMargin = 8; // Very minimal padding for maximum photo size
     
-    // Content should fill more of the screen - bigger width
-    const availableWidth = windowWidth - horizontalMargin * 2;
+    // Account for pagination dots on the right side (dots + padding + margin)
+    const paginationDotsWidth = 28; // Approximate width of pagination dots container
+    const paginationRight = 12;
+    const rightMargin = paginationDotsWidth + paginationRight + 20; // Increased spacing to prevent overlap
     
-    // Calculate vertical spacing - minimal padding to maximize content size
-    const topSpace = Math.max(insets.top + 90, 100); // Space for top-left camera
-    const bottomSpace = insets.bottom + 8; // Minimal bottom padding
+    const availableWidth = windowWidth - horizontalMargin - rightMargin; // Left margin + right space for dots
     
-    // Calculate available height for content - fills most of screen
+    // Calculate vertical spacing optimized for TikTok - account for larger camera (130px) + companion panel
+    const recorderSize = 130;
+    const topSpace = Math.max(insets.top + recorderSize + 20, 160); // Space for larger camera + companion panel
+    const bottomSpace = insets.bottom + 140; // Space for bottom overlays (title, note input, instructions)
+    
+    // Photo takes up 90% of available vertical space for TikTok format
     const availableHeight = windowHeight - topSpace - bottomSpace;
+    const photoHeight = availableHeight * 0.9; // 90% of available space
+    const photoWidth = photoHeight * (3/4); // Maintain 3:4 aspect ratio for dating photos
     
-    // Calculate pagination position - center it in the content area
+    // Calculate pagination position - center it vertically on the right side
     const contentCenterY = topSpace + availableHeight / 2;
-    const paginationTop = contentCenterY - 40;
-    const paginationRight = 16;
+    const paginationTop = contentCenterY - 60; // Account for pagination height
 
     return {
       contentWidth: availableWidth,
       contentHeight: availableHeight,
+      photoWidth: Math.min(photoWidth, availableWidth), // Use full available width (already accounts for pagination)
+      photoHeight,
       slideHorizontalPadding: horizontalMargin,
       slideTopPadding: topSpace,
       slideBottomPadding: bottomSpace,
@@ -97,9 +116,10 @@ export default function ReviewerRequestScreen() {
     };
   }, [insets, windowHeight, windowWidth]);
 
-  // Position recorder at top-left corner for TikTok-style composition
+  // Position recorder at top-left corner for TikTok-style composition - larger size
   const recorderTop = insets.top + 16;
   const recorderLeft = 16;
+  const recorderSize = 130; // Increased from 90 for better visibility
   
   // Video review is now the only option - no individual section ratings needed
   const canSubmit = React.useMemo(() => !!videoUri && overallRating > 0, [videoUri, overallRating]);
@@ -114,9 +134,9 @@ export default function ReviewerRequestScreen() {
     }
   }, [request?.notes]);
   
-  // Create combined slides array: profile + section cards + photos + rating input + overall summary
+  // Create combined slides array: profile + section cards + photos + photo notes + rating input + pros + cons + overall summary
   const allSlides = React.useMemo(() => {
-    const slides: Array<{type: 'profile' | 'section' | 'photo' | 'rating' | 'overall', data: any, index: number}> = [];
+    const slides: Array<{type: 'profile' | 'section' | 'photo' | 'photoNote' | 'rating' | 'pros' | 'cons' | 'overall', data: any, index: number}> = [];
     let slideIndex = 0;
 
     slides.push({
@@ -133,22 +153,44 @@ export default function ReviewerRequestScreen() {
       });
 
       signedProfilePhotos.forEach((uri, i) => {
+        // Add photo slide
         slides.push({
           type: 'photo',
           data: { uri, category: 'Dating Profile', photoIndex: i, totalPhotos: signedProfilePhotos.length },
           index: slideIndex++
         });
+        
+        // Add note slide after each photo
+        slides.push({
+          type: 'photoNote',
+          data: { category: 'Dating Profile', photoIndex: i, totalPhotos: signedProfilePhotos.length, photoUri: uri },
+          index: slideIndex++
+        });
       });
     }
 
-    // First: Rating input slide (no photo, just rating and notes input)
+    // First: Overall Rating slide (just rating and note input)
     slides.push({
       type: 'rating',
       data: { name: reviewee?.displayName || 'User' },
       index: slideIndex++
     });
 
-    // Second: Overall summary slide (profile photo with rating and notes displayed)
+    // Second: Pros selection slide
+    slides.push({
+      type: 'pros',
+      data: { name: reviewee?.displayName || 'User' },
+      index: slideIndex++
+    });
+
+    // Third: Cons selection slide
+    slides.push({
+      type: 'cons',
+      data: { name: reviewee?.displayName || 'User' },
+      index: slideIndex++
+    });
+
+    // Fourth: Overall summary slide (profile photo with rating and notes displayed)
     slides.push({
       type: 'overall',
       data: { name: reviewee?.displayName || 'User', profilePicture: avatarUri },
@@ -157,6 +199,16 @@ export default function ReviewerRequestScreen() {
 
     return slides;
   }, [signedProfilePhotos, avatarUri, reviewee?.displayName, parsedNotes?.message]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // Create sections for VideoReviewSection
   const reviewSections = React.useMemo(() => {
@@ -186,6 +238,7 @@ export default function ReviewerRequestScreen() {
         
         setRequest(req);
         
+        // Get reviewee (person being reviewed)
         if (req?.userId) {
           const profile = await getProfileById(req.userId);
           
@@ -197,6 +250,20 @@ export default function ReviewerRequestScreen() {
               try { uri = (await getSignedAvatarUrl(uri)) || uri; } catch {}
             }
             setAvatarUri(uri);
+          }
+        }
+        
+        // Get reviewer (current user/influencer)
+        if (req?.influencerId) {
+          const reviewerProfile = await getProfileById(req.influencerId);
+          setReviewer(reviewerProfile);
+          
+          if (reviewerProfile?.avatarUrl) {
+            let reviewerUri = reviewerProfile.avatarUrl;
+            if (reviewerUri && !/^https?:\/\//i.test(reviewerUri)) {
+              try { reviewerUri = (await getSignedAvatarUrl(reviewerUri)) || reviewerUri; } catch {}
+            }
+            setReviewerAvatarUri(reviewerUri);
           }
         }
         // Sign media URLs for reliable viewing
@@ -569,15 +636,80 @@ export default function ReviewerRequestScreen() {
                 ]}
               >
                 {slide.type === 'profile' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center', flex: 1 }] }>
-                    {/* Auro Logo */}
-                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 20, alignSelf: 'center' }} contentFit="contain" />
-                    <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', fontSize: 28, marginBottom: 8 }]}>{slide.data.name}</Text>
-                    {slide.data.message ? (<Text style={[styles.overlayText, { marginTop: 8, marginBottom: 24, lineHeight: 22, textAlign: 'center', width: '100%', fontSize: 16 }]}>{slide.data.message}</Text>) : null}
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center', flex: 1, position: 'relative' }] }>
+                    {/* Name and message overlay - ABOVE profile picture, centered with page */}
+                    <RNView style={{
+                      position: 'absolute',
+                      top: 40,
+                      left: 0,
+                      right: 0,
+                      alignItems: 'center',
+                      zIndex: 2,
+                      paddingHorizontal: frameMetrics.slideHorizontalPadding + 8,
+                    }}>
+                      <RNView style={{
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        borderRadius: 20,
+                        paddingVertical: 24,
+                        paddingHorizontal: 24,
+                        backdropFilter: 'blur(10px)',
+                        width: frameMetrics.photoWidth,
+                        alignItems: 'center',
+                      }}>
+                      {/* Auro Logo inside the box */}
+                      <RNView style={{ marginBottom: 16, alignItems: 'center' }}>
+                        <Image 
+                          source={require('@/auro_aura_logo_nobg.png')} 
+                          style={{ 
+                            width: 72, 
+                            height: 36, 
+                            opacity: 0.95,
+                          }} 
+                          contentFit="contain" 
+                        />
+                      </RNView>
+                      
+                      <Text style={[styles.overlayTitle, { 
+                        textAlign: 'center', 
+                        width: '100%', 
+                        fontSize: 28, 
+                        marginBottom: 12,
+                        color: '#fff',
+                        fontWeight: '900',
+                      }]}>
+                        {slide.data.name}
+                      </Text>
+                      {slide.data.message ? (
+                        <Text style={[styles.overlayText, { 
+                          lineHeight: 24, 
+                          textAlign: 'center', 
+                          width: '100%', 
+                          fontSize: 18,
+                          color: 'rgba(255, 255, 255, 0.9)',
+                          fontWeight: '600',
+                        }]}>
+                          {slide.data.message}
+                        </Text>
+                      ) : null}
+                      </RNView>
+                    </RNView>
+                    
+                    {/* Circular profile photo - TikTok optimized */}
                     {slide.data.profilePicture ? (
                       <Image 
                         source={{ uri: slide.data.profilePicture }} 
-                        style={{ width: '85%', maxWidth: 380, aspectRatio: 1, borderRadius: 16, marginTop: 8, alignSelf: 'center' }} 
+                        style={{ 
+                          width: frameMetrics.photoWidth * 0.85,
+                          height: frameMetrics.photoWidth * 0.85,
+                          borderRadius: (frameMetrics.photoWidth * 0.85) / 2, // Make it circular
+                          marginTop: 140, // Space for the name/bio overlay above
+                          alignSelf: 'center',
+                          shadowColor: Colors.brand.shadow,
+                          shadowOffset: { width: 0, height: 12 },
+                          shadowOpacity: 0.4,
+                          shadowRadius: 20,
+                          elevation: 12,
+                        }} 
                         contentFit="cover" 
                       />
                     ) : null}
@@ -596,80 +728,240 @@ export default function ReviewerRequestScreen() {
                 )}
                 
                 {slide.type === 'photo' && (
-                  <RNView style={[styles.overlayPhotoCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center' }] }>
-                    {/* Auro Logo */}
-                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 64, height: 32, marginBottom: 10, alignSelf: 'center' }} contentFit="contain" />
-                    <Text style={[styles.overlayTitle, { marginBottom: 6, fontSize: 20, textAlign: 'center', width: '100%' }]}>{slide.data.category} - Photo {slide.data.photoIndex + 1}</Text>
+                  <RNView style={[styles.overlayPhotoCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center', position: 'relative' }] }>
+                    {/* Full-screen photo - TikTok optimized */}
                     <TouchableOpacity
                       style={{ 
-                        width: '95%', 
-                        maxWidth: 450,
-                        aspectRatio: 3/4, 
-                        borderRadius: 16, 
-                        marginTop: 0,
-                        marginBottom: 8,
+                        width: frameMetrics.photoWidth,
+                        height: frameMetrics.photoHeight,
+                        borderRadius: 20, 
                         overflow: 'hidden',
                         alignSelf: 'center',
                         shadowColor: Colors.brand.shadow,
-                        shadowOffset: { width: 0, height: 8 },
-                        shadowOpacity: 0.3,
-                        shadowRadius: 12,
-                        elevation: 8,
+                        shadowOffset: { width: 0, height: 12 },
+                        shadowOpacity: 0.4,
+                        shadowRadius: 20,
+                        elevation: 12,
                       }}
                       onPress={() => {
                         setCurrentPhotoUri(slide.data.uri);
                         setPhotoModalOpen(true);
                       }}
+                      activeOpacity={0.95}
                     >
                       <Image source={{ uri: slide.data.uri }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                     </TouchableOpacity>
-                    <Text style={[styles.overlayText, { marginTop: 6, fontSize: 13, paddingHorizontal: 8, lineHeight: 18, textAlign: 'center', width: '100%' }]}>
-                      Talk through what stands out while you record. Swipe up to continue through their profile.
-                    </Text>
+
+                    {/* Minimal logo overlay - top center */}
+                    <RNView style={{
+                      position: 'absolute',
+                      top: 20,
+                      left: 0,
+                      right: 0,
+                      alignItems: 'center',
+                      zIndex: 2,
+                    }}>
+                      <Image 
+                        source={require('@/auro_aura_logo_nobg.png')} 
+                        style={{ 
+                          width: 56, 
+                          height: 28, 
+                          opacity: 0.9,
+                        }} 
+                        contentFit="contain" 
+                      />
+                    </RNView>
+
+                    {/* Photo info overlay - positioned below photo, centered */}
+                    <RNView style={{
+                      position: 'absolute',
+                      top: frameMetrics.photoHeight + 60, // Position below the photo with spacing
+                      left: 0,
+                      right: 0,
+                      alignItems: 'center',
+                      zIndex: 2,
+                      paddingHorizontal: frameMetrics.slideHorizontalPadding + 8,
+                    }}>
+                      <RNView style={{
+                        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                        borderRadius: 18,
+                        paddingVertical: 16,
+                        paddingHorizontal: 18,
+                        backdropFilter: 'blur(10px)',
+                        width: frameMetrics.photoWidth,
+                        alignItems: 'center',
+                        alignSelf: 'center',
+                      }}>
+                      <Text style={[styles.overlayTitle, { 
+                        fontSize: 18, 
+                        fontWeight: '800',
+                        textAlign: 'center', 
+                        color: '#fff',
+                        marginBottom: 8,
+                      }]}>
+                        {slide.data.category} - Photo {slide.data.photoIndex + 1}
+                      </Text>
+                      
+                      <Text style={[styles.overlayText, { 
+                        fontSize: 11, 
+                        lineHeight: 14, 
+                        textAlign: 'center', 
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        fontWeight: '500',
+                      }]}>
+                        Swipe up to add a note
+                      </Text>
+                      </RNView>
+                    </RNView>
+                  </RNView>
+                )}
+                
+                {slide.type === 'photoNote' && (
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 40, paddingBottom: 40 }] }>
+                    {/* Auro Logo and Title */}
+                    <RNView style={{ alignItems: 'center', marginBottom: 32, width: '100%' }}>
+                      <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                        <Image 
+                          source={require('@/auro_aura_logo_nobg.png')} 
+                          style={{ width: 64, height: 32 }} 
+                          contentFit="contain" 
+                        />
+                        <Text style={{ color: Colors.brand.textPrimary, fontSize: 32, fontWeight: '900', letterSpacing: 0.5 }}>
+                          Auro
+                        </Text>
+                      </RNView>
+                      <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 8, fontSize: 28, paddingHorizontal: 20 }]}>
+                        Add a Note
+                      </Text>
+                      <Text style={[styles.overlayText, { marginBottom: 0, textAlign: 'center', width: '100%', fontSize: 16, paddingHorizontal: 20 }]}>
+                        {slide.data.category} - Photo {slide.data.photoIndex + 1}
+                      </Text>
+                    </RNView>
+                    
+                    {/* Note input field */}
+                    <RNView style={{ marginTop: 16, width: '100%', alignItems: 'center', paddingHorizontal: 20, flex: 1 }}>
+                      <TextInput
+                        style={{
+                          width: '100%',
+                          minHeight: 140,
+                          maxHeight: 200,
+                          backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                          borderRadius: 20,
+                          paddingHorizontal: 20,
+                          paddingVertical: 16,
+                          color: Colors.brand.textPrimary,
+                          fontSize: 16,
+                          textAlign: 'left',
+                          borderWidth: 2,
+                          borderColor: 'rgba(255, 255, 255, 0.25)',
+                          shadowColor: '#000',
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.1,
+                          shadowRadius: 4,
+                          elevation: 2,
+                        }}
+                        placeholder="Share your thoughts about this photo..."
+                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                        multiline
+                        value={photoNotes[slide.data.photoIndex] || ''}
+                        onChangeText={(text) => {
+                          setPhotoNotes(prev => ({ ...prev, [slide.data.photoIndex]: text }));
+                        }}
+                        numberOfLines={6}
+                        textAlignVertical="top"
+                      />
+                      
+                      <Text style={[styles.overlayText, { 
+                        marginTop: 12, 
+                        fontSize: 12, 
+                        textAlign: 'center', 
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        fontWeight: '500',
+                      }]}>
+                        {photoNotes[slide.data.photoIndex]?.length || 0} characters
+                      </Text>
+                    </RNView>
                   </RNView>
                 )}
                 
                 {slide.type === 'rating' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center' }] }>
-                    {/* Auro Logo */}
-                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
-                    <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 8 }]}>Overall Rating</Text>
-                    <Text style={[styles.overlayText, { marginBottom: 20, textAlign: 'center', width: '100%' }]}>Rate {slide.data.name} overall</Text>
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 20, paddingBottom: 20 }] }>
+                    {/* Auro Logo and Title */}
+                    <RNView style={{ alignItems: 'center', marginBottom: 24, width: '100%' }}>
+                      <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                        <Image 
+                          source={require('@/auro_aura_logo_nobg.png')} 
+                          style={{ width: 72, height: 36 }} 
+                          contentFit="contain" 
+                        />
+                        <Text style={{ color: Colors.brand.textPrimary, fontSize: 32, fontWeight: '900', letterSpacing: 0.5 }}>
+                          Auro
+                        </Text>
+                      </RNView>
+                      <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 6, fontSize: 28, paddingHorizontal: 20 }]}>
+                        Overall Rating
+                      </Text>
+                      <Text style={[styles.overlayText, { marginBottom: 0, textAlign: 'center', width: '100%', fontSize: 16, paddingHorizontal: 20 }]}>
+                        Rate {slide.data.name} overall
+                      </Text>
+                    </RNView>
                     
-                    {/* Overall Rating with Stars */}
-                    <RNView style={{ marginTop: 4, alignItems: 'center', width: '100%' }}>
-                      <Text style={[styles.overlayText, { marginBottom: 12, fontSize: 15, textAlign: 'center' }]}>Overall Rating:</Text>
-                      <StarRating 
-                        rating={overallRating * 2} // Convert 1-5 to 2-10 scale for StarRating component
-                        category="Overall"
-                        size="large"
-                        showNumber={false}
-                      />
-                      <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 16, width: '100%' }}>
-                        {ratingSteps.map((rating) => {
-                          const isSelected = overallRating === rating;
+                    {/* Star Rating Buttons - 1-5 stars, no halves */}
+                    <RNView style={{ marginTop: 8, marginBottom: 32, alignItems: 'center', width: '100%', paddingHorizontal: 20 }}>
+                      <Text style={[styles.overlayText, { marginBottom: 16, fontSize: 15, textAlign: 'center' }]}>Tap to rate:</Text>
+                      <RNView style={{ flexDirection: 'row', gap: 12, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+                        {[1, 2, 3, 4, 5].map((starCount) => {
+                          const isSelected = overallRating === starCount;
                           return (
                             <TouchableOpacity
-                              key={rating}
-                              onPress={() => setOverallRating(rating)}
-                              style={[
-                                styles.ratingButton,
-                                isSelected && styles.ratingButtonSelected
-                              ]}
+                              key={starCount}
+                              onPress={() => setOverallRating(starCount)}
+                              style={{
+                                paddingHorizontal: 20,
+                                paddingVertical: 12,
+                                borderRadius: 16,
+                                backgroundColor: isSelected 
+                                  ? Colors.brand.accentOrange 
+                                  : 'rgba(255, 255, 255, 0.1)',
+                                borderWidth: 2,
+                                borderColor: isSelected 
+                                  ? Colors.brand.accentOrange 
+                                  : 'rgba(255, 255, 255, 0.2)',
+                                minWidth: 60,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                shadowColor: isSelected ? Colors.brand.accentOrange : '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: isSelected ? 0.4 : 0.2,
+                                shadowRadius: 4,
+                                elevation: 4,
+                              }}
                             >
-                              <Text style={[
-                                styles.ratingButtonText,
-                                isSelected && styles.ratingButtonTextSelected
-                              ]}>
-                                {rating.toFixed(rating % 1 === 0 ? 0 : 1)}
-                              </Text>
+                              <RNView style={{ flexDirection: 'row', gap: 2, alignItems: 'center' }}>
+                                {Array.from({ length: 5 }, (_, i) => (
+                                  <Text 
+                                    key={i} 
+                                    style={{ 
+                                      fontSize: 16, 
+                                      color: i < starCount ? (isSelected ? '#fff' : Colors.brand.accentOrange) : 'rgba(255, 255, 255, 0.3)'
+                                    }}
+                                  >
+                                    ⭐
+                                  </Text>
+                                ))}
+                              </RNView>
                             </TouchableOpacity>
                           );
                         })}
                       </RNView>
+                      {overallRating > 0 && (
+                        <Text style={[styles.overlayText, { marginTop: 12, fontSize: 14, textAlign: 'center', color: Colors.brand.accentOrange, fontWeight: '700' }]}>
+                          {overallRating} {overallRating === 1 ? 'star' : 'stars'} selected
+                        </Text>
+                      )}
                     </RNView>
 
-                    <RNView style={{ marginTop: 20, width: '100%', alignItems: 'center' }}>
+                    <RNView style={{ marginTop: 20, width: '100%', alignItems: 'center', paddingHorizontal: 20 }}>
                       <Text style={[styles.overlayText, { marginBottom: 10, fontSize: 15, textAlign: 'center', width: '100%' }]}>Overall Note</Text>
                       <TextInput
                         style={[styles.overallNoteInput, { width: '100%', maxHeight: 120 }]}
@@ -685,54 +977,302 @@ export default function ReviewerRequestScreen() {
                   </RNView>
                 )}
                 
-                {slide.type === 'overall' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center' }] }>
-                    {/* Auro Logo */}
-                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 72, height: 36, marginBottom: 12, alignSelf: 'center' }} contentFit="contain" />
-                    <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 6 }]}>Review Summary</Text>
-                    <Text style={[styles.overlayText, { marginBottom: 16, textAlign: 'center', width: '100%' }]}>Your final review for {slide.data.name}</Text>
-                    
-                    {/* Profile Picture display */}
-                    {slide.data.profilePicture ? (
-                      <TouchableOpacity
-                        style={{ 
-                          width: '70%', 
-                          maxWidth: 280,
-                          aspectRatio: 1, 
-                          borderRadius: 16, 
-                          marginTop: 4,
-                          marginBottom: 16,
-                          overflow: 'hidden',
-                          alignSelf: 'center',
-                          shadowColor: Colors.brand.shadow,
-                          shadowOffset: { width: 0, height: 8 },
-                          shadowOpacity: 0.3,
-                          shadowRadius: 12,
-                          elevation: 8,
-                        }}
-                        onPress={() => {
-                          setCurrentPhotoUri(slide.data.profilePicture);
-                          setPhotoModalOpen(true);
-                        }}
-                      >
-                        <Image source={{ uri: slide.data.profilePicture }} style={{ width: '100%', height: '100%', borderRadius: 16 }} contentFit="cover" />
-                      </TouchableOpacity>
-                    ) : null}
-                    
-                    {/* Overall Rating Display (Read-only) */}
-                    {overallRating > 0 && (
-                      <RNView style={{ marginTop: 4, alignItems: 'center', width: '100%', marginBottom: 16 }}>
-                        <Text style={[styles.overlayText, { marginBottom: 8, fontSize: 15, fontWeight: '600', textAlign: 'center' }]}>Your Rating:</Text>
-                        <RNView style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
-                          <Text style={[styles.overlayTitle, { fontSize: 28, marginRight: 6 }]}>{overallRating.toFixed(overallRating % 1 === 0 ? 0 : 1)}</Text>
-                          <Text style={[styles.overlayText, { fontSize: 16 }]}>/ 5</Text>
-                        </RNView>
-                        <StarRating 
-                          rating={overallRating * 2} // Convert 1-5 to 2-10 scale for StarRating component
-                          category="Overall"
-                          size="large"
-                          showNumber={false}
+                {slide.type === 'pros' && (
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 20, paddingBottom: 20 }] }>
+                    {/* Auro Logo and Title */}
+                    <RNView style={{ alignItems: 'center', marginBottom: 32, width: '100%' }}>
+                      <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                        <Image 
+                          source={require('@/auro_aura_logo_nobg.png')} 
+                          style={{ width: 64, height: 32 }} 
+                          contentFit="contain" 
                         />
+                        <Text style={{ color: Colors.brand.textPrimary, fontSize: 32, fontWeight: '900', letterSpacing: 0.5 }}>
+                          Auro
+                        </Text>
+                      </RNView>
+                      <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 8, fontSize: 32, paddingHorizontal: 20, color: Colors.brand.status.completed }]}>
+                        ✓ What stands out? (Pros)
+                      </Text>
+                      <Text style={[styles.overlayText, { marginBottom: 0, textAlign: 'center', width: '100%', fontSize: 16, paddingHorizontal: 20 }]}>
+                        Select all pros for {slide.data.name}
+                      </Text>
+                    </RNView>
+                    
+                    {/* Pros Tags - Centered */}
+                    <RNView style={{ marginTop: 16, width: '100%', alignItems: 'center', paddingHorizontal: 20, flex: 1 }}>
+                      <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'center', width: '100%' }}>
+                        {prosTags.map((tag) => {
+                          const isSelected = selectedPros.includes(tag);
+                          return (
+                            <TouchableOpacity
+                              key={tag}
+                              onPress={() => {
+                                setSelectedPros(prev => 
+                                  isSelected 
+                                    ? prev.filter(t => t !== tag)
+                                    : [...prev, tag]
+                                );
+                              }}
+                              style={{
+                                paddingHorizontal: 18,
+                                paddingVertical: 14,
+                                borderRadius: 24,
+                                backgroundColor: isSelected 
+                                  ? Colors.brand.status.completed 
+                                  : 'rgba(255, 255, 255, 0.12)',
+                                borderWidth: 2,
+                                borderColor: isSelected 
+                                  ? Colors.brand.status.completed 
+                                  : 'rgba(255, 255, 255, 0.25)',
+                                shadowColor: isSelected ? Colors.brand.status.completed : '#000',
+                                shadowOffset: { width: 0, height: 3 },
+                                shadowOpacity: isSelected ? 0.4 : 0.1,
+                                shadowRadius: 6,
+                                elevation: 3,
+                                minWidth: 100,
+                              }}
+                            >
+                              <Text style={{
+                                color: isSelected ? '#fff' : Colors.brand.textPrimary,
+                                fontSize: 15,
+                                fontWeight: '700',
+                              }}>
+                                {tag}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </RNView>
+                    </RNView>
+                  </RNView>
+                )}
+                
+                {slide.type === 'cons' && (
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 20, paddingBottom: 20 }] }>
+                    {/* Auro Logo and Title */}
+                    <RNView style={{ alignItems: 'center', marginBottom: 32, width: '100%' }}>
+                      <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                        <Image 
+                          source={require('@/auro_aura_logo_nobg.png')} 
+                          style={{ width: 64, height: 32 }} 
+                          contentFit="contain" 
+                        />
+                        <Text style={{ color: Colors.brand.textPrimary, fontSize: 32, fontWeight: '900', letterSpacing: 0.5 }}>
+                          Auro
+                        </Text>
+                      </RNView>
+                      <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 8, fontSize: 32, paddingHorizontal: 20, color: Colors.brand.status.rejected }]}>
+                        ✗ What stands out? (Cons)
+                      </Text>
+                      <Text style={[styles.overlayText, { marginBottom: 0, textAlign: 'center', width: '100%', fontSize: 16, paddingHorizontal: 20 }]}>
+                        Select all cons for {slide.data.name}
+                      </Text>
+                    </RNView>
+                    
+                    {/* Cons Tags - Centered */}
+                    <RNView style={{ marginTop: 16, width: '100%', alignItems: 'center', paddingHorizontal: 20, flex: 1 }}>
+                      <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'center', width: '100%' }}>
+                        {consTags.map((tag) => {
+                          const isSelected = selectedCons.includes(tag);
+                          return (
+                            <TouchableOpacity
+                              key={tag}
+                              onPress={() => {
+                                setSelectedCons(prev => 
+                                  isSelected 
+                                    ? prev.filter(t => t !== tag)
+                                    : [...prev, tag]
+                                );
+                              }}
+                              style={{
+                                paddingHorizontal: 18,
+                                paddingVertical: 14,
+                                borderRadius: 24,
+                                backgroundColor: isSelected 
+                                  ? Colors.brand.status.rejected 
+                                  : 'rgba(255, 255, 255, 0.12)',
+                                borderWidth: 2,
+                                borderColor: isSelected 
+                                  ? Colors.brand.status.rejected 
+                                  : 'rgba(255, 255, 255, 0.25)',
+                                shadowColor: isSelected ? Colors.brand.status.rejected : '#000',
+                                shadowOffset: { width: 0, height: 3 },
+                                shadowOpacity: isSelected ? 0.4 : 0.1,
+                                shadowRadius: 6,
+                                elevation: 3,
+                                minWidth: 100,
+                              }}
+                            >
+                              <Text style={{
+                                color: isSelected ? '#fff' : Colors.brand.textPrimary,
+                                fontSize: 15,
+                                fontWeight: '700',
+                              }}>
+                                {tag}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </RNView>
+                    </RNView>
+                  </RNView>
+                )}
+                
+                {slide.type === 'overall' && (
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 20, paddingBottom: 20 }] }>
+                    {/* Auro Logo */}
+                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 72, height: 36, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
+                    <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 6, fontSize: 28 }]}>Review Summary</Text>
+                    <Text style={[styles.overlayText, { marginBottom: 24, textAlign: 'center', width: '100%', fontSize: 16 }]}>Your final review for {slide.data.name}</Text>
+                    
+                    {/* Both Profile Pictures - Circular, side by side */}
+                    <RNView style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 24, width: '100%', paddingHorizontal: 20 }}>
+                      {/* Reviewer Profile Picture */}
+                      {reviewerAvatarUri ? (
+                        <RNView style={{ alignItems: 'center', gap: 8 }}>
+                          <TouchableOpacity
+                            style={{ 
+                              width: 120, 
+                              height: 120,
+                              borderRadius: 60, 
+                              overflow: 'hidden',
+                              alignSelf: 'center',
+                              shadowColor: Colors.brand.shadow,
+                              shadowOffset: { width: 0, height: 8 },
+                              shadowOpacity: 0.3,
+                              shadowRadius: 12,
+                              elevation: 8,
+                              borderWidth: 3,
+                              borderColor: Colors.brand.accentOrange,
+                            }}
+                            onPress={() => {
+                              setCurrentPhotoUri(reviewerAvatarUri);
+                              setPhotoModalOpen(true);
+                            }}
+                          >
+                            <Image source={{ uri: reviewerAvatarUri }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                          </TouchableOpacity>
+                          <Text style={[styles.overlayText, { fontSize: 14, fontWeight: '600', textAlign: 'center' }]}>
+                            {reviewer?.displayName || reviewer?.full_name || reviewer?.username || 'You'}
+                          </Text>
+                        </RNView>
+                      ) : null}
+                      
+                      {/* VS or Arrow */}
+                      <Text style={{ fontSize: 24, fontWeight: '900', color: Colors.brand.accentOrange, opacity: 0.8 }}>→</Text>
+                      
+                      {/* Reviewee Profile Picture */}
+                      {slide.data.profilePicture ? (
+                        <RNView style={{ alignItems: 'center', gap: 8 }}>
+                          <TouchableOpacity
+                            style={{ 
+                              width: 120, 
+                              height: 120,
+                              borderRadius: 60, 
+                              overflow: 'hidden',
+                              alignSelf: 'center',
+                              shadowColor: Colors.brand.shadow,
+                              shadowOffset: { width: 0, height: 8 },
+                              shadowOpacity: 0.3,
+                              shadowRadius: 12,
+                              elevation: 8,
+                              borderWidth: 3,
+                              borderColor: Colors.brand.textPrimary,
+                            }}
+                            onPress={() => {
+                              setCurrentPhotoUri(slide.data.profilePicture);
+                              setPhotoModalOpen(true);
+                            }}
+                          >
+                            <Image source={{ uri: slide.data.profilePicture }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                          </TouchableOpacity>
+                          <Text style={[styles.overlayText, { fontSize: 14, fontWeight: '600', textAlign: 'center' }]}>
+                            {slide.data.name}
+                          </Text>
+                        </RNView>
+                      ) : null}
+                    </RNView>
+                    
+                    {/* Overall Rating Display - Large and prominent */}
+                    {overallRating > 0 && (
+                      <RNView style={{ marginTop: 8, alignItems: 'center', width: '100%', marginBottom: 24, paddingHorizontal: 20 }}>
+                        <Text style={[styles.overlayText, { marginBottom: 12, fontSize: 16, fontWeight: '700', textAlign: 'center' }]}>Overall Rating</Text>
+                        <RNView style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', marginBottom: 12, gap: 8 }}>
+                          <Text style={[styles.overlayTitle, { fontSize: 48, fontWeight: '900', color: Colors.brand.accentOrange }]}>{overallRating}</Text>
+                          <Text style={[styles.overlayText, { fontSize: 24, fontWeight: '700', opacity: 0.7 }]}>/ 5</Text>
+                        </RNView>
+                        <RNView style={{ flexDirection: 'row', gap: 4, marginBottom: 8 }}>
+                          {Array.from({ length: 5 }, (_, i) => (
+                            <Text key={i} style={{ fontSize: 24, color: i < overallRating ? Colors.brand.accentOrange : 'rgba(255, 255, 255, 0.3)' }}>
+                              ⭐
+                            </Text>
+                          ))}
+                        </RNView>
+                      </RNView>
+                    )}
+                    
+                    {/* Selected Pros */}
+                    {selectedPros.length > 0 && (
+                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: 16, paddingHorizontal: 20 }}>
+                        <Text style={[styles.overlayText, { marginBottom: 12, fontSize: 16, textAlign: 'center', width: '100%', fontWeight: '700', color: Colors.brand.status.completed }]}>
+                          ✓ Pros ({selectedPros.length})
+                        </Text>
+                        <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', width: '100%' }}>
+                          {selectedPros.map((tag) => (
+                            <RNView
+                              key={tag}
+                              style={{
+                                paddingHorizontal: 14,
+                                paddingVertical: 8,
+                                borderRadius: 20,
+                                backgroundColor: Colors.brand.status.completed,
+                                borderWidth: 1.5,
+                                borderColor: Colors.brand.status.completed,
+                              }}
+                            >
+                              <Text style={{
+                                color: '#fff',
+                                fontSize: 13,
+                                fontWeight: '600',
+                              }}>
+                                {tag}
+                              </Text>
+                            </RNView>
+                          ))}
+                        </RNView>
+                      </RNView>
+                    )}
+                    
+                    {/* Selected Cons */}
+                    {selectedCons.length > 0 && (
+                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: 16, paddingHorizontal: 20 }}>
+                        <Text style={[styles.overlayText, { marginBottom: 12, fontSize: 16, textAlign: 'center', width: '100%', fontWeight: '700', color: Colors.brand.status.rejected }]}>
+                          ✗ Cons ({selectedCons.length})
+                        </Text>
+                        <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', width: '100%' }}>
+                          {selectedCons.map((tag) => (
+                            <RNView
+                              key={tag}
+                              style={{
+                                paddingHorizontal: 14,
+                                paddingVertical: 8,
+                                borderRadius: 20,
+                                backgroundColor: Colors.brand.status.rejected,
+                                borderWidth: 1.5,
+                                borderColor: Colors.brand.status.rejected,
+                              }}
+                            >
+                              <Text style={{
+                                color: '#fff',
+                                fontSize: 13,
+                                fontWeight: '600',
+                              }}>
+                                {tag}
+                              </Text>
+                            </RNView>
+                          ))}
+                        </RNView>
                       </RNView>
                     )}
 
@@ -767,18 +1307,83 @@ export default function ReviewerRequestScreen() {
             ))}
           </ScrollView>
 
-          {/* Circular video recorder in top-left corner - TikTok style */}
-          <RNView style={{ position: 'absolute', top: recorderTop, left: recorderLeft, zIndex: 10, elevation: 10 }}>
+          {/* Circular video recorder in top-left corner - TikTok style with companion info */}
+          <RNView style={{ position: 'absolute', top: recorderTop, left: recorderLeft, zIndex: 10, elevation: 10, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <MediaRecorder
               onRecorded={(uri) => {
                 setVideoUri(uri);
                 setRecordingModeOpen(false);
                 setIsVideoReviewMode(false);
+                if (recordingTimerRef.current) {
+                  clearInterval(recordingTimerRef.current);
+                  recordingTimerRef.current = null;
+                }
+                setRecordingDuration(0);
                 Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
               }}
               variant="corner"
-              circleSize={90}
+              circleSize={recorderSize}
+              onRecordingStart={() => {
+                setRecordingDuration(0);
+                recordingTimerRef.current = setInterval(() => {
+                  setRecordingDuration(prev => prev + 1);
+                }, 1000);
+              }}
+              onRecordingStop={() => {
+                if (recordingTimerRef.current) {
+                  clearInterval(recordingTimerRef.current);
+                  recordingTimerRef.current = null;
+                }
+              }}
             />
+            
+            {/* Companion info panel - dynamic content based on state */}
+            <RNView style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.65)',
+              borderRadius: 18,
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              backdropFilter: 'blur(10px)',
+              borderWidth: 1.5,
+              borderColor: recordingDuration > 0 ? Colors.brand.accentOrange + '40' : 'rgba(255, 255, 255, 0.2)',
+              minWidth: 90,
+              alignItems: 'center',
+              alignSelf: 'center',
+            }}>
+              {/* Reviewer Name */}
+              <RNView style={{ alignItems: 'center', marginBottom: recordingDuration > 0 ? 8 : 0 }}>
+                <Text style={{ color: '#fff', fontSize: 22, fontWeight: '800', letterSpacing: 0.5, textAlign: 'center' }}>
+                  {reviewer?.displayName || reviewer?.full_name || reviewer?.username || 'Reviewer'}
+                </Text>
+              </RNView>
+              
+              {/* Recording timer with pulsing effect */}
+              {recordingDuration > 0 && (
+                <RNView style={{ alignItems: 'center', paddingTop: 4, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.15)', width: '100%' }}>
+                  <Text style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: 10, fontWeight: '600', marginBottom: 3, letterSpacing: 0.5 }}>
+                    REC
+                  </Text>
+                  <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    {/* Pulsing dot indicator */}
+                    <RNView style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: '#ff3b30',
+                      shadowColor: '#ff3b30',
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 1,
+                      shadowRadius: 4,
+                      elevation: 4,
+                    }} />
+                    <Text style={{ color: Colors.brand.accentOrange, fontSize: 16, fontWeight: '900', letterSpacing: 0.5 }}>
+                      {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
+                    </Text>
+                  </RNView>
+                </RNView>
+              )}
+              
+            </RNView>
           </RNView>
 
 
@@ -823,17 +1428,20 @@ export default function ReviewerRequestScreen() {
             </TouchableOpacity>
           </RNView>
 
-          {/* Vertical pagination dots on right side (left side has camera) */}
+          {/* Vertical pagination dots on right side (left side has camera) - TikTok optimized */}
           <RNView
             style={{
               position: 'absolute',
               top: frameMetrics.paginationTop,
               right: frameMetrics.paginationRight,
               zIndex: 10,
-              backgroundColor: 'rgba(0,0,0,0.3)',
-              borderRadius: 16,
-              paddingVertical: 8,
-              paddingHorizontal: 6,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              borderRadius: 20,
+              paddingVertical: 12,
+              paddingHorizontal: 8,
+              backdropFilter: 'blur(10px)',
+              borderWidth: 1,
+              borderColor: 'rgba(255, 255, 255, 0.1)',
             }}
           >
             <PaginationDots

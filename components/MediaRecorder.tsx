@@ -12,9 +12,11 @@ type Props = {
   variant?: 'inline' | 'overlay' | 'centered' | 'corner';
   circleSize?: number;
   value?: string | null;
+  onRecordingStart?: () => void;
+  onRecordingStop?: () => void;
 };
 
-export default function MediaRecorder({ photos = [], onRecorded, variant = 'inline', circleSize = 140, value = null }: Props) {
+export default function MediaRecorder({ photos = [], onRecorded, variant = 'inline', circleSize = 140, value = null, onRecordingStart, onRecordingStop }: Props) {
   const cameraRef = useRef<CameraView | null>(null);
   const [type, setType] = useState<CameraType>('front');
   const [recording, setRecording] = useState(false);
@@ -54,6 +56,7 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
     }
     setStarting(true);
     setRecording(true);
+    onRecordingStart?.();
     try {
       const v: any = await cameraRef.current.recordAsync({ maxDuration: 180 } as any);
       setVideoUri(v?.uri || null);
@@ -62,6 +65,7 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
     } finally {
       setRecording(false);
       setStarting(false);
+      onRecordingStop?.();
     }
   };
 
@@ -77,7 +81,7 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
 
   if (variant === 'corner') {
     return (
-      <View style={{ alignItems: 'flex-start' }}>
+      <View style={{ alignItems: 'flex-start', position: 'relative' }}>
         {/* Circular camera surface with subtle border for TikTok-style */}
         <View style={{ 
           width: circleSize, 
@@ -85,18 +89,18 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
           borderRadius: circleSize / 2, 
           overflow: 'hidden', 
           backgroundColor: 'rgba(0,0,0,0.4)',
-          borderWidth: 2,
-          borderColor: 'rgba(255,255,255,0.3)',
+          borderWidth: 3,
+          borderColor: recording ? '#ff3b30' : 'rgba(255,255,255,0.4)',
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 8,
-          elevation: 8,
+          shadowOpacity: 0.4,
+          shadowRadius: 10,
+          elevation: 10,
         }}>
           {!permission?.granted ? (
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.brand.cardBackground }}>
-              <Pressable onPress={requestPermission} style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, backgroundColor: Colors.brand.status.accepted }}>
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>Enable</Text>
+              <Pressable onPress={requestPermission} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, backgroundColor: Colors.brand.status.accepted }}>
+                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Enable</Text>
               </Pressable>
             </View>
           ) : videoUri ? (
@@ -116,114 +120,175 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
                     } catch {}
                   }}
                   accessibilityLabel={isPlaying ? 'Pause playback' : 'Play playback'}
-                  style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.7)', alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <Text style={{ color: '#fff', fontWeight: '900', fontSize: 12 }}>{isPlaying ? '❚❚' : '▶'}</Text>
+                  <Text style={{ color: '#fff', fontWeight: '900', fontSize: 14 }}>{isPlaying ? '❚❚' : '▶'}</Text>
                 </Pressable>
               </View>
             </>
           ) : (
-            <CameraView
-              ref={r => (cameraRef.current = r)}
-              style={{ width: '100%', height: '100%' }}
-              facing={type as any}
-              mode={"video" as any}
-              onCameraReady={() => setIsCameraReady(true)}
-              onError={() => setIsCameraReady(false)}
-            />
-          )}
-        </View>
-        
-        {/* Compact controls below the circle */}
-        <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          {!recording && !videoUri && (
-            <Pressable
-              onPress={startRecording}
-              accessibilityLabel="Start recording"
-              disabled={!isCameraReady || starting}
-              style={{ 
-                width: 40, 
-                height: 40, 
-                borderRadius: 20, 
-                backgroundColor: isCameraReady && !starting ? '#ff3b30' : 'rgba(255,59,48,0.4)', 
-                borderWidth: 2, 
-                borderColor: '#fff', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.3,
-                shadowRadius: 4,
-                elevation: 4,
-              }}
-            />
-          )}
-          {recording && (
-            <Pressable
-              onPress={async () => { if (!cameraRef.current) return; try { await cameraRef.current.stopRecording(); } catch {} }}
-              accessibilityLabel="Stop recording"
-              style={{ 
-                paddingHorizontal: 12, 
-                paddingVertical: 6, 
-                borderRadius: 12, 
-                backgroundColor: '#fff',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 4,
-                elevation: 4,
-              }}
-            >
-              <Text style={{ color: Colors.brand.textPrimary, fontWeight: '700', fontSize: 12 }}>Stop</Text>
-            </Pressable>
-          )}
-          {!videoUri && (
-            <Pressable 
-              onPress={() => setType(prev => (prev === 'front' ? 'back' : 'front'))} 
-              accessibilityLabel="Flip camera" 
-              style={{ 
-                paddingHorizontal: 8, 
-                paddingVertical: 6, 
-                borderRadius: 10, 
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                borderWidth: 1,
-                borderColor: 'rgba(255,255,255,0.2)',
-              }}
-            >
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 11 }}>Flip</Text>
-            </Pressable>
-          )}
-          {videoUri && (
             <>
-              <Pressable 
-                onPress={() => { onRecorded(videoUri); }} 
-                accessibilityLabel="Use this video" 
-                style={{ 
-                  paddingHorizontal: 10, 
-                  paddingVertical: 6, 
-                  borderRadius: 10, 
-                  backgroundColor: Colors.brand.status.completed 
-                }}
-              >
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 11 }}>Use</Text>
-              </Pressable>
-              <Pressable 
-                onPress={() => setVideoUri(null)} 
-                accessibilityLabel="Re-record" 
-                style={{ 
-                  paddingHorizontal: 10, 
-                  paddingVertical: 6, 
-                  borderRadius: 10, 
-                  backgroundColor: Colors.brand.cardBackground,
-                  borderWidth: 1,
-                  borderColor: Colors.brand.divider,
-                }}
-              >
-                <Text style={{ color: Colors.brand.textPrimary, fontWeight: '700', fontSize: 11 }}>Re-record</Text>
-              </Pressable>
+              <CameraView
+                ref={r => (cameraRef.current = r)}
+                style={{ width: '100%', height: '100%' }}
+                facing={type as any}
+                mode={"video" as any}
+                onCameraReady={() => setIsCameraReady(true)}
+                onError={() => setIsCameraReady(false)}
+              />
+              
+              {/* Recording indicator overlay */}
+              {recording && (
+                <View style={{ 
+                  position: 'absolute', 
+                  top: 8, 
+                  right: 8, 
+                  width: 12, 
+                  height: 12, 
+                  borderRadius: 6, 
+                  backgroundColor: '#ff3b30',
+                  shadowColor: '#ff3b30',
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.8,
+                  shadowRadius: 6,
+                  elevation: 6,
+                }} />
+              )}
+              
+              {/* Start/Stop button overlay - positioned at bottom center */}
+              {!recording && !videoUri && (
+                <Pressable
+                  onPress={startRecording}
+                  accessibilityLabel="Start recording"
+                  disabled={!isCameraReady || starting}
+                  style={{ 
+                    position: 'absolute',
+                    bottom: 12,
+                    alignSelf: 'center',
+                    width: 44, 
+                    height: 44, 
+                    borderRadius: 22, 
+                    backgroundColor: isCameraReady && !starting ? '#ff3b30' : 'rgba(255,59,48,0.5)', 
+                    borderWidth: 3, 
+                    borderColor: '#fff', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.4,
+                    shadowRadius: 6,
+                    elevation: 6,
+                  }}
+                >
+                  <View style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: 2,
+                    backgroundColor: '#fff',
+                  }} />
+                </Pressable>
+              )}
+              
+              {recording && (
+                <Pressable
+                  onPress={async () => { 
+                    if (!cameraRef.current) return; 
+                    try { 
+                      await cameraRef.current.stopRecording(); 
+                      onRecordingStop?.();
+                    } catch {} 
+                  }}
+                  accessibilityLabel="Stop recording"
+                  style={{ 
+                    position: 'absolute',
+                    bottom: 12,
+                    alignSelf: 'center',
+                    width: 44, 
+                    height: 44, 
+                    borderRadius: 22, 
+                    backgroundColor: '#fff',
+                    borderWidth: 3,
+                    borderColor: '#ff3b30',
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.4,
+                    shadowRadius: 6,
+                    elevation: 6,
+                  }}
+                >
+                  <View style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 2,
+                    backgroundColor: '#ff3b30',
+                  }} />
+                </Pressable>
+              )}
             </>
           )}
         </View>
+        
+        {/* Flip camera button - positioned below and to the right */}
+        {!videoUri && permission?.granted && (
+          <Pressable 
+            onPress={() => setType(prev => (prev === 'front' ? 'back' : 'front'))} 
+            accessibilityLabel="Flip camera" 
+            style={{ 
+              position: 'absolute',
+              bottom: -8,
+              right: -8,
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              borderWidth: 2,
+              borderColor: 'rgba(255, 255, 255, 0.3)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 4,
+            }}
+          >
+            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14 }}>↻</Text>
+          </Pressable>
+        )}
+        
+        {/* Video controls when video is recorded */}
+        {videoUri && (
+          <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Pressable 
+              onPress={() => { onRecorded(videoUri); }} 
+              accessibilityLabel="Use this video" 
+              style={{ 
+                paddingHorizontal: 10, 
+                paddingVertical: 6, 
+                borderRadius: 10, 
+                backgroundColor: Colors.brand.status.completed 
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 11 }}>Use</Text>
+            </Pressable>
+            <Pressable 
+              onPress={() => setVideoUri(null)} 
+              accessibilityLabel="Re-record" 
+              style={{ 
+                paddingHorizontal: 10, 
+                paddingVertical: 6, 
+                borderRadius: 10, 
+                backgroundColor: Colors.brand.cardBackground,
+                borderWidth: 1,
+                borderColor: Colors.brand.divider,
+              }}
+            >
+              <Text style={{ color: Colors.brand.textPrimary, fontWeight: '700', fontSize: 11 }}>Re-record</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
     );
   }

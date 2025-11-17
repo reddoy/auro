@@ -28,12 +28,17 @@ export default function DatingProfilePhotoGallery({ uris, onPhotoPress }: Props)
     const index = Math.round(contentOffsetX / (cardWidth + cardSpacing));
     setActiveIndex(Math.max(0, Math.min(index, uris.length - 1)));
   };
+
+  // Calculate padding to center the photos
+  // Center the first photo when there's extra space available
+  const totalContentWidth = uris.length * cardWidth + (uris.length - 1) * cardSpacing;
+  const centerPadding = Math.max(containerPadding, (screenWidth - totalContentWidth) / 2);
   
   const scrollToIndex = (index: number) => {
     const offset = index * (cardWidth + cardSpacing);
     scrollViewRef.current?.scrollTo({ x: offset, animated: true });
   };
-
+  
   return (
     <View style={styles.container}>
       <ScrollView
@@ -41,11 +46,11 @@ export default function DatingProfilePhotoGallery({ uris, onPhotoPress }: Props)
         horizontal
         pagingEnabled={false}
         snapToInterval={cardWidth + cardSpacing}
-        snapToAlignment="start"
+        snapToAlignment="center"
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{
-          paddingHorizontal: containerPadding,
+          paddingHorizontal: centerPadding,
           paddingVertical: 8,
         }}
         onScroll={handleScroll}
