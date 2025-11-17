@@ -35,11 +35,21 @@ export default function SimplePhotoModal({ visible, uri, onClose }: Props) {
   const { width, height } = Dimensions.get('window');
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
+    <Modal 
+      visible={visible} 
+      transparent 
+      animationType="fade" 
+      onRequestClose={handleClose}
+      presentationStyle="overFullScreen"
+    >
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
         
-        <View style={[styles.container, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}>
+        <Pressable 
+          style={[styles.container, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}
+          onPress={handleImagePress}
+          activeOpacity={1}
+        >
           <Image
             source={{ uri }}
             style={[
@@ -51,16 +61,15 @@ export default function SimplePhotoModal({ visible, uri, onClose }: Props) {
               }
             ]}
             contentFit="contain"
-            onPress={handleImagePress}
           />
           
           {/* Instructions */}
-          <View style={styles.instructions}>
+          <View style={styles.instructions} pointerEvents="none">
             <Text style={styles.instructionText}>
               {isZoomed ? 'Tap to zoom out • Tap outside to close' : 'Tap to zoom in • Tap outside to close'}
             </Text>
           </View>
-        </View>
+        </Pressable>
       </View>
     </Modal>
   );
@@ -69,15 +78,18 @@ export default function SimplePhotoModal({ visible, uri, onClose }: Props) {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 9999,
+    elevation: 9999,
   },
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
+    width: '100%',
   },
   image: {
     borderRadius: 8,

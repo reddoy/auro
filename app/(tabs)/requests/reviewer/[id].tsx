@@ -83,16 +83,16 @@ export default function ReviewerRequestScreen() {
     const horizontalMargin = 8; // Very minimal padding for maximum photo size
     
     // Account for pagination dots on the right side (dots + padding + margin)
-    const paginationDotsWidth = 28; // Approximate width of pagination dots container
-    const paginationRight = 12;
-    const rightMargin = paginationDotsWidth + paginationRight + 20; // Increased spacing to prevent overlap
+    const paginationDotsWidth = 36; // Approximate width of pagination dots container (increased for iOS)
+    const paginationRight = 16; // Increased right margin for iOS
+    const rightMargin = paginationDotsWidth + paginationRight + 24; // Increased spacing to prevent overlap on iOS
     
     const availableWidth = windowWidth - horizontalMargin - rightMargin; // Left margin + right space for dots
     
     // Calculate vertical spacing optimized for TikTok - account for larger camera (130px) + companion panel
     const recorderSize = 130;
     const topSpace = Math.max(insets.top + recorderSize + 20, 160); // Space for larger camera + companion panel
-    const bottomSpace = insets.bottom + 140; // Space for bottom overlays (title, note input, instructions)
+    const bottomSpace = insets.bottom + 100; // Reduced space for bottom - buttons will be fixed at bottom
     
     // Photo takes up 90% of available vertical space for TikTok format
     const availableHeight = windowHeight - topSpace - bottomSpace;
@@ -590,7 +590,12 @@ export default function ReviewerRequestScreen() {
         )}
       </ScrollView>
       {/* Immersive recording modal with rating and note controls */}
-      <Modal visible={recordingModeOpen} animationType="slide" onRequestClose={() => setRecordingModeOpen(false)}>
+      <Modal 
+        visible={recordingModeOpen && !photoModalOpen} 
+        animationType="slide" 
+        onRequestClose={() => setRecordingModeOpen(false)}
+        presentationStyle="fullScreen"
+      >
         <RNView style={{ flex: 1, backgroundColor: Colors.brand.background }}>
           
           {/* Vertical photo carousel with rating and note controls */}
@@ -620,7 +625,7 @@ export default function ReviewerRequestScreen() {
             {allSlides.map((slide, i) => (
               <RNView
                 key={`slide-${i}`}
-                style={[
+                  style={[
                   styles.recordingSlide,
                   {
                     width: windowWidth,
@@ -630,21 +635,19 @@ export default function ReviewerRequestScreen() {
                     paddingTop: frameMetrics.slideTopPadding,
                     paddingBottom: frameMetrics.slideBottomPadding,
                     alignItems: 'center',
-                    justifyContent: 'center',
+                    justifyContent: 'flex-end',
                     overflow: 'hidden',
                   },
                 ]}
               >
                 {slide.type === 'profile' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center', flex: 1, position: 'relative' }] }>
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-end', flex: 1, paddingTop: 0, paddingBottom: 20 }] }>
                     {/* Name and message overlay - ABOVE profile picture, centered with page */}
                     <RNView style={{
-                      position: 'absolute',
-                      top: 40,
-                      left: 0,
-                      right: 0,
+                      width: '100%',
                       alignItems: 'center',
-                      zIndex: 2,
+                      marginTop: 0,
+                      marginBottom: 24,
                       paddingHorizontal: frameMetrics.slideHorizontalPadding + 8,
                     }}>
                       <RNView style={{
@@ -696,22 +699,33 @@ export default function ReviewerRequestScreen() {
                     
                     {/* Circular profile photo - TikTok optimized */}
                     {slide.data.profilePicture ? (
-                      <Image 
-                        source={{ uri: slide.data.profilePicture }} 
+                      <TouchableOpacity
                         style={{ 
-                          width: frameMetrics.photoWidth * 0.85,
-                          height: frameMetrics.photoWidth * 0.85,
-                          borderRadius: (frameMetrics.photoWidth * 0.85) / 2, // Make it circular
-                          marginTop: 140, // Space for the name/bio overlay above
-                          alignSelf: 'center',
-                          shadowColor: Colors.brand.shadow,
-                          shadowOffset: { width: 0, height: 12 },
-                          shadowOpacity: 0.4,
-                          shadowRadius: 20,
-                          elevation: 12,
-                        }} 
-                        contentFit="cover" 
-                      />
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        onPress={() => {
+                          setCurrentPhotoUri(slide.data.profilePicture);
+                          setPhotoModalOpen(true);
+                        }}
+                        activeOpacity={0.95}
+                      >
+                        <Image 
+                          source={{ uri: slide.data.profilePicture }} 
+                          style={{ 
+                            width: frameMetrics.photoWidth * 0.85,
+                            height: frameMetrics.photoWidth * 0.85,
+                            borderRadius: (frameMetrics.photoWidth * 0.85) / 2, // Make it circular
+                            alignSelf: 'center',
+                            shadowColor: Colors.brand.shadow,
+                            shadowOffset: { width: 0, height: 12 },
+                            shadowOpacity: 0.4,
+                            shadowRadius: 20,
+                            elevation: 12,
+                          }} 
+                          contentFit="cover" 
+                        />
+                      </TouchableOpacity>
                     ) : null}
                   </RNView>
                 )}
@@ -742,6 +756,7 @@ export default function ReviewerRequestScreen() {
                         shadowOpacity: 0.4,
                         shadowRadius: 20,
                         elevation: 12,
+                        zIndex: 1,
                       }}
                       onPress={() => {
                         setCurrentPhotoUri(slide.data.uri);
@@ -774,12 +789,9 @@ export default function ReviewerRequestScreen() {
 
                     {/* Photo info overlay - positioned below photo, centered */}
                     <RNView style={{
-                      position: 'absolute',
-                      top: frameMetrics.photoHeight + 60, // Position below the photo with spacing
-                      left: 0,
-                      right: 0,
+                      marginTop: 20,
+                      width: '100%',
                       alignItems: 'center',
-                      zIndex: 2,
                       paddingHorizontal: frameMetrics.slideHorizontalPadding + 8,
                     }}>
                       <RNView style={{
@@ -1323,6 +1335,11 @@ export default function ReviewerRequestScreen() {
               }}
               variant="corner"
               circleSize={recorderSize}
+              hideButtons={true}
+              value={videoUri}
+              onVideoUriChange={(uri) => {
+                setVideoUri(uri);
+              }}
               onRecordingStart={() => {
                 setRecordingDuration(0);
                 recordingTimerRef.current = setInterval(() => {
@@ -1434,7 +1451,8 @@ export default function ReviewerRequestScreen() {
               position: 'absolute',
               top: frameMetrics.paginationTop,
               right: frameMetrics.paginationRight,
-              zIndex: 10,
+              zIndex: 5,
+              elevation: 5,
               backgroundColor: 'rgba(0, 0, 0, 0.5)',
               borderRadius: 20,
               paddingVertical: 12,
@@ -1443,6 +1461,7 @@ export default function ReviewerRequestScreen() {
               borderWidth: 1,
               borderColor: 'rgba(255, 255, 255, 0.1)',
             }}
+            pointerEvents="box-none"
           >
             <PaginationDots
               totalItems={allSlides.length}
@@ -1450,6 +1469,73 @@ export default function ReviewerRequestScreen() {
               orientation="vertical"
             />
           </RNView>
+
+          {/* Fixed Use/Re-record buttons at bottom when video is recorded */}
+          {videoUri && (
+            <RNView
+              style={{
+                position: 'absolute',
+                bottom: insets.bottom + 20,
+                left: 0,
+                right: 0,
+                alignItems: 'center',
+                zIndex: 12,
+                elevation: 12,
+                paddingHorizontal: 20,
+              }}
+            >
+              <RNView
+                style={{
+                  flexDirection: 'row',
+                  gap: 12,
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  borderRadius: 16,
+                  paddingVertical: 12,
+                  paddingHorizontal: 20,
+                  borderWidth: 1,
+                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                }}
+              >
+                <TouchableOpacity
+                  onPress={() => {
+                    setRecordingModeOpen(false);
+                    setIsVideoReviewMode(false);
+                    if (recordingTimerRef.current) {
+                      clearInterval(recordingTimerRef.current);
+                      recordingTimerRef.current = null;
+                    }
+                    setRecordingDuration(0);
+                    Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
+                  }}
+                  style={{
+                    paddingHorizontal: 24,
+                    paddingVertical: 12,
+                    borderRadius: 12,
+                    backgroundColor: Colors.brand.status.completed,
+                    minWidth: 100,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Use</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setVideoUri(null)}
+                  style={{
+                    paddingHorizontal: 24,
+                    paddingVertical: 12,
+                    borderRadius: 12,
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    minWidth: 100,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Re-record</Text>
+                </TouchableOpacity>
+              </RNView>
+            </RNView>
+          )}
           
         </RNView>
       </Modal>

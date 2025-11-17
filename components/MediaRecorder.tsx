@@ -14,19 +14,33 @@ type Props = {
   value?: string | null;
   onRecordingStart?: () => void;
   onRecordingStop?: () => void;
+  hideButtons?: boolean;
+  onVideoUriChange?: (uri: string | null) => void;
 };
 
-export default function MediaRecorder({ photos = [], onRecorded, variant = 'inline', circleSize = 140, value = null, onRecordingStart, onRecordingStop }: Props) {
+export default function MediaRecorder({ photos = [], onRecorded, variant = 'inline', circleSize = 140, value = null, onRecordingStart, onRecordingStop, hideButtons = false, onVideoUriChange }: Props) {
   const cameraRef = useRef<CameraView | null>(null);
   const [type, setType] = useState<CameraType>('front');
   const [recording, setRecording] = useState(false);
   const [starting, setStarting] = useState(false);
-  const [videoUri, setVideoUri] = useState<string | null>(null);
+  const [videoUri, setVideoUri] = useState<string | null>(value);
   const videoPlayer = useVideoPlayer(videoUri || '');
   const [activeIdx, setActiveIdx] = useState(0);
   const [permission, requestPermission] = useCameraPermissions();
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  // Sync internal videoUri with external value prop
+  React.useEffect(() => {
+    if (value !== videoUri) {
+      setVideoUri(value);
+    }
+  }, [value]);
+
+  // Update parent when videoUri changes
+  React.useEffect(() => {
+    onVideoUriChange?.(videoUri);
+  }, [videoUri, onVideoUriChange]);
 
   const startRecording = async () => {
     if (!cameraRef.current) return;
@@ -259,7 +273,7 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
         )}
         
         {/* Video controls when video is recorded */}
-        {videoUri && (
+        {videoUri && !hideButtons && (
           <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Pressable 
               onPress={() => { onRecorded(videoUri); }} 
@@ -274,7 +288,10 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
               <Text style={{ color: '#fff', fontWeight: '700', fontSize: 11 }}>Use</Text>
             </Pressable>
             <Pressable 
-              onPress={() => setVideoUri(null)} 
+              onPress={() => {
+                setVideoUri(null);
+                onVideoUriChange?.(null);
+              }} 
               accessibilityLabel="Re-record" 
               style={{ 
                 paddingHorizontal: 10, 
