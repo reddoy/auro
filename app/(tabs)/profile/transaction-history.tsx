@@ -427,7 +427,7 @@ export default function TransactionBreakdownScreen() {
               tintColor={Colors.brand.textPrimary}
             />
           }
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[styles.listContainer, { paddingBottom: 20 + insets.bottom + 80 }]}
           showsVerticalScrollIndicator={false}
         />
       </View>

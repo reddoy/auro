@@ -281,6 +281,14 @@ export default function ProfileSettingsScreen() {
         <Text style={styles.sectionTitle}>Privacy & Notifications</Text>
         <LabeledSwitch label="Email notifications" value={emailNotif} onValueChange={setEmailNotif} />
         <LabeledSwitch label="Push notifications" value={pushNotif} onValueChange={setPushNotif} />
+        <TouchableOpacity 
+          style={styles.testButton}
+          onPress={() => router.push('/(tabs)/profile/test-notifications')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.testButtonText}>Test Notifications</Text>
+          <Text style={styles.testButtonArrow}>›</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.saveBar}>
@@ -467,6 +475,27 @@ const styles = StyleSheet.create({
   },
   securityButtonTextDanger: { 
     color: '#fff' 
+  },
+  testButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.brand.background,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.brand.border,
+  },
+  testButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.brand.textPrimary,
+  },
+  testButtonArrow: {
+    fontSize: 20,
+    color: Colors.brand.textSecondary,
   },
 });
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { StyleSheet, Alert, FlatList, Platform, Linking, Switch, View as RNView, Image, RefreshControl, ScrollView } from 'react-native';
+import { StyleSheet, Alert, FlatList, Platform, Linking, Switch, View as RNView, Image, RefreshControl, ScrollView, Modal, TextInput, KeyboardAvoidingView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -35,6 +35,8 @@ export default function ProfileScreen() {
     completedPaid: 0,           // Money fully paid out to reviewer's Stripe account
     completedCount: 0           // Total number of completed reviews
   });
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
   const skipNextFocusRefresh = useRef(true);
   const refreshInFlight = useRef(false);
   
@@ -664,16 +666,78 @@ export default function ProfileScreen() {
                   <Switch
                     value={!!profile?.is_reviewer}
                     onValueChange={async (val) => {
-                      try {
-                        const updated = await updateProfile({ is_reviewer: val });
-                        setProfile(updated);
-                        if (val) {
+                      // If enabling, proceed normally
+                      if (val) {
+                        try {
+                          const updated = await updateProfile({ is_reviewer: val });
+                          setProfile(updated);
                           Alert.alert('Reviewer enabled', 'Your reviewer profile is now active.');
+                        } catch (e: any) {
+                          Alert.alert('Error', e?.message || 'Failed to update reviewer status');
+                        }
+                        return;
+                      }
+
+                      // If disabling, check for pending reviews first
+                      try {
+                        if (!profile?.id) {
+                          Alert.alert('Error', 'Unable to verify your profile');
+                          return;
+                        }
+
+                        // Check for pending reviews (accepted, paid, or in_progress)
+                        const requests = await getRequestsByReviewer(profile.id);
+                        const pendingReviews = requests.filter(
+                          (r) => (r.status === 'accepted' || r.status === 'paid' || r.status === 'in_progress')
+                        );
+
+                        if (pendingReviews.length > 0) {
+                          // Show warning dialog with details
+                          const pendingCount = pendingReviews.length;
+                          const totalPending = pendingReviews.reduce((sum, r) => {
+                            // Only count amounts for paid/in_progress reviews that have payment info
+                            if (r.status === 'paid' || r.status === 'in_progress') {
+                              const amount = r.reviewer_amount_cents || ((r.amount_cents || 0) - (r.application_fee_cents || 0));
+                              return sum + amount;
+                            }
+                            // For 'accepted' status, payment might not be complete yet, so return 0
+                            return sum;
+                          }, 0) / 100;
+
+                          Alert.alert(
+                            'Pending Reviews',
+                            `You have ${pendingCount} pending review${pendingCount > 1 ? 's' : ''} that need to be completed${totalPending > 0 ? ` ($${totalPending.toFixed(2)} in pending earnings)` : ''}.\n\nDisabling your reviewer status will prevent you from completing these reviews. You can still complete them if you re-enable your reviewer status later.\n\nDo you want to continue?`,
+                            [
+                              {
+                                text: 'Cancel',
+                                style: 'cancel',
+                                onPress: () => {
+                                  // Reset switch to true since we're canceling
+                                  // The Switch is controlled by profile.is_reviewer, so this will reset it visually
+                                  if (profile) {
+                                    setProfile({ ...profile, is_reviewer: true });
+                                  }
+                                },
+                              },
+                              {
+                                text: 'Disable Anyway',
+                                style: 'destructive',
+                                onPress: () => {
+                                  // Show confirmation modal requiring typing "auro"
+                                  setConfirmText('');
+                                  setShowConfirmModal(true);
+                                },
+                              },
+                            ],
+                            { cancelable: true }
+                          );
                         } else {
-                          Alert.alert('Reviewer disabled', 'You will no longer appear as a reviewer.');
+                          // No pending reviews, show confirmation modal requiring typing "auro"
+                          setConfirmText('');
+                          setShowConfirmModal(true);
                         }
                       } catch (e: any) {
-                        Alert.alert('Error', e?.message || 'Failed to update reviewer status');
+                        Alert.alert('Error', e?.message || 'Failed to check pending reviews');
                       }
                     }}
                     trackColor={{ false: '#3e3e3e', true: '#10b981' }}
@@ -797,6 +861,20 @@ export default function ProfileScreen() {
             <Text style={styles.actionText}>Hinge Profile Clone</Text>
             <Text style={styles.actionArrow}>›</Text>
           </MotionPressable>
+
+          <MotionPressable style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/test-notifications')} accessibilityLabel="Test notifications">
+            <View style={styles.actionIconContainer}>
+              <ExpoLinearGradient
+                colors={['#8B5CF6', '#A78BFA']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.actionIconGradient}
+              />
+              <Text style={styles.actionIcon}>🔔</Text>
+            </View>
+            <Text style={styles.actionText}>Test Notifications</Text>
+            <Text style={styles.actionArrow}>›</Text>
+          </MotionPressable>
         </MotionView>
 
         <MotionView entering={nextEntrance()} style={styles.dangerSection}>
@@ -807,6 +885,99 @@ export default function ProfileScreen() {
         </MotionView>
       </ScrollView>
       {refreshing ? renderSkeleton(true) : null}
+      
+      {/* Confirmation Modal for Disabling Reviewer Status */}
+      <Modal
+        visible={showConfirmModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowConfirmModal(false);
+          setConfirmText('');
+        }}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <TouchableOpacity
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={() => {
+              setShowConfirmModal(false);
+              setConfirmText('');
+            }}
+          >
+            <View style={styles.modalContent}>
+              <TouchableOpacity activeOpacity={1}>
+                <Text style={styles.modalTitle}>Confirm Disable Reviewer Status</Text>
+                <Text style={styles.modalMessage}>
+                  To confirm you want to disable your reviewer status, please type "auro" below.
+                </Text>
+                <TextInput
+                  style={styles.confirmInput}
+                  value={confirmText}
+                  onChangeText={setConfirmText}
+                  placeholder="Type 'auro' to confirm"
+                  placeholderTextColor={Colors.brand.textSecondary}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoFocus={Platform.OS !== 'web'}
+                />
+                <RNView style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonCancel]}
+                    onPress={() => {
+                      setShowConfirmModal(false);
+                      setConfirmText('');
+                      // Reset switch to true since we're canceling
+                      if (profile) {
+                        setProfile({ ...profile, is_reviewer: true });
+                      }
+                    }}
+                  >
+                    <Text style={styles.modalButtonCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.modalButton,
+                      styles.modalButtonConfirm,
+                      confirmText.toLowerCase() !== 'auro' && styles.modalButtonDisabled,
+                    ]}
+                    onPress={async () => {
+                      if (confirmText.toLowerCase() !== 'auro') {
+                        return;
+                      }
+                      try {
+                        const updated = await updateProfile({ is_reviewer: false });
+                        setProfile(updated);
+                        setShowConfirmModal(false);
+                        setConfirmText('');
+                        Alert.alert(
+                          'Reviewer disabled',
+                          'You will no longer appear as a reviewer. You can re-enable your status to complete pending reviews.'
+                        );
+                      } catch (e: any) {
+                        Alert.alert('Error', e?.message || 'Failed to update reviewer status');
+                      }
+                    }}
+                    disabled={confirmText.toLowerCase() !== 'auro'}
+                  >
+                    <Text
+                      style={[
+                        styles.modalButtonConfirmText,
+                        confirmText.toLowerCase() !== 'auro' && styles.modalButtonDisabledText,
+                      ]}
+                    >
+                      Disable
+                    </Text>
+                  </TouchableOpacity>
+                </RNView>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -1401,6 +1572,92 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: Colors.brand.textPrimary,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 20,
+    padding: 24,
+    width: '90%',
+    maxWidth: 400,
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: Colors.brand.textSecondary,
+    marginBottom: 20,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  confirmInput: {
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    borderWidth: 2,
+    borderColor: Colors.brand.border,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: Colors.brand.textPrimary,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalButtonCancel: {
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    borderWidth: 1,
+    borderColor: Colors.brand.border,
+    marginRight: 6,
+  },
+  modalButtonConfirm: {
+    backgroundColor: Colors.brand.status.rejected,
+    marginLeft: 6,
+  },
+  modalButtonDisabled: {
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    opacity: 0.5,
+  },
+  modalButtonCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.brand.textPrimary,
+  },
+  modalButtonConfirmText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  modalButtonDisabledText: {
+    color: Colors.brand.textSecondary,
   },
 });
 

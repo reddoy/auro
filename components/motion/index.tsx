@@ -94,7 +94,7 @@ export const MotionPressable = forwardRef<Animated.ComponentRef<typeof AnimatedP
         ref={ref}
         entering={entering ?? DEFAULT_ENTERING}
         exiting={exiting ?? DEFAULT_EXITING}
-        layout={layout ?? DEFAULT_LAYOUT}
+        layout={layout !== undefined ? layout : (scaleEffect ? undefined : DEFAULT_LAYOUT)}
         style={resolvedStyle}
         onPressIn={(event) => {
           if (scaleEffect) {

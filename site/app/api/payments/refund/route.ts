@@ -35,20 +35,30 @@ export async function POST(req: Request) {
         refunded_amount_cents,
         refund_status,
         refund_reason,
-        refunded_at,
-        profiles!requests_user_id_fkey (
-          id,
-          email,
-          full_name,
-          username
-        )
+        refunded_at
       `)
       .eq('id', requestId)
       .maybeSingle();
 
     if (requestError) {
       console.error('Failed to fetch request:', requestError);
-      return new Response(JSON.stringify({ error: 'Failed to fetch request' }), { status: 500 });
+      return new Response(JSON.stringify({ error: 'Failed to fetch request', details: requestError.message }), { status: 500 });
+    }
+
+    // Get customer profile separately if needed
+    let customer = null;
+    if (request?.user_id) {
+      try {
+        const { data: profileData } = await admin
+          .from('profiles')
+          .select('id, email, full_name, username')
+          .eq('id', request.user_id)
+          .maybeSingle();
+        customer = profileData;
+      } catch (profileError) {
+        console.error('Failed to fetch customer profile:', profileError);
+        // Don't fail the refund if we can't get the profile
+      }
     }
 
     if (!request) {
@@ -152,8 +162,6 @@ export async function POST(req: Request) {
         // Don't fail the request since the refund was successful
       }
 
-      const customer = (request as any).profiles;
-      
       return new Response(JSON.stringify({ 
         success: true,
         refundId: refund.id,
@@ -161,8 +169,8 @@ export async function POST(req: Request) {
         totalRefunded: newRefundedAmount,
         totalAmount: totalAmount,
         isFullyRefunded: isFullyRefunded,
-        customerName: customer?.full_name || customer?.username,
-        customerEmail: customer?.email,
+        customerName: customer?.full_name || customer?.username || null,
+        customerEmail: customer?.email || null,
         message: isFullyRefunded ? 'Request fully refunded' : 'Partial refund processed'
       }), { status: 200 });
 

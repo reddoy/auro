@@ -131,13 +131,18 @@ export default function RequestPage() {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const creatorSlug = urlParams.get('creatorSlug');
+      const creatorId = urlParams.get('creatorId');
       
       // Try to restore flow state first (for OAuth return)
       const restored = restoreFlowState();
       
-      if (creatorSlug && !restored) {
-        // Only set creator slug if we didn't restore from saved state
-        setRequestData(prev => ({ ...prev, creatorSlug }));
+      if ((creatorSlug || creatorId) && !restored) {
+        // Only set creator if we didn't restore from saved state
+        if (creatorSlug) {
+          setRequestData(prev => ({ ...prev, creatorSlug }));
+        } else if (creatorId) {
+          setRequestData(prev => ({ ...prev, creatorId }));
+        }
         setCurrentStep('creator-selection');
       }
     }

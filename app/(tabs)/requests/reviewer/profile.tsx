@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, TouchableOpacity, ScrollView, View as RNView, Linking, Image, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
+import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
@@ -95,6 +96,24 @@ export default function ReviewerProfileScreen() {
     try { Linking.openURL(finalUrl); } catch {}
   };
 
+  const handleRequestReview = () => {
+    if (!reviewer) return;
+    
+    // Build URL with creatorSlug (username) if available, otherwise use creatorId
+    let requestUrl = 'https://www.appauro.com/request?';
+    if (reviewer.username) {
+      requestUrl += `creatorSlug=${encodeURIComponent(reviewer.username)}`;
+    } else {
+      requestUrl += `creatorId=${encodeURIComponent(reviewer.id)}`;
+    }
+    
+    try {
+      Linking.openURL(requestUrl);
+    } catch (error) {
+      console.error('Error opening request URL:', error);
+    }
+  };
+
   const bottomPadding = Platform.OS === 'web' ? 24 : insets.bottom + 120;
 
   return (
@@ -111,6 +130,23 @@ export default function ReviewerProfileScreen() {
               <Text style={styles.bio}>{reviewer.bio}</Text>
             )}
           </RNView>
+
+          {/* Request a Review Button */}
+          <TouchableOpacity
+            style={styles.requestButton}
+            onPress={handleRequestReview}
+            activeOpacity={0.8}
+            accessibilityLabel="Request a review from this reviewer"
+          >
+            <ExpoLinearGradient
+              colors={[Colors.brand.accentMagenta, Colors.brand.accentOrange]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.requestButtonGradient}
+            >
+              <Text style={styles.requestButtonText}>Request a Review</Text>
+            </ExpoLinearGradient>
+          </TouchableOpacity>
 
           {/* Stats */}
           <RNView style={styles.statsRow}>
@@ -215,7 +251,29 @@ const styles = StyleSheet.create({
   reviewComment: { color: Colors.brand.textPrimary, marginBottom: 4 },
   reviewMeta: { color: Colors.brand.textSecondary, fontSize: 12 },
   emptyText: { color: Colors.brand.textSecondary },
-  
+  requestButton: {
+    marginTop: 16,
+    marginBottom: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: Colors.brand.accentMagenta,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  requestButtonGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  requestButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
 });
 
 
