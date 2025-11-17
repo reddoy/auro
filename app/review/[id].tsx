@@ -4,8 +4,14 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, router } from 'expo-router';
 
 import { Text, View } from '@/components/Themed';
-import { getRequestById, getReviewerReviewByRequestId, type ReviewerReview } from '@/lib/api';
-import { getReviewerById, getProfileById } from '@/lib/api';
+import {
+  getRequestById,
+  getReviewerReviewByRequestId,
+  type ReviewerReview,
+  getReviewerById,
+  getProfileById,
+  markReviewAsViewed,
+} from '@/lib/api';
 import Colors from '@/constants/Colors';
 import { Image } from 'expo-image';
 import { signRequestMediaUrls } from '@/lib/uploads';
@@ -34,6 +40,8 @@ export default function ReviewDetailScreen() {
   const [galleryIndex, setGalleryIndex] = React.useState(0);
   const [reviewerReviewModalOpen, setReviewerReviewModalOpen] = React.useState(false);
   const [reviewerReview, setReviewerReview] = React.useState<ReviewerReview | null>(null);
+  const [hasViewedReview, setHasViewedReview] = React.useState(false);
+  const [autoPromptShown, setAutoPromptShown] = React.useState(false);
 
   const statusBanner = React.useMemo(() => {
     const s = request?.status as string | undefined;
@@ -93,11 +101,33 @@ export default function ReviewDetailScreen() {
   const shareConsent = React.useMemo(() => !!parsedNotes?.consent?.shareOnSocial, [parsedNotes]);
 
   React.useEffect(() => {
+    if (!request?.id || request.status !== 'completed' || !review || hasViewedReview) {
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        await markReviewAsViewed(request.id);
+        if (!cancelled) {
+          setHasViewedReview(true);
+          setRequest((prev: any) => (prev ? { ...prev, review_viewed_at: new Date().toISOString() } : prev));
+        }
+      } catch (error) {
+        console.error('Failed to mark review as viewed:', error);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [request?.id, request?.status, review, hasViewedReview]);
+
+  React.useEffect(() => {
     const run = async () => {
       if (!id) return;
       try {
         const req = await getRequestById(String(id));
         setRequest(req);
+        setHasViewedReview(!!req?.review_viewed_at);
         if (req?.influencerId) {
           const rev = await getReviewerById(String(req.influencerId));
           if (rev) {
@@ -139,6 +169,17 @@ export default function ReviewDetailScreen() {
     };
     run();
   }, [id]);
+
+  React.useEffect(() => {
+    if (!hasViewedReview || autoPromptShown || reviewerReview || !review || request?.status !== 'completed') {
+      return;
+    }
+    const promptTimer = setTimeout(() => {
+      setReviewerReviewModalOpen(true);
+      setAutoPromptShown(true);
+    }, 1200);
+    return () => clearTimeout(promptTimer);
+  }, [hasViewedReview, autoPromptShown, reviewerReview, review, request?.status]);
 
   if (loading) {
     return (

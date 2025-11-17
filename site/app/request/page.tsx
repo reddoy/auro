@@ -151,16 +151,32 @@ export default function RequestPage() {
   // Scroll to top on step change for better UX
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    try {
-      const container = document.querySelector('.request-content');
-      if (container && 'scrollIntoView' in container) {
-        (container as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
+    // Use setTimeout to ensure DOM has updated after step change
+    const scrollToTop = () => {
+      try {
+        // Scroll window to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Also try scrolling the main container if it exists
+        const container = document.querySelector('.request-content');
+        if (container) {
+          (container as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        // Scroll the document body/element as well for better compatibility
+        if (document.documentElement) {
+          document.documentElement.scrollTop = 0;
+        }
+        if (document.body) {
+          document.body.scrollTop = 0;
+        }
+      } catch (error) {
+        console.warn('Scroll to top failed:', error);
+        // Fallback: instant scroll without smooth behavior
+        window.scrollTo(0, 0);
       }
-    } catch (error) {
-      console.warn('Scroll to top failed:', error);
-    }
+    };
+    // Small delay to ensure step content has rendered
+    const timeoutId = setTimeout(scrollToTop, 100);
+    return () => clearTimeout(timeoutId);
   }, [currentStep]);
 
   useEffect(() => {

@@ -130,6 +130,7 @@ export interface DbRequestSummary {
   payment_status?: string | null;
   requester_name?: string | null;
   requester_username?: string | null;
+  review_viewed_at?: string | null;
 }
 
 export interface DbUserProfile {

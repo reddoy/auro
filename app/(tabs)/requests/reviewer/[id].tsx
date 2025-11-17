@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Platform, Linking, Animated, LayoutAnimation, useWindowDimensions } from 'react-native';
+import { FontAwesome } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,6 +14,7 @@ import StatusBadge from '@/components/StatusBadge';
 import { Image } from 'expo-image';
 import SimplePhotoModal from '@/components/SimplePhotoModal';
 import ImageGalleryModal from '@/components/ImageGalleryModal';
+import FullScreenPhotoModal from '@/components/FullScreenPhotoModal';
 import { signRequestMediaUrls, getSignedRequestMediaUrl } from '@/lib/uploads';
 import RatingBar from '@/components/RatingBar';
 import MediaRecorder from '@/components/MediaRecorder';
@@ -71,11 +73,11 @@ export default function ReviewerRequestScreen() {
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const scrollViewRef = useRef<ScrollView | null>(null);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const ratingSteps = React.useMemo(() => Array.from({ length: 9 }, (_, index) => 1 + index * 0.5), []);
 
   // Pros and cons tag options
   const prosTags = ['Great photos', 'Great lighting', 'Clever prompts', 'Strong style', 'Good variety', 'Authentic', 'Well composed', 'Eye-catching'];
   const consTags = ['Work on prompts', 'Bad lighting', 'Group photos', 'Bad style', 'Too similar', 'Low quality', 'Needs variety', 'Unclear photos'];
+  const ratingLabels = ['', 'Needs work', 'Could improve', 'Solid', 'Great', 'Outstanding'];
 
   const frameMetrics = React.useMemo(() => {
     // Optimize for TikTok vertical video (9:16) - maximize photo size
@@ -91,12 +93,12 @@ export default function ReviewerRequestScreen() {
     
     // Calculate vertical spacing optimized for TikTok - account for larger camera (130px) + companion panel
     const recorderSize = 130;
-    const topSpace = Math.max(insets.top + recorderSize + 20, 160); // Space for larger camera + companion panel
+    const topSpace = Math.max(insets.top + recorderSize + 40, 180); // Increased space for larger camera + companion panel + more spacing
     const bottomSpace = insets.bottom + 100; // Reduced space for bottom - buttons will be fixed at bottom
     
-    // Photo takes up 90% of available vertical space for TikTok format
+    // Photo takes up 85% of available vertical space for TikTok format (reduced from 90% to make it smaller)
     const availableHeight = windowHeight - topSpace - bottomSpace;
-    const photoHeight = availableHeight * 0.9; // 90% of available space
+    const photoHeight = availableHeight * 0.85; // 85% of available space (reduced from 90%)
     const photoWidth = photoHeight * (3/4); // Maintain 3:4 aspect ratio for dating photos
     
     // Calculate pagination position - center it vertically on the right side
@@ -591,7 +593,7 @@ export default function ReviewerRequestScreen() {
       </ScrollView>
       {/* Immersive recording modal with rating and note controls */}
       <Modal 
-        visible={recordingModeOpen && !photoModalOpen} 
+        visible={recordingModeOpen} 
         animationType="slide" 
         onRequestClose={() => setRecordingModeOpen(false)}
         presentationStyle="fullScreen"
@@ -641,7 +643,7 @@ export default function ReviewerRequestScreen() {
                 ]}
               >
                 {slide.type === 'profile' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-end', flex: 1, paddingTop: 0, paddingBottom: 20 }] }>
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-end', flex: 1, paddingTop: 0, paddingBottom: 60 }] }>
                     {/* Name and message overlay - ABOVE profile picture, centered with page */}
                     <RNView style={{
                       width: '100%',
@@ -731,7 +733,7 @@ export default function ReviewerRequestScreen() {
                 )}
                 
                 {slide.type === 'section' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center' }] }>
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center', marginTop: 60 }] }>
                     <SectionSlideCard
                       title={slide.data.title}
                       subtitle={slide.data.subtitle}
@@ -742,7 +744,7 @@ export default function ReviewerRequestScreen() {
                 )}
                 
                 {slide.type === 'photo' && (
-                  <RNView style={[styles.overlayPhotoCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center', position: 'relative' }] }>
+                  <RNView style={[styles.overlayPhotoCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center', position: 'relative', marginTop: 60 }] }>
                     {/* Full-screen photo - TikTok optimized */}
                     <TouchableOpacity
                       style={{ 
@@ -918,57 +920,34 @@ export default function ReviewerRequestScreen() {
                       </Text>
                     </RNView>
                     
-                    {/* Star Rating Buttons - 1-5 stars, no halves */}
+                    {/* Star Rating - tap a star 1-5 */}
                     <RNView style={{ marginTop: 8, marginBottom: 32, alignItems: 'center', width: '100%', paddingHorizontal: 20 }}>
-                      <Text style={[styles.overlayText, { marginBottom: 16, fontSize: 15, textAlign: 'center' }]}>Tap to rate:</Text>
-                      <RNView style={{ flexDirection: 'row', gap: 12, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
-                        {[1, 2, 3, 4, 5].map((starCount) => {
-                          const isSelected = overallRating === starCount;
+                      <Text style={[styles.overlayText, { marginBottom: 16, fontSize: 15, textAlign: 'center' }]}>Tap a star to rate:</Text>
+                      <RNView style={{ flexDirection: 'row', gap: 16, justifyContent: 'center', alignItems: 'center' }}>
+                        {[1, 2, 3, 4, 5].map((value) => {
+                          const isActive = value <= overallRating;
                           return (
                             <TouchableOpacity
-                              key={starCount}
-                              onPress={() => setOverallRating(starCount)}
+                              key={value}
+                              onPress={() => setOverallRating(value)}
+                              activeOpacity={0.8}
                               style={{
-                                paddingHorizontal: 20,
-                                paddingVertical: 12,
-                                borderRadius: 16,
-                                backgroundColor: isSelected 
-                                  ? Colors.brand.accentOrange 
-                                  : 'rgba(255, 255, 255, 0.1)',
-                                borderWidth: 2,
-                                borderColor: isSelected 
-                                  ? Colors.brand.accentOrange 
-                                  : 'rgba(255, 255, 255, 0.2)',
-                                minWidth: 60,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                shadowColor: isSelected ? Colors.brand.accentOrange : '#000',
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: isSelected ? 0.4 : 0.2,
-                                shadowRadius: 4,
-                                elevation: 4,
+                                padding: 6,
+                                borderRadius: 24,
                               }}
                             >
-                              <RNView style={{ flexDirection: 'row', gap: 2, alignItems: 'center' }}>
-                                {Array.from({ length: 5 }, (_, i) => (
-                                  <Text 
-                                    key={i} 
-                                    style={{ 
-                                      fontSize: 16, 
-                                      color: i < starCount ? (isSelected ? '#fff' : Colors.brand.accentOrange) : 'rgba(255, 255, 255, 0.3)'
-                                    }}
-                                  >
-                                    ⭐
-                                  </Text>
-                                ))}
-                              </RNView>
+                              <FontAwesome
+                                name={isActive ? 'star' : 'star-o'}
+                                size={42}
+                                color={isActive ? Colors.brand.accentOrange : 'rgba(255, 255, 255, 0.4)'}
+                              />
                             </TouchableOpacity>
                           );
                         })}
                       </RNView>
                       {overallRating > 0 && (
                         <Text style={[styles.overlayText, { marginTop: 12, fontSize: 14, textAlign: 'center', color: Colors.brand.accentOrange, fontWeight: '700' }]}>
-                          {overallRating} {overallRating === 1 ? 'star' : 'stars'} selected
+                          {ratingLabels[overallRating]} ({overallRating} {overallRating === 1 ? 'star' : 'stars'})
                         </Text>
                       )}
                     </RNView>
@@ -1453,13 +1432,8 @@ export default function ReviewerRequestScreen() {
               right: frameMetrics.paginationRight,
               zIndex: 5,
               elevation: 5,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              borderRadius: 20,
-              paddingVertical: 12,
-              paddingHorizontal: 8,
-              backdropFilter: 'blur(10px)',
-              borderWidth: 1,
-              borderColor: 'rgba(255, 255, 255, 0.1)',
+              paddingVertical: 4,
+              paddingHorizontal: 0,
             }}
             pointerEvents="box-none"
           >
@@ -1540,7 +1514,7 @@ export default function ReviewerRequestScreen() {
         </RNView>
       </Modal>
       <ImageGalleryModal visible={galleryOpen} uris={galleryUris} initialIndex={galleryIndex} onClose={() => setGalleryOpen(false)} />
-      <SimplePhotoModal visible={photoModalOpen} uri={currentPhotoUri} onClose={() => setPhotoModalOpen(false)} />
+      <FullScreenPhotoModal visible={photoModalOpen} uri={currentPhotoUri} onClose={() => setPhotoModalOpen(false)} />
     </SafeAreaView>
   );
 }

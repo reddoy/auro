@@ -38,6 +38,7 @@ function mapRequestRow(row: any): DbRequestSummary {
       row.requester?.username ??
       row.user?.username ??
       null,
+    review_viewed_at: row.review_viewed_at ?? row.reviewViewedAt ?? null,
   } as DbRequestSummary;
 }
 
@@ -491,6 +492,18 @@ export async function unarchiveRequest(id: string): Promise<DbRequestSummary> {
   const refetched = await getRequestById(id);
   if (!refetched) throw new Error('Request not found after unarchiving');
   return refetched;
+}
+
+// Mark that the reviewee has opened/watched their completed review
+export async function markReviewAsViewed(requestId: string): Promise<void> {
+  const { error } = await supabase
+    .from('requests')
+    .update({ review_viewed_at: new Date().toISOString() })
+    .eq('id', requestId)
+    .is('review_viewed_at', null);
+  if (error && error.code !== 'PGRST116') {
+    throw error;
+  }
 }
 
 // New: minimal profile fetch by id
