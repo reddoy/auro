@@ -33,14 +33,20 @@ export default function PhotoCarousel({ uris, onPressItem, onLongPressItem, heig
             onPress={showScrollIndicator ? undefined : () => onPressItem?.(index)} 
             onLongPress={showScrollIndicator ? undefined : () => onLongPressItem?.(index)} 
             style={styles.thumbWrap} 
-            accessibilityLabel={showScrollIndicator ? `Photo ${index + 1}` : `Open photo ${index + 1}`}
+            accessibilityLabel={showScrollIndicator ? `Photo ${index + 1} of ${uris.length}` : `Open photo ${index + 1} of ${uris.length}`}
+            accessibilityRole="button"
+            accessibilityHint={showScrollIndicator ? undefined : "Double tap to view full size"}
           >
             <Image
               source={{ uri: item }}
               style={{ width: height * 0.66, height, borderRadius: 12 }}
               contentFit="cover"
-              cachePolicy="none"
+              cachePolicy="memory-disk"
               transition={200}
+              onError={() => {
+                // Image error handling - could show placeholder
+                console.warn(`Failed to load photo at index ${index}`);
+              }}
             />
           </Pressable>
         )}

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Modal, StyleSheet, View, Dimensions, Text, PanResponder, Animated, TouchableOpacity } from 'react-native';
+import { Modal, StyleSheet, View, Dimensions, Text, PanResponder, Animated, TouchableOpacity, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -182,6 +182,20 @@ export default function FullScreenPhotoModal({ visible, uri, onClose }: Props) {
     ],
   };
 
+  // Handle Escape key on web
+  React.useEffect(() => {
+    if (!visible || Platform.OS !== 'web') return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleClose();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [visible]);
+
   return (
     <Modal 
       visible={visible} 
@@ -189,6 +203,8 @@ export default function FullScreenPhotoModal({ visible, uri, onClose }: Props) {
       animationType="fade" 
       onRequestClose={handleClose}
       presentationStyle="fullScreen"
+      accessibilityViewIsModal={true}
+      accessibilityLabel="Full screen photo viewer"
     >
       <View style={styles.container}>
         {/* Close button - top right */}
@@ -196,6 +212,9 @@ export default function FullScreenPhotoModal({ visible, uri, onClose }: Props) {
           style={[styles.closeButton, { top: insets.top + 16, right: 16 }]} 
           onPress={handleClose}
           activeOpacity={0.7}
+          accessibilityLabel="Close photo viewer"
+          accessibilityRole="button"
+          accessibilityHint="Double tap to close"
         >
           <Text style={styles.closeButtonText}>✕</Text>
         </TouchableOpacity>
@@ -258,4 +277,5 @@ const styles = StyleSheet.create({
     height: '100%',
   },
 });
+
 

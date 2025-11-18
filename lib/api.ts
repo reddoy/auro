@@ -310,14 +310,73 @@ export async function submitRequestReview(params: {
   imageUrl?: string | null;
 }): Promise<DbRequestSummary> {
   const { requestId, review, videoUrl, imageUrl } = params;
+  
+  // CRITICAL: Input validation
+  if (!requestId || typeof requestId !== 'string' || requestId.length < 10) {
+    throw new Error('Invalid request ID');
+  }
+  
+  if (!review || typeof review !== 'object') {
+    throw new Error('Invalid review data');
+  }
+  
+  // Validate ratings
+  if (!review.ratings || typeof review.ratings.overall !== 'number' || 
+      review.ratings.overall < 1 || review.ratings.overall > 5) {
+    throw new Error('Overall rating must be between 1 and 5');
+  }
+  
+  // Validate video/image URLs if provided
+  if (videoUrl && typeof videoUrl !== 'string') {
+    throw new Error('Invalid video URL');
+  }
+  if (imageUrl && typeof imageUrl !== 'string') {
+    throw new Error('Invalid image URL');
+  }
+  
+  // CRITICAL: Check if review already exists to prevent duplicate submissions
+  const { data: existingRequest } = await supabase
+    .from('requests')
+    .select('id, status, review')
+    .eq('id', requestId)
+    .maybeSingle();
+  
+  if (!existingRequest) {
+    throw new Error('Request not found');
+  }
+  
+  if (existingRequest.status === 'completed' && existingRequest.review) {
+    // Review already submitted - return existing review
+    console.warn('[submitRequestReview] Review already submitted for request:', requestId);
+    const refetched = await getRequestById(requestId);
+    if (!refetched) throw new Error('Request not found');
+    return refetched;
+  }
+  
+  if (existingRequest.status !== 'in_progress' && existingRequest.status !== 'paid') {
+    throw new Error(`Cannot submit review for request with status: ${existingRequest.status}`);
+  }
+  
+  // CRITICAL: Use atomic update to prevent concurrent submissions
+  // Only update if status is still 'in_progress' or 'paid' (not already completed)
   const withMedia = { ...review, media: { videoUrl: videoUrl ?? null, imageUrl: imageUrl ?? null } } as any;
   const { data, error } = await supabase
     .from('requests')
     .update({ review: withMedia, status: 'completed' })
     .eq('id', requestId)
+    .in('status', ['in_progress', 'paid']) // Only update if still in progress/paid (atomic check)
     .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps')
     .maybeSingle();
+  
   if (error) throw error;
+  
+  // If no data returned, it means the status changed (race condition - another process completed it)
+  if (!data) {
+    console.warn('[submitRequestReview] Request status changed during submission (race condition)');
+    const refetched = await getRequestById(requestId);
+    if (!refetched) throw new Error('Request not found');
+    return refetched;
+  }
   if (data) {
     const result = mapRequestRow(data);
     

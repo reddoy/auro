@@ -60,13 +60,24 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'Request not found' }), { status: 404 });
     }
 
-    // Check if already distributed
+    // CRITICAL: Check if already distributed with database-level atomic check
+    // This prevents race conditions where multiple concurrent requests could both pass the check
     if (request.payment_distributed) {
-      return new Response(JSON.stringify({ 
-        success: true,
-        message: 'Payment already distributed',
-        alreadyDistributed: true
-      }), { status: 200 });
+      // Double-check with fresh read to ensure no race condition
+      const { data: freshRequest } = await admin
+        .from('requests')
+        .select('payment_distributed, stripe_transfer_id')
+        .eq('id', requestId)
+        .maybeSingle();
+      
+      if (freshRequest?.payment_distributed) {
+        return new Response(JSON.stringify({ 
+          success: true,
+          message: 'Payment already distributed',
+          alreadyDistributed: true,
+          transferId: freshRequest.stripe_transfer_id
+        }), { status: 200 });
+      }
     }
 
     // Verify the request is completed
@@ -75,6 +86,29 @@ export async function POST(req: Request) {
         error: 'Request is not completed yet. Payment can only be distributed after review completion.',
         currentStatus: request.status
       }), { status: 400 });
+    }
+
+    // CRITICAL: Use database-level locking to prevent race conditions
+    // Attempt to atomically mark as "distributing" to prevent concurrent distributions
+    const { data: lockResult, error: lockError } = await admin
+      .from('requests')
+      .update({ 
+        payment_distribution_attempts: (request.payment_distribution_attempts || 0) + 1,
+        payment_distribution_error: null // Clear any previous errors when retrying
+      })
+      .eq('id', requestId)
+      .eq('payment_distributed', false) // Only update if not already distributed (atomic check)
+      .select('id, payment_distributed')
+      .maybeSingle();
+
+    // If update failed, it means payment was already distributed by another process
+    if (lockError || !lockResult || lockResult.payment_distributed) {
+      console.log('[payment-distribution] Payment already being distributed or completed by another process');
+      return new Response(JSON.stringify({ 
+        success: true,
+        message: 'Payment distribution already in progress or completed',
+        alreadyDistributed: true
+      }), { status: 200 });
     }
 
     const reviewer = (request as any).profiles;

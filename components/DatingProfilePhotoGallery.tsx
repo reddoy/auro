@@ -69,6 +69,8 @@ export default function DatingProfilePhotoGallery({ uris, onPhotoPress }: Props)
               },
             ]}
             accessibilityLabel={`Dating profile photo ${index + 1} of ${uris.length}`}
+            accessibilityRole="button"
+            accessibilityHint="Double tap to view full size"
           >
             <View style={styles.imageContainer}>
               <Image
@@ -78,6 +80,9 @@ export default function DatingProfilePhotoGallery({ uris, onPhotoPress }: Props)
                 cachePolicy="memory-disk"
                 transition={300}
                 placeholderContentFit="contain"
+                onError={() => {
+                  console.warn(`Failed to load dating profile photo at index ${index}`);
+                }}
               />
               {/* Subtle gradient overlay at bottom for a modern look */}
               <ExpoLinearGradient
@@ -111,7 +116,8 @@ export default function DatingProfilePhotoGallery({ uris, onPhotoPress }: Props)
                 index === activeIndex && styles.paginationDotActive,
                 index < uris.length - 1 && { marginRight: 8 },
               ]}
-              accessibilityLabel={`Go to photo ${index + 1}`}
+              accessibilityLabel={`Go to photo ${index + 1} of ${uris.length}`}
+              accessibilityRole="button"
             />
           ))}
         </View>

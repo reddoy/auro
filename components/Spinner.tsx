@@ -35,7 +35,12 @@ export default function Spinner({
   }));
 
   return (
-    <View style={[styles.container, { width: size, height: size }]}>
+    <View 
+      style={[styles.container, { width: size, height: size }]}
+      accessibilityRole="progressbar"
+      accessibilityLabel="Loading"
+      accessibilityLiveRegion="polite"
+    >
       <Animated.View
         style={[
           styles.spinner,
@@ -48,6 +53,8 @@ export default function Spinner({
           },
           animatedStyle,
         ]}
+        accessibilityRole="none"
+        accessibilityElementsHidden={true}
       />
     </View>
   );

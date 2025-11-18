@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, View as RNView, Linking, Platform } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, View as RNView, Linking, Platform, Pressable, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 
@@ -23,10 +23,12 @@ import { getSignedAvatarUrl } from '@/lib/profile';
 import * as Sharing from 'expo-sharing';
 import StarRating from '@/components/StarRating';
 import ReviewerReviewModal from '@/components/ReviewerReviewModal';
+import { VideoView, useVideoPlayer } from 'expo-video';
 
 export default function ReviewDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const [loading, setLoading] = React.useState(true);
   const [influencerName, setInfluencerName] = React.useState<string>('');
   const [influencerAvatar, setInfluencerAvatar] = React.useState<string | undefined>(undefined);
@@ -42,6 +44,7 @@ export default function ReviewDetailScreen() {
   const [reviewerReview, setReviewerReview] = React.useState<ReviewerReview | null>(null);
   const [hasViewedReview, setHasViewedReview] = React.useState(false);
   const [autoPromptShown, setAutoPromptShown] = React.useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = React.useState(false);
 
   const statusBanner = React.useMemo(() => {
     const s = request?.status as string | undefined;
@@ -200,6 +203,41 @@ export default function ReviewDetailScreen() {
 
   const mediaVideoUrl = review?.media?.videoUrl as string | undefined;
   const mediaImageUrl = review?.media?.imageUrl as string | undefined;
+  
+  // Video player setup
+  const videoPlayer = useVideoPlayer(mediaVideoUrl || '', (player) => {
+    if (mediaVideoUrl) {
+      player.loop = false;
+      player.muted = false;
+    }
+  });
+  
+  // Update video source when URL changes
+  React.useEffect(() => {
+    if (!videoPlayer || !mediaVideoUrl) return;
+    videoPlayer.replace(mediaVideoUrl);
+  }, [videoPlayer, mediaVideoUrl]);
+  
+  React.useEffect(() => {
+    if (!videoPlayer) return;
+    
+    const subscription = videoPlayer.addListener('playingChange', (isPlaying) => {
+      setIsVideoPlaying(isPlaying);
+    });
+    
+    return () => {
+      subscription.remove();
+    };
+  }, [videoPlayer]);
+  
+  const toggleVideoPlayback = () => {
+    if (!videoPlayer) return;
+    if (isVideoPlaying) {
+      videoPlayer.pause();
+    } else {
+      videoPlayer.play();
+    }
+  };
 
   const ratingEntries = React.useMemo(() => {
     if (!review?.ratings) return [];
@@ -260,43 +298,106 @@ export default function ReviewDetailScreen() {
     Linking.openURL('https://www.instagram.com');
   };
 
+  // Calculate available height for content section
+  // Top section (video circle + name): 80px height + 20px marginBottom = 100px
+  // Account for: safe area top inset, ScrollView paddingTop (12px), and bottom padding
+  const topSectionHeight = 100;
+  const scrollViewPaddingTop = 12;
+  const scrollViewPaddingBottom = Platform.OS === 'web' ? 24 : 24;
+  const availableContentHeight = Math.max(
+    400, // Minimum height to ensure content is visible
+    windowHeight - topSectionHeight - insets.top - scrollViewPaddingTop - scrollViewPaddingBottom - insets.bottom
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
-      <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: Platform.OS === 'web' ? 24 : 24, paddingHorizontal: 16 }}>
-        <View style={styles.header}>
-          <RNView style={styles.influencerImageWrapper}>
-            <Avatar uri={influencerAvatar} name={influencerName} size={60} />
-          </RNView>
-        <RNView style={styles.headerInfo}>
-          <Text style={styles.influencerName}>{influencerName}</Text>
-          {review?.createdAt ? (
-            <Text style={styles.reviewDate}>
-              {`Reviewed on ${new Date(review.createdAt).toLocaleDateString()}`}
-            </Text>
-          ) : null}
-        </RNView>
-        </View>
-
-      {statusBanner && (
-        <View style={styles.statusSection}>
-          <Text style={styles.statusTitle}>Status</Text>
-          <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-            <StatusBadge status={request.status as any} label={statusBanner.labelOverride} />
-          </RNView>
-          <Text style={styles.statusText}>{statusBanner.text}</Text>
-          {hasConsent ? (
-            <RNView style={[styles.consentPill, { borderColor: shareConsent ? Colors.brand.status.completed : Colors.brand.status.rejected }] }>
-              <Text style={[styles.consentPillText, { color: shareConsent ? Colors.brand.status.completed : Colors.brand.status.rejected }]}>
-                {`Consent to share review publicly? ${shareConsent ? 'Yes' : 'No'}`}
-              </Text>
+      <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: Platform.OS === 'web' ? 24 : 24, paddingHorizontal: 16, flexGrow: 1 }}>
+        {/* Top Section: Circular video player on left, Reviewer name on right */}
+        {mediaVideoUrl && review ? (
+          <View style={styles.videoReviewTopSection}>
+            {/* Circular Video Player - Left Side */}
+            <RNView style={styles.videoCircleContainer}>
+              <RNView style={styles.videoCircleWrapper}>
+                <VideoView
+                  style={styles.videoCirclePlayer}
+                  player={videoPlayer}
+                  contentFit="cover"
+                  nativeControls={false}
+                />
+                {/* Play/Pause Overlay - only show when paused */}
+                {!isVideoPlaying && (
+                  <Pressable
+                    style={styles.videoCirclePlayButton}
+                    onPress={toggleVideoPlayback}
+                    accessibilityLabel="Play video"
+                  >
+                    <Text style={styles.videoCirclePlayIcon}>▶</Text>
+                  </Pressable>
+                )}
+                {/* Tap to pause when playing - transparent overlay */}
+                {isVideoPlaying && (
+                  <Pressable
+                    style={styles.videoCirclePlayButtonTransparent}
+                    onPress={toggleVideoPlayback}
+                    accessibilityLabel="Pause video"
+                  >
+                    <RNView />
+                  </Pressable>
+                )}
+              </RNView>
             </RNView>
-          ) : null}
-        </View>
-      )}
+            
+            {/* Reviewer Name - Right Side */}
+            <RNView style={styles.reviewerNameContainer}>
+              <Text style={styles.reviewerNameTop}>{influencerName}</Text>
+              {review?.createdAt ? (
+                <Text style={styles.reviewDateTop}>
+                  {`Reviewed on ${new Date(review.createdAt).toLocaleDateString()}`}
+                </Text>
+              ) : null}
+            </RNView>
+          </View>
+        ) : (
+          /* Fallback header when no video */
+          <View style={styles.header}>
+            <RNView style={styles.influencerImageWrapper}>
+              <Avatar uri={influencerAvatar} name={influencerName} size={60} />
+            </RNView>
+            <RNView style={styles.headerInfo}>
+              <Text style={styles.influencerName}>{influencerName}</Text>
+              {review?.createdAt ? (
+                <Text style={styles.reviewDate}>
+                  {`Reviewed on ${new Date(review.createdAt).toLocaleDateString()}`}
+                </Text>
+              ) : null}
+            </RNView>
+          </View>
+        )}
 
-      {/* Consent pill is now shown inside the status card */}
+        {/* Review Content Section - Below the top section */}
+        {review && (
+          <RNView style={[styles.reviewContentSection, { minHeight: availableContentHeight }]}>
 
-      {review && ratingEntries.length > 0 ? (
+            {statusBanner && (
+              <View style={styles.statusSection}>
+                <Text style={styles.statusTitle}>Status</Text>
+                <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                  <StatusBadge status={request.status as any} label={statusBanner.labelOverride} />
+                </RNView>
+                <Text style={styles.statusText}>{statusBanner.text}</Text>
+                {hasConsent ? (
+                  <RNView style={[styles.consentPill, { borderColor: shareConsent ? Colors.brand.status.completed : Colors.brand.status.rejected }] }>
+                    <Text style={[styles.consentPillText, { color: shareConsent ? Colors.brand.status.completed : Colors.brand.status.rejected }]}>
+                      {`Consent to share review publicly? ${shareConsent ? 'Yes' : 'No'}`}
+                    </Text>
+                  </RNView>
+                ) : null}
+              </View>
+            )}
+
+            {/* Consent pill is now shown inside the status card */}
+
+            {ratingEntries.length > 0 ? (
         <View style={styles.ratingsSection}>
           <Text style={styles.sectionTitle}>Your Ratings</Text>
           <RNView
@@ -324,10 +425,10 @@ export default function ReviewDetailScreen() {
               </View>
             ))}
           </RNView>
-        </View>
-      ) : null}
+            </View>
+            ) : null}
 
-      {review && (<View style={styles.feedbackSection}>
+            <View style={styles.feedbackSection}>
         <Text style={styles.sectionTitle}>Feedback</Text>
         
         <View style={styles.feedbackCard}>
@@ -353,69 +454,64 @@ export default function ReviewDetailScreen() {
           <View style={styles.feedbackCard}>
             <Text style={styles.feedbackTitle}>📋 Dating Profile Notes</Text>
             <Text style={styles.generalFeedback}>{datingProfileNotes}</Text>
-          </View>
-        ) : null}
-      </View>)}
-
-        {(revieweeAvatar || parsedNotes?.message) && (
-          <View style={styles.mediaSection}>
-            <Text style={styles.sectionTitle}>Profile Photo</Text>
-            {revieweeAvatar ? (
-              <TouchableOpacity
-                onPress={() => {
-                  setGalleryUris([revieweeAvatar]);
-                  setGalleryIndex(0);
-                  setGalleryOpen(true);
-                }}
-              >
-                <Image source={{ uri: revieweeAvatar }} style={styles.selfie} contentFit="cover" transition={200} cachePolicy="none" />
-              </TouchableOpacity>
+            </View>
             ) : null}
-            {revieweeAvatar ? (
-              <Text style={styles.mediaHint}>
-                This is the hero photo they lead with on their dating profile.
-              </Text>
-            ) : null}
-            {parsedNotes?.message ? (
-              <>
-                <Text style={[styles.promptLabel, styles.mediaHeading]}>Profile Bio</Text>
-                <Text style={styles.promptText}>{parsedNotes.message}</Text>
-              </>
-            ) : null}
-          </View>
+            </View>
+          </RNView>
         )}
 
-        {signedProfilePhotos.length ? (
-          <View style={styles.mediaSection}>
-            <Text style={styles.sectionTitle}>Dating Profile Gallery</Text>
-            <Text style={styles.mediaHint}>Tap to view each dating profile photo in full resolution.</Text>
-            <PhotoCarousel
-              uris={signedProfilePhotos}
-              onPressItem={(i) => {
-                setGalleryUris(signedProfilePhotos);
-                setGalleryIndex(i);
-                setGalleryOpen(true);
-              }}
-            />
-          </View>
-        ) : null}
+            {(revieweeAvatar || parsedNotes?.message) && (
+              <View style={styles.mediaSection}>
+                <Text style={styles.sectionTitle}>Profile Photo</Text>
+                {revieweeAvatar ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setGalleryUris([revieweeAvatar]);
+                      setGalleryIndex(0);
+                      setGalleryOpen(true);
+                    }}
+                  >
+                    <Image source={{ uri: revieweeAvatar }} style={styles.selfie} contentFit="cover" transition={200} cachePolicy="none" />
+                  </TouchableOpacity>
+                ) : null}
+                {revieweeAvatar ? (
+                  <Text style={styles.mediaHint}>
+                    This is the hero photo they lead with on their dating profile.
+                  </Text>
+                ) : null}
+                {parsedNotes?.message ? (
+                  <>
+                    <Text style={[styles.promptLabel, styles.mediaHeading]}>Profile Bio</Text>
+                    <Text style={styles.promptText}>{parsedNotes.message}</Text>
+                  </>
+                ) : null}
+              </View>
+            )}
 
-        {mediaVideoUrl ? (
-          <View style={styles.mediaSection}>
-            <Text style={styles.sectionTitle}>Reviewer Video</Text>
-            <Text style={styles.videoHint}>Tap a button below to share your video to TikTok or Instagram.</Text>
-          </View>
-        ) : null}
+            {signedProfilePhotos.length ? (
+              <View style={styles.mediaSection}>
+                <Text style={styles.sectionTitle}>Dating Profile Gallery</Text>
+                <Text style={styles.mediaHint}>Tap to view each dating profile photo in full resolution.</Text>
+                <PhotoCarousel
+                  uris={signedProfilePhotos}
+                  onPressItem={(i) => {
+                    setGalleryUris(signedProfilePhotos);
+                    setGalleryIndex(i);
+                    setGalleryOpen(true);
+                  }}
+                />
+              </View>
+            ) : null}
 
-        {parsedNotes?.media?.datingProfile ? (
-          <View style={styles.mediaSection}>
-            <Text style={styles.sectionTitle}>Dating Profile</Text>
-            <Image source={{ uri: parsedNotes.media.datingProfile }} style={styles.videoThumb} contentFit="cover" transition={200} />
-            <Text style={styles.videoHint}>Open in original app to view the video</Text>
-          </View>
-        ) : null}
+            {parsedNotes?.media?.datingProfile ? (
+              <View style={styles.mediaSection}>
+                <Text style={styles.sectionTitle}>Dating Profile</Text>
+                <Image source={{ uri: parsedNotes.media.datingProfile }} style={styles.videoThumb} contentFit="cover" transition={200} />
+                <Text style={styles.videoHint}>Open in original app to view the video</Text>
+              </View>
+            ) : null}
 
-        <View style={styles.actionsSection}>
+            <View style={styles.actionsSection}>
         {request?.status === 'completed' && (mediaVideoUrl || mediaImageUrl) ? (
           <>
             <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#000' }]} onPress={openTikTok}>
@@ -479,7 +575,7 @@ export default function ReviewDetailScreen() {
             Back to Home
           </Text>
         </TouchableOpacity>
-        </View>
+            </View>
       </ScrollView>
       <ImageGalleryModal visible={galleryOpen} uris={galleryUris} initialIndex={galleryIndex} onClose={() => setGalleryOpen(false)} />
       {request?.status === 'completed' && review && (
@@ -502,6 +598,87 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.brand.background,
+  },
+  // New Video Review Top Section Styles
+  videoReviewTopSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    marginHorizontal: 0,
+    gap: 16,
+  },
+  videoCircleContainer: {
+    width: 80,
+    height: 80,
+  },
+  videoCircleWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    overflow: 'hidden',
+    backgroundColor: Colors.brand.cardBackground,
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+    position: 'relative',
+  },
+  videoCirclePlayer: {
+    width: '100%',
+    height: '100%',
+  },
+  videoCirclePlayButton: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    borderRadius: 40,
+  },
+  videoCirclePlayButtonTransparent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    borderRadius: 40,
+  },
+  videoCirclePlayIcon: {
+    fontSize: 32,
+    color: '#fff',
+    fontWeight: '900',
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  reviewerNameContainer: {
+    flex: 1,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  reviewerNameTop: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: Colors.brand.textPrimary,
+    fontFamily: 'Poppins_700Bold',
+    marginBottom: 6,
+  },
+  reviewDateTop: {
+    fontSize: 14,
+    color: Colors.brand.textSecondary,
+    lineHeight: 20,
+  },
+  reviewContentSection: {
+    marginTop: 0,
+    flex: 1,
+    justifyContent: 'center',
   },
   header: {
     flexDirection: 'row',

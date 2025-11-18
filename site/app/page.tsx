@@ -198,9 +198,13 @@ export default function HomePage() {
                   className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-sm text-base sm:text-lg px-4 sm:px-6 py-3 shadow-2xl font-semibold"
                   asChild
                 >
-                  <a href="/reviewers/apply" className="flex items-center justify-center">
+                  <a 
+                    href="/reviewers/apply" 
+                    className="flex items-center justify-center"
+                    aria-label={`Only ${spotsLeft} founding spots left - Apply now`}
+                  >
                     <span className="truncate">Only {spotsLeft} founding spots left</span>
-                    <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                    <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" aria-hidden="true" />
                   </a>
                 </Button>
               </div>
@@ -224,6 +228,7 @@ export default function HomePage() {
                       ref={mobileOverlayRef} 
                       href="/reviewers/apply" 
                       className="mobile-iphone-overlay"
+                      aria-label="Click to see the full review and get your personalized style review"
                     >
                       <div className="overlay-content">
                         <h3>👆 Click here to see the full review</h3>

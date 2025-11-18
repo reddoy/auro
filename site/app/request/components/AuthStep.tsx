@@ -310,6 +310,13 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
           </div>
 
           <div className="form-fields">
+              {error && (
+                <div className="form-error" role="alert" aria-live="polite">
+                  <span className="form-error-icon">⚠️</span>
+                  <span className="form-error-text">{error}</span>
+                </div>
+              )}
+              
               {isSignUp && (
                 <div className="form-field">
                   <label htmlFor="fullName">Full Name</label>
@@ -317,10 +324,20 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
                     id="fullName"
                     type="text"
                     value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    onChange={(e) => {
+                      setFullName(e.target.value);
+                      if (error) setError('');
+                    }}
                     placeholder="Enter your full name"
                     required
+                    aria-describedby={error ? 'fullName-error' : undefined}
+                    aria-invalid={!!error && !fullName}
                   />
+                  {error && !fullName && (
+                    <span id="fullName-error" className="field-error" role="alert">
+                      Full name is required
+                    </span>
+                  )}
                 </div>
               )}
 
@@ -330,10 +347,20 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (error) setError('');
+                  }}
                   placeholder="Enter your email"
                   required
+                  aria-describedby={error ? 'email-error' : undefined}
+                  aria-invalid={!!error && !email}
                 />
+                {error && !email && (
+                  <span id="email-error" className="field-error" role="alert">
+                    Email is required
+                  </span>
+                )}
               </div>
 
               <div className="form-field">
@@ -342,11 +369,21 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (error) setError('');
+                  }}
                   placeholder={isSignUp ? "Create a password (min 6 characters)" : "Enter your password"}
                   minLength={6}
                   required
+                  aria-describedby={error ? 'password-error' : undefined}
+                  aria-invalid={!!error && (!password || password.length < 6)}
                 />
+                {error && (!password || password.length < 6) && (
+                  <span id="password-error" className="field-error" role="alert">
+                    Password must be at least 6 characters
+                  </span>
+                )}
               </div>
 
               <button 
@@ -354,6 +391,7 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
                 onClick={isSignUp ? handleSignUp : handleSignIn}
                 disabled={loading}
                 className="btn-primary auth-submit"
+                aria-label={loading ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Sign In')}
               >
                 {loading ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Sign In')}
               </button>

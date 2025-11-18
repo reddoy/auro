@@ -14,6 +14,47 @@ export async function POST(req: Request) {
   
   try {
     const event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+    
+    // CRITICAL: Idempotency check - prevent duplicate webhook processing
+    // Store processed event IDs to prevent reprocessing
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    
+    if (url && key) {
+      const admin = createClient(url, key);
+      
+      // Check if we've already processed this event
+      const { data: existingEvent } = await admin
+        .from('webhook_events')
+        .select('id, processed_at')
+        .eq('stripe_event_id', event.id)
+        .maybeSingle();
+      
+      if (existingEvent) {
+        console.log('[stripe-webhook] Event already processed:', event.id, 'at', existingEvent.processed_at);
+        return new Response(JSON.stringify({ received: true, alreadyProcessed: true }), { status: 200 });
+      }
+      
+      // Mark event as processing (with a small delay to handle race conditions)
+      try {
+        await admin
+          .from('webhook_events')
+          .insert({
+            stripe_event_id: event.id,
+            event_type: event.type,
+            processed_at: new Date().toISOString(),
+            status: 'processing'
+          });
+      } catch (insertError: any) {
+        // If insert fails due to unique constraint, event was already processed
+        if (insertError?.code === '23505') {
+          console.log('[stripe-webhook] Event already being processed:', event.id);
+          return new Response(JSON.stringify({ received: true, alreadyProcessed: true }), { status: 200 });
+        }
+        // Log but continue - don't fail webhook processing
+        console.error('[stripe-webhook] Failed to record event:', insertError);
+      }
+    }
     console.log('[stripe-webhook] ===== EVENT PARSED SUCCESSFULLY =====');
     console.log('[stripe-webhook] Event ID:', event.id);
     console.log('[stripe-webhook] Event type:', event.type);
@@ -138,6 +179,16 @@ export async function POST(req: Request) {
                 console.error('[stripe-webhook] Database update error:', error);
               } else {
                 console.log('[stripe-webhook] Database update successful:', data);
+                
+                // Mark webhook event as completed
+                try {
+                  await admin
+                    .from('webhook_events')
+                    .update({ status: 'completed' })
+                    .eq('stripe_event_id', event.id);
+                } catch (updateError) {
+                  console.error('[stripe-webhook] Failed to mark event as completed:', updateError);
+                }
               }
 
               // Backfill customer email and ensure profile exists for the user
@@ -224,6 +275,24 @@ export async function POST(req: Request) {
         } catch (e) {
           console.error('[stripe-webhook] ===== WEBHOOK UPDATE ERROR =====');
           console.error('[stripe-webhook] Error details:', e);
+          
+          // Mark webhook event as failed
+          try {
+            const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+            const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+            if (url && key) {
+              const admin = createClient(url, key);
+              await admin
+                .from('webhook_events')
+                .update({ 
+                  status: 'failed',
+                  error_message: (e as any)?.message || 'Unknown error'
+                })
+                .eq('stripe_event_id', event.id);
+            }
+          } catch (updateError) {
+            console.error('[stripe-webhook] Failed to mark event as failed:', updateError);
+          }
         }
         break;
       case 'checkout.session.async_payment_succeeded':

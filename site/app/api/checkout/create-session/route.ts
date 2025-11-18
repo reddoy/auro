@@ -188,6 +188,21 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'Failed to validate reviewer profile. Please try again.' }), { status: 500 });
     }
 
+    // CRITICAL: Input validation and sanitization
+    if (creatorId && typeof creatorId !== 'string') {
+      return new Response(JSON.stringify({ error: 'Invalid creatorId format' }), { status: 400 });
+    }
+    if (creatorSlug && typeof creatorSlug !== 'string') {
+      return new Response(JSON.stringify({ error: 'Invalid creatorSlug format' }), { status: 400 });
+    }
+    if (requestId && (typeof requestId !== 'string' || requestId.length < 10)) {
+      return new Response(JSON.stringify({ error: 'Invalid requestId format' }), { status: 400 });
+    }
+    
+    // Sanitize inputs
+    const sanitizedCreatorSlug = creatorSlug ? creatorSlug.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 50) : undefined;
+    const sanitizedUploadSessionId = uploadSessionId ? uploadSessionId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 100) : undefined;
+
     // Create a request record on the server if not provided by client
     let ensuredRequestId: string | undefined = requestId as string | undefined;
     try {
@@ -332,8 +347,8 @@ export async function POST(req: Request) {
       metadata: {
         request_id: ensuredRequestId || '',
         creator_id: resolvedCreatorId || '',
-        creator_slug: creatorSlug || '',
-        upload_session_id: uploadSessionId || '',
+        creator_slug: sanitizedCreatorSlug || '',
+        upload_session_id: sanitizedUploadSessionId || '',
         auro_fee_cents: finalApplicationFeeCents.toString(),
         auro_fee_bps: auroFeeBps.toString(), // Always 2000 (20%) for all reviewers
       },

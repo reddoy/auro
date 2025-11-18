@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, View, Dimensions, Text, PanResponder, Animated } from 'react-native';
+import { Modal, Pressable, StyleSheet, View, Dimensions, Text, PanResponder, Animated, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -144,6 +144,20 @@ export default function SimplePhotoModal({ visible, uri, onClose }: Props) {
     ],
   };
 
+  // Handle Escape key on web
+  React.useEffect(() => {
+    if (!visible || Platform.OS !== 'web') return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleClose();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [visible]);
+
   return (
     <Modal 
       visible={visible} 
@@ -151,9 +165,16 @@ export default function SimplePhotoModal({ visible, uri, onClose }: Props) {
       animationType="fade" 
       onRequestClose={handleClose}
       presentationStyle="overFullScreen"
+      accessibilityViewIsModal={true}
+      accessibilityLabel="Photo viewer"
     >
       <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+        <Pressable 
+          style={StyleSheet.absoluteFill} 
+          onPress={handleClose}
+          accessibilityLabel="Close photo viewer"
+          accessibilityRole="button"
+        />
         
         <View 
           style={[styles.container, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}

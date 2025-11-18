@@ -75,6 +75,11 @@ export default function AsyncAvatar({ avatarPathOrUrl, alt, size = 64 }: Props) 
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
+        @media (prefers-reduced-motion: reduce) {
+          * {
+            animation: none !important;
+          }
+        }
       `}</style>
       <div
         style={{
@@ -82,14 +87,17 @@ export default function AsyncAvatar({ avatarPathOrUrl, alt, size = 64 }: Props) 
           height: dimension,
           borderRadius: '50%',
           overflow: 'hidden',
-          background: 'rgba(255, 255, 255, 0.06)',
+          background: '#A89BC5',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           boxSizing: 'border-box',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0 4px 12px rgba(12, 3, 37, 0.25)'
+          border: '2px solid #FF6F00',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+          position: 'relative',
         }}
+        role="img"
+        aria-label={alt || 'User avatar'}
       >
         {loading ? (
           <LoadingSpinner size={size} />
@@ -101,18 +109,38 @@ export default function AsyncAvatar({ avatarPathOrUrl, alt, size = 64 }: Props) 
             width={size}
             height={size}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={() => setError(true)}
+            onError={() => {
+              setError(true);
+              setLoading(false);
+            }}
+            onLoad={() => setLoading(false)}
+            loading="lazy"
           />
         ) : (
-          <img 
-            src="/auro_aura_logo_nobg.png" 
-            alt="Auro Logo" 
-            style={{ 
-              width: size * 0.6, 
-              height: size * 0.6, 
-              objectFit: 'contain' 
-            }} 
-          />
+          initials ? (
+            <div
+              style={{
+                color: '#FFFFFF',
+                fontWeight: 700,
+                fontSize: size * 0.4,
+                textAlign: 'center',
+                lineHeight: 1,
+              }}
+              aria-label={`Initials: ${initials}`}
+            >
+              {initials}
+            </div>
+          ) : (
+            <img 
+              src="/auro_aura_logo_nobg.png" 
+              alt="Auro Logo" 
+              style={{ 
+                width: size * 0.6, 
+                height: size * 0.6, 
+                objectFit: 'contain' 
+              }} 
+            />
+          )
         )}
       </div>
     </>

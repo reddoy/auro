@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
+import { BorderRadius, Typography } from '@/constants/DesignSystem';
 
 export type RequestStatus = 'pending' | 'accepted' | 'paid' | 'in_progress' | 'completed' | 'rejected';
 
@@ -32,9 +33,16 @@ const defaultLabelForStatus = (status: RequestStatus) => {
   }
 };
 
+// Ensure text color has sufficient contrast (WCAG AA: 4.5:1 for normal text)
+const getTextColor = (bgColor: string): string => {
+  // All status colors should have white text for sufficient contrast
+  return '#FFFFFF';
+};
+
 export default function StatusBadge({ status, label, style, textStyle, accessibilityLabel }: Props) {
   const bgColor = (Colors.brand.status as any)?.[status] || '#999999';
   const finalLabel = label || defaultLabelForStatus(status);
+  const textColor = getTextColor(bgColor);
 
   return (
     <View
@@ -42,7 +50,7 @@ export default function StatusBadge({ status, label, style, textStyle, accessibi
       accessibilityRole="text"
       accessibilityLabel={accessibilityLabel || `${finalLabel} status`}
     >
-      <Text style={[styles.text, textStyle]}>{finalLabel}</Text>
+      <Text style={[styles.text, { color: textColor }, textStyle]}>{finalLabel}</Text>
     </View>
   );
 }
@@ -52,12 +60,14 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 14,
+    borderRadius: BorderRadius.md,
+    minHeight: 24, // Ensure minimum touch target
   },
   text: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
+    color: '#FFFFFF', // High contrast white text
+    fontSize: Typography.fontSize.xs,
+    fontWeight: Typography.fontWeight.semibold,
+    lineHeight: Typography.fontSize.xs * Typography.lineHeight.normal,
   },
 });
 

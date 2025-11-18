@@ -151,11 +151,32 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
   const handleFileUpload = async (files: FileList | null, category: 'outfits' | 'roomTourPhotos' | 'datingProfileScreenshots', isMultiple: boolean = false) => {
     if (!files || files.length === 0) return;
 
+    // CRITICAL: File size validation - prevent oversized uploads
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
+    const MAX_TOTAL_SIZE = 50 * 1024 * 1024; // 50MB total for all files
+    
+    const fileArray = Array.from(files);
+    const totalSize = fileArray.reduce((sum, file) => sum + file.size, 0);
+    
+    // Check individual file sizes
+    for (const file of fileArray) {
+      if (file.size > MAX_FILE_SIZE) {
+        alert(`File "${file.name}" is too large. Maximum file size is 10MB. Please compress or resize the image.`);
+        return;
+      }
+    }
+    
+    // Check total size
+    if (totalSize > MAX_TOTAL_SIZE) {
+      alert(`Total file size (${(totalSize / 1024 / 1024).toFixed(2)}MB) exceeds the maximum of 50MB. Please select fewer or smaller files.`);
+      return;
+    }
+
     setUploading(prev => ({ ...prev, [category]: true }));
 
     try {
       if (isMultiple) {
-        const prepared = await Promise.all(Array.from(files).map(async (file) => {
+        const prepared = await Promise.all(fileArray.map(async (file) => {
           const { uploadFile, previewBlob } = await convertToJpeg(file);
           return { uploadFile, previewBlob };
         }));

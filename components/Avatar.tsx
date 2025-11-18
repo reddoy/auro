@@ -4,20 +4,29 @@ import { Text } from '@/components/Themed';
 import { Image } from 'expo-image';
 import Colors from '@/constants/Colors';
 import Spinner from '@/components/Spinner';
+import { BorderRadius } from '@/constants/DesignSystem';
 
-export type AvatarProps = { uri?: string | null; name?: string | null; size?: number };
+export type AvatarProps = { 
+  uri?: string | null; 
+  name?: string | null; 
+  size?: number;
+  accessibilityLabel?: string;
+};
 
-export default function Avatar({ uri, name, size = 48 }: AvatarProps) {
+export default function Avatar({ uri, name, size = 48, accessibilityLabel }: AvatarProps) {
   const [showSpinner, setShowSpinner] = React.useState(!!uri);
+  const [imageError, setImageError] = React.useState(false);
   
   React.useEffect(() => {
     if (uri) {
       setShowSpinner(true);
+      setImageError(false);
       // Hide spinner after a short delay to let image load
       const timer = setTimeout(() => setShowSpinner(false), 500);
       return () => clearTimeout(timer);
     } else {
       setShowSpinner(false);
+      setImageError(false);
     }
   }, [uri]);
   
@@ -29,6 +38,9 @@ export default function Avatar({ uri, name, size = 48 }: AvatarProps) {
     return chars || '·';
   }, [name]);
 
+  const displayName = name || 'User';
+  const defaultAccessibilityLabel = accessibilityLabel || `Avatar for ${displayName}`;
+
   return (
     <View
       style={{
@@ -38,12 +50,14 @@ export default function Avatar({ uri, name, size = 48 }: AvatarProps) {
         overflow: 'hidden',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: Colors.brand.background,
+        backgroundColor: Colors.brand.avatarPlaceholder,
         borderWidth: 2,
         borderColor: Colors.brand.accentOrange,
       }}
+      accessibilityRole="image"
+      accessibilityLabel={defaultAccessibilityLabel}
     >
-      {uri ? (
+      {uri && !imageError ? (
         <Image
           key={uri}
           source={{ uri }}
@@ -51,12 +65,28 @@ export default function Avatar({ uri, name, size = 48 }: AvatarProps) {
           contentFit="cover"
           transition={200}
           cachePolicy="memory-disk"
+          onError={() => {
+            setImageError(true);
+            setShowSpinner(false);
+          }}
+          onLoad={() => {
+            setShowSpinner(false);
+          }}
         />
       ) : (
-        <Text style={{ color: Colors.brand.textPrimary, fontWeight: '700' }}>{initials}</Text>
+        <Text 
+          style={{ 
+            color: Colors.brand.textPrimary, 
+            fontWeight: '700',
+            fontSize: size * 0.4,
+          }}
+          accessibilityLabel={`Initials: ${initials}`}
+        >
+          {initials}
+        </Text>
       )}
       
-      {showSpinner && (
+      {showSpinner && !imageError && (
         <View style={{ position: 'absolute', alignItems: 'center', justifyContent: 'center' }}>
           <Spinner 
             size={size * 0.4} 

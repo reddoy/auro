@@ -63,6 +63,9 @@ export function SkeletonBlock({
         style,
         animatedStyle,
       ]}
+      accessibilityRole="none"
+      accessibilityLabel="Loading"
+      accessibilityLiveRegion="polite"
     />
   );
 }

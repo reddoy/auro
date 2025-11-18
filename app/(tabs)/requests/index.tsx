@@ -14,6 +14,7 @@ import StatusBadge from '@/components/StatusBadge';
 import { useToast } from '@/components/Toast';
 import Avatar from '@/components/Avatar';
 import { MotionPressable, MotionView, cardEntrance, cardExit, subtleFadeIn } from '@/components/motion';
+import EmptyState from '@/components/EmptyState';
 
 export default function RequestsScreen() {
   const insets = useSafeAreaInsets();
@@ -429,10 +430,15 @@ export default function RequestsScreen() {
                 ))}
               </>
             ) : (
-              <MotionView entering={subtleFadeIn()} style={styles.emptyStateMinimal}>
-                <Text style={styles.emptyStateTitle}>No reviews yet</Text>
-                <Text style={styles.emptyStateText}>Start your journey by requesting your first review from an influencer!</Text>
-              </MotionView>
+              <EmptyState
+                title="No reviews yet"
+                message={isReviewer 
+                  ? "You haven't received any review requests yet. Share your profile link to start getting requests!"
+                  : "Start your journey by requesting your first review from an influencer!"}
+                icon="⭐"
+                actionLabel="Discover Reviewers"
+                onAction={handleNewRequest}
+              />
             )}
           </View>
         )}

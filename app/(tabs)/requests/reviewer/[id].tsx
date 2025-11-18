@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Platform, Linking, Animated, LayoutAnimation, useWindowDimensions } from 'react-native';
+import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Platform, Linking, Animated, LayoutAnimation, useWindowDimensions, PanResponder, Text as RNText } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -53,6 +53,21 @@ export default function ReviewerRequestScreen() {
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
   const [currentPhotoUri, setCurrentPhotoUri] = useState<string>('');
+  const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
+  const [zoomedPhotoUri, setZoomedPhotoUri] = useState<string>('');
+  
+  // Zoom state and refs
+  const zoomScale = useRef(new Animated.Value(1)).current;
+  const zoomTranslateX = useRef(new Animated.Value(0)).current;
+  const zoomTranslateY = useRef(new Animated.Value(0)).current;
+  const [zoomLastScale, setZoomLastScale] = useState(1);
+  const [zoomLastTranslateX, setZoomLastTranslateX] = useState(0);
+  const [zoomLastTranslateY, setZoomLastTranslateY] = useState(0);
+  const [zoomCurrentScale, setZoomCurrentScale] = useState(1);
+  const zoomGestureScale = useRef(1);
+  const zoomGestureTranslateX = useRef(0);
+  const zoomGestureTranslateY = useRef(0);
+  
   // Earnings UI
   const amountCents = (request as any)?.amount_cents as number | undefined;
   const auroFeeCents = (request as any)?.application_fee_cents as number | undefined;
@@ -93,12 +108,22 @@ export default function ReviewerRequestScreen() {
     
     // Calculate vertical spacing optimized for TikTok - account for larger camera (130px) + companion panel
     const recorderSize = 130;
-    const topSpace = Math.max(insets.top + recorderSize + 40, 180); // Increased space for larger camera + companion panel + more spacing
-    const bottomSpace = insets.bottom + 100; // Reduced space for bottom - buttons will be fixed at bottom
+    // Increase top space to account for recorder + companion panel + extra padding to prevent cutoff
+    const topSpace = Math.max(insets.top + recorderSize + 60, 200); // Increased padding for better spacing
+    // Increase bottom space to prevent content cutoff
+    const bottomSpace = insets.bottom + 120; // Increased to prevent bottom cutoff
     
-    // Photo takes up 85% of available vertical space for TikTok format (reduced from 90% to make it smaller)
+    // Calculate available height for content
     const availableHeight = windowHeight - topSpace - bottomSpace;
-    const photoHeight = availableHeight * 0.85; // 85% of available space (reduced from 90%)
+    
+    // Account for photo info overlay below photo (marginTop: 12 + padding: 24 + text content: ~50px = ~86px)
+    const infoOverlayHeight = 86;
+    const contentPadding = 20; // Extra padding for breathing room
+    
+    // Photo height should leave room for overlay and padding
+    const maxPhotoHeight = availableHeight - infoOverlayHeight - contentPadding;
+    // Use 75% of available space for photo to ensure overlay fits comfortably
+    const photoHeight = Math.min(availableHeight * 0.75, maxPhotoHeight);
     const photoWidth = photoHeight * (3/4); // Maintain 3:4 aspect ratio for dating photos
     
     // Calculate pagination position - center it vertically on the right side
@@ -122,6 +147,208 @@ export default function ReviewerRequestScreen() {
   const recorderTop = insets.top + 16;
   const recorderLeft = 16;
   const recorderSize = 130; // Increased from 90 for better visibility
+
+  // Zoom PanResponder for photo zoom functionality - iOS-like behavior
+  const zoomPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: (evt) => {
+        // Always capture if 2 touches (pinch) or already zoomed
+        return evt.nativeEvent.touches.length === 2 || zoomCurrentScale > 1;
+      },
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        // More sensitive detection for iOS-like feel
+        if (evt.nativeEvent.touches.length === 2) return true;
+        if (zoomCurrentScale > 1) return true;
+        // Detect if user is trying to pan when zoomed
+        return Math.abs(gestureState.dx) > 2 || Math.abs(gestureState.dy) > 2;
+      },
+      onPanResponderGrant: (evt) => {
+        // Set offsets from last known values
+        zoomScale.setOffset(zoomLastScale);
+        zoomTranslateX.setOffset(zoomLastTranslateX);
+        zoomTranslateY.setOffset(zoomLastTranslateY);
+        zoomScale.setValue(0);
+        zoomTranslateX.setValue(0);
+        zoomTranslateY.setValue(0);
+        
+        zoomGestureScale.current = zoomLastScale;
+        zoomGestureTranslateX.current = 0;
+        zoomGestureTranslateY.current = 0;
+        
+        if (evt.nativeEvent.touches.length === 2) {
+          const touch1 = evt.nativeEvent.touches[0];
+          const touch2 = evt.nativeEvent.touches[1];
+          const distance = Math.sqrt(
+            Math.pow(touch2.pageX - touch1.pageX, 2) + 
+            Math.pow(touch2.pageY - touch1.pageY, 2)
+          );
+          const centerX = (touch1.pageX + touch2.pageX) / 2;
+          const centerY = (touch1.pageY + touch2.pageY) / 2;
+          
+          (evt as any).initialDistance = distance;
+          (evt as any).initialScale = zoomLastScale;
+          (evt as any).initialCenterX = centerX;
+          (evt as any).initialCenterY = centerY;
+          (evt as any).initialTranslateX = zoomLastTranslateX;
+          (evt as any).initialTranslateY = zoomLastTranslateY;
+        } else if (zoomCurrentScale > 1) {
+          // Store initial pan position
+          (evt as any).initialPanX = zoomLastTranslateX;
+          (evt as any).initialPanY = zoomLastTranslateY;
+        }
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        const { touches } = evt.nativeEvent;
+        
+        if (touches.length === 2) {
+          // Pinch to zoom - iOS-like behavior
+          const touch1 = touches[0];
+          const touch2 = touches[1];
+          const distance = Math.sqrt(
+            Math.pow(touch2.pageX - touch1.pageX, 2) + 
+            Math.pow(touch2.pageY - touch1.pageY, 2)
+          );
+          
+          const initialDistance = (evt as any).initialDistance;
+          const initialScale = (evt as any).initialScale || 1;
+          
+          if (initialDistance && initialDistance > 0) {
+            const scaleFactor = distance / initialDistance;
+            const newScale = Math.max(0.5, Math.min(5, initialScale * scaleFactor));
+            
+            // Calculate center point for zoom
+            const centerX = (touch1.pageX + touch2.pageX) / 2;
+            const centerY = (touch1.pageY + touch2.pageY) / 2;
+            const initialCenterX = (evt as any).initialCenterX || windowWidth / 2;
+            const initialCenterY = (evt as any).initialCenterY || windowHeight / 2;
+            
+            // Adjust translation to zoom towards touch center
+            const scaleDelta = newScale - initialScale;
+            const translateXDelta = (initialCenterX - windowWidth / 2) * (scaleDelta / initialScale);
+            const translateYDelta = (initialCenterY - windowHeight / 2) * (scaleDelta / initialScale);
+            
+            const baseTranslateX = (evt as any).initialTranslateX || 0;
+            const baseTranslateY = (evt as any).initialTranslateY || 0;
+            
+            zoomGestureScale.current = newScale;
+            zoomGestureTranslateX.current = baseTranslateX - translateXDelta;
+            zoomGestureTranslateY.current = baseTranslateY - translateYDelta;
+            
+            zoomScale.setValue(newScale - initialScale);
+            zoomTranslateX.setValue(zoomGestureTranslateX.current - baseTranslateX);
+            zoomTranslateY.setValue(zoomGestureTranslateY.current - baseTranslateY);
+            
+            setZoomCurrentScale(newScale);
+          }
+        } else if (zoomCurrentScale > 1 && touches.length === 1) {
+          // Pan when zoomed - smooth iOS-like panning
+          const initialPanX = (evt as any).initialPanX || 0;
+          const initialPanY = (evt as any).initialPanY || 0;
+          
+          zoomGestureTranslateX.current = initialPanX + gestureState.dx;
+          zoomGestureTranslateY.current = initialPanY + gestureState.dy;
+          
+          zoomTranslateX.setValue(gestureState.dx);
+          zoomTranslateY.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: () => {
+        // Get final values
+        const finalScale = zoomGestureScale.current;
+        const finalTranslateX = zoomGestureTranslateX.current;
+        const finalTranslateY = zoomGestureTranslateY.current;
+        
+        // Clamp scale
+        const clampedScale = Math.max(1, Math.min(5, finalScale));
+        
+        // Calculate proper pan boundaries based on image dimensions
+        // For contain fit, we need to account for image aspect ratio
+        const scaledWidth = windowWidth * clampedScale;
+        const scaledHeight = windowHeight * clampedScale;
+        const maxTranslateX = Math.max(0, (scaledWidth - windowWidth) / 2);
+        const maxTranslateY = Math.max(0, (scaledHeight - windowHeight) / 2);
+        
+        const clampedTranslateX = Math.max(-maxTranslateX, Math.min(maxTranslateX, finalTranslateX));
+        const clampedTranslateY = Math.max(-maxTranslateY, Math.min(maxTranslateY, finalTranslateY));
+        
+        // Smooth spring animation to final position
+        Animated.parallel([
+          Animated.spring(zoomScale, {
+            toValue: clampedScale - zoomLastScale,
+            useNativeDriver: true,
+            tension: 80,
+            friction: 8,
+            overshootClamping: true,
+          }),
+          Animated.spring(zoomTranslateX, {
+            toValue: clampedTranslateX - zoomLastTranslateX,
+            useNativeDriver: true,
+            tension: 80,
+            friction: 8,
+            overshootClamping: true,
+          }),
+          Animated.spring(zoomTranslateY, {
+            toValue: clampedTranslateY - zoomLastTranslateY,
+            useNativeDriver: true,
+            tension: 80,
+            friction: 8,
+            overshootClamping: true,
+          }),
+        ]).start(() => {
+          // Update last known values
+          setZoomLastScale(clampedScale);
+          setZoomLastTranslateX(clampedTranslateX);
+          setZoomLastTranslateY(clampedTranslateY);
+          setZoomCurrentScale(clampedScale);
+          
+          zoomGestureScale.current = clampedScale;
+          zoomGestureTranslateX.current = clampedTranslateX;
+          zoomGestureTranslateY.current = clampedTranslateY;
+          
+          // Flatten offsets and set new base values
+          zoomScale.flattenOffset();
+          zoomTranslateX.flattenOffset();
+          zoomTranslateY.flattenOffset();
+          
+          zoomScale.setValue(0);
+          zoomTranslateX.setValue(0);
+          zoomTranslateY.setValue(0);
+          
+          zoomScale.setOffset(clampedScale);
+          zoomTranslateX.setOffset(clampedTranslateX);
+          zoomTranslateY.setOffset(clampedTranslateY);
+        });
+      },
+      onPanResponderTerminationRequest: () => {
+        // Don't allow termination if zoomed
+        return zoomCurrentScale <= 1;
+      },
+    })
+  ).current;
+
+  const handleCloseZoom = () => {
+    setZoomLastScale(1);
+    setZoomLastTranslateX(0);
+    setZoomLastTranslateY(0);
+    setZoomCurrentScale(1);
+    zoomGestureScale.current = 1;
+    zoomGestureTranslateX.current = 0;
+    zoomGestureTranslateY.current = 0;
+    zoomScale.setValue(1);
+    zoomTranslateX.setValue(0);
+    zoomTranslateY.setValue(0);
+    setIsPhotoZoomed(false);
+    setZoomedPhotoUri('');
+  };
+
+  // Animated style - offsets are handled in PanResponder, values are relative
+  const zoomAnimatedStyle = {
+    transform: [
+      { scale: zoomScale },
+      { translateX: zoomTranslateX },
+      { translateY: zoomTranslateY },
+    ],
+  };
   
   // Video review is now the only option - no individual section ratings needed
   const canSubmit = React.useMemo(() => !!videoUri && overallRating > 0, [videoUri, overallRating]);
@@ -637,13 +864,13 @@ export default function ReviewerRequestScreen() {
                     paddingTop: frameMetrics.slideTopPadding,
                     paddingBottom: frameMetrics.slideBottomPadding,
                     alignItems: 'center',
-                    justifyContent: 'flex-end',
+                    justifyContent: 'center',
                     overflow: 'hidden',
                   },
                 ]}
               >
                 {slide.type === 'profile' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-end', flex: 1, paddingTop: 0, paddingBottom: 60 }] }>
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center', flex: 1, paddingTop: 0, paddingBottom: 0 }] }>
                     {/* Name and message overlay - ABOVE profile picture, centered with page */}
                     <RNView style={{
                       width: '100%',
@@ -733,7 +960,7 @@ export default function ReviewerRequestScreen() {
                 )}
                 
                 {slide.type === 'section' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center', marginTop: 60 }] }>
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center' }] }>
                     <SectionSlideCard
                       title={slide.data.title}
                       subtitle={slide.data.subtitle}
@@ -744,7 +971,7 @@ export default function ReviewerRequestScreen() {
                 )}
                 
                 {slide.type === 'photo' && (
-                  <RNView style={[styles.overlayPhotoCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center', position: 'relative', marginTop: 60 }] }>
+                  <RNView style={[styles.overlayPhotoCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center', position: 'relative', flex: 1 }] }>
                     {/* Full-screen photo - TikTok optimized */}
                     <TouchableOpacity
                       style={{ 
@@ -761,8 +988,8 @@ export default function ReviewerRequestScreen() {
                         zIndex: 1,
                       }}
                       onPress={() => {
-                        setCurrentPhotoUri(slide.data.uri);
-                        setPhotoModalOpen(true);
+                        setZoomedPhotoUri(slide.data.uri);
+                        setIsPhotoZoomed(true);
                       }}
                       activeOpacity={0.95}
                     >
@@ -791,7 +1018,7 @@ export default function ReviewerRequestScreen() {
 
                     {/* Photo info overlay - positioned below photo, centered */}
                     <RNView style={{
-                      marginTop: 20,
+                      marginTop: 12,
                       width: '100%',
                       alignItems: 'center',
                       paddingHorizontal: frameMetrics.slideHorizontalPadding + 8,
@@ -799,7 +1026,7 @@ export default function ReviewerRequestScreen() {
                       <RNView style={{
                         backgroundColor: 'rgba(0, 0, 0, 0.75)',
                         borderRadius: 18,
-                        paddingVertical: 16,
+                        paddingVertical: 12,
                         paddingHorizontal: 18,
                         backdropFilter: 'blur(10px)',
                         width: frameMetrics.photoWidth,
@@ -1299,7 +1526,7 @@ export default function ReviewerRequestScreen() {
           </ScrollView>
 
           {/* Circular video recorder in top-left corner - TikTok style with companion info */}
-          <RNView style={{ position: 'absolute', top: recorderTop, left: recorderLeft, zIndex: 10, elevation: 10, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <RNView style={{ position: 'absolute', top: recorderTop, left: recorderLeft, zIndex: 15, elevation: 15, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <MediaRecorder
               onRecorded={(uri) => {
                 setVideoUri(uri);
@@ -1382,6 +1609,33 @@ export default function ReviewerRequestScreen() {
             </RNView>
           </RNView>
 
+          {/* Photo Zoom View - Full screen with pinch zoom, keeps recorder visible */}
+          {isPhotoZoomed && zoomedPhotoUri && (
+            <RNView style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#000', zIndex: 5, elevation: 5 }}>
+              {/* Done button - bottom center to avoid conflict with close button */}
+              <TouchableOpacity 
+                style={{ position: 'absolute', bottom: insets.bottom + 40, alignSelf: 'center', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24, backgroundColor: 'rgba(0, 0, 0, 0.7)', justifyContent: 'center', alignItems: 'center', zIndex: 20, elevation: 20 }}
+                onPress={handleCloseZoom}
+                activeOpacity={0.7}
+              >
+                <RNText style={{ color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: 0.5 }}>Done</RNText>
+              </TouchableOpacity>
+              
+              {/* Zoomable image */}
+              <RNView 
+                style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+                {...zoomPanResponder.panHandlers}
+              >
+                <Animated.View style={[{ width: windowWidth, height: windowHeight, justifyContent: 'center', alignItems: 'center' }, zoomAnimatedStyle]}>
+                  <Image
+                    source={{ uri: zoomedPhotoUri }}
+                    style={{ width: windowWidth, height: windowHeight }}
+                    contentFit="contain"
+                  />
+                </Animated.View>
+              </RNView>
+            </RNView>
+          )}
 
           {/* Close button - positioned at top right for better accessibility */}
           <RNView style={{ position: 'absolute', top: insets.top + 12, right: 16, zIndex: 11, elevation: 11 }}>

@@ -71,9 +71,21 @@ export default function ImageGalleryModal({ visible, uris, initialIndex = 0, onC
   const goNext = () => goTo(index + 1);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal 
+      visible={visible} 
+      transparent 
+      animationType="fade" 
+      onRequestClose={onClose}
+      accessibilityViewIsModal={true}
+      accessibilityLabel="Image gallery"
+    >
       <View style={styles.backdrop}>
-        <Pressable style={[StyleSheet.absoluteFill, { zIndex: 0 }]} onPress={onClose} accessibilityLabel="Close gallery" />
+        <Pressable 
+          style={[StyleSheet.absoluteFill, { zIndex: 0 }]} 
+          onPress={onClose} 
+          accessibilityLabel="Close gallery"
+          accessibilityRole="button"
+        />
         <FlatList
           ref={listRef}
           data={uris}
@@ -88,12 +100,23 @@ export default function ImageGalleryModal({ visible, uris, initialIndex = 0, onC
             const i = Math.round(e.nativeEvent.contentOffset.x / width);
             setIndex(i);
           }}
-          renderItem={({ item }) => (
-            <ZoomableImage uri={item} width={width} height={height} />
+          renderItem={({ item, index: itemIndex }) => (
+            <View 
+              accessibilityLabel={`Image ${itemIndex + 1} of ${uris.length}`}
+              accessibilityRole="image"
+            >
+              <ZoomableImage uri={item} width={width} height={height} />
+            </View>
           )}
         />
         {/* Counter (top-left) */}
-        <View style={[styles.counter, { top: insets.top + 16 }]}><Text style={styles.counterText}>{index + 1}/{uris.length}</Text></View>
+        <View 
+          style={[styles.counter, { top: insets.top + 16 }]}
+          accessibilityLabel={`Image ${index + 1} of ${uris.length}`}
+          accessibilityRole="text"
+        >
+          <Text style={styles.counterText}>{index + 1}/{uris.length}</Text>
+        </View>
         
         {/* Zoom hint (bottom-center) */}
         <View style={[styles.zoomHint, { bottom: insets.bottom + 20 }]}>
@@ -101,17 +124,37 @@ export default function ImageGalleryModal({ visible, uris, initialIndex = 0, onC
         </View>
 
         {/* Close button (top-right) - positioned with safe area */}
-        <Pressable onPress={onClose} style={[styles.closeButton, { top: insets.top + 16 }]} accessibilityLabel="Close gallery">
+        <Pressable 
+          onPress={onClose} 
+          style={[styles.closeButton, { top: insets.top + 16 }]} 
+          accessibilityLabel="Close gallery"
+          accessibilityRole="button"
+          accessibilityHint="Double tap to close the image gallery"
+        >
           <Text style={styles.closeButtonText}>×</Text>
         </Pressable>
 
         {/* Arrows for web (and optionally native) */}
         {(Platform.OS === 'web' && uris.length > 1) ? (
           <View style={styles.arrowsWrap} pointerEvents="box-none">
-            <Pressable onPress={goPrev} style={[styles.arrowButton, { left: 12 }]} accessibilityLabel="Previous image">
+            <Pressable 
+              onPress={goPrev} 
+              style={[styles.arrowButton, { left: 12 }]} 
+              accessibilityLabel="Previous image"
+              accessibilityRole="button"
+              accessibilityHint={`Go to image ${index} of ${uris.length}`}
+              disabled={index === 0}
+            >
               <Text style={styles.arrowText}>‹</Text>
             </Pressable>
-            <Pressable onPress={goNext} style={[styles.arrowButton, { right: 12 }]} accessibilityLabel="Next image">
+            <Pressable 
+              onPress={goNext} 
+              style={[styles.arrowButton, { right: 12 }]} 
+              accessibilityLabel="Next image"
+              accessibilityRole="button"
+              accessibilityHint={`Go to image ${index + 2} of ${uris.length}`}
+              disabled={index === uris.length - 1}
+            >
               <Text style={styles.arrowText}>›</Text>
             </Pressable>
           </View>
@@ -144,7 +187,17 @@ const styles = StyleSheet.create({
   },
   closeButtonText: { color: '#fff', fontWeight: '900', fontSize: 24, lineHeight: 24 },
   arrowsWrap: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 },
-  arrowButton: { position: 'absolute', width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center' },
+  arrowButton: { 
+    position: 'absolute', 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22, 
+    backgroundColor: 'rgba(0,0,0,0.45)', 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    minWidth: 44,
+    minHeight: 44,
+  },
   arrowText: { color: '#fff', fontSize: 28, fontWeight: '900', lineHeight: 28 },
   zoomHint: { 
     position: 'absolute', 

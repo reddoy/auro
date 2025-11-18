@@ -85,12 +85,28 @@ export default function ReviewerReviewModal({ visible, requestId, reviewerName, 
     }
   };
 
+  // Handle Escape key on web
+  React.useEffect(() => {
+    if (!visible || Platform.OS !== 'web') return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !submitting) {
+        handleClose();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [visible, submitting]);
+
   return (
     <Modal
       visible={visible}
       transparent
       animationType="slide"
       onRequestClose={handleClose}
+      accessibilityViewIsModal={true}
+      accessibilityLabel="Review your reviewer"
     >
       <View style={styles.backdrop}>
         <TouchableOpacity
@@ -126,6 +142,9 @@ export default function ReviewerReviewModal({ visible, requestId, reviewerName, 
                         styles.ratingButton,
                         rating === r && styles.ratingButtonSelected,
                       ]}
+                      accessibilityLabel={`Rate ${r} out of 5: ${r === 1 ? 'Poor' : r === 2 ? 'Fair' : r === 3 ? 'Good' : r === 4 ? 'Very Good' : 'Excellent'}`}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: rating === r }}
                     >
                       <Text
                         style={[
@@ -161,6 +180,8 @@ export default function ReviewerReviewModal({ visible, requestId, reviewerName, 
                   numberOfLines={4}
                   textAlignVertical="top"
                   editable={!submitting}
+                  accessibilityLabel="Review comment"
+                  accessibilityHint="Optional comment about your experience with the reviewer"
                 />
               </View>
 
@@ -170,6 +191,8 @@ export default function ReviewerReviewModal({ visible, requestId, reviewerName, 
                   style={[styles.button, styles.cancelButton]}
                   onPress={handleClose}
                   disabled={submitting}
+                  accessibilityLabel="Cancel review"
+                  accessibilityRole="button"
                 >
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
@@ -181,6 +204,9 @@ export default function ReviewerReviewModal({ visible, requestId, reviewerName, 
                   ]}
                   onPress={handleSubmit}
                   disabled={submitting || rating === 0}
+                  accessibilityLabel={existingReview ? 'Update review' : 'Submit review'}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: submitting || rating === 0 }}
                 >
                   {submitting ? (
                     <ActivityIndicator color={Colors.brand.textOnGradient} />

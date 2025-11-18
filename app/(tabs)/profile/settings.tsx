@@ -303,18 +303,46 @@ export default function ProfileSettingsScreen() {
 }
 
 function LabeledInput(props: any) {
-  const { label, style, multiline, numberOfLines, inputRef, ...rest } = props;
+  const { label, style, multiline, numberOfLines, inputRef, error, accessibilityLabel, ...rest } = props;
+  const inputId = React.useId();
+  const labelId = `${inputId}-label`;
+  const errorId = `${inputId}-error`;
+  
   return (
     <View style={{ marginBottom: 14 }}>
-      <Text style={styles.label}>{label}</Text>
+      <Text 
+        style={styles.label}
+        nativeID={labelId}
+        accessibilityRole="text"
+      >
+        {label}
+      </Text>
       <TextInput
         {...rest}
         ref={inputRef}
-        style={[styles.input, multiline && { height: Math.max(96, (numberOfLines || 4) * 22) }, style]}
+        style={[
+          styles.input, 
+          multiline && { height: Math.max(96, (numberOfLines || 4) * 22) }, 
+          error && styles.inputError,
+          style
+        ]}
         placeholderTextColor={Colors.brand.textSecondary}
         multiline={multiline}
         numberOfLines={numberOfLines}
+        accessibilityLabel={accessibilityLabel || label}
+        accessibilityLabelledBy={labelId}
+        accessibilityDescribedBy={error ? errorId : undefined}
+        accessibilityInvalid={!!error}
       />
+      {error && (
+        <Text 
+          style={styles.errorText}
+          nativeID={errorId}
+          accessibilityRole="alert"
+        >
+          {error}
+        </Text>
+      )}
     </View>
   );
 }
@@ -398,7 +426,18 @@ const styles = StyleSheet.create({
     paddingVertical: 14, 
     color: Colors.brand.textPrimary, 
     fontSize: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)'
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    minHeight: 44,
+  },
+  inputError: {
+    borderColor: Colors.brand.error,
+    borderWidth: 2,
+  },
+  errorText: {
+    color: Colors.brand.error,
+    fontSize: 14,
+    marginTop: 4,
+    fontWeight: '500',
   },
   switchRow: { 
     flexDirection: 'row', 
