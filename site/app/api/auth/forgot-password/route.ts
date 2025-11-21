@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     const redirectTo = `${siteUrl}/auth/reset-password`;
 
     const { error } = await admin.auth.resetPasswordForEmail(email, {
-      emailRedirectTo: redirectTo,
+      redirectTo,
     });
 
     if (error) {
