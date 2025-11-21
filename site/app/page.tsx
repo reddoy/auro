@@ -9,6 +9,7 @@ import CountdownTimer from '../components/CountdownTimer';
 import RevieweeWaitlist from '../components/RevieweeWaitlist';
 import { supabase } from '../lib/supabase';
 import { ArrowRight, Star, DollarSign, Clock, Users, TrendingUp, CheckCircle } from 'lucide-react';
+import { useIosSourceFlag } from '@/hooks/useIosSourceFlag';
 
 export default function HomePage() {
   // Removed unused showRibbon state
@@ -18,6 +19,9 @@ export default function HomePage() {
   const desktopOverlayRef = useRef<HTMLAnchorElement>(null);
   const mobileVideoRef = useRef<HTMLVideoElement>(null);
   const mobileOverlayRef = useRef<HTMLAnchorElement>(null);
+  const isIosSource = useIosSourceFlag();
+  const iosCtaMessage =
+    "Purchases are unavailable in the iOS in-app browser. Open appauro.com in Safari or on desktop to continue.";
 
   useEffect(() => {
     const fetchReviewerCount = async () => {
@@ -192,21 +196,27 @@ export default function HomePage() {
 
               {/* CTA Button - Moved above iPhone for better conversion */}
               <div className="flex justify-center mobile-text-reveal mb-8 px-4" style={{ animationDelay: '1.2s' }}>
-                <Button 
-                  size="xl" 
-                  variant="gradient" 
-                  className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-sm text-base sm:text-lg px-4 sm:px-6 py-3 shadow-2xl font-semibold"
-                  asChild
-                >
-                  <a 
-                    href="/reviewers/apply" 
-                    className="flex items-center justify-center"
-                    aria-label={`Only ${spotsLeft} founding spots left - Apply now`}
+                {isIosSource ? (
+                  <div className="w-full max-w-sm rounded-2xl border border-white/20 bg-white/5 px-4 py-3 text-center text-sm font-semibold text-white/80 shadow-2xl">
+                    {iosCtaMessage}
+                  </div>
+                ) : (
+                  <Button
+                    size="xl"
+                    variant="gradient"
+                    className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-sm text-base sm:text-lg px-4 sm:px-6 py-3 shadow-2xl font-semibold"
+                    asChild
                   >
-                    <span className="truncate">Only {spotsLeft} founding spots left</span>
-                    <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" aria-hidden="true" />
-                  </a>
-                </Button>
+                    <a
+                      href="/reviewers/apply"
+                      className="flex items-center justify-center"
+                      aria-label={`Only ${spotsLeft} founding spots left - Apply now`}
+                    >
+                      <span className="truncate">Only {spotsLeft} founding spots left</span>
+                      <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" aria-hidden="true" />
+                    </a>
+                  </Button>
+                )}
               </div>
 
               {/* Mobile iPhone Video - Moved below CTA with proper spacing */}
@@ -224,17 +234,25 @@ export default function HomePage() {
                       muted
                       aria-label="Demo video showing how Auro app works - reviewing a guy's profile and style"
                     />
-                    <a 
-                      ref={mobileOverlayRef} 
-                      href="/reviewers/apply" 
-                      className="mobile-iphone-overlay"
-                      aria-label="Click to see the full review and get your personalized style review"
-                    >
-                      <div className="overlay-content">
-                        <h3>👆 Click here to see the full review</h3>
-                        <p>Get your personalized style review</p>
+                    {isIosSource ? (
+                      <div className="mobile-iphone-overlay ios-blocked" aria-live="polite">
+                        <div className="overlay-content text-center text-sm font-semibold text-white">
+                          <p>{iosCtaMessage}</p>
+                        </div>
                       </div>
-                    </a>
+                    ) : (
+                      <a
+                        ref={mobileOverlayRef}
+                        href="/reviewers/apply"
+                        className="mobile-iphone-overlay"
+                        aria-label="Click to see the full review and get your personalized style review"
+                      >
+                        <div className="overlay-content">
+                          <h3>👆 Click here to see the full review</h3>
+                          <p>Get your personalized style review</p>
+                        </div>
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>
@@ -297,17 +315,25 @@ export default function HomePage() {
                 
                 {/* CTA Button */}
                 <div className="flex justify-start">
-                  <Button 
-                    size="xl" 
-                    variant="gradient" 
-                    className="group text-lg px-8 py-4 shadow-2xl hover:shadow-3xl transition-all duration-300"
-                    asChild
-                  >
-                    <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
-                      <span className="mobile-button-text">🚀 Start Earning Today ({isLoadingCount ? 'Loading...' : `${reviewerCount}/35 spots taken`})</span>
-                      <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
-                    </a>
-                  </Button>
+                  {isIosSource ? (
+                    <div className="rounded-2xl border border-white/20 bg-white/5 px-6 py-4 text-base font-semibold text-white/80 shadow-2xl max-w-md">
+                      {iosCtaMessage}
+                    </div>
+                  ) : (
+                    <Button
+                      size="xl"
+                      variant="gradient"
+                      className="group text-lg px-8 py-4 shadow-2xl hover:shadow-3xl transition-all duration-300"
+                      asChild
+                    >
+                      <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
+                        <span className="mobile-button-text">
+                          🚀 Start Earning Today ({isLoadingCount ? 'Loading...' : `${reviewerCount}/35 spots taken`})
+                        </span>
+                        <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                      </a>
+                    </Button>
+                  )}
                 </div>
 
                 {/* App Launch Countdown */}
@@ -349,16 +375,24 @@ export default function HomePage() {
                       muted
                       aria-label="Demo video showing how Auro app works - reviewing a guy's profile and style"
                     />
-                    <a 
-                      ref={desktopOverlayRef} 
-                      href="/reviewers/apply" 
-                      className="desktop-iphone-overlay"
-                    >
-                      <div className="overlay-content">
-                        <h3>👆 Click here to see the full review</h3>
-                        <p>Get your personalized style review</p>
+                    {isIosSource ? (
+                      <div className="desktop-iphone-overlay ios-blocked" aria-live="polite">
+                        <div className="overlay-content text-center text-base font-semibold text-white">
+                          {iosCtaMessage}
+                        </div>
                       </div>
-                    </a>
+                    ) : (
+                      <a
+                        ref={desktopOverlayRef}
+                        href="/reviewers/apply"
+                        className="desktop-iphone-overlay"
+                      >
+                        <div className="overlay-content">
+                          <h3>👆 Click here to see the full review</h3>
+                          <p>Get your personalized style review</p>
+                        </div>
+                      </a>
+                    )}
                   </div>
                   
                   {/* Floating Benefit Callouts */}

@@ -4,6 +4,16 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["iad1"]
+  "regions": ["iad1"],
+  "crons": [
+    {
+      "path": "/api/payments/retry-failed-distributions",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/payments/process-timeout-refunds",
+      "schedule": "*/30 * * * *"
+    }
+  ]
 }
 

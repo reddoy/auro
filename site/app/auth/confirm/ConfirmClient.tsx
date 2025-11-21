@@ -4,6 +4,31 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useIosSourceFlag } from "@/hooks/useIosSourceFlag";
+
+const requestLinkStyle = {
+  backgroundImage: "linear-gradient(90deg,#FF6F00,#FF2D55)",
+};
+
+function RequestLink({ children }: { children: React.ReactNode }) {
+  const isIosSource = useIosSourceFlag();
+  const iosMessage =
+    "Purchases are unavailable inside the iOS in-app browser. Please open this link in Safari or on desktop.";
+
+  if (isIosSource) {
+    return (
+      <div className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold border border-white/30 bg-white/5 text-center text-sm">
+        {iosMessage}
+      </div>
+    );
+  }
+
+  return (
+    <Link href="/request" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={requestLinkStyle}>
+      {children}
+    </Link>
+  );
+}
 
 function Inner() {
   const params = useSearchParams();
@@ -81,9 +106,7 @@ function Inner() {
                 <>
                   <h1 className="text-white text-2xl font-semibold">Email confirmed! 🎉</h1>
                   <p className="text-[#C7BFD9] mt-2">{email ? `Verified ${email}.` : "You're all set."} Choose a next step below.</p>
-                  <Link href="/request" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "linear-gradient(90deg,#FF6F00,#FF2D55)" }}>
-                    Request a review
-                  </Link>
+                  <RequestLink>Request a review</RequestLink>
                   <div className="mt-3 grid grid-cols-1 gap-3 w-full">
                     <a href="https://apps.apple.com/" target="_blank" className="block w-full rounded-2xl px-5 py-3 text-center font-semibold" style={{ color: "#EDE8F7", backgroundColor: "#2C1746", border: "1px solid rgba(255,255,255,0.08)" }}>Download on the App Store</a>
                     <a href="https://play.google.com/store" target="_blank" className="block w-full rounded-2xl px-5 py-3 text-center font-semibold" style={{ color: "#EDE8F7", backgroundColor: "#2C1746", border: "1px solid rgba(255,255,255,0.08)" }}>Get it on Google Play</a>
@@ -95,36 +118,28 @@ function Inner() {
                 <>
                   <h1 className="text-white text-2xl font-semibold">Welcome to Auro! 🎉</h1>
                   <p className="text-[#C7BFD9] mt-2">Your invitation has been confirmed. You can now sign up for an account.</p>
-                  <Link href="/request" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "linear-gradient(90deg,#FF6F00,#FF2D55)" }}>
-                    Get Started
-                  </Link>
+                <RequestLink>Get Started</RequestLink>
                 </>
               )}
               {isMagicLink && (
                 <>
                   <h1 className="text-white text-2xl font-semibold">Signed in successfully! ✅</h1>
                   <p className="text-[#C7BFD9] mt-2">You've been signed in using your magic link.</p>
-                  <Link href="/request" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "linear-gradient(90deg,#FF6F00,#FF2D55)" }}>
-                    Continue to App
-                  </Link>
+                  <RequestLink>Continue to App</RequestLink>
                 </>
               )}
               {isEmailChange && (
                 <>
                   <h1 className="text-white text-2xl font-semibold">Email address updated! ✅</h1>
                   <p className="text-[#C7BFD9] mt-2">{email ? `Your email has been changed to ${email}.` : "Your email address has been successfully updated."}</p>
-                  <Link href="/request" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "linear-gradient(90deg,#FF6F00,#FF2D55)" }}>
-                    Continue to App
-                  </Link>
+                  <RequestLink>Continue to App</RequestLink>
                 </>
               )}
               {isReauthentication && (
                 <>
                   <h1 className="text-white text-2xl font-semibold">Re-authentication successful! ✅</h1>
                   <p className="text-[#C7BFD9] mt-2">You've successfully verified your identity. You can now proceed with the action.</p>
-                  <Link href="/request" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "linear-gradient(90deg,#FF6F00,#FF2D55)" }}>
-                    Continue to App
-                  </Link>
+                  <RequestLink>Continue to App</RequestLink>
                 </>
               )}
             </>

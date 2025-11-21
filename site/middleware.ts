@@ -1,6 +1,9 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
+const IOS_SOURCE_COOKIE = 'auro_ios_src';
+const IOS_SOURCE_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
+
 function buildCorsHeaders(req: NextRequest): Headers {
   const origin = req.headers.get('origin') || '*';
   const requestedHeaders = req.headers.get('access-control-request-headers');
@@ -13,37 +16,58 @@ function buildCorsHeaders(req: NextRequest): Headers {
   return headers;
 }
 
+function maybeSetIosCookie(req: NextRequest, res: NextResponse) {
+  const source = req.nextUrl.searchParams.get('src');
+  if (source === 'ios') {
+    res.cookies.set(IOS_SOURCE_COOKIE, '1', {
+      path: '/',
+      httpOnly: false,
+      sameSite: 'lax',
+      maxAge: IOS_SOURCE_TTL_SECONDS,
+    });
+  }
+}
+
 export function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname || '';
-  
+
   // Handle redirects from old /reviewers/[slug] URLs to new /[username] URLs
-  if (pathname.startsWith('/reviewers/') && pathname !== '/reviewers' && pathname !== '/reviewers/apply' && pathname !== '/reviewers/thanks') {
+  if (
+    pathname.startsWith('/reviewers/') &&
+    pathname !== '/reviewers' &&
+    pathname !== '/reviewers/apply' &&
+    pathname !== '/reviewers/thanks'
+  ) {
     const slug = pathname.replace('/reviewers/', '');
     const url = req.nextUrl.clone();
     url.pathname = `/${slug}`;
-    return NextResponse.redirect(url, 301); // Permanent redirect
-  }
-  
-  // Enforce CORS only for storage API endpoints
-  if (!pathname.startsWith('/api/storage/')) {
-    return NextResponse.next();
+    const redirectResponse = NextResponse.redirect(url, 301);
+    maybeSetIosCookie(req, redirectResponse);
+    return redirectResponse;
   }
 
-  const cors = buildCorsHeaders(req);
+  let response: NextResponse;
 
-  // Short-circuit preflight
-  if (req.method === 'OPTIONS') {
-    return new NextResponse(null, { status: 204, headers: cors });
+  if (pathname.startsWith('/api/storage/')) {
+    const cors = buildCorsHeaders(req);
+
+    if (req.method === 'OPTIONS') {
+      response = new NextResponse(null, { status: 204, headers: cors });
+      maybeSetIosCookie(req, response);
+      return response;
+    }
+
+    response = NextResponse.next();
+    cors.forEach((value, key) => response.headers.set(key, value));
+  } else {
+    response = NextResponse.next();
   }
 
-  // Add CORS headers to downstream responses
-  const res = NextResponse.next();
-  cors.forEach((value, key) => res.headers.set(key, value));
-  return res;
+  maybeSetIosCookie(req, response);
+  return response;
 }
 
 export const config = {
-  matcher: ['/api/storage/:path*', '/reviewers/:path*'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
-
 

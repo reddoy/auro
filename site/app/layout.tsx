@@ -6,6 +6,7 @@ import CountdownTimer from '../components/CountdownTimer';
 import ReviewerCounter from '../components/ReviewerCounter';
 import ConditionalNav from '../components/ConditionalNav';
 import GoogleAnalytics from '../components/GoogleAnalytics';
+import { IosSourceTracker } from '../components/IosSourceTracker';
 
 // Fonts must be initialized at module scope
 const poppins = Poppins({ subsets: ['latin'], weight: ['400', '600', '700'] });
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
       </head>
       <body className={`${poppins.className} snap-y`}>
+        <IosSourceTracker />
         {GA_MEASUREMENT_ID && <GoogleAnalytics GA_MEASUREMENT_ID={GA_MEASUREMENT_ID} />}
         <header className="nav">
           <div className="container">
