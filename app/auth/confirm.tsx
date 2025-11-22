@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Linking, Animated } from 'react-native';
+import { StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Animated } from 'react-native';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Text, View } from '@/components/Themed';
@@ -113,19 +113,11 @@ export default function ConfirmEmailScreen() {
         end={{ x: 0, y: 1 }}
         style={styles.backgroundGradient}
       />
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <ExpoLinearGradient
-          colors={[Colors.brand.cardBackgroundLight, Colors.brand.cardBackground]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.header}
-        >
-          <View style={styles.headerContent}>
-            <Image source={require('@/Auro_side_side_no_bg.png')} style={styles.logoTop} resizeMode="contain" />
-            <Text style={styles.tagline}>Your Aura, Amplified</Text>
-          </View>
-        </ExpoLinearGradient>
-
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <Animated.View 
           style={[
             styles.card,
@@ -224,7 +216,7 @@ export default function ConfirmEmailScreen() {
                 </View>
               </MotionView>
               <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item * 2)}>
-                <Text style={styles.title}>Please confirm your email</Text>
+                <Text style={styles.title} numberOfLines={1}>Please confirm your email</Text>
               </MotionView>
               <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item * 3)}>
                 {!!email && <Text style={styles.body}>We sent a confirmation link to <Text style={styles.emailHighlight}>{email}</Text>. Please check your inbox and click the link to verify your email address.</Text>}
@@ -283,10 +275,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
   backgroundGradient: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
   scrollView: { flex: 1, backgroundColor: 'transparent' },
-  header: { paddingTop: 80, paddingBottom: 40, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 24, elevation: 12 },
-  headerContent: { alignItems: 'center', backgroundColor: 'transparent', width: '100%' },
-  logoTop: { width: 120, height: 48, marginBottom: 10 },
-  tagline: { fontSize: 16, color: Colors.brand.textOnGradient, textAlign: 'center', opacity: 0.9, fontWeight: '500' },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingVertical: 20 },
   card: { 
     margin: 28, 
     backgroundColor: Colors.brand.cardBackground, 
@@ -308,7 +297,7 @@ const styles = StyleSheet.create({
   logo: { width: 180, height: 72, marginBottom: 24 },
   title: { 
     color: Colors.brand.textPrimary, 
-    fontSize: 24, 
+    fontSize: 20, 
     fontWeight: '700', 
     textAlign: 'center', 
     marginBottom: 12,

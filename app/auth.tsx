@@ -313,8 +313,21 @@ export default function AuthScreen() {
       if (isLogin) {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
-          const message = String((error as any)?.message || '');
+          const message = String((error as any)?.message || '').toLowerCase();
           const status = (error as any)?.status;
+          
+          // Check for invalid credentials
+          if (/invalid.*credentials|invalid.*email.*password|invalid.*login|wrong.*password|incorrect.*password/i.test(message) || 
+              (status === 400 && /invalid|wrong|incorrect/i.test(message))) {
+            Alert.alert(
+              'Invalid Credentials',
+              'Oops! That email and password combination doesn\'t look correct. Please try again.'
+            );
+            setLoading(false);
+            return;
+          }
+          
+          // Check for email confirmation issues
           if (status === 400 || /confirm/i.test(message)) {
             if (/confirm/i.test(message) || /not\s*confirmed/i.test(message)) {
               router.replace({ pathname: '/auth/confirm', params: { email } });
@@ -424,14 +437,26 @@ export default function AuthScreen() {
         }
       }
     } catch (err: any) {
-      const msg = String(err?.message || '');
+      const msg = String(err?.message || '').toLowerCase();
       const secMatch = msg.match(/after\s+(\d+)\s*seconds?/i);
+      
+      // Check for rate limiting / security cooldown
       if (/security\s*purposes|too\s*many|rate/i.test(msg)) {
         const wait = Number(secMatch?.[1]) || 60;
         setCooldownSec(wait);
         Alert.alert('Please wait', `For security purposes, please try again in ${wait} seconds.`);
         return;
       }
+      
+      // Check for invalid credentials (fallback in case it wasn't caught earlier)
+      if (isLogin && (/invalid.*credentials|invalid.*email.*password|invalid.*login|wrong.*password|incorrect.*password/i.test(msg))) {
+        Alert.alert(
+          'Invalid Credentials',
+          'Oops! That email and password combination doesn\'t look correct. Please try again.'
+        );
+        return;
+      }
+      
       // Check for duplicate email errors
       if (/already registered|user already exists|email address is already registered/i.test(msg)) {
         Alert.alert(
@@ -455,7 +480,14 @@ export default function AuthScreen() {
         );
         return;
       }
-      Alert.alert('Auth error', msg || 'Something went wrong');
+      
+      // Generic error message - more user-friendly
+      Alert.alert(
+        'Oops!',
+        isLogin 
+          ? 'We couldn\'t sign you in. Please check your credentials and try again.'
+          : 'Something went wrong. Please try again.'
+      );
       // Don't redirect on error - stay on the same screen
     } finally {
       setLoading(false);
@@ -587,22 +619,6 @@ export default function AuthScreen() {
   const shouldShowPhone = !isLogin && signupStep === 3;
 
   const scrollViewRef = useRef<ScrollView>(null);
-  const inputRefs = useRef<{ [key: string]: any }>({});
-
-  // Auto-scroll to focused input on mobile
-  const handleInputFocus = (inputKey: string) => {
-    if (Platform.OS !== 'web' && inputRefs.current[inputKey]) {
-      setTimeout(() => {
-        inputRefs.current[inputKey]?.measureLayout?.(
-          scrollViewRef.current?.getInnerViewNode?.() || scrollViewRef.current,
-          (x: number, y: number) => {
-            scrollViewRef.current?.scrollTo?.({ y: y - 20, animated: true });
-          },
-          () => {}
-        );
-      }, 100);
-    }
-  };
 
   return (
     <KeyboardAvoidingView 
@@ -631,6 +647,17 @@ export default function AuthScreen() {
         contentInsetAdjustmentBehavior="automatic"
         enableAutomaticScroll={Platform.OS === 'ios'}
       >
+        {/* Logo and Brand Name - Outside and above the form card */}
+        <MotionView entering={ZoomIn.duration(400).delay(MotionDelays.quick)}>
+          <View style={[styles.logoContainer, isCompact && styles.logoContainerCompact, styles.logoContainerOutside]}>
+            <Image 
+              source={require('../auro_aura_logo_nobg.png')} 
+              style={[styles.logoImage, isCompact && styles.logoImageCompact]}
+              resizeMode="contain"
+            />
+            <Text style={[styles.brandText, isCompact && styles.brandTextCompact]}>Auro</Text>
+          </View>
+        </MotionView>
 
       <Animated.View 
         style={[
@@ -644,18 +671,6 @@ export default function AuthScreen() {
           },
         ]}
       >
-        {/* Logo and Brand Name */}
-        <MotionView entering={ZoomIn.duration(400).delay(MotionDelays.quick)}>
-          <View style={[styles.logoContainer, isCompact && styles.logoContainerCompact]}>
-            <Image 
-              source={require('../auro_aura_logo_nobg.png')} 
-              style={[styles.logoImage, isCompact && styles.logoImageCompact]}
-              resizeMode="contain"
-            />
-            <Text style={[styles.brandText, isCompact && styles.brandTextCompact]}>Auro</Text>
-          </View>
-        </MotionView>
-
         {!forgotPasswordMode ? (
           <>
             <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
@@ -952,14 +967,10 @@ export default function AuthScreen() {
                 placeholder={isUltraCompact ? 'Email' : 'Enter your email'}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                ref={(ref) => {
-                  emailRef.current = ref;
-                  inputRefs.current.email = ref;
-                }}
+                ref={emailRef}
                 returnKeyType="next"
                 blurOnSubmit={false}
                 onSubmitEditing={() => passwordRef.current?.focus()}
-                onFocus={() => handleInputFocus('email')}
                 editable={!checkingEmail}
               />
               {checkingEmail && (
@@ -981,14 +992,10 @@ export default function AuthScreen() {
                   onChangeText={setPassword}
                   placeholder={isUltraCompact ? 'Password' : 'Enter your password'}
                   secureTextEntry={!showPassword}
-                  ref={(ref) => {
-                    passwordRef.current = ref;
-                    inputRefs.current.password = ref;
-                  }}
+                  ref={passwordRef}
                   returnKeyType={isLogin ? 'go' : 'next'}
                   blurOnSubmit={isLogin}
                   onSubmitEditing={isLogin ? handleSubmit : () => confirmPasswordRef.current?.focus()}
-                  onFocus={() => handleInputFocus('password')}
                 />
                 <TouchableOpacity
                   style={styles.eyeIcon}
@@ -1230,6 +1237,11 @@ const styles = StyleSheet.create({
   logoContainerCompact: {
     marginBottom: 20,
   },
+  logoContainerOutside: {
+    marginBottom: 24,
+    marginTop: Platform.OS === 'web' ? 0 : 20,
+    paddingHorizontal: Platform.OS === 'web' ? 0 : 28,
+  },
   logoImage: {
     width: 48,
     height: 48,
@@ -1408,8 +1420,10 @@ const styles = StyleSheet.create({
   eyeIcon: {
     position: 'absolute',
     right: 16,
-    top: '50%',
-    transform: [{ translateY: -10 }],
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 4,
     backgroundColor: 'transparent',
   },

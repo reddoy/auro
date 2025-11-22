@@ -52,13 +52,20 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
     setError('');
 
     try {
+      // Get the site URL for email redirect
+      const siteUrl = typeof window !== 'undefined' && window.location?.origin
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com';
+      const redirectTo = `${siteUrl}/auth/confirm`;
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName,
-          }
+          },
+          emailRedirectTo: redirectTo,
         }
       });
 

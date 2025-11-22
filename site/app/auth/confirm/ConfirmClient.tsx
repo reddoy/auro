@@ -74,6 +74,11 @@ function Inner() {
           setStatus("error");
           setMessage(error.message || "Unable to verify your email.");
         } else {
+          // For signup confirmations, redirect to thank you page
+          if (isSignup) {
+            router.replace("/auth/thank-you");
+            return;
+          }
           setStatus("success");
         }
       } catch (e: any) {

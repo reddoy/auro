@@ -1126,73 +1126,88 @@ export default function ReviewerRequestScreen() {
                 )}
                 
                 {slide.type === 'rating' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 20, paddingBottom: 20 }] }>
-                    {/* Auro Logo and Title */}
-                    <RNView style={{ alignItems: 'center', marginBottom: 24, width: '100%' }}>
-                      <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                        <Image 
-                          source={require('@/auro_aura_logo_nobg.png')} 
-                          style={{ width: 72, height: 36 }} 
-                          contentFit="contain" 
-                        />
-                        <Text style={{ color: Colors.brand.textPrimary, fontSize: 32, fontWeight: '900', letterSpacing: 0.5 }}>
-                          Auro
+                  <ScrollView 
+                    style={{ flex: 1, width: '100%' }}
+                    contentContainerStyle={{ 
+                      flexGrow: 1,
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      paddingTop: Platform.OS === 'ios' ? 10 : 20,
+                      paddingBottom: Platform.OS === 'ios' ? 80 : 20,
+                      paddingHorizontal: 0,
+                    }}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="interactive"
+                  >
+                    <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 0, paddingBottom: 0 }] }>
+                      {/* Auro Logo and Title */}
+                      <RNView style={{ alignItems: 'center', marginBottom: Platform.OS === 'ios' ? 16 : 24, width: '100%' }}>
+                        <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: Platform.OS === 'ios' ? 12 : 16 }}>
+                          <Image 
+                            source={require('@/auro_aura_logo_nobg.png')} 
+                            style={{ width: 72, height: 36 }} 
+                            contentFit="contain" 
+                          />
+                          <Text style={{ color: Colors.brand.textPrimary, fontSize: 32, fontWeight: '900', letterSpacing: 0.5 }}>
+                            Auro
+                          </Text>
+                        </RNView>
+                        <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 6, fontSize: 28, paddingHorizontal: 20 }]}>
+                          Overall Rating
+                        </Text>
+                        <Text style={[styles.overlayText, { marginBottom: 0, textAlign: 'center', width: '100%', fontSize: 16, paddingHorizontal: 20 }]}>
+                          Rate {slide.data.name} overall
                         </Text>
                       </RNView>
-                      <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 6, fontSize: 28, paddingHorizontal: 20 }]}>
-                        Overall Rating
-                      </Text>
-                      <Text style={[styles.overlayText, { marginBottom: 0, textAlign: 'center', width: '100%', fontSize: 16, paddingHorizontal: 20 }]}>
-                        Rate {slide.data.name} overall
-                      </Text>
-                    </RNView>
-                    
-                    {/* Star Rating - tap a star 1-5 */}
-                    <RNView style={{ marginTop: 8, marginBottom: 32, alignItems: 'center', width: '100%', paddingHorizontal: 20 }}>
-                      <Text style={[styles.overlayText, { marginBottom: 16, fontSize: 15, textAlign: 'center' }]}>Tap a star to rate:</Text>
-                      <RNView style={{ flexDirection: 'row', gap: 16, justifyContent: 'center', alignItems: 'center' }}>
-                        {[1, 2, 3, 4, 5].map((value) => {
-                          const isActive = value <= overallRating;
-                          return (
-                            <TouchableOpacity
-                              key={value}
-                              onPress={() => setOverallRating(value)}
-                              activeOpacity={0.8}
-                              style={{
-                                padding: 6,
-                                borderRadius: 24,
-                              }}
-                            >
-                              <FontAwesome
-                                name={isActive ? 'star' : 'star-o'}
-                                size={42}
-                                color={isActive ? Colors.brand.accentOrange : 'rgba(255, 255, 255, 0.4)'}
-                              />
-                            </TouchableOpacity>
-                          );
-                        })}
+                      
+                      {/* Star Rating - tap a star 1-5 */}
+                      <RNView style={{ marginTop: 8, marginBottom: Platform.OS === 'ios' ? 20 : 32, alignItems: 'center', width: '100%', paddingHorizontal: 20 }}>
+                        <Text style={[styles.overlayText, { marginBottom: 16, fontSize: 15, textAlign: 'center' }]}>Tap a star to rate:</Text>
+                        <RNView style={{ flexDirection: 'row', gap: 16, justifyContent: 'center', alignItems: 'center' }}>
+                          {[1, 2, 3, 4, 5].map((value) => {
+                            const isActive = value <= overallRating;
+                            return (
+                              <TouchableOpacity
+                                key={value}
+                                onPress={() => setOverallRating(value)}
+                                activeOpacity={0.8}
+                                style={{
+                                  padding: 6,
+                                  borderRadius: 24,
+                                }}
+                              >
+                                <FontAwesome
+                                  name={isActive ? 'star' : 'star-o'}
+                                  size={42}
+                                  color={isActive ? Colors.brand.accentOrange : 'rgba(255, 255, 255, 0.4)'}
+                                />
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </RNView>
+                        {overallRating > 0 && (
+                          <Text style={[styles.overlayText, { marginTop: 12, fontSize: 14, textAlign: 'center', color: Colors.brand.accentOrange, fontWeight: '700' }]}>
+                            {ratingLabels[overallRating]} ({overallRating} {overallRating === 1 ? 'star' : 'stars'})
+                          </Text>
+                        )}
                       </RNView>
-                      {overallRating > 0 && (
-                        <Text style={[styles.overlayText, { marginTop: 12, fontSize: 14, textAlign: 'center', color: Colors.brand.accentOrange, fontWeight: '700' }]}>
-                          {ratingLabels[overallRating]} ({overallRating} {overallRating === 1 ? 'star' : 'stars'})
-                        </Text>
-                      )}
-                    </RNView>
 
-                    <RNView style={{ marginTop: 20, width: '100%', alignItems: 'center', paddingHorizontal: 20 }}>
-                      <Text style={[styles.overlayText, { marginBottom: 10, fontSize: 15, textAlign: 'center', width: '100%' }]}>Overall Note</Text>
-                      <TextInput
-                        style={[styles.overallNoteInput, { width: '100%', maxHeight: 120 }]}
-                        placeholder="Share a short summary to pair with your video review"
-                        placeholderTextColor={Colors.brand.textSecondary}
-                        multiline
-                        value={overallNote}
-                        onChangeText={setOverallNote}
-                        numberOfLines={4}
-                        textAlignVertical="top"
-                      />
+                      <RNView style={{ marginTop: Platform.OS === 'ios' ? 12 : 20, marginBottom: Platform.OS === 'ios' ? 40 : 0, width: '100%', alignItems: 'center', paddingHorizontal: 20 }}>
+                        <Text style={[styles.overlayText, { marginBottom: 10, fontSize: 15, textAlign: 'center', width: '100%' }]}>Overall Note</Text>
+                        <TextInput
+                          style={[styles.overallNoteInput, { width: '100%', maxHeight: 120 }]}
+                          placeholder="Share a short summary to pair with your video review"
+                          placeholderTextColor={Colors.brand.textSecondary}
+                          multiline
+                          value={overallNote}
+                          onChangeText={setOverallNote}
+                          numberOfLines={4}
+                          textAlignVertical="top"
+                        />
+                      </RNView>
                     </RNView>
-                  </RNView>
+                  </ScrollView>
                 )}
                 
                 {slide.type === 'pros' && (
@@ -1338,14 +1353,29 @@ export default function ReviewerRequestScreen() {
                 )}
                 
                 {slide.type === 'overall' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 20, paddingBottom: 20 }] }>
+                  <ScrollView 
+                    style={{ flex: 1, width: '100%' }}
+                    contentContainerStyle={{ 
+                      flexGrow: 1,
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      paddingTop: Platform.OS === 'ios' ? 10 : 20,
+                      paddingBottom: Platform.OS === 'ios' ? 80 : 20,
+                      paddingHorizontal: 0,
+                    }}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 0, paddingBottom: 0 }] }>
                     {/* Auro Logo */}
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 72, height: 36, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
-                    <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 6, fontSize: 28 }]}>Review Summary</Text>
-                    <Text style={[styles.overlayText, { marginBottom: 24, textAlign: 'center', width: '100%', fontSize: 16 }]}>Your final review for {slide.data.name}</Text>
+                    <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 6, fontSize: 28, paddingHorizontal: 20 }]}>
+                      {reviewer?.displayName || reviewer?.full_name || reviewer?.username || 'Reviewer'} rated you a {overallRating > 0 ? overallRating * 2 : 'X'}/10
+                    </Text>
+                    <Text style={[styles.overlayText, { marginBottom: Platform.OS === 'ios' ? 16 : 24, textAlign: 'center', width: '100%', fontSize: 16, paddingHorizontal: 20 }]}>Your final review for {slide.data.name}</Text>
                     
                     {/* Both Profile Pictures - Circular, side by side */}
-                    <RNView style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 24, width: '100%', paddingHorizontal: 20 }}>
+                    <RNView style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: Platform.OS === 'ios' ? 16 : 24, width: '100%', paddingHorizontal: 20 }}>
                       {/* Reviewer Profile Picture */}
                       {reviewerAvatarUri ? (
                         <RNView style={{ alignItems: 'center', gap: 8 }}>
@@ -1414,11 +1444,11 @@ export default function ReviewerRequestScreen() {
                     
                     {/* Overall Rating Display - Large and prominent */}
                     {overallRating > 0 && (
-                      <RNView style={{ marginTop: 8, alignItems: 'center', width: '100%', marginBottom: 24, paddingHorizontal: 20 }}>
+                      <RNView style={{ marginTop: 8, alignItems: 'center', width: '100%', marginBottom: Platform.OS === 'ios' ? 16 : 24, paddingHorizontal: 20 }}>
                         <Text style={[styles.overlayText, { marginBottom: 12, fontSize: 16, fontWeight: '700', textAlign: 'center' }]}>Overall Rating</Text>
                         <RNView style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', marginBottom: 12, gap: 8 }}>
-                          <Text style={[styles.overlayTitle, { fontSize: 48, fontWeight: '900', color: Colors.brand.accentOrange }]}>{overallRating}</Text>
-                          <Text style={[styles.overlayText, { fontSize: 24, fontWeight: '700', opacity: 0.7 }]}>/ 5</Text>
+                          <Text style={[styles.overlayTitle, { fontSize: 48, fontWeight: '900', color: Colors.brand.accentOrange }]}>{overallRating * 2}</Text>
+                          <Text style={[styles.overlayText, { fontSize: 24, fontWeight: '700', opacity: 0.7 }]}>/ 10</Text>
                         </RNView>
                         <RNView style={{ flexDirection: 'row', gap: 4, marginBottom: 8 }}>
                           {Array.from({ length: 5 }, (_, i) => (
@@ -1432,8 +1462,8 @@ export default function ReviewerRequestScreen() {
                     
                     {/* Selected Pros */}
                     {selectedPros.length > 0 && (
-                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: 16, paddingHorizontal: 20 }}>
-                        <Text style={[styles.overlayText, { marginBottom: 12, fontSize: 16, textAlign: 'center', width: '100%', fontWeight: '700', color: Colors.brand.status.completed }]}>
+                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: Platform.OS === 'ios' ? 12 : 16, paddingHorizontal: 20 }}>
+                        <Text style={[styles.overlayText, { marginBottom: Platform.OS === 'ios' ? 8 : 12, fontSize: 16, textAlign: 'center', width: '100%', fontWeight: '700', color: Colors.brand.status.completed }]}>
                           ✓ Pros ({selectedPros.length})
                         </Text>
                         <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', width: '100%' }}>
@@ -1464,8 +1494,8 @@ export default function ReviewerRequestScreen() {
                     
                     {/* Selected Cons */}
                     {selectedCons.length > 0 && (
-                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: 16, paddingHorizontal: 20 }}>
-                        <Text style={[styles.overlayText, { marginBottom: 12, fontSize: 16, textAlign: 'center', width: '100%', fontWeight: '700', color: Colors.brand.status.rejected }]}>
+                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: Platform.OS === 'ios' ? 12 : 16, paddingHorizontal: 20 }}>
+                        <Text style={[styles.overlayText, { marginBottom: Platform.OS === 'ios' ? 8 : 12, fontSize: 16, textAlign: 'center', width: '100%', fontWeight: '700', color: Colors.brand.status.rejected }]}>
                           ✗ Cons ({selectedCons.length})
                         </Text>
                         <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', width: '100%' }}>
@@ -1496,7 +1526,7 @@ export default function ReviewerRequestScreen() {
 
                     {/* Overall Note Display (Read-only) */}
                     {overallNote.trim() && (
-                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center' }}>
+                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: Platform.OS === 'ios' ? 12 : 0, paddingHorizontal: 20 }}>
                         <Text style={[styles.overlayText, { marginBottom: 8, fontSize: 15, fontWeight: '600', textAlign: 'center', width: '100%' }]}>Your Note:</Text>
                         <RNView style={[styles.overallNoteInput, { backgroundColor: Colors.brand.cardBackgroundLight, padding: 12, width: '100%', maxHeight: 100 }]}>
                           <Text style={[styles.overlayText, { textAlign: 'left', fontSize: 14, lineHeight: 20 }]} numberOfLines={4}>{overallNote}</Text>
@@ -1511,7 +1541,7 @@ export default function ReviewerRequestScreen() {
                       style={[
                         styles.actionButton, 
                         styles.acceptButton, 
-                        { marginTop: 20, alignSelf: 'center' },
+                        { marginTop: 20, marginBottom: Platform.OS === 'ios' ? 20 : 0, alignSelf: 'center' },
                         (!canSubmit || submitting) && styles.disabledButton
                       ]}
                     >
@@ -1520,6 +1550,7 @@ export default function ReviewerRequestScreen() {
                       </Text>
                     </TouchableOpacity>
                   </RNView>
+                  </ScrollView>
                 )}
               </RNView>
             ))}
