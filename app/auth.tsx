@@ -645,9 +645,9 @@ export default function AuthScreen() {
         contentContainerStyle={[
           { 
             flexGrow: 1, 
-            justifyContent: 'center', 
+            justifyContent: 'center',
             paddingBottom: isCompact ? insets.bottom + 20 : insets.bottom + 40,
-            paddingTop: Platform.OS === 'ios' ? insets.top : 0
+            paddingTop: isCompact ? insets.top + 20 : insets.top + 40
           },
           Platform.OS === 'web' && styles.scrollContentWeb
         ]}

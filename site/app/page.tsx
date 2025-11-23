@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -11,7 +12,36 @@ import { supabase } from '../lib/supabase';
 import { ArrowRight, Star, DollarSign, Clock, Users, TrendingUp, CheckCircle } from 'lucide-react';
 import { useIosSourceFlag } from '@/hooks/useIosSourceFlag';
 
-export default function HomePage() {
+// Component to handle redirect for email confirmation tokens
+function EmailConfirmationRedirect() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const tokenHash = searchParams.get('token_hash');
+    const type = searchParams.get('type');
+    const accessToken = searchParams.get('access_token');
+    const refreshToken = searchParams.get('refresh_token');
+    
+    // If we have confirmation tokens in the URL, redirect to confirm page
+    if (tokenHash || (accessToken && type)) {
+      const params = new URLSearchParams();
+      if (tokenHash) params.set('token_hash', tokenHash);
+      if (type) params.set('type', type);
+      if (accessToken) params.set('access_token', accessToken);
+      if (refreshToken) params.set('refresh_token', refreshToken);
+      
+      router.replace(`/auth/confirm?${params.toString()}`);
+      return;
+    }
+  }, [searchParams, router]);
+
+  return null;
+}
+
+function HomePageContent() {
   // Removed unused showRibbon state
   const [reviewerCount, setReviewerCount] = useState<number>(0);
   const [isLoadingCount, setIsLoadingCount] = useState<boolean>(true);
@@ -967,5 +997,14 @@ export default function HomePage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={null}>
+      <EmailConfirmationRedirect />
+      <HomePageContent />
+    </Suspense>
   );
 }
