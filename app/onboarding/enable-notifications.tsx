@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View, Alert } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Alert, Platform, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,6 +14,7 @@ import { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 export default function EnableNotificationsScreen() {
   const insets = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
   const [enabling, setEnabling] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
@@ -76,8 +77,9 @@ export default function EnableNotificationsScreen() {
         style={[
           styles.content,
           {
-            paddingTop: Math.max(20, insets.top + 20),
-            paddingBottom: insets.bottom + 20,
+            height: Platform.OS === 'ios' ? screenHeight - insets.top - insets.bottom : undefined,
+            paddingTop: Platform.OS === 'ios' ? 0 : Math.max(20, insets.top + 20),
+            paddingBottom: Platform.OS === 'ios' ? 0 : insets.bottom + 20,
           },
         ]}
       >
@@ -167,7 +169,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    backgroundColor: 'rgba(255, 0, 0, 0.2)', // RED - main content container
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
@@ -177,7 +178,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
-    backgroundColor: 'rgba(0, 255, 0, 0.2)', // GREEN - top section
   },
   iconContainer: {
     width: 120,

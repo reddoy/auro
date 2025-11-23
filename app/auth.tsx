@@ -644,10 +644,10 @@ export default function AuthScreen() {
         style={styles.scrollView}
         contentContainerStyle={[
           { 
-            flexGrow: 1, 
+            height: screenHeight - insets.top - insets.bottom,
             justifyContent: 'center',
-            paddingBottom: isCompact ? insets.bottom + 20 : insets.bottom + 40,
-            paddingTop: isCompact ? insets.top + 20 : insets.top + 40
+            paddingBottom: 0,
+            paddingTop: 0
           },
           Platform.OS === 'web' && styles.scrollContentWeb
         ]}
@@ -655,8 +655,8 @@ export default function AuthScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.select({ ios: 'interactive', default: 'on-drag' })}
-        contentInsetAdjustmentBehavior="automatic"
-        enableAutomaticScroll={Platform.OS === 'ios'}
+        contentInsetAdjustmentBehavior="never"
+        scrollEnabled={false}
       >
         {/* Logo and Brand Name - Outside and above the form card */}
         <MotionView entering={ZoomIn.duration(400).delay(MotionDelays.quick)}>

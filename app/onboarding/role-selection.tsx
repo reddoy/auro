@@ -3,6 +3,7 @@ import { StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } f
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useWindowDimensions } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { updateProfilePreferences } from '@/lib/profile';
@@ -12,6 +13,7 @@ import { FadeInDown } from 'react-native-reanimated';
 
 export default function RoleSelectionScreen() {
   const insets = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
   const [loadingChoice, setLoadingChoice] = useState<'reviewer' | 'reviewee' | null>(null);
 
   const handleError = (error: any) => {
@@ -66,8 +68,9 @@ export default function RoleSelectionScreen() {
         style={[
           styles.content,
           {
-            paddingTop: Math.max(20, insets.top + 12),
-            paddingBottom: Math.max(20, insets.bottom + 12),
+            height: Platform.OS === 'ios' ? screenHeight - insets.top - insets.bottom : undefined,
+            paddingTop: Platform.OS === 'ios' ? 0 : Math.max(20, insets.top + 12),
+            paddingBottom: Platform.OS === 'ios' ? 0 : Math.max(20, insets.bottom + 12),
           },
         ]}
       >
@@ -144,13 +147,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
-    backgroundColor: 'rgba(255, 0, 0, 0.2)', // RED - main content container
   },
   centerContent: {
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 255, 0, 0.2)', // GREEN - center content wrapper
   },
   title: {
     fontSize: 26,
@@ -172,7 +173,6 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 14,
     marginTop: 32,
-    backgroundColor: 'rgba(0, 0, 255, 0.2)', // BLUE - options container
   },
   optionCard: {
     width: '100%',

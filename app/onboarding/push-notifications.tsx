@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, View as RNView, Platform, Image } from 'react-native';
+import { StyleSheet, TouchableOpacity, View as RNView, Platform, Image, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +13,7 @@ import { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 export default function OnboardingWelcomeScreen() {
   const insets = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
 
   // Only set the step if user is actually on this step (no step or push-notifications)
   // This prevents overwriting progress if user somehow navigates back here
@@ -54,17 +55,17 @@ export default function OnboardingWelcomeScreen() {
 
 
   return (
-    <RNView style={styles.container}>
+    <RNView style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: '#FF0000' }]}>
       <RNView 
         style={[
           styles.content,
           {
-            paddingTop: insets.top,
-            paddingBottom: insets.bottom,
+            height: Platform.OS === 'ios' ? screenHeight - insets.top - insets.bottom : undefined,
+            backgroundColor: '#00FF00',
           },
         ]}
       >
-        <RNView style={styles.centerSection}>
+        <RNView style={[styles.centerSection, { backgroundColor: '#0000FF' }]}>
           <MotionView entering={ZoomIn.duration(400).delay(MotionDelays.quick)}>
             <Text style={styles.emoji}>🎉</Text>
           </MotionView>
@@ -126,8 +127,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.brand.background,
   },
   content: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 0, 0, 0.2)', // RED - main content container
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
@@ -138,7 +137,6 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 255, 0, 0.2)', // GREEN - center section
   },
   emoji: {
     fontSize: 56,
