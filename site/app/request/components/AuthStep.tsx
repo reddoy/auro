@@ -56,7 +56,7 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
       const siteUrl = typeof window !== 'undefined' && window.location?.origin
         ? window.location.origin
         : process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com';
-      const redirectTo = `${siteUrl}/auth/confirm`;
+      const redirectTo = `${siteUrl}/auth/confirm?type=signup`;
 
       const { data, error } = await supabase.auth.signUp({
         email,

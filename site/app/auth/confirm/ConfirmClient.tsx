@@ -74,9 +74,9 @@ function Inner() {
           setStatus("error");
           setMessage(error.message || "Unable to verify your email.");
         } else {
-          // For signup confirmations, redirect to thank you page
-          // Check if it's a signup by type param or if we used signup verifyType
-          if (isSignup || isInvite || (!type && verifyType === "signup")) {
+          // For signup confirmations, always redirect to thank you page
+          // verifyType defaults to "signup" if no type is specified, so this catches all signups
+          if (isSignup || isInvite || verifyType === "signup") {
             router.replace("/auth/thank-you");
             return;
           }
