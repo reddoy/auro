@@ -32,7 +32,12 @@ export default function RevieweeProfilePictureScreen() {
       });
       router.replace('/onboarding/discover-reviewers');
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'We were not able to save your photo. Please try again.');
+      const message = error?.message || 'We were not able to save your photo. Please try again.';
+      if (message.toLowerCase().includes('not signed in') || message.toLowerCase().includes('not authenticated')) {
+        router.replace('/auth');
+        return;
+      }
+      Alert.alert('Error', message);
     } finally {
       setUploading(false);
     }

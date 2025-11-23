@@ -29,7 +29,12 @@ export default function StripeSetupScreen() {
           await updateProfile({ is_reviewer: true });
         }
       } catch (e: any) {
-        Alert.alert('Error', 'Failed to load profile');
+        const message = e?.message || 'Failed to load profile';
+        if (message.toLowerCase().includes('not signed in') || message.toLowerCase().includes('not authenticated')) {
+          router.replace('/auth');
+          return;
+        }
+        Alert.alert('Error', message);
       } finally {
         setLoading(false);
       }

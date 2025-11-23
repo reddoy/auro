@@ -18,6 +18,13 @@ export default function RoleSelectionScreen() {
 
   const handleError = (error: any) => {
     const message = error?.message || 'Something went wrong. Please try again.';
+    
+    // If user is not signed in, redirect to sign in
+    if (message.toLowerCase().includes('not signed in') || message.toLowerCase().includes('not authenticated')) {
+      router.replace('/auth');
+      return;
+    }
+    
     Alert.alert('Unable to continue', message);
   };
 
@@ -75,7 +82,9 @@ export default function RoleSelectionScreen() {
       >
         <View style={styles.centerContent}>
           <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
-            <Text style={styles.title}>What would you like to do?</Text>
+            <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
+              What would you like to do?
+            </Text>
           </MotionView>
           <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
             <Text style={styles.description}>
@@ -153,12 +162,13 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
   title: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: '700',
     color: Colors.brand.textPrimary,
     textAlign: 'center',
     marginBottom: 8,
     fontFamily: 'Poppins_700Bold',
+    paddingHorizontal: 8,
   },
   description: {
     fontSize: 14,

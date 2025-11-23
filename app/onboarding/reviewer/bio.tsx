@@ -28,7 +28,12 @@ export default function BioScreen() {
       await updateProfilePreferences({ onboarding_step: 'reviewer_rate' });
       router.replace('/onboarding/reviewer/rate');
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to save bio');
+      const message = e?.message || 'Failed to save bio';
+      if (message.toLowerCase().includes('not signed in') || message.toLowerCase().includes('not authenticated')) {
+        router.replace('/auth');
+        return;
+      }
+      Alert.alert('Error', message);
     } finally {
       setSaving(false);
     }

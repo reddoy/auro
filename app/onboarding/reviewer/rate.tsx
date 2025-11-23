@@ -30,7 +30,12 @@ export default function RateScreen() {
       await updateProfilePreferences({ onboarding_step: 'reviewer_profile_picture' });
       router.replace('/onboarding/reviewer/profile-picture');
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to save rate');
+      const message = e?.message || 'Failed to save rate';
+      if (message.toLowerCase().includes('not signed in') || message.toLowerCase().includes('not authenticated')) {
+        router.replace('/auth');
+        return;
+      }
+      Alert.alert('Error', message);
     } finally {
       setSaving(false);
     }

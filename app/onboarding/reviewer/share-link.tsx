@@ -57,9 +57,14 @@ export default function ReviewerShareLinkScreen() {
           // Update to this step if we're coming from an earlier step
           updateProfilePreferences({ onboarding_step: 'reviewer_share_link' }).catch(() => {});
         }
-      } catch (error) {
+      } catch (error: any) {
         console.warn('Failed to load profile for share link', error);
-        Alert.alert('Error', 'We were not able to load your profile. Please try again.');
+        const message = error?.message || 'We were not able to load your profile. Please try again.';
+        if (message.toLowerCase().includes('not signed in') || message.toLowerCase().includes('not authenticated')) {
+          router.replace('/auth');
+          return;
+        }
+        Alert.alert('Error', message);
       } finally {
         setLoading(false);
       }
