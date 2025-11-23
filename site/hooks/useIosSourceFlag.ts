@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { IOS_SOURCE_COOKIE } from "@/lib/ios-source-constants";
 
 const STORAGE_KEY = "auro_ios_src";
@@ -21,12 +20,15 @@ function persistFlag() {
 }
 
 export function useIosSourceFlag(): boolean {
-  const searchParams = useSearchParams();
   const [isIosSource, setIsIosSource] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const sourceParam = searchParams?.get("src");
+    
+    // Read from window.location directly to avoid useSearchParams during static generation
+    const urlParams = new URLSearchParams(window.location.search);
+    const sourceParam = urlParams.get("src");
+    
     if (sourceParam === "ios") {
       persistFlag();
       setIsIosSource(true);
@@ -37,7 +39,7 @@ export function useIosSourceFlag(): boolean {
       .split(";")
       .some((entry) => entry.trim().startsWith(`${IOS_SOURCE_COOKIE}=1`));
     setIsIosSource(stored || cookieMatch);
-  }, [searchParams]);
+  }, []);
 
   return isIosSource;
 }
