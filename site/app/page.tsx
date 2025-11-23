@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -11,7 +11,9 @@ import { supabase } from '../lib/supabase';
 import { ArrowRight, Star, DollarSign, Clock, Users, TrendingUp, CheckCircle } from 'lucide-react';
 import { useIosSourceFlag } from '@/hooks/useIosSourceFlag';
 
-export default function HomePage() {
+export const dynamic = 'force-dynamic';
+
+function HomePageContent() {
   // Removed unused showRibbon state
   const [reviewerCount, setReviewerCount] = useState<number>(0);
   const [isLoadingCount, setIsLoadingCount] = useState<boolean>(true);
@@ -967,5 +969,13 @@ export default function HomePage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={null}>
+      <HomePageContent />
+    </Suspense>
   );
 }
