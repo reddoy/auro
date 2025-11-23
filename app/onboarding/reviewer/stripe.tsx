@@ -234,11 +234,13 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: 'center',
     paddingHorizontal: 24,
     paddingTop: 40,
+    backgroundColor: 'rgba(255, 0, 0, 0.2)', // RED - scroll content
   },
   content: {
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(0, 255, 0, 0.2)', // GREEN - content wrapper
   },
   title: {
     fontSize: 28,

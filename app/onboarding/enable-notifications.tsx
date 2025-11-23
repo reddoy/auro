@@ -167,9 +167,9 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(255, 0, 0, 0.2)', // RED - main content container
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingHorizontal: 20,
   },
   topSection: {
@@ -177,6 +177,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
+    backgroundColor: 'rgba(0, 255, 0, 0.2)', // GREEN - top section
   },
   iconContainer: {
     width: 120,

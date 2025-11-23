@@ -356,93 +356,88 @@ export default function RequestsScreen() {
   });
   const renderItem = renderReceivedItem;
 
+  const headerComponent = (
+    <MotionView entering={subtleFadeIn()} style={styles.headerPlain}>
+      <MotionView entering={subtleFadeIn()} style={styles.headerContentPlain}>
+        <Text style={styles.titlePlain}>My Reviews</Text>
+        <Text style={styles.subtitlePlain} numberOfLines={1}>Track your review requests and feedback</Text>
+
+        <RNView style={[styles.countersRowPlain, { justifyContent: 'center' }]}>
+          <MotionPressable
+            onPress={() => setFilter('active')}
+            style={[styles.counterPillPlain, filter === 'active' ? styles.counterPillActive : styles.counterPillInactive]}
+            scaleEffect={false}
+            accessibilityRole="button"
+          >
+            <Text style={styles.counterTextPlain}>Active {requests.filter(r => (r.status === 'pending' || r.status === 'accepted' || r.status === 'paid' || r.status === 'in_progress') && !r.archived_at).length}</Text>
+          </MotionPressable>
+          <MotionPressable
+            onPress={() => setFilter('completed')}
+            style={[styles.counterPillPlain, filter === 'completed' ? styles.counterPillActive : styles.counterPillInactive]}
+            scaleEffect={false}
+            accessibilityRole="button"
+          >
+            <Text style={styles.counterTextPlain}>Completed {requests.filter(r => r.status === 'completed' && !r.archived_at).length}</Text>
+          </MotionPressable>
+          <MotionPressable
+            onPress={() => setFilter('archived')}
+            style={[styles.counterPillPlain, filter === 'archived' ? styles.counterPillActive : styles.counterPillInactive]}
+            scaleEffect={false}
+            accessibilityRole="button"
+          >
+            <Text style={styles.counterTextPlain}>Archived {requests.filter(r => !!r.archived_at).length}</Text>
+          </MotionPressable>
+        </RNView>
+      </MotionView>
+    </MotionView>
+  );
+
   return (
     <View style={[styles.container, { paddingTop: 0 }]}>
-      <FlatList
-        data={data}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => refreshData('pull')}
-            tintColor={Colors.brand.textPrimary}
-            colors={[Colors.brand.accentMagenta]}
-            progressBackgroundColor={Colors.brand.background}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 24, paddingHorizontal: 16, paddingTop: 0 }}
-        ListHeaderComponent={(
-          <>
-            <MotionView entering={subtleFadeIn()} style={styles.headerPlain}>
-              <MotionView entering={subtleFadeIn()} style={styles.headerContentPlain}>
-                <Text style={styles.titlePlain}>My Reviews</Text>
-                <Text style={styles.subtitlePlain} numberOfLines={1}>Track your review requests and feedback</Text>
-
-                <RNView style={[styles.countersRowPlain, { justifyContent: 'center' }]}>
-                  <MotionPressable
-                    onPress={() => setFilter('active')}
-                    style={[styles.counterPillPlain, filter === 'active' ? styles.counterPillActive : styles.counterPillInactive]}
-                    scaleEffect={false}
-                    accessibilityRole="button"
-                  >
-                    <Text style={styles.counterTextPlain}>Active {requests.filter(r => (r.status === 'pending' || r.status === 'accepted' || r.status === 'paid' || r.status === 'in_progress') && !r.archived_at).length}</Text>
-                  </MotionPressable>
-                  <MotionPressable
-                    onPress={() => setFilter('completed')}
-                    style={[styles.counterPillPlain, filter === 'completed' ? styles.counterPillActive : styles.counterPillInactive]}
-                    scaleEffect={false}
-                    accessibilityRole="button"
-                  >
-                    <Text style={styles.counterTextPlain}>Completed {requests.filter(r => r.status === 'completed' && !r.archived_at).length}</Text>
-                  </MotionPressable>
-                  <MotionPressable
-                    onPress={() => setFilter('archived')}
-                    style={[styles.counterPillPlain, filter === 'archived' ? styles.counterPillActive : styles.counterPillInactive]}
-                    scaleEffect={false}
-                    accessibilityRole="button"
-                  >
-                    <Text style={styles.counterTextPlain}>Archived {requests.filter(r => !!r.archived_at).length}</Text>
-                  </MotionPressable>
-                </RNView>
-              </MotionView>
-            </MotionView>
-            <MotionView entering={cardEntrance(0)} style={styles.discoverButtonContainer}>
-              <MotionPressable style={styles.newRequestButton} onPress={handleNewRequest}>
-                <ExpoLinearGradient
-                  colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 14 }}
-                />
-                <Text style={styles.newRequestButtonText}>Discover Reviewers</Text>
-              </MotionPressable>
-            </MotionView>
-          </>
-        )}
-        ListEmptyComponent={(
-          <View style={{ paddingHorizontal: 16, paddingTop: 24 }}>
-            {!hasShownSkeleton && loading ? (
-              <>
-                {[...Array(4)].map((_, i) => (
-                  <SkeletonCard key={`s-${i}`} index={i} />
-                ))}
-              </>
-            ) : (
-              <EmptyState
-                title="No reviews yet"
-                message={isReviewer 
-                  ? "You haven't received any review requests yet. Share your profile link to start getting requests!"
-                  : "Start your journey by requesting your first review from an influencer!"}
-                icon="⭐"
-                actionLabel="Discover Reviewers"
-                onAction={handleNewRequest}
+      {headerComponent}
+      {!hasShownSkeleton && loading ? (
+        <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 24 }}>
+          {[...Array(4)].map((_, i) => (
+            <SkeletonCard key={`s-${i}`} index={i} />
+          ))}
+        </View>
+      ) : (
+        <MotionView 
+          entering={hasShownSkeleton && !loading ? subtleFadeIn() : undefined}
+          style={{ flex: 1 }}
+        >
+          <FlatList
+            data={data}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={() => refreshData('pull')}
+                tintColor={Colors.brand.textPrimary}
+                colors={[Colors.brand.accentMagenta]}
+                progressBackgroundColor={Colors.brand.background}
               />
+            }
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 24, paddingHorizontal: 16, paddingTop: 0 }}
+            ListHeaderComponent={null}
+            ListEmptyComponent={(
+              <View style={{ paddingHorizontal: 16, paddingTop: 24 }}>
+                <EmptyState
+                  title="No reviews yet"
+                  message={isReviewer 
+                    ? "You haven't received any review requests yet. Share your profile link to start getting requests!"
+                    : "Start your journey by requesting your first review from an influencer!"}
+                  icon="⭐"
+                  actionLabel="Discover Reviewers"
+                  onAction={handleNewRequest}
+                />
+              </View>
             )}
-          </View>
-        )}
-      />
+          />
+        </MotionView>
+      )}
     </View>
   );
 }

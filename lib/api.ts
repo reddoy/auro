@@ -68,7 +68,7 @@ export async function getInfluencerById(id: string): Promise<DbInfluencerSummary
 export async function getRequestsByUser(userId: string): Promise<DbRequestSummary[]> {
   const { data, error } = await supabase
     .from('requests')
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps')
+    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps,completed_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw error;

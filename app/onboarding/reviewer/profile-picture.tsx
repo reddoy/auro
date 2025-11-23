@@ -59,7 +59,9 @@ export default function ProfilePictureScreen() {
       >
         <View style={styles.content}>
           <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
-            <Text style={styles.title}>Set Your Profile Picture</Text>
+            <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+              Set Your Profile Picture
+            </Text>
           </MotionView>
           <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
             <Text style={styles.description}>
@@ -127,9 +129,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 24,
     paddingTop: 60,
+    backgroundColor: 'rgba(255, 0, 0, 0.2)', // RED - scroll content
   },
   content: {
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(0, 255, 0, 0.2)', // GREEN - content wrapper
     alignItems: 'center',
   },
   title: {

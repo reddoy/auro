@@ -8,7 +8,7 @@ import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { Text, View } from '@/components/Themed';
 import { supabase } from '@/lib/supabase';
 import Colors from '@/constants/Colors';
-import { getRequestsByReviewer } from '@/lib/api';
+import { getRequestsByReviewer, getRequestsByUser, getReviewerById } from '@/lib/api';
 import { createStripeExpressLoginLink, createStripeExpressOnboardingLink } from '@/lib/payments';
 import type { Profile } from '@/types';
 import { MotionView, cardEntrance, subtleFadeIn } from '@/components/motion';
@@ -28,6 +28,9 @@ interface TransactionItem {
   completed_at?: string | null;
   requester_name?: string | null;
   requester_username?: string | null;
+  reviewer_name?: string | null;
+  reviewer_username?: string | null;
+  is_reviewer_view?: boolean;
 }
 
 export default function TransactionBreakdownScreen() {
@@ -142,6 +145,7 @@ export default function TransactionBreakdownScreen() {
       }
 
       if (profileData?.is_reviewer) {
+        // Reviewer view: show transactions where they are the reviewer
         const requests = await getRequestsByReviewer(profileData.id);
 
         const transactionItems: TransactionItem[] = requests
@@ -160,6 +164,7 @@ export default function TransactionBreakdownScreen() {
             completed_at: r.completed_at ?? null,
             requester_name: r.requester_name ?? null,
             requester_username: r.requester_username ?? null,
+            is_reviewer_view: true,
           }))
           .sort((a, b) => {
             const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
@@ -168,10 +173,63 @@ export default function TransactionBreakdownScreen() {
           });
 
         setTransactions(transactionItems);
-        console.log('[transactions] load finished', { reason, count: transactionItems.length });
+        console.log('[transactions] load finished', { reason, count: transactionItems.length, view: 'reviewer' });
       } else {
-        setTransactions([]);
-        console.log('[transactions] load finished', { reason, count: 0, reviewer: false });
+        // Reviewee view: show transactions where they ordered reviews
+        const requests = await getRequestsByUser(profileData.id);
+
+        // Fetch reviewer information for each request
+        const reviewerIds = Array.from(
+          new Set(
+            requests
+              .map((r) => r.influencerId)
+              .filter((id): id is string => typeof id === 'string' && id.length > 0)
+          )
+        );
+
+        const reviewerMap = new Map<string, { name: string | null; username: string | null }>();
+        if (reviewerIds.length > 0) {
+          const reviewers = await Promise.all(
+            reviewerIds.map((id) => getReviewerById(id))
+          );
+          reviewers.forEach((reviewer) => {
+            if (reviewer) {
+              reviewerMap.set(reviewer.id, {
+                name: reviewer.displayName,
+                username: reviewer.username ?? null,
+              });
+            }
+          });
+        }
+
+        const transactionItems: TransactionItem[] = requests
+          .filter(r => r.amount_cents)
+          .map(r => {
+            const reviewer = r.influencerId ? reviewerMap.get(r.influencerId) : undefined;
+            return {
+              id: r.id,
+              status: r.status,
+              amount_cents: r.amount_cents || 0,
+              application_fee_cents: r.application_fee_cents || 0,
+              payment_distributed: r.payment_distributed || false,
+              payment_distributed_at: r.payment_distributed_at,
+              payment_distribution_error: r.payment_distribution_error,
+              payment_status: r.payment_status,
+              created_at: r.created_at ?? r.createdAt,
+              completed_at: r.completed_at ?? null,
+              reviewer_name: reviewer?.name ?? null,
+              reviewer_username: reviewer?.username ?? null,
+              is_reviewer_view: false,
+            };
+          })
+          .sort((a, b) => {
+            const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+            const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+            return bTime - aTime;
+          });
+
+        setTransactions(transactionItems);
+        console.log('[transactions] load finished', { reason, count: transactionItems.length, view: 'reviewee' });
       }
     } catch (error) {
       console.error('Error loading transactions:', error);
@@ -283,24 +341,79 @@ export default function TransactionBreakdownScreen() {
     return (reviewerAmount / 100).toFixed(2);
   };
 
+  const getRevieweePaymentStatus = (transaction: TransactionItem) => {
+    switch (transaction.status) {
+      case 'pending':
+        return {
+          status: 'pending',
+          message: 'Review request pending',
+          color: Colors.brand.textSecondary,
+          icon: '⏳'
+        };
+      case 'accepted':
+        return {
+          status: 'accepted',
+          message: 'Review accepted, awaiting payment',
+          color: '#3b82f6',
+          icon: '✅'
+        };
+      case 'paid':
+        return {
+          status: 'paid',
+          message: 'Payment received, review in progress',
+          color: '#10b981',
+          icon: '💳'
+        };
+      case 'in_progress':
+        return {
+          status: 'in_progress',
+          message: 'Review in progress',
+          color: '#f59e0b',
+          icon: '🔄'
+        };
+      case 'completed':
+        return {
+          status: 'completed',
+          message: 'Review completed',
+          color: '#10b981',
+          icon: '✅'
+        };
+      case 'rejected':
+        return {
+          status: 'rejected',
+          message: 'Review request rejected',
+          color: '#ef4444',
+          icon: '❌'
+        };
+      default:
+        return {
+          status: 'unknown',
+          message: 'Unknown status',
+          color: Colors.brand.textSecondary,
+          icon: '❓'
+        };
+    }
+  };
+
   const renderTransaction = ({ item }: { item: TransactionItem }) => {
-    const paymentStatus = getPaymentStatus(item);
-    const amount = getAmountDisplay(item);
+    const isReviewer = item.is_reviewer_view ?? true;
+    const paymentStatus = isReviewer ? getPaymentStatus(item) : getRevieweePaymentStatus(item);
+    const amount = isReviewer ? getAmountDisplay(item) : (item.amount_cents / 100).toFixed(2);
     const createdTimestamp = item.created_at ?? null;
     const completedTimestamp = item.completed_at ?? null;
     const createdDate = createdTimestamp ? new Date(createdTimestamp).toLocaleDateString() : 'Unknown date';
     const completedDate = completedTimestamp ? new Date(completedTimestamp).toLocaleDateString() : null;
-    const requesterDisplayName =
-      item.requester_name ??
-      item.requester_username ??
-      'Unknown User';
+    
+    const displayName = isReviewer
+      ? (item.requester_name ?? item.requester_username ?? 'Unknown User')
+      : (item.reviewer_name ?? item.reviewer_username ?? 'Unknown Reviewer');
 
     return (
       <View style={styles.transactionCard}>
         <View style={styles.transactionHeader}>
           <View style={styles.transactionInfo}>
             <Text style={styles.transactionTitle}>
-              {requesterDisplayName}
+              {displayName}
             </Text>
             <Text style={styles.transactionDate}>
               Created: {createdDate}
@@ -318,7 +431,7 @@ export default function TransactionBreakdownScreen() {
           </Text>
         </View>
 
-        {item.payment_distribution_error && (
+        {item.payment_distribution_error && isReviewer && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>
               Error: {item.payment_distribution_error}
@@ -326,27 +439,41 @@ export default function TransactionBreakdownScreen() {
           </View>
         )}
 
-        <View style={styles.transactionDetails}>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Customer pays:</Text>
-            <Text style={styles.detailValue}>${(item.amount_cents / 100).toFixed(2)}</Text>
+        {isReviewer ? (
+          <View style={styles.transactionDetails}>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Customer pays:</Text>
+              <Text style={styles.detailValue}>${(item.amount_cents / 100).toFixed(2)}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Auro fee (20%):</Text>
+              <Text style={styles.detailValue}>
+                -${((item.application_fee_cents || Math.round(item.amount_cents * 0.2)) / 100).toFixed(2)}
+              </Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Your Earnings:</Text>
+              <Text style={[styles.detailValue, styles.earningsValue]}>${amount}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={[styles.detailLabel, { fontSize: 12, fontStyle: 'italic', color: Colors.brand.textSecondary }]}>
+                * Processing fees are covered by Auro
+              </Text>
+            </View>
           </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Auro fee (20%):</Text>
-            <Text style={styles.detailValue}>
-              -${((item.application_fee_cents || Math.round(item.amount_cents * 0.2)) / 100).toFixed(2)}
-            </Text>
+        ) : (
+          <View style={styles.transactionDetails}>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Amount paid:</Text>
+              <Text style={[styles.detailValue, styles.earningsValue]}>${(item.amount_cents / 100).toFixed(2)}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={[styles.detailLabel, { fontSize: 12, fontStyle: 'italic', color: Colors.brand.textSecondary }]}>
+                {item.status === 'completed' ? 'Review completed successfully' : 'Review status: ' + item.status}
+              </Text>
+            </View>
           </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Your Earnings:</Text>
-            <Text style={[styles.detailValue, styles.earningsValue]}>${amount}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { fontSize: 12, fontStyle: 'italic', color: Colors.brand.textSecondary }]}>
-              * Processing fees are covered by Auro
-            </Text>
-          </View>
-        </View>
+        )}
       </View>
     );
   };
@@ -364,17 +491,26 @@ export default function TransactionBreakdownScreen() {
         >
           <Ionicons name="arrow-back" size={24} color={Colors.brand.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Stripe Transactions</Text>
+        <Text style={styles.headerTitle}>Transaction History</Text>
       </View>
 
       <View style={styles.content}>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Payment Processing Info</Text>
-          <Text style={styles.summaryText}>
-            💳 Completed reviews are processed within 5-7 business days after completion.
-            This is due to payment settlement timing from Stripe.
-          </Text>
-        </View>
+        {profile?.is_reviewer ? (
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>Payment Processing Info</Text>
+            <Text style={styles.summaryText}>
+              💳 Completed reviews are processed within 5-7 business days after completion.
+              This is due to payment settlement timing from Stripe.
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>Your Review Orders</Text>
+            <Text style={styles.summaryText}>
+              📋 View all the reviews you've ordered, their status, and payment information.
+            </Text>
+          </View>
+        )}
 
         {/* See Payouts Button */}
         {profile?.is_reviewer && (

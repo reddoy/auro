@@ -4,6 +4,7 @@ import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { ensureProfileForCurrentUser } from '@/lib/api';
+import { getCurrentProfile, resolveOnboardingDestination } from '@/lib/profile';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
@@ -119,16 +120,17 @@ export default function AuthCallback() {
                 
                 setStatus('success');
                 // Ensure user profile exists after OAuth login
-                // Check if this is a new user (profile was just created)
-                let isNewUser = false;
                 try { 
-                  isNewUser = await ensureProfileForCurrentUser();
+                  await ensureProfileForCurrentUser();
                 } catch {}
                 
-                // If new user, redirect to onboarding; otherwise go to main app
-                if (isNewUser) {
-                  setTimeout(() => router.replace('/onboarding/push-notifications'), 800);
-                } else {
+                // Check onboarding status and route accordingly
+                try {
+                  const profile = await getCurrentProfile();
+                  const destination = resolveOnboardingDestination(profile);
+                  setTimeout(() => router.replace(destination as any), 800);
+                } catch (err) {
+                  console.warn('Failed to load profile for onboarding state', err);
                   setTimeout(() => router.replace('/(tabs)/requests'), 800);
                 }
               }

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Image, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname } from 'expo-router';
+import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 
 interface LogoHeaderProps {
@@ -10,7 +11,7 @@ interface LogoHeaderProps {
 }
 
 export default function LogoHeader({ 
-  backgroundColor = Colors.brand.background, 
+  backgroundColor = '#0C0225', 
   showLogo = true 
 }: LogoHeaderProps) {
   const insets = useSafeAreaInsets();
@@ -30,10 +31,11 @@ export default function LogoHeader({
       <View style={[styles.safeAreaSpacer, { height: Platform.OS === 'web' ? 0 : insets.top }]} />
       <View style={styles.logoContainer}>
         <Image 
-          source={require('../Auro_side_side_no_bg.png')} 
+          source={require('../auro_aura_logo_nobg.png')} 
           style={styles.logo}
           resizeMode="contain"
         />
+        <Text style={styles.brandText}>Auro</Text>
       </View>
     </View>
   );
@@ -53,11 +55,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
+    backgroundColor: 'transparent',
   },
   logo: {
-    width: 120,
-    height: 40,
-    maxWidth: '80%',
+    width: 48,
+    height: 48,
+    marginRight: 12,
+  },
+  brandText: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    fontFamily: 'Poppins_700Bold',
   },
 });
 

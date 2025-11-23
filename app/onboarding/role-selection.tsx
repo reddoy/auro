@@ -71,16 +71,17 @@ export default function RoleSelectionScreen() {
           },
         ]}
       >
-        <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
-          <Text style={styles.title}>What would you like to do?</Text>
-        </MotionView>
-        <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
-          <Text style={styles.description}>
-            Choose how you'd like to use Auro. You can always change this later.
-          </Text>
-        </MotionView>
+        <View style={styles.centerContent}>
+          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
+            <Text style={styles.title}>What would you like to do?</Text>
+          </MotionView>
+          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
+            <Text style={styles.description}>
+              Choose how you'd like to use Auro. You can always change this later.
+            </Text>
+          </MotionView>
 
-        <View style={styles.optionsContainer}>
+          <View style={styles.optionsContainer}>
           <MotionView entering={cardEntrance(2)}>
             <MotionPressable 
               style={styles.optionCard}
@@ -119,6 +120,7 @@ export default function RoleSelectionScreen() {
             </MotionPressable>
           </MotionView>
         </View>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -140,8 +142,15 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingHorizontal: 24,
+    backgroundColor: 'rgba(255, 0, 0, 0.2)', // RED - main content container
+  },
+  centerContent: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 255, 0, 0.2)', // GREEN - center content wrapper
   },
   title: {
     fontSize: 26,
@@ -162,8 +171,8 @@ const styles = StyleSheet.create({
   optionsContainer: {
     width: '100%',
     gap: 14,
-    flex: 1,
-    justifyContent: 'center',
+    marginTop: 32,
+    backgroundColor: 'rgba(0, 0, 255, 0.2)', // BLUE - options container
   },
   optionCard: {
     width: '100%',

@@ -3,6 +3,45 @@ import * as FileSystem from 'expo-file-system/legacy';
 import Constants from 'expo-constants';
 import type { Profile, ProfilePreferences, UserReview, ReviewerPackage } from '@/types';
 
+/**
+ * Resolves the destination route based on the user's onboarding status.
+ * Returns the appropriate route to navigate to after sign-in.
+ */
+export function resolveOnboardingDestination(profile: Profile | null | undefined): string {
+  const preferences = profile?.preferences || {};
+  if (preferences?.onboarding_completed) {
+    return '/(tabs)/requests';
+  }
+
+  const step = preferences?.onboarding_step || null;
+  switch (step) {
+    case 'reviewer_bio':
+      return '/onboarding/reviewer/bio';
+    case 'reviewer_rate':
+      return '/onboarding/reviewer/rate';
+    case 'reviewer_profile_picture':
+      return '/onboarding/reviewer/profile-picture';
+    case 'reviewer_stripe':
+      return '/onboarding/reviewer/stripe';
+    case 'reviewer_share_link':
+      return '/onboarding/reviewer/share-link';
+    case 'reviewee_profile_picture':
+      return '/onboarding/reviewee/profile-picture';
+    case 'discover_reviewers':
+      return '/onboarding/discover-reviewers';
+    case 'role_selection':
+      return '/onboarding/role-selection';
+    case 'push_notifications':
+    case 'push-notifications':
+      return '/onboarding/push-notifications';
+    case 'completed':
+      return '/(tabs)/requests';
+    default:
+      // For new users with no step, go directly to push notifications
+      return '/onboarding/push-notifications';
+  }
+}
+
 function getFileExtensionFromUri(uri: string): string | null {
   const match = uri.match(/\.([a-zA-Z0-9]+)(?:\?.*)?$/);
   return match ? match[1].toLowerCase() : null;

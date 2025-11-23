@@ -1,7 +1,7 @@
 // Auro Brand Colors - Deep Purple + Orange→Magenta Gradient
 const brandColors = {
   // Core
-  background: '#1A0B2E',
+  background: '#0C0225',
   cardBackground: '#2A1B3D',
   cardBackgroundSecondary: '#1F1629',
   cardBackgroundLight: '#342346',

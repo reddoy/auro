@@ -497,7 +497,9 @@ export default function ProfileScreen() {
                   {profile ? (profile.full_name || profile.username || 'User') : 'Loading...'}
                 </Text>
                 {!!profile?.created_at && (
-                  <Text style={styles.userEmail}>Joined {new Date(profile.created_at).toLocaleDateString()}</Text>
+                  <Text style={styles.userEmail} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
+                    Joined {new Date(profile.created_at).toLocaleDateString()}
+                  </Text>
                 )}
               </MotionView>
             </MotionView>
@@ -771,6 +773,24 @@ export default function ProfileScreen() {
               ) : null}
             </MotionView>
 
+            {/* Transaction History for Reviewees */}
+            {!profile?.is_reviewer && (
+              <MotionView entering={nextEntrance()} style={styles.bioSection}>
+                <Text style={styles.sectionTitle}>Your Reviews</Text>
+                <Text style={{ color: Colors.brand.textSecondary, marginBottom: 16 }}>
+                  View your review orders and transaction history.
+                </Text>
+                <MotionPressable
+                  onPress={() => router.push('/(tabs)/profile/transaction-history')}
+                  style={styles.transactionHistoryButton}
+                >
+                  <Text style={styles.transactionHistoryText}>
+                    📊 Transaction History
+                  </Text>
+                </MotionPressable>
+              </MotionView>
+            )}
+
             {profile?.bio && (
               <MotionView entering={nextEntrance()} style={styles.bioSection}>
                 <Text style={styles.sectionTitle}>Bio</Text>
@@ -1003,7 +1023,7 @@ const styles = StyleSheet.create({
   },
   container: { flex: 1, backgroundColor: Colors.brand.background },
   scrollView: { flex: 1, backgroundColor: 'transparent' },
-  header: { paddingTop: 20, paddingBottom: 40, paddingHorizontal: 0, backgroundColor: Colors.brand.cardBackground, borderBottomLeftRadius: 30, borderBottomRightRadius: 30, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 24, elevation: 12 },
+  header: { paddingTop: 20, paddingBottom: 40, paddingHorizontal: 0, backgroundColor: Colors.brand.cardBackground, borderRadius: 30, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 24, elevation: 12 },
   headerContent: { paddingHorizontal: 20, backgroundColor: 'transparent', width: '100%' },
   profileSection: { flexDirection: 'row', alignItems: 'center', marginBottom: 24, backgroundColor: 'transparent' },
   avatarContainer: { position: 'relative', marginRight: 20, backgroundColor: 'transparent' },
@@ -1057,7 +1077,7 @@ const styles = StyleSheet.create({
   reviewerStatusRow: {
     marginTop: 16,
     paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     backgroundColor: Colors.brand.cardBackgroundLight,
     borderRadius: 20,
     flexDirection: 'row',
@@ -1066,19 +1086,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
     minHeight: 60,
-    flexWrap: 'wrap',
   },
   reviewerStatusLabel: {
     color: Colors.brand.textPrimary,
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '600',
-    flex: 1,
-    marginRight: 12,
+    flexShrink: 0,
+    marginRight: 8,
   },
   reviewerStatusControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
     backgroundColor: 'transparent',
     flexShrink: 0,
   },
@@ -1086,8 +1105,8 @@ const styles = StyleSheet.create({
     transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }],
   },
   statusIndicator: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
     borderRadius: 16,
     backgroundColor: 'rgba(239, 68, 68, 0.15)',
     borderWidth: 1,
@@ -1099,7 +1118,7 @@ const styles = StyleSheet.create({
   },
   statusIndicatorText: {
     color: '#ef4444',
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '700',
   },
   statusIndicatorTextActive: {

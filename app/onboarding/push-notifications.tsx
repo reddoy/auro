@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, View as RNView, Platform } from 'react-native';
+import { StyleSheet, TouchableOpacity, View as RNView, Platform, Image } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -54,71 +54,69 @@ export default function OnboardingWelcomeScreen() {
 
 
   return (
-    <View style={styles.container}>
-      <ExpoLinearGradient
-        colors={[Colors.brand.background, Colors.brand.cardBackground]}
-        style={styles.backgroundGradient}
-      />
-      <View 
+    <RNView style={styles.container}>
+      <RNView 
         style={[
           styles.content,
           {
-            paddingTop: Math.max(20, insets.top + 20),
-            paddingBottom: insets.bottom + 20,
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
           },
         ]}
       >
-        <View style={styles.topSection}>
+        <RNView style={styles.centerSection}>
           <MotionView entering={ZoomIn.duration(400).delay(MotionDelays.quick)}>
             <Text style={styles.emoji}>🎉</Text>
           </MotionView>
-          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
-            <Text
-              style={styles.title}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.85}
-            >
-              Thanks for joining Auro!
-            </Text>
-          </MotionView>
-          <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item * 2)}>
-            <Text style={styles.subtitle}>
-              Let's get you set up. We'll walk you through a few quick steps to tailor Auro to how you want to use it.
-            </Text>
-          </MotionView>
+          
+          <RNView style={styles.introRow}>
+            <MotionView entering={ZoomIn.duration(400).delay(MotionDelays.quick)} style={styles.avatarContainer}>
+              <Image 
+                source={require('../../rohan-headshot.jpg')}
+                style={styles.avatar}
+                resizeMode="cover"
+              />
+            </MotionView>
+            <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)} style={styles.introTextContainer}>
+              <Text style={styles.introText}>
+                Hey I'm RJ, founder of Auro. Thanks for signing up. Let's build your profile.
+              </Text>
+            </MotionView>
+          </RNView>
 
           <MotionView entering={cardEntrance(3)} style={styles.stepsCard}>
-            <View style={styles.stepRow}>
-              <Ionicons name="checkmark-circle" size={20} color={Colors.brand.success} />
-              <Text style={styles.stepText}>Choose whether you want to review or get reviewed</Text>
-            </View>
-            <View style={styles.stepRow}>
-              <Ionicons name="checkmark-circle" size={20} color={Colors.brand.success} />
-              <Text style={styles.stepText}>Add a few details so people know what to expect</Text>
-            </View>
-            <View style={styles.stepRow}>
-              <Ionicons name="checkmark-circle" size={20} color={Colors.brand.success} />
-              <Text style={styles.stepText}>Share your profile and start connecting</Text>
-            </View>
+            <RNView style={styles.stepsRow}>
+              <RNView style={styles.stepItem}>
+                <Ionicons name="checkmark-circle" size={20} color={Colors.brand.success} />
+                <Text style={styles.stepText}>Choose role</Text>
+              </RNView>
+              <RNView style={styles.stepItem}>
+                <Ionicons name="checkmark-circle" size={20} color={Colors.brand.success} />
+                <Text style={styles.stepText}>Add details</Text>
+              </RNView>
+              <RNView style={styles.stepItem}>
+                <Ionicons name="checkmark-circle" size={20} color={Colors.brand.success} />
+                <Text style={styles.stepText}>Share profile</Text>
+              </RNView>
+            </RNView>
           </MotionView>
-        </View>
 
-        <MotionView entering={cardEntrance(4)} style={styles.buttonContainer}>
-          <MotionPressable 
-            style={styles.primaryButton}
-            onPress={handleGetStarted}
-          >
-            <ExpoLinearGradient
-              colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
-              style={styles.buttonGradient}
+          <MotionView entering={cardEntrance(4)} style={styles.buttonContainer}>
+            <MotionPressable 
+              style={styles.primaryButton}
+              onPress={handleGetStarted}
             >
-              <Text style={styles.primaryButtonText}>Let's build your profile</Text>
-            </ExpoLinearGradient>
-          </MotionPressable>
-        </MotionView>
-      </View>
-    </View>
+              <ExpoLinearGradient
+                colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
+                style={styles.buttonGradient}
+              >
+                <Text style={styles.primaryButtonText}>Let's build your profile</Text>
+              </ExpoLinearGradient>
+            </MotionPressable>
+          </MotionView>
+        </RNView>
+      </RNView>
+    </RNView>
   );
 }
 
@@ -127,73 +125,95 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.brand.background,
   },
-  backgroundGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-  },
   content: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(255, 0, 0, 0.2)', // RED - main content container
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-  },
-  topSection: {
-    flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    paddingHorizontal: 20,
     width: '100%',
+    position: 'relative',
+  },
+  centerSection: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 255, 0, 0.2)', // GREEN - center section
   },
   emoji: {
     fontSize: 56,
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.brand.textPrimary,
+    marginBottom: 24,
     textAlign: 'center',
-    marginBottom: 8,
-    fontFamily: 'Poppins_700Bold',
   },
-  subtitle: {
-    fontSize: 16,
+  introRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 32,
+    gap: 16,
+    width: '100%',
+  },
+  avatarContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: Colors.brand.cardBackground,
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+    flexShrink: 0,
+  },
+  avatar: {
+    width: '100%',
+    height: '100%',
+    transform: [{ scale: 1.5 }, { translateY: -10 }],
+  },
+  introTextContainer: {
+    flex: 1,
+  },
+  introText: {
+    fontSize: 18,
     fontWeight: '600',
-    color: Colors.brand.textSecondary,
-    textAlign: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 16,
-    lineHeight: 22,
+    color: Colors.brand.textPrimary,
+    textAlign: 'left',
+    lineHeight: 26,
+    backgroundColor: 'transparent',
   },
   stepsCard: {
     width: '100%',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 16,
-    padding: 14,
-    marginBottom: 0,
+    padding: 16,
+    marginBottom: 32,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
-    gap: 10,
   },
-  stepRow: {
+  stepsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'space-around',
     backgroundColor: 'transparent',
+    gap: 8,
+  },
+  stepItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'transparent',
+    flex: 1,
+    justifyContent: 'center',
   },
   stepText: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.brand.textSecondary,
-    flex: 1,
-    lineHeight: 20,
     backgroundColor: 'transparent',
+    textAlign: 'center',
   },
   buttonContainer: {
     width: '100%',
-    paddingTop: 20,
   },
   primaryButton: {
     width: '100%',

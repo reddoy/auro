@@ -13,6 +13,7 @@ import { Text, View } from '@/components/Themed';
 import { useLocalSearchParams, router } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { ensureProfileForCurrentUser } from '@/lib/api';
+import { getCurrentProfile, resolveOnboardingDestination } from '@/lib/profile';
 import { MotionView, MotionPressable, cardEntrance, subtleFadeIn } from '@/components/motion';
 import { MotionDelays } from '@/components/motion/tokens';
 import { FadeInDown, ZoomIn } from 'react-native-reanimated';
@@ -220,16 +221,18 @@ export default function AuthScreen() {
               return;
             }
             
-            // Check if this is a new user (profile was just created)
-            let isNewUser = false;
+            // Ensure profile exists
             try { 
-              isNewUser = await ensureProfileForCurrentUser();
+              await ensureProfileForCurrentUser();
             } catch {}
             
-            // If new user, redirect to onboarding; otherwise go to main app
-            if (isNewUser) {
-              router.replace('/onboarding/push-notifications');
-            } else {
+            // Check onboarding status and route accordingly
+            try {
+              const profile = await getCurrentProfile();
+              const destination = resolveOnboardingDestination(profile);
+              router.replace(destination as any);
+            } catch (err) {
+              console.warn('Failed to load profile for onboarding state', err);
               router.replace('/(tabs)/requests');
             }
           }
@@ -349,10 +352,18 @@ export default function AuthScreen() {
           return;
         }
 
-        // Ensure profile exists (for existing users, this will return false)
+        // Ensure profile exists
         try { await ensureProfileForCurrentUser(); } catch {}
-        // Proceed directly to app after successful login (existing users don't need onboarding)
-        router.replace('/(tabs)/requests');
+        
+        // Check onboarding status and route accordingly
+        try {
+          const profile = await getCurrentProfile();
+          const destination = resolveOnboardingDestination(profile);
+          router.replace(destination as any);
+        } catch (err) {
+          console.warn('Failed to load profile for onboarding state', err);
+          router.replace('/(tabs)/requests');
+        }
       } else {
         const origin =
           typeof window !== 'undefined' && (window as any).location?.origin
@@ -720,8 +731,10 @@ export default function AuthScreen() {
                   setForgotPasswordSent(false);
                 }}
               >
-                <Ionicons name="arrow-back" size={20} color={Colors.brand.accentMagenta} />
-                <Text style={styles.backButtonText}> Back to {isLogin ? 'Login' : 'Sign Up'}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent' }}>
+                  <Ionicons name="arrow-back" size={20} color={Colors.brand.accentMagenta} />
+                  <Text style={styles.backButtonText}>Back to {isLogin ? 'Login' : 'Sign Up'}</Text>
+                </View>
               </TouchableOpacity>
               <Text style={styles.forgotPasswordTitle}>Reset Password</Text>
               <Text style={styles.forgotPasswordSubtitle}>
