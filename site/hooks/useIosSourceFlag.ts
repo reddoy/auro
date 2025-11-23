@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { IOS_SOURCE_COOKIE } from "@/lib/ios-source";
+import { IOS_SOURCE_COOKIE } from "@/lib/ios-source-constants";
 
 const STORAGE_KEY = "auro_ios_src";
 
