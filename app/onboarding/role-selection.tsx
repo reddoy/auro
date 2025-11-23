@@ -68,9 +68,8 @@ export default function RoleSelectionScreen() {
         style={[
           styles.content,
           {
-            height: Platform.OS === 'ios' ? screenHeight - insets.top - insets.bottom : undefined,
-            paddingTop: Platform.OS === 'ios' ? 0 : Math.max(20, insets.top + 12),
-            paddingBottom: Platform.OS === 'ios' ? 0 : Math.max(20, insets.bottom + 12),
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
           },
         ]}
       >
@@ -151,7 +150,7 @@ const styles = StyleSheet.create({
   centerContent: {
     width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
+    maxWidth: 400,
   },
   title: {
     fontSize: 26,

@@ -77,13 +77,12 @@ export default function EnableNotificationsScreen() {
         style={[
           styles.content,
           {
-            height: Platform.OS === 'ios' ? screenHeight - insets.top - insets.bottom : undefined,
-            paddingTop: Platform.OS === 'ios' ? 0 : Math.max(20, insets.top + 20),
-            paddingBottom: Platform.OS === 'ios' ? 0 : insets.bottom + 20,
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom,
           },
         ]}
       >
-        <View style={styles.topSection}>
+        <View style={styles.centerSection}>
           <MotionView entering={ZoomIn.duration(400).delay(MotionDelays.quick)}>
             <View style={styles.iconContainer}>
               <Ionicons name="notifications" size={64} color={Colors.brand.accentOrange} />
@@ -114,9 +113,8 @@ export default function EnableNotificationsScreen() {
               <Text style={styles.benefitText}>Stay on top of your requests</Text>
             </View>
           </MotionView>
-        </View>
 
-        <MotionView entering={cardEntrance(4)} style={styles.buttonContainer}>
+          <MotionView entering={cardEntrance(4)} style={styles.buttonContainer}>
           <MotionPressable 
             style={[styles.primaryButton, (enabling || notificationsEnabled) && styles.primaryButtonDisabled]}
             onPress={handleEnable}
@@ -150,6 +148,7 @@ export default function EnableNotificationsScreen() {
             </TouchableOpacity>
           </MotionView>
         </MotionView>
+        </View>
       </View>
     </View>
   );
@@ -173,11 +172,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
-  topSection: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  centerSection: {
     width: '100%',
+    alignItems: 'center',
+    maxWidth: 400,
+    gap: 20,
   },
   iconContainer: {
     width: 120,
@@ -230,7 +229,6 @@ const styles = StyleSheet.create({
   buttonContainer: {
     width: '100%',
     gap: 12,
-    paddingTop: 20,
   },
   primaryButton: {
     width: '100%',

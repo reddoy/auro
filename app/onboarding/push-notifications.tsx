@@ -55,17 +55,11 @@ export default function OnboardingWelcomeScreen() {
 
 
   return (
-    <RNView style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom, backgroundColor: '#FF0000' }]}>
+    <RNView style={styles.container}>
       <RNView 
-        style={[
-          styles.content,
-          {
-            height: Platform.OS === 'ios' ? screenHeight - insets.top - insets.bottom : undefined,
-            backgroundColor: '#00FF00',
-          },
-        ]}
+        style={[styles.content, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
       >
-        <RNView style={[styles.centerSection, { backgroundColor: '#0000FF' }]}>
+        <RNView style={styles.centerSection}>
           <MotionView entering={ZoomIn.duration(400).delay(MotionDelays.quick)}>
             <Text style={styles.emoji}>🎉</Text>
           </MotionView>
@@ -127,16 +121,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.brand.background,
   },
   content: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
     width: '100%',
-    position: 'relative',
   },
   centerSection: {
     width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
+    maxWidth: 400,
   },
   emoji: {
     fontSize: 56,

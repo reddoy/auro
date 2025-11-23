@@ -224,7 +224,7 @@ function RootLayoutNav() {
         <ThemeProvider value={customTheme}>
           <ToastProvider>
             <View style={{ flex: 1 }}>
-              <LogoHeader />
+              {!pathname?.includes('/onboarding') && !pathname?.includes('/auth') && !pathname?.includes('/intro') && <LogoHeader />}
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="index" />
                 <Stack.Screen name="intro" />

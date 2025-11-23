@@ -17,8 +17,16 @@ export default function LogoHeader({
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
 
-  // Don't render anything on auth or intro pages
-  if (pathname?.startsWith('/auth') || pathname?.startsWith('/intro')) {
+  // Don't render anything on auth, intro, or onboarding pages
+  const normalizedPath = pathname || '';
+  const isOnboarding = normalizedPath.includes('/onboarding') || 
+                       normalizedPath.includes('onboarding') ||
+                       normalizedPath.startsWith('/onboarding') ||
+                       normalizedPath.startsWith('onboarding');
+  const isAuth = normalizedPath.includes('/auth') || normalizedPath.startsWith('/auth');
+  const isIntro = normalizedPath.includes('/intro') || normalizedPath.startsWith('/intro');
+  
+  if (isAuth || isIntro || isOnboarding) {
     return null;
   }
 
