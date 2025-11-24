@@ -64,10 +64,19 @@ export default function ConfirmEmailScreen() {
               // Continue even if profile creation fails
             }
             setConfirmationStatus('success');
-            // Auto-redirect to push notifications screen after 2 seconds
-            // All new users (email/password signup) go through onboarding
-            setTimeout(() => {
-              router.replace('/onboarding/push-notifications');
+            // After email confirmation, check onboarding status and route accordingly
+            // Don't assume they need onboarding - check their profile state
+            setTimeout(async () => {
+              try {
+                const { getCurrentProfile, resolveOnboardingDestination } = await import('@/lib/profile');
+                const profile = await getCurrentProfile();
+                const destination = resolveOnboardingDestination(profile);
+                router.replace(destination as any);
+              } catch (err) {
+                console.warn('Failed to load profile after email confirmation', err);
+                // Default to onboarding for new users
+                router.replace('/onboarding/push-notifications');
+              }
             }, 2000);
           }
         } catch (err) {
@@ -162,7 +171,17 @@ export default function ConfirmEmailScreen() {
               </MotionView>
 
               <MotionView entering={cardEntrance(4)}>
-                <MotionPressable style={styles.primaryBtn} onPress={() => router.replace('/onboarding/push-notifications')}>
+                <MotionPressable style={styles.primaryBtn} onPress={async () => {
+                  try {
+                    const { getCurrentProfile, resolveOnboardingDestination } = await import('@/lib/profile');
+                    const profile = await getCurrentProfile();
+                    const destination = resolveOnboardingDestination(profile);
+                    router.replace(destination as any);
+                  } catch (err) {
+                    console.warn('Failed to load profile', err);
+                    router.replace('/onboarding/push-notifications');
+                  }
+                }}>
                   <ExpoLinearGradient
                     colors={[Colors.brand.gradientStart, Colors.brand.gradientEnd]}
                     start={{ x: 0, y: 0 }}

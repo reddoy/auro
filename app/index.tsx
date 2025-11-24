@@ -21,18 +21,34 @@ export default function IndexGate() {
           setChecking(false);
           return;
         }
-        if (data.session) {
-          try {
-            const profile = await getCurrentProfile();
-            const destination = resolveOnboardingDestination(profile);
-            router.replace(destination as any);
-          } catch (err) {
-            console.warn('Failed to load profile for onboarding state', err);
-            router.replace('/(tabs)/requests');
-          }
-        } else {
-          // No session - redirect to intro/auth
+        
+        // CRITICAL: Only proceed if we have a valid session
+        if (!data.session) {
+          // No session - redirect to intro/auth immediately
           router.replace('/intro');
+          setChecking(false);
+          return;
+        }
+        
+        // Verify the user is actually authenticated by checking getUser
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+          // User is not actually authenticated - redirect to auth
+          console.warn('User not authenticated:', userError?.message);
+          router.replace('/intro');
+          setChecking(false);
+          return;
+        }
+        
+        // User is authenticated - proceed with routing
+        try {
+          const profile = await getCurrentProfile();
+          const destination = resolveOnboardingDestination(profile);
+          router.replace(destination as any);
+        } catch (err) {
+          console.warn('Failed to load profile for onboarding state', err);
+          // If profile fetch fails, go to main app instead of onboarding
+          router.replace('/(tabs)/requests');
         }
         setChecking(false);
       } catch (err) {

@@ -97,8 +97,17 @@ export default function AuthScreen() {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   
   React.useEffect(() => {
-    if (cooldownSec <= 0) return;
-    const t = setInterval(() => setCooldownSec((s) => (s > 0 ? s - 1 : 0)), 1000);
+    if (cooldownSec <= 0) {
+      // Clear cooldown when it reaches 0
+      if (cooldownSec < 0) setCooldownSec(0);
+      return;
+    }
+    const t = setInterval(() => {
+      setCooldownSec((s) => {
+        const newValue = s > 0 ? s - 1 : 0;
+        return newValue;
+      });
+    }, 1000);
     return () => clearInterval(t);
   }, [cooldownSec]);
 
@@ -291,6 +300,11 @@ export default function AuthScreen() {
   };
 
   const handleSubmit = async () => {
+    // Prevent double-submission
+    if (loading) {
+      return;
+    }
+    
     if (!email || !password || (!isLogin && (!firstName || !lastName || !dateOfBirth || !phone))) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
@@ -298,19 +312,21 @@ export default function AuthScreen() {
     
     setLoading(true);
 
-    // Password validation for signup
-    if (!isLogin) {
-      if (!isPasswordValid(password)) {
-        Alert.alert('Password Requirements', 
-          'Password must include:\n• At least 8 characters\n• One uppercase letter\n• One lowercase letter\n• One number\n• One special character');
-        return;
+      // Password validation for signup
+      if (!isLogin) {
+        if (!isPasswordValid(password)) {
+          setLoading(false); // Reset loading state
+          Alert.alert('Password Requirements', 
+            'Password must include:\n• At least 8 characters\n• One uppercase letter\n• One lowercase letter\n• One number\n• One special character');
+          return;
+        }
+        
+        if (password !== confirmPassword) {
+          setLoading(false); // Reset loading state
+          Alert.alert('Error', 'Passwords do not match');
+          return;
+        }
       }
-      
-      if (password !== confirmPassword) {
-        Alert.alert('Error', 'Passwords do not match');
-        return;
-      }
-    }
 
     try {
       if (isLogin) {
@@ -394,8 +410,23 @@ export default function AuthScreen() {
         });
         
         if (error) {
-          // Check if user already exists
+          setLoading(false); // Reset loading state
           const errorMsg = String(error.message || '').toLowerCase();
+          
+          // Check for rate limiting FIRST
+          const secMatch = errorMsg.match(/after\s+(\d+)\s*seconds?/i);
+          if (/security\s*purposes|too\s*many|rate/i.test(errorMsg)) {
+            const wait = Number(secMatch?.[1]) || 60;
+            setCooldownSec(wait);
+            Alert.alert(
+              'Rate Limit Reached', 
+              `For security purposes, please try again in ${wait} seconds. The timer will count down automatically.`,
+              [{ text: 'OK' }]
+            );
+            return;
+          }
+          
+          // Check if user already exists
           if (errorMsg.includes('already registered') || errorMsg.includes('user already exists') || errorMsg.includes('email address is already registered')) {
             Alert.alert(
               'Account Already Exists',
@@ -408,6 +439,7 @@ export default function AuthScreen() {
                     setSignupStep(0);
                     setPassword('');
                     setConfirmPassword('');
+                    setCooldownSec(0); // Clear any cooldown when switching to login
                   },
                 },
                 {
@@ -423,23 +455,38 @@ export default function AuthScreen() {
 
         // Check if user was created and if email confirmation is needed
         if (signUpData.user) {
-          // Create profile for new user (this will return true for new signups)
-          try { 
-            await ensureProfileForCurrentUser(); 
-            // Phone is stored in user_metadata via signUp options above
-          } catch {}
+          // CRITICAL: Always check email_confirmed_at, not just session
+          // Supabase may create a session even if email isn't confirmed
+          const isEmailConfirmed = signUpData.user.email_confirmed_at !== null;
           
           // Check if email confirmation is required
-          // If user has a session, they're confirmed. Otherwise, they need to verify.
-          const { data: { session } } = await supabase.auth.getSession();
-          
-          if (!session) {
+          // For email/password signup, email confirmation is typically required
+          if (!isEmailConfirmed) {
             // Email confirmation required - redirect to confirmation screen
             // After confirmation, they'll be redirected to onboarding
             router.replace({ pathname: '/auth/confirm', params: { email } });
-          } else {
-            // Already confirmed (shouldn't happen often, but handle it)
-            // Redirect to push notifications screen first (new users go through onboarding)
+            setLoading(false);
+            return;
+          }
+          
+          // Email is already confirmed (rare, but can happen)
+          // Create profile for new user (only if needed - this is safe to call multiple times)
+          try { 
+            await ensureProfileForCurrentUser(); 
+            // Phone is stored in user_metadata via signUp options above
+          } catch (profileErr) {
+            console.warn('Profile creation warning (non-critical):', profileErr);
+            // Continue even if profile creation fails - user can complete onboarding later
+          }
+          
+          // Check onboarding status and route accordingly
+          try {
+            const profile = await getCurrentProfile();
+            const destination = resolveOnboardingDestination(profile);
+            router.replace(destination as any);
+          } catch (err) {
+            console.warn('Failed to load profile for onboarding state', err);
+            // Default to onboarding for new users if profile fetch fails
             router.replace('/onboarding/push-notifications');
           }
         } else {
@@ -455,7 +502,12 @@ export default function AuthScreen() {
       if (/security\s*purposes|too\s*many|rate/i.test(msg)) {
         const wait = Number(secMatch?.[1]) || 60;
         setCooldownSec(wait);
-        Alert.alert('Please wait', `For security purposes, please try again in ${wait} seconds.`);
+        setLoading(false); // CRITICAL: Reset loading state so user can see the cooldown
+        Alert.alert(
+          'Rate Limit Reached', 
+          `For security purposes, please try again in ${wait} seconds. The timer will count down automatically.`,
+          [{ text: 'OK' }]
+        );
         return;
       }
       
@@ -470,6 +522,7 @@ export default function AuthScreen() {
       
       // Check for duplicate email errors
       if (/already registered|user already exists|email address is already registered/i.test(msg)) {
+        setLoading(false); // Reset loading state
         Alert.alert(
           'Account Already Exists',
           'An account with this email address already exists. Please use the "Login" tab to sign in.',
@@ -481,6 +534,7 @@ export default function AuthScreen() {
                 setSignupStep(0);
                 setPassword('');
                 setConfirmPassword('');
+                setCooldownSec(0); // Clear any cooldown when switching to login
               },
             },
             {
@@ -491,6 +545,9 @@ export default function AuthScreen() {
         );
         return;
       }
+      
+      // For all other errors, reset loading state
+      setLoading(false);
       
       // Generic error message - more user-friendly
       Alert.alert(

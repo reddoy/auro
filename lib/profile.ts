@@ -8,6 +8,12 @@ import type { Profile, ProfilePreferences, UserReview, ReviewerPackage } from '@
  * Returns the appropriate route to navigate to after sign-in.
  */
 export function resolveOnboardingDestination(profile: Profile | null | undefined): string {
+  // CRITICAL: If no profile, don't route to onboarding - route to main app
+  // This prevents unauthenticated users from being sent to onboarding
+  if (!profile) {
+    return '/(tabs)/requests';
+  }
+  
   const preferences = profile?.preferences || {};
   if (preferences?.onboarding_completed) {
     return '/(tabs)/requests';
@@ -39,6 +45,7 @@ export function resolveOnboardingDestination(profile: Profile | null | undefined
       return '/(tabs)/requests';
     default:
       // For new users with no step, go directly to push notifications
+      // BUT only if we have a valid profile (user is authenticated)
       return '/onboarding/push-notifications';
   }
 }
