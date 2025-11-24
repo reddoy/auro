@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase as supabaseClient } from '../../lib/supabase';
 
 // Step components
@@ -41,7 +42,9 @@ const STEPS = [
 type Step = typeof STEPS[number];
 
 export default function RequestPage() {
-  const [currentStep, setCurrentStep] = useState<Step>('intro');
+  const router = useRouter();
+  // Start with 'auth' step for unauthenticated users - will be updated after auth check
+  const [currentStep, setCurrentStep] = useState<Step>('auth');
   const [requestData, setRequestData] = useState<RequestData>({
     photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
     message: '',
@@ -53,6 +56,7 @@ export default function RequestPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [supabase, setSupabase] = useState<any>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
 
   // Check if Supabase client is properly configured
   if (!supabaseClient) {
@@ -97,6 +101,7 @@ export default function RequestPage() {
   }, []);
 
   // Restore flow state from localStorage (if returning from OAuth)
+  // NOTE: This should ONLY be called when user is authenticated
   const restoreFlowState = useCallback(() => {
     if (typeof window === 'undefined') return false;
     try {
@@ -112,6 +117,10 @@ export default function RequestPage() {
       }
       
       if (flowState.currentStep && flowState.requestData) {
+        // Don't restore to 'auth' step - that means user was in the middle of auth
+        if (flowState.currentStep === 'auth') {
+          return false;
+        }
         setCurrentStep(flowState.currentStep);
         setRequestData(flowState.requestData);
         console.log('[RequestPage] Restored flow state:', flowState.currentStep);
@@ -126,27 +135,39 @@ export default function RequestPage() {
     return false;
   }, []);
 
-  // Handle URL parameters to pre-populate creator selection
+  // CRITICAL: Ensure unauthenticated users are always on auth step
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (authChecked && !isAuthenticated && currentStep !== 'auth') {
+      setCurrentStep('auth');
+    }
+  }, [authChecked, isAuthenticated, currentStep]);
+
+  // Handle URL parameters to pre-populate creator selection
+  // Only process after auth check is complete
+  useEffect(() => {
+    if (typeof window !== 'undefined' && authChecked && isAuthenticated) {
       const urlParams = new URLSearchParams(window.location.search);
       const creatorSlug = urlParams.get('creatorSlug');
       const creatorId = urlParams.get('creatorId');
       
-      // Try to restore flow state first (for OAuth return)
-      const restored = restoreFlowState();
-      
-      if ((creatorSlug || creatorId) && !restored) {
-        // Only set creator if we didn't restore from saved state
-        if (creatorSlug) {
-          setRequestData(prev => ({ ...prev, creatorSlug }));
-        } else if (creatorId) {
-          setRequestData(prev => ({ ...prev, creatorId }));
+      // Only process URL params if user is authenticated
+      // Unauthenticated users should see auth step first
+      if (creatorSlug || creatorId) {
+        // Try to restore flow state first (for OAuth return)
+        const restored = restoreFlowState();
+        
+        if (!restored) {
+          // Only set creator if we didn't restore from saved state
+          if (creatorSlug) {
+            setRequestData(prev => ({ ...prev, creatorSlug }));
+          } else if (creatorId) {
+            setRequestData(prev => ({ ...prev, creatorId }));
+          }
+          setCurrentStep('creator-selection');
         }
-        setCurrentStep('creator-selection');
       }
     }
-  }, []);
+  }, [authChecked, isAuthenticated]);
 
   // Scroll to top on step change for better UX
   useEffect(() => {
@@ -207,33 +228,64 @@ export default function RequestPage() {
             setRequestData(prev => ({ ...prev, uploadSessionId: sid }));
           } catch {}
 
-          // Check if user is already authenticated
+          // Check if user is already authenticated - CRITICAL: Do this FIRST before any rendering
           const checkAuth = async () => {
             try {
               if (!client?.auth) {
                 console.error('Supabase client or auth is null');
                 setIsAuthenticated(false);
+                setCurrentStep('auth');
+                setAuthChecked(true);
+                setIsInitializing(false);
                 return;
               }
-              const { data: { user } } = await client.auth.getUser();
               
+              // Check session first (faster than getUser)
+              const { data: { session } } = await client.auth.getSession();
+              const isRealUser = !!session?.user && (session.user as any)?.app_metadata?.provider !== 'anon';
               
-              if (!user) {
-                try {
-                  // Ensure an authenticated session for storage uploads
-                  await client.auth.signInAnonymously();
-                } catch (anonErr) {
-                  console.warn('Anonymous sign-in failed:', anonErr);
-                }
+              // If no real user, don't sign in anonymously yet - just set auth step immediately
+              if (!isRealUser) {
+                setIsAuthenticated(false);
+                setCurrentStep('auth');
+                setAuthChecked(true);
+                setIsInitializing(false);
+                return;
               }
-              const { data: { user: userAfter } } = await client.auth.getUser();
-              const isRealUser = !!userAfter && (userAfter as any)?.app_metadata?.provider !== 'anon';
               
-              setIsAuthenticated(isRealUser);
+              // User is authenticated - proceed with normal flow
+              setIsAuthenticated(true);
+              
+              // Check if we should restore from saved state (for OAuth return)
+              const restored = restoreFlowState();
+              if (!restored) {
+                // If not restored and user is authenticated, start from intro
+                setCurrentStep('intro');
+              }
+              
+              // Now sign in anonymously for storage uploads (only if needed)
+              try {
+                const { data: { user } } = await client.auth.getUser();
+                if (!user) {
+                  await client.auth.signInAnonymously();
+                }
+              } catch (anonErr) {
+                console.warn('Anonymous sign-in failed:', anonErr);
+              }
+              
+              setAuthChecked(true);
+              setIsInitializing(false);
             } catch (error) {
               console.error('Auth check error:', error);
+              // On error, default to auth step
+              setIsAuthenticated(false);
+              setCurrentStep('auth');
+              setAuthChecked(true);
+              setIsInitializing(false);
             }
           };
+          
+          // Run auth check immediately
           checkAuth();
 
           // Listen for auth changes
@@ -346,20 +398,32 @@ export default function RequestPage() {
       );
     }
 
-    // Show loading only for steps that don't have their own loading states
-    // Skip showing loading for creator-selection since it has its own loading state
-    if (isInitializing && currentStep !== 'creator-selection') {
+    // CRITICAL: Don't render ANY steps until auth is checked
+    // This prevents unauthenticated users from seeing intro or other steps
+    if (!authChecked || isInitializing) {
       return (
         <div className="loading-container">
           <div style={{ textAlign: 'center', padding: '40px' }}>
             <div className="loading-spinner" style={{ margin: '0 auto 20px' }}></div>
-            <p style={{ color: '#fff', fontSize: '16px' }}>Initializing...</p>
+            <p style={{ color: '#fff', fontSize: '16px' }}>Loading...</p>
           </div>
         </div>
       );
     }
 
     // Render the actual step content
+    // CRITICAL: Prevent showing ANY step except 'auth' if user is not authenticated
+    // This is a safety check - the useEffect above should handle this, but this prevents flash
+    if (!isAuthenticated && currentStep !== 'auth') {
+      return (
+        <div className="loading-container">
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <div className="loading-spinner" style={{ margin: '0 auto 20px' }}></div>
+            <p style={{ color: '#fff', fontSize: '16px' }}>Redirecting to authentication...</p>
+          </div>
+        </div>
+      );
+    }
 
     switch (currentStep) {
       case 'intro':

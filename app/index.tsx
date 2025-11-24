@@ -12,24 +12,35 @@ export default function IndexGate() {
 
   useEffect(() => {
     const run = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        console.warn('Auth session error:', error.message);
-        return;
-      }
-      if (data.session) {
-        try {
-          const profile = await getCurrentProfile();
-          const destination = resolveOnboardingDestination(profile);
-          router.replace(destination as any);
-        } catch (err) {
-          console.warn('Failed to load profile for onboarding state', err);
-          router.replace('/(tabs)/requests');
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          console.warn('Auth session error:', error.message);
+          // On error, redirect to intro/auth to be safe
+          router.replace('/intro');
+          setChecking(false);
+          return;
         }
-      } else {
+        if (data.session) {
+          try {
+            const profile = await getCurrentProfile();
+            const destination = resolveOnboardingDestination(profile);
+            router.replace(destination as any);
+          } catch (err) {
+            console.warn('Failed to load profile for onboarding state', err);
+            router.replace('/(tabs)/requests');
+          }
+        } else {
+          // No session - redirect to intro/auth
+          router.replace('/intro');
+        }
+        setChecking(false);
+      } catch (err) {
+        console.error('Unexpected error in index gate:', err);
+        // On unexpected error, redirect to intro/auth
         router.replace('/intro');
+        setChecking(false);
       }
-      setChecking(false);
     };
     run();
   }, []);

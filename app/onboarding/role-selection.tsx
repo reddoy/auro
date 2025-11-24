@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -10,11 +10,44 @@ import { updateProfilePreferences } from '@/lib/profile';
 import { MotionView, MotionPressable, cardEntrance } from '@/components/motion';
 import { MotionDelays } from '@/components/motion/tokens';
 import { FadeInDown } from 'react-native-reanimated';
+import { supabase } from '@/lib/supabase';
+import Spinner from '@/components/Spinner';
 
 export default function RoleSelectionScreen() {
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
   const [loadingChoice, setLoadingChoice] = useState<'reviewer' | 'reviewee' | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // CRITICAL: Check authentication before rendering anything
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error || !session) {
+          // User is not authenticated - redirect to auth immediately
+          router.replace('/auth');
+          return;
+        }
+        // User is authenticated - proceed with normal flow
+        setCheckingAuth(false);
+      } catch (error) {
+        console.error('Auth check error:', error);
+        // On error, redirect to auth to be safe
+        router.replace('/auth');
+      }
+    };
+    checkAuth();
+  }, []);
+
+  // Show loading while checking auth
+  if (checkingAuth) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Spinner size={40} color={Colors.brand.accentMagenta} />
+      </View>
+    );
+  }
 
   const handleError = (error: any) => {
     const message = error?.message || 'Something went wrong. Please try again.';
@@ -218,6 +251,12 @@ const styles = StyleSheet.create({
     color: Colors.brand.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.brand.background,
   },
 });
 

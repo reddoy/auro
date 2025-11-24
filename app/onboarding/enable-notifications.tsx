@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, TouchableOpacity, View, Alert, Platform, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -11,12 +11,45 @@ import { updateProfilePreferences } from '@/lib/profile';
 import { MotionView, MotionPressable, cardEntrance, subtleFadeIn } from '@/components/motion';
 import { MotionDelays } from '@/components/motion/tokens';
 import { FadeInDown, ZoomIn } from 'react-native-reanimated';
+import { supabase } from '@/lib/supabase';
+import Spinner from '@/components/Spinner';
 
 export default function EnableNotificationsScreen() {
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
   const [enabling, setEnabling] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // CRITICAL: Check authentication before rendering anything
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error || !session) {
+          // User is not authenticated - redirect to auth immediately
+          router.replace('/auth');
+          return;
+        }
+        // User is authenticated - proceed with normal flow
+        setCheckingAuth(false);
+      } catch (error) {
+        console.error('Auth check error:', error);
+        // On error, redirect to auth to be safe
+        router.replace('/auth');
+      }
+    };
+    checkAuth();
+  }, []);
+
+  // Show loading while checking auth
+  if (checkingAuth) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Spinner size={40} color={Colors.brand.accentMagenta} />
+      </View>
+    );
+  }
 
   const handleEnable = async () => {
     setEnabling(true);
@@ -269,6 +302,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: Colors.brand.textSecondary,
     opacity: 0.7,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.brand.background,
   },
 });
 
