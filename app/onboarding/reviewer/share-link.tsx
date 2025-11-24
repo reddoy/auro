@@ -93,13 +93,12 @@ export default function ReviewerShareLinkScreen() {
     setContinuing(true);
     try {
       await updateProfilePreferences({
-        onboarding_step: 'completed',
-        onboarding_completed: true,
+        onboarding_step: 'reviewer_review_pending',
       });
     } catch (error) {
       console.warn('Failed to update onboarding preferences', error);
     } finally {
-      router.replace('/onboarding/thank-you?type=reviewer');
+      router.replace('/onboarding/reviewer/review-pending');
     }
   };
 
@@ -117,7 +116,7 @@ export default function ReviewerShareLinkScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.content}>
+        <View style={styles.content} lightColor="transparent" darkColor="transparent">
           <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
             <Text style={styles.title}>Share Your Profile</Text>
           </MotionView>
@@ -191,10 +190,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 24,
     paddingTop: 40,
-    backgroundColor: 'rgba(255, 0, 0, 0.2)', // RED - scroll content
   },
   content: {
-    backgroundColor: 'rgba(0, 255, 0, 0.2)', // GREEN - content wrapper
+    backgroundColor: 'transparent',
   },
   title: {
     fontSize: 28,

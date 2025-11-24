@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert, useWindowDimensions } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,7 +12,6 @@ import { FadeInDown } from 'react-native-reanimated';
 
 export default function BioScreen() {
   const insets = useSafeAreaInsets();
-  const { height: screenHeight } = useWindowDimensions();
   const [bio, setBio] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -42,8 +41,8 @@ export default function BioScreen() {
   return (
     <KeyboardAvoidingView 
       style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={100}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <ExpoLinearGradient
         colors={[Colors.brand.background, Colors.brand.cardBackground]}
@@ -54,20 +53,20 @@ export default function BioScreen() {
         contentContainerStyle={[
           styles.scrollContent, 
           { 
-            height: Platform.OS === 'ios' ? screenHeight - insets.top - insets.bottom : undefined,
-            paddingBottom: Platform.OS === 'ios' ? 0 : insets.bottom + 40 
+            paddingBottom: insets.bottom + 100
           }
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
       >
-        <View style={styles.content}>
+        <View style={styles.content} lightColor="transparent" darkColor="transparent">
           <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
-            <Text style={styles.title}>Tell Us About Your Reviews</Text>
+            <Text style={styles.title}>Why Choose You as a Reviewer?</Text>
           </MotionView>
           <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
             <Text style={styles.description}>
-              Write a bio so reviewees can know what your reviews are like. What makes your reviews unique?
+              This bio appears on your profile. Tell reviewees what you focus on and why you're the right reviewer for them.
             </Text>
           </MotionView>
 
@@ -128,8 +127,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 24,
     paddingTop: 60,
+    minHeight: '100%',
   },
   content: {
+    backgroundColor: 'transparent',
   },
   title: {
     fontSize: 32,

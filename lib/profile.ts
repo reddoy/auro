@@ -24,7 +24,8 @@ export function resolveOnboardingDestination(profile: Profile | null | undefined
     case 'reviewer_stripe':
       return '/onboarding/reviewer/stripe';
     case 'reviewer_share_link':
-      return '/onboarding/reviewer/share-link';
+      // Skip share-link step in app - go directly to review-pending
+      return '/onboarding/reviewer/review-pending';
     case 'reviewee_profile_picture':
       return '/onboarding/reviewee/profile-picture';
     case 'discover_reviewers':
@@ -71,7 +72,7 @@ export async function getCurrentProfile(): Promise<Profile | null> {
   if (!user) return null;
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, full_name, avatar_url, bio, is_reviewer, created_at, skills, links, preferences, hourly_rate, availability, reviews_given_count, reviews_received_count, rating_average, packages, pending_payout_balance_cents, awaiting_payout_balance_cents, completed_paid_total_cents, stripe_connect_account_id')
+    .select('id, username, full_name, avatar_url, bio, is_reviewer, reviewer_approved, created_at, skills, links, preferences, hourly_rate, availability, reviews_given_count, reviews_received_count, rating_average, packages, pending_payout_balance_cents, awaiting_payout_balance_cents, completed_paid_total_cents, stripe_connect_account_id')
     .eq('id', user.id)
     .maybeSingle();
   if (error) throw error;

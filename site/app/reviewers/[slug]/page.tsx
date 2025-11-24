@@ -22,7 +22,7 @@ async function getReviewer(slug: string) {
   // Try by username first
   let { data, error } = await supabase
     .from('profiles')
-    .select('id, username, full_name, avatar_url, hourly_rate, rating_average, is_reviewer, skills, bio, links')
+    .select('id, username, full_name, avatar_url, hourly_rate, rating_average, is_reviewer, reviewer_approved, skills, bio, links')
     .eq('username', slug)
     .maybeSingle();
   if (error) {
@@ -33,13 +33,14 @@ async function getReviewer(slug: string) {
     if (isUuidLike(slug) || !error) {
       const byId = await supabase
         .from('profiles')
-        .select('id, username, full_name, avatar_url, hourly_rate, rating_average, is_reviewer, skills, bio, links')
+        .select('id, username, full_name, avatar_url, hourly_rate, rating_average, is_reviewer, reviewer_approved, skills, bio, links')
         .eq('id', slug)
         .maybeSingle();
       data = byId.data as any;
     }
   }
-  if (!data || !data.is_reviewer) return null;
+  // Only return reviewer if they are approved (not pending or rejected)
+  if (!data || !data.is_reviewer || data.reviewer_approved !== 'approved') return null;
   return {
     id: data.id,
     slug: data.username || slug,

@@ -145,12 +145,15 @@ export async function POST(req: Request) {
     }
 
     // Now update ONLY reviewer-specific fields - don't touch core profile data
+    // IMPORTANT: Set reviewer_approved='pending' instead of is_reviewer=true
+    // is_reviewer will be set to true only after manual approval
     const reviewerUpdates: any = {
-      is_reviewer: true, // Always set this - CRITICAL: This makes them a reviewer
+      reviewer_approved: 'pending', // Awaiting manual approval
       reviewer_signup_status: 'completed', // Mark as completed when they submit
+      // DO NOT set is_reviewer=true here - only set it after manual approval
     };
     
-    console.log(`[ApplySignup] Setting is_reviewer=true for user ${userId}`);
+    console.log(`[ApplySignup] Setting reviewer_approved='pending' for user ${userId} (awaiting manual approval)`);
     
     // Only update bio if provided (empty string counts as intentional)
     if (typeof bio === 'string') reviewerUpdates.bio = bio;
@@ -184,7 +187,7 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: upErr.message }), { status: 400 });
     }
     
-    console.log(`[ApplySignup] Successfully updated profile for user ${userId} with is_reviewer=true`);
+    console.log(`[ApplySignup] Successfully updated profile for user ${userId} with reviewer_approved='pending' (awaiting manual approval)`);
 
     // Store socials if provided
     if (Array.isArray(socials) && socials.length) {

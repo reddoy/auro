@@ -57,7 +57,7 @@ export default function RevieweeProfilePictureScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.content}>
+        <View style={styles.content} lightColor="transparent" darkColor="transparent">
           <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
             <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
               Set Your Profile Picture
@@ -130,10 +130,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 24,
     paddingTop: 60,
-    backgroundColor: 'rgba(255, 0, 0, 0.2)', // RED - scroll content
   },
   content: {
-    backgroundColor: 'rgba(0, 255, 0, 0.2)', // GREEN - content wrapper
+    backgroundColor: 'transparent',
     alignItems: 'center',
   },
   title: {

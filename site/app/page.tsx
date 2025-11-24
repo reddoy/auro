@@ -506,28 +506,30 @@ function HomePageContent() {
           <div className="text-center space-y-16">
             <div className="space-y-4">
               <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight">How It Works</h2>
-              <p className="text-xl md:text-2xl text-white/80 leading-relaxed">Start earning in 3 simple steps</p>
+              <p className="text-xl md:text-2xl text-white/80 leading-relaxed">Start earning in {isIosSource ? '2' : '3'} simple steps</p>
             </div>
             
             {/* Process Steps */}
-            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
-                <CardHeader className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white font-bold text-2xl shadow-lg">
-                    1
-                  </div>
-                  <CardTitle className="text-2xl font-bold text-white">Set Your Rate & Share Your Link</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <CardDescription className="text-center text-white/80 text-base leading-relaxed">
-                    Set your own price per review and share your Auro profile link on social media. Guys pay through your link and request reviews.
-                  </CardDescription>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    <Badge variant="outline" className="text-xs border-orange-400/40 text-orange-300 bg-orange-500/20">💰 You set your rates</Badge>
-                    <Badge variant="outline" className="text-xs border-orange-400/40 text-orange-300 bg-orange-500/20">📱 Share on Instagram/TikTok</Badge>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className={`grid gap-8 max-w-6xl mx-auto ${isIosSource ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
+              {!isIosSource && (
+                <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
+                  <CardHeader className="text-center">
+                    <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white font-bold text-2xl shadow-lg">
+                      1
+                    </div>
+                    <CardTitle className="text-2xl font-bold text-white">Set Your Rate & Share Your Link</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <CardDescription className="text-center text-white/80 text-base leading-relaxed">
+                      Set your own price per review and share your Auro profile link on social media. Guys pay through your link and request reviews.
+                    </CardDescription>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      <Badge variant="outline" className="text-xs border-orange-400/40 text-orange-300 bg-orange-500/20">💰 You set your rates</Badge>
+                      <Badge variant="outline" className="text-xs border-orange-400/40 text-orange-300 bg-orange-500/20">📱 Share on Instagram/TikTok</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
               
               <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
                 <CardHeader className="text-center">

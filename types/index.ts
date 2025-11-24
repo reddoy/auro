@@ -184,6 +184,7 @@ export interface Profile {
   avatar_url?: string | null;
   bio?: string | null;
   is_reviewer?: boolean;
+  reviewer_approved?: 'pending' | 'approved' | 'rejected' | null;
   created_at?: string;
   skills?: string[] | null;
   links?: ProfileLinks | null;

@@ -78,8 +78,9 @@ export default function StripeSetupScreen() {
               if (profile && !profile.is_reviewer) {
                 updateProfile({ is_reviewer: true }).catch(() => {});
               }
-              updateProfilePreferences({ onboarding_step: 'reviewer_share_link' }).catch(() => {});
-              router.replace('/onboarding/reviewer/share-link');
+              // Skip share-link step in app - go directly to review-pending
+              updateProfilePreferences({ onboarding_step: 'reviewer_review_pending' }).catch(() => {});
+              router.replace('/onboarding/reviewer/review-pending');
             }
           },
           {
@@ -90,8 +91,9 @@ export default function StripeSetupScreen() {
               if (profile && !profile.is_reviewer) {
                 updateProfile({ is_reviewer: true }).catch(() => {});
               }
-              updateProfilePreferences({ onboarding_step: 'reviewer_share_link' }).catch(() => {});
-              router.replace('/onboarding/reviewer/share-link');
+              // Skip share-link step in app - go directly to review-pending
+              updateProfilePreferences({ onboarding_step: 'reviewer_review_pending' }).catch(() => {});
+              router.replace('/onboarding/reviewer/review-pending');
             }
           }
         ]
@@ -116,8 +118,9 @@ export default function StripeSetupScreen() {
             if (profile && !profile.is_reviewer) {
               updateProfile({ is_reviewer: true }).catch(() => {});
             }
-            updateProfilePreferences({ onboarding_step: 'reviewer_share_link' }).catch(() => {});
-            router.replace('/onboarding/reviewer/share-link');
+            // Skip share-link step in app - go directly to review-pending
+            updateProfilePreferences({ onboarding_step: 'reviewer_review_pending' }).catch(() => {});
+            router.replace('/onboarding/reviewer/review-pending');
           }
         }
       ]
@@ -146,7 +149,7 @@ export default function StripeSetupScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.content}>
+        <View style={styles.content} lightColor="transparent" darkColor="transparent">
           <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
             <Text style={styles.title}>Set Up Payments</Text>
           </MotionView>
@@ -159,7 +162,7 @@ export default function StripeSetupScreen() {
           <MotionView entering={cardEntrance(2)} style={styles.infoCard}>
             <RNView style={styles.infoContent}>
               <Text style={styles.infoTitle}>
-                Why{' '}<Text style={styles.stripeText}>Stripe</Text>?
+                Why Stripe?
               </Text>
               <RNView style={styles.benefitsList}>
                 <RNView style={styles.benefitRow}>
@@ -242,10 +245,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 24,
     paddingTop: 40,
-    backgroundColor: 'rgba(255, 0, 0, 0.2)', // RED - scroll content
   },
   content: {
-    backgroundColor: 'rgba(0, 255, 0, 0.2)', // GREEN - content wrapper
+    backgroundColor: 'transparent',
   },
   title: {
     fontSize: 28,
@@ -276,15 +278,9 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: Colors.brand.textPrimary,
+    color: '#635BFF', // Stripe brand color
     marginBottom: 16,
     textAlign: 'center',
-    letterSpacing: 0,
-  },
-  stripeText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#635BFF', // Stripe brand color
     letterSpacing: 0,
   },
   benefitsList: {

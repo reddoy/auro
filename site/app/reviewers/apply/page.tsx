@@ -1434,9 +1434,9 @@ export default function FoundingReviewerApplyPage() {
               </div>
               
               <div className="space-y-3">
-                <h3 className="text-2xl font-bold text-white">Welcome to the Founding Team! 🎉</h3>
+                <h3 className="text-2xl font-bold text-white">Application Submitted! 🎉</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  You're now one of the exclusive 35 founding reviewers. We've sent a verification email to confirm your account.
+                  Thank you for applying to become a reviewer! We've received your application and will review it personally.
                 </p>
               </div>
 
@@ -1449,17 +1449,17 @@ export default function FoundingReviewerApplyPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span>We'll notify you when the app launches</span>
+                    <span>We'll personally review your application to ensure you align with our platform</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span>Start earning with your founding benefits</span>
+                    <span>You'll receive an email notification once your application is approved</span>
                   </div>
                   
-                  {/* Payment Processing Notice */}
+                  {/* Approval Notice */}
                   <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                     <p className="text-xs text-blue-300 text-center">
-                      💳 <strong>Payment Processing:</strong> Payments are processed within 5-7 business days after review completion
+                      ⏳ <strong>Review Process:</strong> We personally review each application to ensure quality. You'll be notified via email once your application has been reviewed.
                     </p>
                   </div>
             </div>

@@ -595,7 +595,7 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Reviewer Settings</Text>
           <Text style={{ color: Colors.brand.textSecondary }}>Control your reviewer status and price per review.</Text>
           
-          {profile?.is_reviewer ? (
+          {profile?.is_reviewer && profile?.reviewer_approved === 'approved' ? (
             <>
               {/* Earnings Tracker - Moved to top */}
               <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
@@ -660,14 +660,35 @@ export default function ProfileScreen() {
               <View style={styles.reviewerStatusRow}>
                 <Text style={styles.reviewerStatusLabel}>Reviewer Status</Text>
                 <MotionView entering={subtleFadeIn()} style={styles.reviewerStatusControls}>
-                  <MotionView entering={subtleFadeIn()} style={[styles.statusIndicator, profile?.is_reviewer && styles.statusIndicatorActive]}>
-                    <Text style={[styles.statusIndicatorText, profile?.is_reviewer && styles.statusIndicatorTextActive]}>
-                      {profile?.is_reviewer ? '● Active' : '● Inactive'}
+                  <MotionView entering={subtleFadeIn()} style={[
+                    styles.statusIndicator, 
+                    profile?.is_reviewer && profile?.reviewer_approved === 'approved' && styles.statusIndicatorActive,
+                    profile?.reviewer_approved === 'pending' && styles.statusIndicatorPending
+                  ]}>
+                    <Text style={[
+                      styles.statusIndicatorText, 
+                      profile?.is_reviewer && profile?.reviewer_approved === 'approved' && styles.statusIndicatorTextActive,
+                      profile?.reviewer_approved === 'pending' && styles.statusIndicatorTextPending
+                    ]}>
+                      {profile?.reviewer_approved === 'pending' 
+                        ? '● Pending approval' 
+                        : profile?.is_reviewer && profile?.reviewer_approved === 'approved'
+                        ? '● Active' 
+                        : '● Inactive'}
                     </Text>
                   </MotionView>
                   <Switch
-                    value={!!profile?.is_reviewer}
+                    value={!!(profile?.is_reviewer && profile?.reviewer_approved === 'approved')}
+                    disabled={profile?.reviewer_approved === 'pending'}
                     onValueChange={async (val) => {
+                      // Don't allow toggling if pending approval
+                      if (profile?.reviewer_approved === 'pending') {
+                        Alert.alert(
+                          'Pending Approval',
+                          'Your reviewer application is currently pending approval. You\'ll be notified via email once your application has been reviewed.'
+                        );
+                        return;
+                      }
                       // If enabling, proceed normally
                       if (val) {
                         try {
@@ -743,12 +764,12 @@ export default function ProfileScreen() {
                       }
                     }}
                     trackColor={{ false: '#3e3e3e', true: '#10b981' }}
-                    thumbColor={profile?.is_reviewer ? '#ffffff' : '#f4f3f4'}
+                    thumbColor={(profile?.is_reviewer && profile?.reviewer_approved === 'approved') ? '#ffffff' : '#f4f3f4'}
                     style={styles.reviewerSwitch}
                   />
                 </MotionView>
               </View>
-              {profile?.is_reviewer ? (
+              {profile?.is_reviewer && profile?.reviewer_approved === 'approved' ? (
                 <>
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
                     <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Share Your Reviewer Profile</Text>
@@ -1123,6 +1144,13 @@ const styles = StyleSheet.create({
   },
   statusIndicatorTextActive: {
     color: '#10b981',
+  },
+  statusIndicatorPending: {
+    backgroundColor: 'rgba(251, 191, 36, 0.15)',
+    borderColor: 'rgba(251, 191, 36, 0.3)',
+  },
+  statusIndicatorTextPending: {
+    color: '#fbbf24',
   },
   
   priceCard: { backgroundColor: Colors.brand.cardBackgroundLight, borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.08)', minHeight: 60 },

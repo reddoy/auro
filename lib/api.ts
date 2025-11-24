@@ -170,12 +170,13 @@ export async function ensureProfileForCurrentUser(): Promise<boolean> {
   }
 }
 
-// New: list reviewers from profiles where is_reviewer = true and has Stripe Connect account
+// New: list reviewers from profiles where is_reviewer = true, reviewer_approved = 'approved', and has Stripe Connect account
 export async function getReviewers(): Promise<DbReviewerSummary[]> {
   const { data, error } = await supabase
     .from('profiles')
     .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, is_reviewer, packages, links, bio, stripe_connect_account_id, created_at, reviews_given_count')
     .eq('is_reviewer', true)
+    .eq('reviewer_approved', 'approved') // Only show manually approved reviewers
     .not('stripe_connect_account_id', 'is', null) // Only show reviewers with Connect accounts
     .not('hourly_rate', 'is', null) // Only show reviewers who have set their rate
     .gt('hourly_rate', 0) // Only show reviewers with positive rates

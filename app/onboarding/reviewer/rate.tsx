@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert, View as RNView, useWindowDimensions } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert, View as RNView } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,7 +12,6 @@ import { FadeInDown } from 'react-native-reanimated';
 
 export default function RateScreen() {
   const insets = useSafeAreaInsets();
-  const { height: screenHeight } = useWindowDimensions();
   const [rate, setRate] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -49,8 +48,8 @@ export default function RateScreen() {
   return (
     <KeyboardAvoidingView 
       style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={100}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <ExpoLinearGradient
         colors={[Colors.brand.background, Colors.brand.cardBackground]}
@@ -61,14 +60,14 @@ export default function RateScreen() {
         contentContainerStyle={[
           styles.scrollContent, 
           { 
-            height: Platform.OS === 'ios' ? screenHeight - insets.top - insets.bottom : undefined,
-            paddingBottom: Platform.OS === 'ios' ? 0 : insets.bottom + 40 
+            paddingBottom: insets.bottom + 100
           }
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
       >
-        <View style={styles.content}>
+        <View style={styles.content} lightColor="transparent" darkColor="transparent">
           <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
             <Text style={styles.title}>Set Your Rate</Text>
           </MotionView>
@@ -162,8 +161,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 24,
     paddingTop: 20,
+    minHeight: '100%',
   },
   content: {
+    backgroundColor: 'transparent',
   },
   title: {
     fontSize: 26,
