@@ -81,9 +81,11 @@ export async function POST(req: Request) {
     const connectAccountId = reviewer.stripe_connect_account_id;
     if (!connectAccountId) {
       return new Response(JSON.stringify({ 
-        error: 'Reviewer has not set up their payment account yet. Please ask them to complete their Stripe Connect setup.',
+        error: 'Payment is being held: Reviewer has not set up their Stripe Connect account yet. Payment will be distributed automatically once Stripe is connected.',
+        held: true,
         reviewerId: request.influencer_id,
-        reviewerName: reviewer.full_name || reviewer.username
+        reviewerName: reviewer.full_name || reviewer.username,
+        note: 'Reviewer can still complete reviews. Please ask them to complete their Stripe Connect setup to receive payments.'
       }), { status: 400 });
     }
 

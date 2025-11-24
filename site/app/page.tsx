@@ -36,24 +36,15 @@ function HomePageContent() {
           return;
         }
         
+        // Query profiles table directly (creators table doesn't exist)
         const { data, error } = await supabase
-          .from('creators')
+          .from('profiles')
           .select('id', { count: 'exact' })
           .eq('is_reviewer', true);
 
         if (error) {
-          console.warn('Primary table query failed, trying fallback:', error.message);
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('id', { count: 'exact' })
-            .eq('is_reviewer', true);
-          
-          if (!profileError) {
-            setReviewerCount(profileData?.length || 0);
-          } else {
-            console.error('Both database queries failed:', profileError.message);
-            // Keep current count instead of resetting to 0
-          }
+          console.error('Failed to fetch reviewer count:', error.message);
+          // Keep current count instead of resetting to 0
         } else {
           setReviewerCount(data?.length || 0);
         }

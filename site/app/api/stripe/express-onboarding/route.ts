@@ -72,6 +72,10 @@ export async function POST(req: Request) {
       return_url: returnUrl || siteUrl,
       refresh_url: returnUrl || siteUrl,
     });
+
+    // Note: Once the reviewer completes Stripe onboarding and payouts are enabled,
+    // the retry-failed-distributions cron job will automatically pick up and distribute any held payments
+
     return new Response(JSON.stringify({ url: accountLink.url, accountId: connectAccountId }), { status: 200 });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e?.message || 'Failed to create onboarding link' }), { status: 400 });

@@ -47,6 +47,7 @@ async function processRetryJob(
     const stripe = buildStripeClient();
     const admin = buildSupabaseAdmin();
 
+    // Query for both failed distributions and held payments (waiting for Stripe setup)
     const { data: failedDistributions, error: queryError } = await admin
       .from("requests")
       .select(
@@ -72,7 +73,7 @@ async function processRetryJob(
       .eq("status", "completed")
       .eq("payment_distributed", false)
       .lt("payment_distribution_attempts", maxRetries)
-      .not("payment_distribution_failed_at", "is", null)
+      .or("payment_distribution_failed_at.not.is.null,payment_distribution_error.ilike.%Payment held%")
       .limit(retryAll ? 1000 : limit);
 
     if (queryError) {

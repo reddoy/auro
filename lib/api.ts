@@ -117,15 +117,16 @@ export async function getUserProfile(): Promise<DbUserProfile | null> {
   if (!user) return null;
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('id, username, full_name, avatar_url, bio, is_reviewer')
+    .select('id, username, first_name, last_name, avatar_url, bio, is_reviewer')
     .eq('id', user.id)
     .maybeSingle();
   if (error) throw error;
   if (profile) {
+    const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || null;
     return {
       id: profile.id,
       email: user.email ?? undefined,
-      name: profile.full_name || profile.username || undefined,
+      name: fullName || profile.username || undefined,
       bio: profile.bio ?? null,
       avatarUrl: profile.avatar_url ?? null,
       // @ts-ignore - optional flag for app logic
@@ -143,41 +144,69 @@ export async function getUserProfile(): Promise<DbUserProfile | null> {
 
 // Ensure a profile row exists for the current user. Safe to call after login.
 // Returns true if a new profile was created, false if it already existed.
+// This function is idempotent - safe to call multiple times.
 export async function ensureProfileForCurrentUser(): Promise<boolean> {
   const { data: sessionData } = await supabase.auth.getUser();
   const user = sessionData.user;
-  if (!user) return false;
+  if (!user) {
+    console.log('[ensureProfileForCurrentUser] No user found');
+    return false;
+  }
+  
+  // Check if profile already exists first to avoid unnecessary upsert
   try {
     const { data: existing } = await supabase
       .from('profiles')
       .select('id')
       .eq('id', user.id)
       .maybeSingle();
-    if (existing) return false; // Profile already existed
-  } catch {}
+    if (existing) {
+      console.log('[ensureProfileForCurrentUser] Profile already exists for user:', user.id);
+      return false; // Profile already existed
+    }
+  } catch (checkError) {
+    console.warn('[ensureProfileForCurrentUser] Error checking existing profile:', checkError);
+    // Continue to try creating it anyway
+  }
+  
+  // Split name into first_name and last_name
+  const metadataName = user.user_metadata?.name || '';
+  const nameParts = metadataName.trim().split(' ');
+  const firstName = nameParts[0] || null;
+  const lastName = nameParts.slice(1).join(' ') || null;
+  
   const payload: any = {
     id: user.id,
-    full_name: user.user_metadata?.name || null,
+    first_name: firstName,
+    last_name: lastName,
     username: user.user_metadata?.user_name || (user.email ? String(user.email).split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').slice(0, 24) : null),
     avatar_url: user.user_metadata?.avatar_url || null,
   };
+  
   try {
-    await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
+    // Use upsert with onConflict to handle race conditions
+    // This ensures only one profile is created even if called multiple times
+    const { error: upsertError } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
+    if (upsertError) {
+      console.error('[ensureProfileForCurrentUser] Upsert error:', upsertError);
+      return false;
+    }
+    console.log('[ensureProfileForCurrentUser] Profile created/updated for user:', user.id);
     return true; // New profile was created
   } catch (e) {
+    console.error('[ensureProfileForCurrentUser] Exception during upsert:', e);
     // Swallow errors here to avoid blocking login; RLS or schema issues can be handled server-side
     return false;
   }
 }
 
-// New: list reviewers from profiles where is_reviewer = true, reviewer_approved = 'approved', and has Stripe Connect account
+// New: list reviewers from profiles where is_reviewer = 'approved' and has set their rate
+// Note: Stripe Connect account is NOT required to show up - payments will be held until Stripe is set up
 export async function getReviewers(): Promise<DbReviewerSummary[]> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, is_reviewer, packages, links, bio, stripe_connect_account_id, created_at, reviews_given_count')
-    .eq('is_reviewer', true)
-    .eq('reviewer_approved', 'approved') // Only show manually approved reviewers
-    .not('stripe_connect_account_id', 'is', null) // Only show reviewers with Connect accounts
+    .select('id, first_name, last_name, username, avatar_url, skills, hourly_rate, rating_average, is_reviewer, packages, links, bio, stripe_connect_account_id, created_at, reviews_given_count')
+    .eq('is_reviewer', 'approved') // Only show approved reviewers (is_reviewer can be 'pending', 'approved', or 'rejected')
     .not('hourly_rate', 'is', null) // Only show reviewers who have set their rate
     .gt('hourly_rate', 0) // Only show reviewers with positive rates
     .order('rating_average', { ascending: false, nullsFirst: false });
@@ -190,9 +219,10 @@ export async function getReviewers(): Promise<DbReviewerSummary[]> {
       parsedReviewsGivenCount !== null && Number.isFinite(parsedReviewsGivenCount)
         ? parsedReviewsGivenCount
         : null;
+    const fullName = [row.first_name, row.last_name].filter(Boolean).join(' ') || null;
     return {
     id: row.id,
-    displayName: row.full_name || row.username || 'Reviewer',
+    displayName: fullName || row.username || 'Reviewer',
     username: row.username,
     avatarUrl: row.avatar_url || null,
     skills: row.skills || null,
@@ -210,7 +240,7 @@ export async function getReviewers(): Promise<DbReviewerSummary[]> {
 export async function getReviewerById(id: string): Promise<DbReviewerSummary | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, is_reviewer, packages, links, bio, reviews_given_count')
+    .select('id, first_name, last_name, username, avatar_url, skills, hourly_rate, rating_average, is_reviewer, packages, links, bio, reviews_given_count')
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;
@@ -222,9 +252,10 @@ export async function getReviewerById(id: string): Promise<DbReviewerSummary | n
     parsedReviewsGivenCount !== null && Number.isFinite(parsedReviewsGivenCount)
       ? parsedReviewsGivenCount
       : null;
+  const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ') || null;
   return {
     id: data.id,
-    displayName: data.full_name || data.username || 'Reviewer',
+    displayName: fullName || data.username || 'Reviewer',
     username: data.username,
     avatarUrl: data.avatar_url || null,
     skills: data.skills || null,
@@ -261,7 +292,7 @@ export async function getRequestsByReviewer(reviewerId: string): Promise<DbReque
 
   const { data: profilesData, error: profilesError } = await supabase
     .from('profiles')
-    .select('id, full_name, username')
+    .select('id, first_name, last_name, username')
     .in('id', userIds);
 
   if (profilesError || !profilesData) {
@@ -269,10 +300,13 @@ export async function getRequestsByReviewer(reviewerId: string): Promise<DbReque
   }
 
   const profileMap = new Map<string, { id: string; full_name: string | null; username: string | null }>(
-    profilesData.map((profile: any) => [
-      profile.id,
-      { id: profile.id, full_name: profile.full_name ?? null, username: profile.username ?? null },
-    ])
+    profilesData.map((profile: any) => {
+      const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || null;
+      return [
+        profile.id,
+        { id: profile.id, full_name: fullName, username: profile.username ?? null },
+      ];
+    })
   );
 
   return requests.map((request) => {

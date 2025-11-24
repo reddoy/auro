@@ -93,14 +93,17 @@ export async function POST(req: Request) {
     // Check if reviewer has Stripe Connect account
     const connectAccountId = reviewer.stripe_connect_account_id;
     if (!connectAccountId) {
+      // Payment is still being held - not an error, just waiting for Stripe setup
       return new Response(JSON.stringify({ 
-        error: 'Reviewer has not set up Stripe Connect account',
+        success: false,
+        held: true,
+        message: 'Payment is still being held. Reviewer needs to set up Stripe Connect account.',
         errorType: 'NO_CONNECT_ACCOUNT',
         reviewerId: request.influencer_id,
         reviewerName: reviewer.full_name || reviewer.username,
         reviewerEmail: reviewer.email,
-        message: 'Please ask the reviewer to complete their Stripe Connect setup'
-      }), { status: 400 });
+        note: 'Once Stripe is connected, payment will be distributed automatically.'
+      }), { status: 200 });
     }
 
     // Calculate the amount to transfer

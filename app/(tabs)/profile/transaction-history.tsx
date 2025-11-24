@@ -312,7 +312,20 @@ export default function TransactionBreakdownScreen() {
       };
     }
 
+    // Check if payment is held due to Stripe not being set up
     if (transaction.payment_distribution_error) {
+      const errorLower = transaction.payment_distribution_error.toLowerCase();
+      if (errorLower.includes('payment held') || 
+          errorLower.includes('stripe connect account') || 
+          errorLower.includes('not set up')) {
+        return {
+          status: 'held',
+          message: 'Payout attempted but Stripe not set up',
+          color: '#f59e0b',
+          icon: '⚠️'
+        };
+      }
+      // Other payment errors
       return {
         status: 'failed',
         message: 'Payment failed - will retry automatically',
@@ -432,9 +445,28 @@ export default function TransactionBreakdownScreen() {
         </View>
 
         {item.payment_distribution_error && isReviewer && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>
-              Error: {item.payment_distribution_error}
+          <View style={[
+            styles.errorContainer,
+            item.payment_distribution_error.toLowerCase().includes('payment held') || 
+            item.payment_distribution_error.toLowerCase().includes('stripe connect account') ||
+            item.payment_distribution_error.toLowerCase().includes('not set up')
+              ? styles.heldContainer 
+              : null
+          ]}>
+            <Text style={[
+              styles.errorText,
+              item.payment_distribution_error.toLowerCase().includes('payment held') || 
+              item.payment_distribution_error.toLowerCase().includes('stripe connect account') ||
+              item.payment_distribution_error.toLowerCase().includes('not set up')
+                ? styles.heldText 
+                : null
+            ]}>
+              {item.payment_distribution_error.toLowerCase().includes('payment held') || 
+               item.payment_distribution_error.toLowerCase().includes('stripe connect account') ||
+               item.payment_distribution_error.toLowerCase().includes('not set up')
+                ? '⚠️ Payment is being held until you set up Stripe Connect. Complete your Stripe setup to receive this payment automatically.'
+                : `Error: ${item.payment_distribution_error}`
+              }
             </Text>
           </View>
         )}
@@ -715,9 +747,19 @@ const styles = StyleSheet.create({
     padding: 8,
     marginBottom: 12,
   },
+  heldContainer: {
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.3)',
+  },
   errorText: {
     fontSize: 12,
     color: '#ef4444',
+  },
+  heldText: {
+    fontSize: 12,
+    color: '#f59e0b',
+    lineHeight: 16,
   },
   transactionDetails: {
     backgroundColor: 'transparent',

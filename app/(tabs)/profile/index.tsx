@@ -596,7 +596,7 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Reviewer Settings</Text>
           <Text style={{ color: Colors.brand.textSecondary }}>Control your reviewer status and price per review.</Text>
           
-          {profile?.is_reviewer && profile?.reviewer_approved === 'approved' ? (
+          {profile?.is_reviewer === 'approved' ? (
             <>
               {/* Earnings Tracker - Moved to top */}
               <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
@@ -659,31 +659,34 @@ export default function ProfileScreen() {
               
               {/* Reviewer Status Toggle */}
               <View style={styles.reviewerStatusRow}>
-                <Text style={styles.reviewerStatusLabel}>Reviewer Status</Text>
                 <MotionView entering={subtleFadeIn()} style={styles.reviewerStatusControls}>
                   <MotionView entering={subtleFadeIn()} style={[
                     styles.statusIndicator, 
-                    profile?.is_reviewer && profile?.reviewer_approved === 'approved' && styles.statusIndicatorActive,
-                    profile?.reviewer_approved === 'pending' && styles.statusIndicatorPending
+                    profile?.is_reviewer === 'approved' && styles.statusIndicatorActive,
+                    profile?.is_reviewer === 'pending' && styles.statusIndicatorPending
                   ]}>
-                    <Text style={[
-                      styles.statusIndicatorText, 
-                      profile?.is_reviewer && profile?.reviewer_approved === 'approved' && styles.statusIndicatorTextActive,
-                      profile?.reviewer_approved === 'pending' && styles.statusIndicatorTextPending
-                    ]}>
-                      {profile?.reviewer_approved === 'pending' 
-                        ? '● Pending approval' 
-                        : profile?.is_reviewer && profile?.reviewer_approved === 'approved'
-                        ? '● Active' 
-                        : '● Inactive'}
+                    <Text 
+                      style={[
+                        styles.statusIndicatorText, 
+                        profile?.is_reviewer === 'approved' && styles.statusIndicatorTextActive,
+                        profile?.is_reviewer === 'pending' && styles.statusIndicatorTextPending
+                      ]}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      {profile?.is_reviewer === 'pending' 
+                        ? '⏳ Pending' 
+                        : profile?.is_reviewer === 'approved'
+                        ? '✓ Active' 
+                        : '○ Inactive'}
                     </Text>
                   </MotionView>
                   <Switch
-                    value={!!(profile?.is_reviewer && profile?.reviewer_approved === 'approved')}
-                    disabled={profile?.reviewer_approved === 'pending'}
+                    value={profile?.is_reviewer === 'approved'}
+                    disabled={profile?.is_reviewer === 'pending'}
                     onValueChange={async (val) => {
                       // Don't allow toggling if pending approval
-                      if (profile?.reviewer_approved === 'pending') {
+                      if (profile?.is_reviewer === 'pending') {
                         Alert.alert(
                           'Pending Approval',
                           'Your reviewer application is currently pending approval. You\'ll be notified via email once your application has been reviewed.'
@@ -765,14 +768,14 @@ export default function ProfileScreen() {
                       }
                     }}
                     trackColor={{ false: '#3e3e3e', true: '#10b981' }}
-                    thumbColor={(profile?.is_reviewer && profile?.reviewer_approved === 'approved') ? '#ffffff' : '#f4f3f4'}
+                    thumbColor={profile?.is_reviewer === 'approved' ? '#ffffff' : '#f4f3f4'}
                     style={styles.reviewerSwitch}
                   />
                 </MotionView>
               </View>
               
               {/* Pending Approval Message */}
-              {profile?.reviewer_approved === 'pending' && (
+              {profile?.is_reviewer === 'pending' && (
                 <MotionView entering={cardEntrance(1)} style={styles.pendingApprovalCard}>
                   <RNView style={styles.pendingApprovalContent}>
                     <Text style={styles.pendingApprovalIcon}>⏳</Text>
@@ -786,7 +789,7 @@ export default function ProfileScreen() {
                 </MotionView>
               )}
               
-              {profile?.is_reviewer && profile?.reviewer_approved === 'approved' ? (
+              {profile?.is_reviewer === 'approved' ? (
                 <>
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
                     <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Share Your Reviewer Profile</Text>
@@ -1116,14 +1119,19 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingVertical: 16,
     paddingHorizontal: 16,
-    backgroundColor: Colors.brand.cardBackgroundLight,
+    backgroundColor: 'transparent',
     borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    justifyContent: 'center',
+    borderWidth: 0,
     minHeight: 60,
+    flexWrap: 'wrap',
+  },
+  reviewerStatusLabelContainer: {
+    flex: 1,
+    minWidth: 120,
+    marginRight: 12,
   },
   reviewerStatusLabel: {
     color: Colors.brand.textPrimary,
@@ -1131,39 +1139,45 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flexShrink: 0,
     marginRight: 8,
+    textAlign: 'center',
   },
   reviewerStatusControls: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     backgroundColor: 'transparent',
-    flexShrink: 0,
+    flexShrink: 1,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
   reviewerSwitch: {
     transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }],
   },
   statusIndicator: {
-    paddingHorizontal: 8,
-    paddingVertical: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.3)',
+    maxWidth: 120,
+    minWidth: 70,
   },
   statusIndicatorActive: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    backgroundColor: 'transparent',
     borderColor: 'rgba(16, 185, 129, 0.3)',
   },
   statusIndicatorText: {
     color: '#ef4444',
     fontSize: 11,
     fontWeight: '700',
+    textAlign: 'center',
   },
   statusIndicatorTextActive: {
     color: '#10b981',
   },
   statusIndicatorPending: {
-    backgroundColor: 'rgba(251, 191, 36, 0.15)',
+    backgroundColor: 'transparent',
     borderColor: 'rgba(251, 191, 36, 0.3)',
   },
   statusIndicatorTextPending: {
@@ -1523,6 +1537,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.brand.cardBackground,
     borderRadius: 16,
     padding: 16,
+    marginTop: 16,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: 'rgba(255, 111, 0, 0.2)',

@@ -95,6 +95,11 @@ export default function AuthScreen() {
   const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  // Use ref to prevent double-submission even if state hasn't updated yet
+  const isSubmittingRef = useRef(false);
+  // Track last signup attempt email to prevent rapid retries
+  const lastSignupEmailRef = useRef<string | null>(null);
+  const lastSignupTimeRef = useRef<number>(0);
   
   React.useEffect(() => {
     if (cooldownSec <= 0) {
@@ -300,8 +305,9 @@ export default function AuthScreen() {
   };
 
   const handleSubmit = async () => {
-    // Prevent double-submission
-    if (loading) {
+    // Prevent double-submission using ref (faster than state check)
+    if (isSubmittingRef.current || loading) {
+      console.log('[Auth] handleSubmit called but already submitting, ignoring');
       return;
     }
     
@@ -310,11 +316,14 @@ export default function AuthScreen() {
       return;
     }
     
+    // Set both ref and state to prevent double-submission
+    isSubmittingRef.current = true;
     setLoading(true);
 
       // Password validation for signup
       if (!isLogin) {
         if (!isPasswordValid(password)) {
+          isSubmittingRef.current = false;
           setLoading(false); // Reset loading state
           Alert.alert('Password Requirements', 
             'Password must include:\n• At least 8 characters\n• One uppercase letter\n• One lowercase letter\n• One number\n• One special character');
@@ -322,6 +331,7 @@ export default function AuthScreen() {
         }
         
         if (password !== confirmPassword) {
+          isSubmittingRef.current = false;
           setLoading(false); // Reset loading state
           Alert.alert('Error', 'Passwords do not match');
           return;
@@ -342,6 +352,7 @@ export default function AuthScreen() {
               'Invalid Credentials',
               'Oops! That email and password combination doesn\'t look correct. Please try again.'
             );
+            isSubmittingRef.current = false;
             setLoading(false);
             return;
           }
@@ -381,6 +392,27 @@ export default function AuthScreen() {
           router.replace('/(tabs)/requests');
         }
       } else {
+        // CRITICAL: Prevent rapid retries for the same email
+        const now = Date.now();
+        const timeSinceLastSignup = now - lastSignupTimeRef.current;
+        const isSameEmail = lastSignupEmailRef.current === email.toLowerCase().trim();
+        
+        // If same email and less than 5 seconds since last attempt, block it
+        if (isSameEmail && timeSinceLastSignup < 5000) {
+          isSubmittingRef.current = false;
+          setLoading(false);
+          Alert.alert(
+            'Please Wait',
+            'You just attempted to sign up. Please wait a few seconds before trying again.',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+        
+        // Update tracking
+        lastSignupEmailRef.current = email.toLowerCase().trim();
+        lastSignupTimeRef.current = now;
+        
         const origin =
           typeof window !== 'undefined' && (window as any).location?.origin
             ? (window as any).location.origin
@@ -410,24 +442,36 @@ export default function AuthScreen() {
         });
         
         if (error) {
+          isSubmittingRef.current = false;
           setLoading(false); // Reset loading state
           const errorMsg = String(error.message || '').toLowerCase();
+          const errorCode = (error as any)?.status || (error as any)?.code || '';
+          const errorCodeStr = String(errorCode).toLowerCase();
           
-          // Check for rate limiting FIRST
+          // Check for rate limiting FIRST - handle 429 status code and email rate limit errors
           const secMatch = errorMsg.match(/after\s+(\d+)\s*seconds?/i);
-          if (/security\s*purposes|too\s*many|rate/i.test(errorMsg)) {
+          if (/security\s*purposes|too\s*many|rate|429|over_email_send_rate_limit|email.*rate.*limit/i.test(errorMsg) || 
+              errorCode === 429 || 
+              errorCodeStr.includes('429') ||
+              errorCodeStr.includes('rate_limit')) {
             const wait = Number(secMatch?.[1]) || 60;
             setCooldownSec(wait);
+            // Clear email tracking to allow retry after cooldown
+            lastSignupEmailRef.current = null;
+            lastSignupTimeRef.current = 0;
             Alert.alert(
               'Rate Limit Reached', 
-              `For security purposes, please try again in ${wait} seconds. The timer will count down automatically.`,
+              `Too many signup attempts for this email. Please wait ${wait} seconds before trying again. The timer will count down automatically.`,
               [{ text: 'OK' }]
             );
             return;
           }
           
           // Check if user already exists
-          if (errorMsg.includes('already registered') || errorMsg.includes('user already exists') || errorMsg.includes('email address is already registered')) {
+          if (errorMsg.includes('already registered') || errorMsg.includes('user already exists') || errorMsg.includes('email address is already registered') || errorCode === 422) {
+            // Clear email tracking since this is a different error
+            lastSignupEmailRef.current = null;
+            lastSignupTimeRef.current = 0;
             Alert.alert(
               'Account Already Exists',
               'An account with this email address already exists. Please use the "Login" tab to sign in.',
@@ -440,6 +484,8 @@ export default function AuthScreen() {
                     setPassword('');
                     setConfirmPassword('');
                     setCooldownSec(0); // Clear any cooldown when switching to login
+                    lastSignupEmailRef.current = null;
+                    lastSignupTimeRef.current = 0;
                   },
                 },
                 {
@@ -450,6 +496,13 @@ export default function AuthScreen() {
             );
             return;
           }
+          
+          // For other errors, clear tracking after a delay to prevent rapid retries
+          setTimeout(() => {
+            lastSignupEmailRef.current = null;
+            lastSignupTimeRef.current = 0;
+          }, 10000); // Clear after 10 seconds
+          
           throw error;
         }
 
@@ -459,18 +512,40 @@ export default function AuthScreen() {
           // Supabase may create a session even if email isn't confirmed
           const isEmailConfirmed = signUpData.user.email_confirmed_at !== null;
           
-          // Check if email confirmation is required
-          // For email/password signup, email confirmation is typically required
-          if (!isEmailConfirmed) {
-            // Email confirmation required - redirect to confirmation screen
-            // After confirmation, they'll be redirected to onboarding
-            router.replace({ pathname: '/auth/confirm', params: { email } });
-            setLoading(false);
-            return;
-          }
+          // Also check if we have a session - if no session, definitely need confirmation
+          const { data: { session } } = await supabase.auth.getSession();
+          const hasValidSession = !!session && !!session.user;
           
-          // Email is already confirmed (rare, but can happen)
-          // Create profile for new user (only if needed - this is safe to call multiple times)
+          console.log('[Auth] Signup successful:', {
+            userId: signUpData.user.id,
+            email: signUpData.user.email,
+            emailConfirmed: isEmailConfirmed,
+            emailConfirmedAt: signUpData.user.email_confirmed_at,
+            hasSession: hasValidSession
+          });
+          
+          // CRITICAL: For email/password signup, ALWAYS redirect to confirm screen
+          // Even if Supabase auto-confirms, we want users to see the verification screen
+          // This ensures users always see the "please verify your email" screen after signup
+          
+          // ALWAYS redirect to confirm screen for new signups
+          // The confirm screen will handle the case where email is already confirmed
+          console.log('[Auth] New signup - redirecting to confirmation screen for:', email);
+          
+          // Clear tracking since signup was successful
+          lastSignupEmailRef.current = null;
+          lastSignupTimeRef.current = 0;
+          isSubmittingRef.current = false; // Reset ref before navigation
+          setLoading(false);
+          
+          // Use setTimeout to ensure state is reset before navigation
+          setTimeout(() => {
+            router.replace({ pathname: '/auth/confirm', params: { email } });
+          }, 100);
+          return;
+          
+          // Only create profile if email is confirmed - otherwise wait for email confirmation
+          // This prevents double-counting (profile creation happens in confirm screen)
           try { 
             await ensureProfileForCurrentUser(); 
             // Phone is stored in user_metadata via signUp options above
@@ -489,23 +564,45 @@ export default function AuthScreen() {
             // Default to onboarding for new users if profile fetch fails
             router.replace('/onboarding/push-notifications');
           }
+          
+          // Clear tracking since signup was successful
+          lastSignupEmailRef.current = null;
+          lastSignupTimeRef.current = 0;
+          // Reset loading state after navigation
+          isSubmittingRef.current = false;
+          setLoading(false);
         } else {
           // No user returned - should not happen, but handle gracefully
+          // Clear tracking
+          lastSignupEmailRef.current = null;
+          lastSignupTimeRef.current = 0;
+          isSubmittingRef.current = false;
+          setLoading(false);
           Alert.alert('Signup Error', 'Account creation failed. Please try again.');
         }
       }
     } catch (err: any) {
+      // Always reset submission state on error
+      isSubmittingRef.current = false;
       const msg = String(err?.message || '').toLowerCase();
       const secMatch = msg.match(/after\s+(\d+)\s*seconds?/i);
       
-      // Check for rate limiting / security cooldown
-      if (/security\s*purposes|too\s*many|rate/i.test(msg)) {
+      // Check for rate limiting / security cooldown - handle 429 and email rate limit
+      const errorCode = (err as any)?.status || (err as any)?.code || '';
+      const errorCodeStr = String(errorCode).toLowerCase();
+      if (/security\s*purposes|too\s*many|rate|429|over_email_send_rate_limit|email.*rate.*limit/i.test(msg) || 
+          errorCode === 429 || 
+          errorCodeStr.includes('429') ||
+          errorCodeStr.includes('rate_limit')) {
         const wait = Number(secMatch?.[1]) || 60;
         setCooldownSec(wait);
+        // Clear email tracking to allow retry after cooldown
+        lastSignupEmailRef.current = null;
+        lastSignupTimeRef.current = 0;
         setLoading(false); // CRITICAL: Reset loading state so user can see the cooldown
         Alert.alert(
           'Rate Limit Reached', 
-          `For security purposes, please try again in ${wait} seconds. The timer will count down automatically.`,
+          `Too many signup attempts. Please wait ${wait} seconds before trying again. The timer will count down automatically.`,
           [{ text: 'OK' }]
         );
         return;
@@ -522,6 +619,9 @@ export default function AuthScreen() {
       
       // Check for duplicate email errors
       if (/already registered|user already exists|email address is already registered/i.test(msg)) {
+        // Clear email tracking
+        lastSignupEmailRef.current = null;
+        lastSignupTimeRef.current = 0;
         setLoading(false); // Reset loading state
         Alert.alert(
           'Account Already Exists',
@@ -535,6 +635,8 @@ export default function AuthScreen() {
                 setPassword('');
                 setConfirmPassword('');
                 setCooldownSec(0); // Clear any cooldown when switching to login
+                lastSignupEmailRef.current = null;
+                lastSignupTimeRef.current = 0;
               },
             },
             {
@@ -546,8 +648,13 @@ export default function AuthScreen() {
         return;
       }
       
-      // For all other errors, reset loading state
+      // For all other errors, reset loading state and clear tracking after delay
+      isSubmittingRef.current = false;
       setLoading(false);
+      setTimeout(() => {
+        lastSignupEmailRef.current = null;
+        lastSignupTimeRef.current = 0;
+      }, 10000); // Clear after 10 seconds
       
       // Generic error message - more user-friendly
       Alert.alert(
@@ -558,6 +665,9 @@ export default function AuthScreen() {
       );
       // Don't redirect on error - stay on the same screen
     } finally {
+      // CRITICAL: Always ensure ref is reset even if something unexpected happens
+      // This prevents the button from being permanently disabled
+      isSubmittingRef.current = false;
       setLoading(false);
     }
   };

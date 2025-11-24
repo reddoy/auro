@@ -172,13 +172,15 @@ export async function updateProfilePreferences(
   const user = userResult.user;
   if (!user) throw new Error('Not signed in');
 
+  let existingRow: any | null = null;
   let existingPreferences: ProfilePreferences | null = null;
   try {
-    const { data: existingRow } = await supabase
+    const { data } = await supabase
       .from('profiles')
-      .select('preferences')
+      .select('id, preferences')
       .eq('id', user.id)
       .maybeSingle();
+    existingRow = data || null;
     existingPreferences = (existingRow?.preferences as ProfilePreferences) || null;
   } catch {}
 
@@ -190,6 +192,33 @@ export async function updateProfilePreferences(
           ...(partial || {}),
         } as ProfilePreferences);
 
+  // Check if profile exists - if not, we need to create it with seeded data
+  const profileExists = !!existingRow;
+  
+  if (!profileExists) {
+    // Profile doesn't exist - create it with seeded data from user metadata
+    const metadata = user.user_metadata || {};
+    const nameParts = (metadata.name || '').trim().split(' ');
+    const seededProfile: any = {
+      id: user.id,
+      first_name: nameParts[0] || null,
+      last_name: nameParts.slice(1).join(' ') || null,
+      username: metadata.user_name || (user.email ? String(user.email).split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').slice(0, 24) : null),
+      avatar_url: metadata.avatar_url || null,
+      preferences: merged,
+    };
+
+    // Use upsert to create the profile if it doesn't exist
+    const { data: upserted, error: upsertError } = await supabase
+      .from('profiles')
+      .upsert(seededProfile, { onConflict: 'id' })
+      .select('preferences')
+      .single();
+    if (upsertError) throw upsertError;
+    return upserted?.preferences as ProfilePreferences | null;
+  }
+
+  // Profile exists - use update
   const { data, error } = await supabase
     .from('profiles')
     .update({ preferences: merged })

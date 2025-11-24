@@ -119,24 +119,26 @@ export async function POST(req: Request) {
     // Check if reviewer has Stripe Connect account
     const connectAccountId = reviewer.stripe_connect_account_id;
     if (!connectAccountId) {
-      // Log this as a failed distribution attempt
+      // Hold payment until Stripe is set up - don't mark as failed, just pending
       await admin
         .from('requests')
         .update({ 
           payment_distribution_attempts: (request.payment_distribution_attempts || 0) + 1,
-          payment_distribution_error: 'Reviewer has not set up Stripe Connect account',
-          payment_distribution_failed_at: new Date().toISOString()
+          payment_distribution_error: 'Payment held: Reviewer has not set up Stripe Connect account. Payment will be distributed once Stripe is connected.',
         })
         .eq('id', requestId);
 
+      // Return success with message that payment is being held
       return new Response(JSON.stringify({ 
-        error: 'Reviewer has not set up their payment account yet.',
+        success: true,
+        held: true,
+        message: 'Payment is being held until reviewer sets up Stripe Connect account.',
         errorType: 'NO_CONNECT_ACCOUNT',
         reviewerId: request.influencer_id,
         reviewerName: reviewer.full_name || reviewer.username,
         reviewerEmail: reviewer.email,
-        message: 'Please ask the reviewer to complete their Stripe Connect setup in their profile settings.'
-      }), { status: 400 });
+        note: 'Reviewer can still complete reviews. Payment will be distributed automatically once Stripe is connected.'
+      }), { status: 200 });
     }
 
     // Pre-flight check: Verify account status before attempting transfer

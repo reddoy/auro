@@ -433,15 +433,8 @@ export default function FoundingReviewerApplyPage() {
           return;
         }
 
-        // Fallback to creators table (legacy)
-        const { data, error } = await supabase
-          .from('creators')
-          .select('id', { count: 'exact' })
-          .eq('is_reviewer', true);
-
-        if (!error && data) {
-          setReviewerCount(data.length || 0);
-        }
+        // If profile query failed, just keep the current count
+        // No fallback needed - only profiles table exists
       } catch (err) {
         console.error('Error fetching reviewer count:', err);
         // Silently fail - default to 0
