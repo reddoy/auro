@@ -570,14 +570,15 @@ export async function markReviewAsViewed(requestId: string): Promise<void> {
 export async function getProfileById(id: string): Promise<{ id: string; displayName: string; username?: string | null; avatarUrl?: string | null } | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, username, avatar_url')
+    .select('id, first_name, last_name, username, avatar_url')
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
+  const displayName = [data.first_name, data.last_name].filter(Boolean).join(' ') || data.username || 'User';
   return {
     id: data.id,
-    displayName: data.full_name || data.username || 'User',
+    displayName,
     username: data.username || null,
     avatarUrl: data.avatar_url || null,
   };

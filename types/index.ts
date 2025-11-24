@@ -180,11 +180,11 @@ export interface ProfilePreferences {
 export interface Profile {
   id: string;
   username?: string | null;
-  full_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
   avatar_url?: string | null;
   bio?: string | null;
-  is_reviewer?: boolean;
-  reviewer_approved?: 'pending' | 'approved' | 'rejected' | null;
+  is_reviewer?: 'pending' | 'approved' | 'rejected' | null;
   created_at?: string;
   skills?: string[] | null;
   links?: ProfileLinks | null;
@@ -219,8 +219,8 @@ export interface UserReview {
   comment?: string | null;
   created_at: string;
   // Optional denormalized fields for UI rendering
-  author?: { id: string; username?: string | null; full_name?: string | null; avatar_url?: string | null };
-  subject?: { id: string; username?: string | null; full_name?: string | null; avatar_url?: string | null };
+  author?: { id: string; username?: string | null; first_name?: string | null; last_name?: string | null; avatar_url?: string | null };
+  subject?: { id: string; username?: string | null; first_name?: string | null; last_name?: string | null; avatar_url?: string | null };
   // Per-user archiving flags (optional, may not exist in all DBs)
   archived_by_author?: boolean | null;
   archived_by_subject?: boolean | null;

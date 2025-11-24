@@ -24,9 +24,9 @@ export default function StripeSetupScreen() {
       try {
         const p = await getCurrentProfile();
         setProfile(p);
-        // Mark user as reviewer
-        if (p && !p.is_reviewer) {
-          await updateProfile({ is_reviewer: true });
+        // Mark user as reviewer pending approval
+        if (p && p.is_reviewer !== 'pending' && p.is_reviewer !== 'approved') {
+          await updateProfile({ is_reviewer: 'pending' as any });
         }
       } catch (e: any) {
         const message = e?.message || 'Failed to load profile';
@@ -74,9 +74,9 @@ export default function StripeSetupScreen() {
           {
             text: 'Continue to Next Step',
             onPress: () => {
-              // Mark as reviewer if not already
-              if (profile && !profile.is_reviewer) {
-                updateProfile({ is_reviewer: true }).catch(() => {});
+              // Mark as reviewer pending approval
+              if (profile && profile.is_reviewer !== 'pending' && profile.is_reviewer !== 'approved') {
+                updateProfile({ is_reviewer: 'pending' as any }).catch(() => {});
               }
               // Skip share-link step in app - go directly to review-pending
               updateProfilePreferences({ onboarding_step: 'reviewer_review_pending' }).catch(() => {});
@@ -87,9 +87,9 @@ export default function StripeSetupScreen() {
             text: 'Skip for Now',
             style: 'cancel',
             onPress: () => {
-              // Skip Stripe setup - mark as reviewer and continue
-              if (profile && !profile.is_reviewer) {
-                updateProfile({ is_reviewer: true }).catch(() => {});
+              // Skip Stripe setup - mark as reviewer pending approval
+              if (profile && profile.is_reviewer !== 'pending' && profile.is_reviewer !== 'approved') {
+                updateProfile({ is_reviewer: 'pending' as any }).catch(() => {});
               }
               // Skip share-link step in app - go directly to review-pending
               updateProfilePreferences({ onboarding_step: 'reviewer_review_pending' }).catch(() => {});
@@ -114,9 +114,9 @@ export default function StripeSetupScreen() {
         { 
           text: 'Skip for Now', 
           onPress: () => {
-            // Mark as reviewer even if skipping Stripe
-            if (profile && !profile.is_reviewer) {
-              updateProfile({ is_reviewer: true }).catch(() => {});
+            // Mark as reviewer pending approval even if skipping Stripe
+            if (profile && profile.is_reviewer !== 'pending' && profile.is_reviewer !== 'approved') {
+              updateProfile({ is_reviewer: 'pending' as any }).catch(() => {});
             }
             // Skip share-link step in app - go directly to review-pending
             updateProfilePreferences({ onboarding_step: 'reviewer_review_pending' }).catch(() => {});

@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 import Colors from '@/constants/Colors';
 import AvatarUploader from '@/components/AvatarUploader';
 import { getCurrentProfile, updateProfile, getSignedAvatarUrl } from '@/lib/profile';
+import { getDisplayName } from '@/lib/profile-utils';
 import type { Profile } from '@/types';
 import { createStripeExpressLoginLink, createStripeExpressOnboardingLink } from '@/lib/payments';
 import { getRequestsByReviewer } from '@/lib/api';
@@ -494,7 +495,7 @@ export default function ProfileScreen() {
               </MotionView>
               <MotionView entering={subtleFadeIn()} style={styles.userInfo}>
                 <Text style={styles.userName}>
-                  {profile ? (profile.full_name || profile.username || 'User') : 'Loading...'}
+                  {profile ? getDisplayName(profile.first_name, profile.last_name, profile.username) : 'Loading...'}
                 </Text>
                 {!!profile?.created_at && (
                   <Text style={styles.userEmail} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
@@ -769,6 +770,22 @@ export default function ProfileScreen() {
                   />
                 </MotionView>
               </View>
+              
+              {/* Pending Approval Message */}
+              {profile?.reviewer_approved === 'pending' && (
+                <MotionView entering={cardEntrance(1)} style={styles.pendingApprovalCard}>
+                  <RNView style={styles.pendingApprovalContent}>
+                    <Text style={styles.pendingApprovalIcon}>⏳</Text>
+                    <RNView style={styles.pendingApprovalTextContainer}>
+                      <Text style={styles.pendingApprovalTitle}>Under Review</Text>
+                      <Text style={styles.pendingApprovalMessage}>
+                        Your reviewer application is currently under review. You'll receive an email notification with the approval or denial decision within a few business days.
+                      </Text>
+                    </RNView>
+                  </RNView>
+                </MotionView>
+              )}
+              
               {profile?.is_reviewer && profile?.reviewer_approved === 'approved' ? (
                 <>
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
@@ -1705,6 +1722,45 @@ const styles = StyleSheet.create({
   },
   modalButtonDisabledText: {
     color: Colors.brand.textSecondary,
+  },
+  pendingApprovalCard: {
+    marginTop: 16,
+    backgroundColor: 'rgba(251, 191, 36, 0.1)',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(251, 191, 36, 0.3)',
+    shadowColor: '#fbbf24',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  pendingApprovalContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: 'transparent',
+  },
+  pendingApprovalIcon: {
+    fontSize: 28,
+    marginRight: 12,
+    marginTop: 2,
+  },
+  pendingApprovalTextContainer: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  pendingApprovalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+    marginBottom: 8,
+    fontFamily: 'Poppins_700Bold',
+  },
+  pendingApprovalMessage: {
+    fontSize: 14,
+    color: Colors.brand.textSecondary,
+    lineHeight: 20,
   },
 });
 

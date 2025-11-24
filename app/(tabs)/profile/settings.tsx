@@ -70,11 +70,9 @@ export default function ProfileSettingsScreen() {
         const p = await getCurrentProfile();
         setProfile(p);
         if (p) {
-          // Split full name into first and last name
-          const fullName = p.full_name || '';
-          const nameParts = fullName.trim().split(' ');
-          setFirstName(nameParts[0] || '');
-          setLastName(nameParts.slice(1).join(' ') || '');
+          // Use first_name and last_name directly
+          setFirstName(p.first_name || '');
+          setLastName(p.last_name || '');
           setUsername(p.username || '');
           setBio(p.bio || '');
           setInstagram(normalizeHandle((p.links as any)?.instagram || ''));
@@ -145,7 +143,8 @@ export default function ProfileSettingsScreen() {
         linktree: normalizeHandle(linktree) || null,
       } as any;
       const payload: Partial<Profile> = {
-        full_name: `${firstName} ${lastName}`.trim() || null,
+        first_name: firstName.trim() || null,
+        last_name: lastName.trim() || null,
         username: username || null,
         bio: bio || null,
         links,

@@ -72,19 +72,23 @@ export async function getCurrentProfile(): Promise<Profile | null> {
   if (!user) return null;
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, username, full_name, avatar_url, bio, is_reviewer, reviewer_approved, created_at, skills, links, preferences, hourly_rate, availability, reviews_given_count, reviews_received_count, rating_average, packages, pending_payout_balance_cents, awaiting_payout_balance_cents, completed_paid_total_cents, stripe_connect_account_id')
+    .select('id, username, first_name, last_name, avatar_url, bio, is_reviewer, created_at, skills, links, preferences, hourly_rate, availability, reviews_given_count, reviews_received_count, rating_average, packages, pending_payout_balance_cents, awaiting_payout_balance_cents, completed_paid_total_cents, stripe_connect_account_id')
     .eq('id', user.id)
     .maybeSingle();
   if (error) throw error;
   if (!data) {
     // Return minimal shape if row doesn't exist yet
+    // Try to split user metadata name into first and last name
+    const metadataName = user.user_metadata?.name || '';
+    const nameParts = metadataName.trim().split(' ');
     return {
       id: user.id,
       username: user.user_metadata?.user_name || null,
-      full_name: user.user_metadata?.name || null,
+      first_name: nameParts[0] || null,
+      last_name: nameParts.slice(1).join(' ') || null,
       avatar_url: user.user_metadata?.avatar_url || null,
       bio: null,
-      is_reviewer: false,
+      is_reviewer: null,
       created_at: undefined,
       skills: null,
       links: null,
@@ -105,13 +109,13 @@ export async function updateProfile(partial: Partial<Profile>): Promise<Profile>
   const user = userResult.user;
   if (!user) throw new Error('Not signed in');
   // If the profile row doesn't exist yet, we should seed key identity fields
-  // (full_name, username, and optionally avatar_url) from auth metadata so we
+  // (first_name, last_name, username, and optionally avatar_url) from auth metadata so we
   // don't create a new row that wipes the displayed name to "User".
   let existing: any | null = null;
   try {
     const { data: existingRow } = await supabase
       .from('profiles')
-      .select('id, username, full_name, avatar_url, preferences')
+      .select('id, username, first_name, last_name, avatar_url, preferences')
       .eq('id', user.id)
       .maybeSingle();
     existing = existingRow || null;
@@ -124,7 +128,10 @@ export async function updateProfile(partial: Partial<Profile>): Promise<Profile>
       (seeded as any).username = metadata.user_name;
     }
     if (metadata.name) {
-      (seeded as any).full_name = metadata.name;
+      // Split metadata name into first and last name
+      const nameParts = (metadata.name || '').trim().split(' ');
+      (seeded as any).first_name = nameParts[0] || null;
+      (seeded as any).last_name = nameParts.slice(1).join(' ') || null;
     }
     // Only seed avatar_url from metadata if caller isn't explicitly updating it
     if (partial.avatar_url === undefined && metadata.avatar_url) {
@@ -145,7 +152,7 @@ export async function updateProfile(partial: Partial<Profile>): Promise<Profile>
   const { data, error } = await supabase
     .from('profiles')
     .upsert(update, { onConflict: 'id' })
-    .select('id, username, full_name, avatar_url, bio, is_reviewer, created_at, skills, links, preferences, hourly_rate, availability, reviews_given_count, reviews_received_count, rating_average, packages, pending_payout_balance_cents, awaiting_payout_balance_cents, completed_paid_total_cents')
+    .select('id, username, first_name, last_name, avatar_url, bio, is_reviewer, created_at, skills, links, preferences, hourly_rate, availability, reviews_given_count, reviews_received_count, rating_average, packages, pending_payout_balance_cents, awaiting_payout_balance_cents, completed_paid_total_cents')
     .single();
   if (error) throw error;
   return data as Profile;
@@ -347,7 +354,7 @@ export async function getReviewsGiven(userId: string, opts: { page?: number; pag
   try {
     const { data, error } = await supabase
       .from('reviews')
-      .select('id, author_id, subject_id, rating, comment, created_at, archived_by_author, archived_by_subject, author:author_id(id, username, full_name, avatar_url), subject:subject_id(id, username, full_name, avatar_url)')
+      .select('id, author_id, subject_id, rating, comment, created_at, archived_by_author, archived_by_subject, author:author_id(id, username, first_name, last_name, avatar_url), subject:subject_id(id, username, first_name, last_name, avatar_url)')
       .eq('author_id', userId)
       .order('created_at', { ascending: false })
       .range(from, to);
@@ -356,7 +363,7 @@ export async function getReviewsGiven(userId: string, opts: { page?: number; pag
   } catch {
     const { data, error } = await supabase
       .from('reviews')
-      .select('id, author_id, subject_id, rating, comment, created_at, author:author_id(id, username, full_name, avatar_url), subject:subject_id(id, username, full_name, avatar_url)')
+      .select('id, author_id, subject_id, rating, comment, created_at, author:author_id(id, username, first_name, last_name, avatar_url), subject:subject_id(id, username, first_name, last_name, avatar_url)')
       .eq('author_id', userId)
       .order('created_at', { ascending: false })
       .range(from, to);
@@ -379,7 +386,7 @@ export async function getReviewsReceived(userId: string, opts: { page?: number; 
   try {
     const { data, error } = await supabase
       .from('reviews')
-      .select('id, author_id, subject_id, rating, comment, created_at, archived_by_author, archived_by_subject, author:author_id(id, username, full_name, avatar_url), subject:subject_id(id, username, full_name, avatar_url)')
+      .select('id, author_id, subject_id, rating, comment, created_at, archived_by_author, archived_by_subject, author:author_id(id, username, first_name, last_name, avatar_url), subject:subject_id(id, username, first_name, last_name, avatar_url)')
       .eq('subject_id', userId)
       .order('created_at', { ascending: false })
       .range(from, to);
@@ -388,7 +395,7 @@ export async function getReviewsReceived(userId: string, opts: { page?: number; 
   } catch {
     const { data, error } = await supabase
       .from('reviews')
-      .select('id, author_id, subject_id, rating, comment, created_at, author:author_id(id, username, full_name, avatar_url), subject:subject_id(id, username, full_name, avatar_url)')
+      .select('id, author_id, subject_id, rating, comment, created_at, author:author_id(id, username, first_name, last_name, avatar_url), subject:subject_id(id, username, first_name, last_name, avatar_url)')
       .eq('subject_id', userId)
       .order('created_at', { ascending: false })
       .range(from, to);

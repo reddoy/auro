@@ -10,10 +10,7 @@ import { MotionView, MotionPressable, cardEntrance } from '@/components/motion';
 import { MotionDelays } from '@/components/motion/tokens';
 import { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
-// TODO: Replace this with your actual profile picture URL
-// You can host it on Supabase Storage, Cloudinary, or any CDN
-// Example: 'https://your-cdn.com/your-picture.jpg' or a Supabase Storage URL
-const OWNER_PROFILE_PICTURE_URL = 'https://via.placeholder.com/150'; // Replace with your actual picture URL
+// Using the rohan headshot from assets
 
 export default function ReviewPendingScreen() {
   const insets = useSafeAreaInsets();
@@ -56,9 +53,9 @@ export default function ReviewPendingScreen() {
           <MotionView entering={ZoomIn.duration(500).delay(MotionDelays.quick)}>
             <RNView style={styles.avatarContainer}>
               <Image 
-                source={{ uri: OWNER_PROFILE_PICTURE_URL }}
+                source={require('@/assets/images/rohan-headshot-backyard.jpg')}
                 style={styles.avatar}
-                defaultSource={require('@/assets/images/icon.png')} // Fallback if image fails to load
+                resizeMode="cover"
               />
             </RNView>
           </MotionView>
