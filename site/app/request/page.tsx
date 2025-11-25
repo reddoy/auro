@@ -169,8 +169,9 @@ export default function RequestPage() {
           } else if (creatorId) {
             setRequestData(prev => ({ ...prev, creatorId }));
           }
-          // Only change step if we're still on intro (don't override if user has progressed)
-          setCurrentStep('creator-selection');
+          // Skip creator-selection step and go directly to photo-upload when coming from app
+          // This provides a smoother experience when user has already selected a reviewer in the app
+          setCurrentStep('photo-upload');
         }
         urlParamsProcessed.current = true;
       }
