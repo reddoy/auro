@@ -9,7 +9,7 @@ import { Text, View } from '@/components/Themed';
 import { supabase } from '@/lib/supabase';
 import Colors from '@/constants/Colors';
 import AvatarUploader from '@/components/AvatarUploader';
-import { getCurrentProfile, updateProfile, getSignedAvatarUrl } from '@/lib/profile';
+import { getCurrentProfile, updateProfile, getSignedAvatarUrl, getReviewerOnboardingStartStep, updateProfilePreferences } from '@/lib/profile';
 import { getDisplayName } from '@/lib/profile-utils';
 import type { Profile } from '@/types';
 import { createStripeExpressLoginLink, createStripeExpressOnboardingLink } from '@/lib/payments';
@@ -693,14 +693,23 @@ export default function ProfileScreen() {
                         );
                         return;
                       }
-                      // If enabling, proceed normally
+                      // If enabling, navigate to reviewer onboarding flow
                       if (val) {
                         try {
-                          const updated = await updateProfile({ is_reviewer: val });
-                          setProfile(updated);
-                          Alert.alert('Reviewer enabled', 'Your reviewer profile is now active.');
+                          // Determine which onboarding step to start from based on existing profile data
+                          const { route, step } = getReviewerOnboardingStartStep(profile);
+                          
+                          // Set onboarding preferences to indicate they're starting reviewer onboarding
+                          await updateProfilePreferences({
+                            onboarding_role: 'reviewer',
+                            onboarding_step: step,
+                            onboarding_completed: false,
+                          });
+                          
+                          // Navigate to the appropriate onboarding step
+                          router.push(route);
                         } catch (e: any) {
-                          Alert.alert('Error', e?.message || 'Failed to update reviewer status');
+                          Alert.alert('Error', e?.message || 'Failed to start reviewer onboarding');
                         }
                         return;
                       }
@@ -1010,7 +1019,8 @@ export default function ProfileScreen() {
                         return;
                       }
                       try {
-                        const updated = await updateProfile({ is_reviewer: false });
+                        // Set is_reviewer to null (not false) to match the constraint
+                        const updated = await updateProfile({ is_reviewer: null });
                         setProfile(updated);
                         setShowConfirmModal(false);
                         setConfirmText('');

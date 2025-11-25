@@ -4,6 +4,40 @@ import Constants from 'expo-constants';
 import type { Profile, ProfilePreferences, UserReview, ReviewerPackage } from '@/types';
 
 /**
+ * Determines which reviewer onboarding step to start from based on existing profile data.
+ * Returns the route and onboarding step preference to set.
+ */
+export function getReviewerOnboardingStartStep(profile: Profile | null | undefined): { route: string; step: string } {
+  if (!profile) {
+    // No profile, start from the beginning
+    return { route: '/onboarding/reviewer/bio', step: 'reviewer_bio' };
+  }
+
+  // Check what fields are already filled to determine where to start
+  const hasBio = !!(profile.bio && profile.bio.trim());
+  const hasRate = !!(profile.hourly_rate && profile.hourly_rate > 0);
+  const hasAvatar = !!(profile.avatar_url && profile.avatar_url.trim());
+  const hasStripe = !!(profile.stripe_connect_account_id && profile.stripe_connect_account_id.trim());
+
+  // Determine starting step based on what's missing
+  if (!hasBio) {
+    return { route: '/onboarding/reviewer/bio', step: 'reviewer_bio' };
+  }
+  if (!hasRate) {
+    return { route: '/onboarding/reviewer/rate', step: 'reviewer_rate' };
+  }
+  if (!hasAvatar) {
+    return { route: '/onboarding/reviewer/profile-picture', step: 'reviewer_profile_picture' };
+  }
+  if (!hasStripe) {
+    return { route: '/onboarding/reviewer/stripe', step: 'reviewer_stripe' };
+  }
+  
+  // All fields are filled, go to review-pending (final step)
+  return { route: '/onboarding/reviewer/review-pending', step: 'reviewer_review_pending' };
+}
+
+/**
  * Resolves the destination route based on the user's onboarding status.
  * Returns the appropriate route to navigate to after sign-in.
  */
