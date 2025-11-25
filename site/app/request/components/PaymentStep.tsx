@@ -24,7 +24,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
       try {
         let query = supabase
           .from('profiles')
-          .select('id, full_name, username, avatar_url, hourly_rate')
+          .select('id, first_name, last_name, username, avatar_url, hourly_rate')
           .eq('is_reviewer', true);
 
         if (requestData.creatorId) {
@@ -38,7 +38,9 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
         if (error) throw error;
 
         if (data) {
-          setCreatorInfo(data);
+          // Construct full_name from first_name and last_name for backward compatibility
+          const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ') || null;
+          setCreatorInfo({ ...data, full_name: fullName });
           setPrice(data.hourly_rate || 10);
         }
       } catch (error) {

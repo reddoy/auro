@@ -22,9 +22,20 @@ export async function POST(req: Request) {
     const influencerId = (reqRow as any).influencer_id as string | undefined;
 
     const [reviewee, reviewer] = await Promise.all([
-      userId ? admin.from('profiles').select('id, full_name, username, avatar_url').eq('id', userId).maybeSingle() : Promise.resolve({ data: null } as any),
-      influencerId ? admin.from('profiles').select('id, full_name, username, avatar_url').eq('id', influencerId).maybeSingle() : Promise.resolve({ data: null } as any),
+      userId ? admin.from('profiles').select('id, first_name, last_name, username, avatar_url').eq('id', userId).maybeSingle() : Promise.resolve({ data: null } as any),
+      influencerId ? admin.from('profiles').select('id, first_name, last_name, username, avatar_url').eq('id', influencerId).maybeSingle() : Promise.resolve({ data: null } as any),
     ]);
+
+    // Construct full_name from first_name and last_name for backward compatibility
+    const revieweeData = reviewee?.data ? {
+      ...reviewee.data,
+      full_name: [reviewee.data.first_name, reviewee.data.last_name].filter(Boolean).join(' ') || null,
+    } : null;
+
+    const reviewerData = reviewer?.data ? {
+      ...reviewer.data,
+      full_name: [reviewer.data.first_name, reviewer.data.last_name].filter(Boolean).join(' ') || null,
+    } : null;
 
     const payload = {
       id: (reqRow as any).id,
@@ -33,8 +44,8 @@ export async function POST(req: Request) {
       created_at: (reqRow as any).created_at,
       photos: (reqRow as any).photos,
       notes: (reqRow as any).notes,
-      reviewee: reviewee?.data || null,
-      reviewer: reviewer?.data || null,
+      reviewee: revieweeData,
+      reviewer: reviewerData,
     };
 
     return new Response(JSON.stringify(payload), { status: 200 });

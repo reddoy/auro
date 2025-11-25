@@ -25,7 +25,7 @@ export default function PromptAnswers({ message, onMessageChange, onNext, onBack
       try {
         let query = supabase
           .from('profiles')
-          .select('full_name')
+          .select('first_name, last_name')
           .eq('is_reviewer', true);
 
         if (creatorId) {
@@ -38,9 +38,8 @@ export default function PromptAnswers({ message, onMessageChange, onNext, onBack
 
         if (error) throw error;
 
-        if (data?.full_name) {
-          const firstName = data.full_name.split(' ')[0];
-          setCreatorFirstName(firstName);
+        if (data?.first_name) {
+          setCreatorFirstName(data.first_name);
         }
       } catch (error) {
         console.error('Error fetching creator name:', error);

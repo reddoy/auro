@@ -62,7 +62,7 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
 
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, bio, links, stripe_connect_account_id')
+          .select('id, first_name, last_name, username, avatar_url, skills, hourly_rate, rating_average, bio, links, stripe_connect_account_id')
           .eq('is_reviewer', true)
           .not('stripe_connect_account_id', 'is', null) // Only show reviewers with Connect accounts
           .not('hourly_rate', 'is', null) // Only show reviewers who have set their rate
@@ -72,17 +72,20 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
         if (error) throw error;
 
         // Normalize data to ensure required fields exist
-        const normalized: Creator[] = (data || []).map((c: any) => ({
-          id: c.id,
-          username: c.username,
-          avatar_url: c.avatar_url,
-          full_name: c.full_name,
-          skills: c.skills || [],
-          hourly_rate: c.hourly_rate ?? undefined,
-          rating_average: c.rating_average ?? undefined,
-          bio: c.bio ?? undefined,
-          links: c.links ?? undefined,
-        }));
+        const normalized: Creator[] = (data || []).map((c: any) => {
+          const fullName = [c.first_name, c.last_name].filter(Boolean).join(' ') || null;
+          return {
+            id: c.id,
+            username: c.username,
+            avatar_url: c.avatar_url,
+            full_name: fullName || '',
+            skills: c.skills || [],
+            hourly_rate: c.hourly_rate ?? undefined,
+            rating_average: c.rating_average ?? undefined,
+            bio: c.bio ?? undefined,
+            links: c.links ?? undefined,
+          };
+        });
 
         // Filter out current user if they're a reviewer
         const filteredCreators = currentUser?.id 
