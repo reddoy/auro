@@ -26,7 +26,7 @@ export default function PromptAnswers({ message, onMessageChange, onNext, onBack
         let query = supabase
           .from('profiles')
           .select('first_name, last_name')
-          .eq('is_reviewer', true);
+          .eq('is_reviewer', 'approved'); // Only show approved reviewers
 
         if (creatorId) {
           query = query.eq('id', creatorId);

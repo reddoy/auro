@@ -25,7 +25,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
         let query = supabase
           .from('profiles')
           .select('id, first_name, last_name, username, avatar_url, hourly_rate')
-          .eq('is_reviewer', true);
+          .eq('is_reviewer', 'approved'); // Only show approved reviewers
 
         if (requestData.creatorId) {
           query = query.eq('id', requestData.creatorId);
