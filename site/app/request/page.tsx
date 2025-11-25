@@ -13,6 +13,7 @@ import ConsentForm from './components/ConsentForm';
 import AuthStep from './components/AuthStep';
 import PaymentStep from './components/PaymentStep';
 import DownloadApp from './components/DownloadApp';
+import AsyncAvatar from './components/AsyncAvatar';
 
 export type RequestData = {
   creatorId?: string;
@@ -772,10 +773,88 @@ export default function RequestPage() {
     );
   };
 
+  // Selected Reviewer Indicator Component
+  const SelectedReviewerIndicator = () => {
+    const [reviewerInfo, setReviewerInfo] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+      // Only show on photo-upload step and if we have a creator selected
+      if (currentStep !== 'photo-upload' || (!requestData.creatorId && !requestData.creatorSlug)) {
+        setReviewerInfo(null);
+        return;
+      }
+
+      const fetchReviewerInfo = async () => {
+        if (!supabase) return;
+        
+        setLoading(true);
+        try {
+          let query = supabase
+            .from('profiles')
+            .select('id, first_name, last_name, username, avatar_url')
+            .eq('is_reviewer', 'approved');
+
+          if (requestData.creatorId) {
+            query = query.eq('id', requestData.creatorId);
+          } else if (requestData.creatorSlug) {
+            query = query.eq('username', requestData.creatorSlug);
+          }
+
+          const { data, error } = await query.maybeSingle();
+
+          if (error) throw error;
+
+          if (data) {
+            const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ') || data.username || 'Reviewer';
+            setReviewerInfo({
+              ...data,
+              full_name: fullName
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching reviewer info:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchReviewerInfo();
+    }, [currentStep, requestData.creatorId, requestData.creatorSlug, supabase]);
+
+    // Only render on photo-upload step and if we have reviewer info
+    if (currentStep !== 'photo-upload' || !reviewerInfo) {
+      return null;
+    }
+
+    return (
+      <div className="w-full px-4 py-3 bg-gradient-to-r from-[#0c0325]/80 to-[#1a0b3d]/80 border-b border-white/10">
+        <div className="max-w-6xl mx-auto flex items-center justify-center gap-3">
+          <div className="flex items-center gap-3 bg-white/5 rounded-full px-4 py-2.5 border border-white/10 shadow-lg shadow-green-500/10">
+            <div className="relative">
+              <AsyncAvatar 
+                avatarPathOrUrl={reviewerInfo.avatar_url} 
+                alt={reviewerInfo.full_name}
+                size={32}
+              />
+              <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-4 h-4 rounded-full bg-green-500 text-white text-[10px] font-bold border-2 border-[#0c0325] shadow-sm">
+                ✓
+              </div>
+            </div>
+            <span className="text-white font-medium text-sm md:text-base">
+              Reviewing with <span className="font-semibold text-green-400">{reviewerInfo.full_name}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0c0325] via-[#1a0b3d] to-[#0c0325] text-white">
       <div className="w-full">
         <Stepper />
+        <SelectedReviewerIndicator />
       </div>
 
       <div className="request-content px-4 max-w-6xl mx-auto">
