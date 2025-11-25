@@ -140,13 +140,14 @@ export default function RequestPage() {
   // Handle URL parameters to pre-populate creator selection
   // Process after auth check is complete (works for both authenticated and unauthenticated users)
   // Only runs once when auth is checked, not on every step change
+  const urlParamsProcessed = useRef(false);
   useEffect(() => {
-    if (typeof window !== 'undefined' && authChecked && currentStep === 'intro') {
+    if (typeof window !== 'undefined' && authChecked && currentStep === 'intro' && !urlParamsProcessed.current) {
       const urlParams = new URLSearchParams(window.location.search);
       const creatorSlug = urlParams.get('creatorSlug');
       const creatorId = urlParams.get('creatorId');
       
-      // Process URL params only if we're still on intro step
+      // Process URL params only if we're still on intro step and haven't processed them yet
       // Don't override if user has already progressed through the flow
       if (creatorSlug || creatorId) {
         // Try to restore flow state first (for OAuth return)
@@ -162,6 +163,7 @@ export default function RequestPage() {
           // Only change step if we're still on intro (don't override if user has progressed)
           setCurrentStep('creator-selection');
         }
+        urlParamsProcessed.current = true;
       }
     }
   }, [authChecked, currentStep]);
@@ -372,12 +374,16 @@ export default function RequestPage() {
     }
   };
 
-  const previousStep = () => {
-    const currentIndex = STEPS.indexOf(currentStep);
-    if (currentIndex > 0) {
-      setCurrentStep(STEPS[currentIndex - 1]);
-    }
-  };
+  const previousStep = useCallback(() => {
+    // Use functional update to ensure we're using the latest state
+    setCurrentStep(prevStep => {
+      const prevIndex = STEPS.indexOf(prevStep);
+      if (prevIndex > 0) {
+        return STEPS[prevIndex - 1];
+      }
+      return prevStep;
+    });
+  }, []);
 
   const goToStep = (step: Step) => {
     setCurrentStep(step);
