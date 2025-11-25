@@ -248,6 +248,46 @@ export default function RequestPage() {
                 return;
               }
               
+              // Check for auth code from app (for seamless login)
+              const urlParams = new URLSearchParams(window.location.search);
+              const authCode = urlParams.get('authCode');
+              
+              if (authCode) {
+                try {
+                  // Exchange the code for session data
+                  const response = await fetch(`/api/auth/app-session?code=${encodeURIComponent(authCode)}`);
+                  if (response.ok) {
+                    const { accessToken, refreshToken, user: userData } = await response.json();
+                    if (accessToken && refreshToken && userData) {
+                      // Set the session using both tokens
+                      const { data: sessionData, error: sessionError } = await client.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken,
+                      });
+                      
+                      if (!sessionError && sessionData.session) {
+                        const isRealUser = !!sessionData.session.user && (sessionData.session.user as any)?.app_metadata?.provider !== 'anon';
+                        setIsAuthenticated(isRealUser);
+                        
+                        console.log('[RequestPage] Session established from app, user:', userData.id);
+                        
+                        // Remove authCode from URL to clean it up
+                        urlParams.delete('authCode');
+                        const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                        window.history.replaceState({}, '', newUrl);
+                      } else {
+                        console.warn('[RequestPage] Failed to set session:', sessionError);
+                      }
+                    }
+                  } else {
+                    console.warn('[RequestPage] Failed to exchange auth code:', response.status);
+                  }
+                } catch (error) {
+                  console.warn('[RequestPage] Failed to exchange auth code:', error);
+                  // Continue with normal auth check
+                }
+              }
+              
               // Check session first (faster than getUser)
               const { data: { session } } = await client.auth.getSession();
               const isRealUser = !!session?.user && (session.user as any)?.app_metadata?.provider !== 'anon';

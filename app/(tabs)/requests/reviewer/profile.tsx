@@ -11,6 +11,7 @@ import { getReviewerById, getRequestsByReviewer, getReviewerReviewsByReviewerId 
 import { getSignedAvatarUrl } from '@/lib/profile';
 import { getReviewsReceived } from '@/lib/profile';
 import type { DbReviewerSummary } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 const socialIcons = {
   instagram: require('../../../../Instagram_icon-removebg-preview.png'),
@@ -96,7 +97,7 @@ export default function ReviewerProfileScreen() {
     try { Linking.openURL(finalUrl); } catch {}
   };
 
-  const handleRequestReview = () => {
+  const handleRequestReview = async () => {
     if (!reviewer) return;
     
     // Build URL with creatorSlug (username) if available, otherwise use creatorId
@@ -105,6 +106,32 @@ export default function ReviewerProfileScreen() {
       requestUrl += `creatorSlug=${encodeURIComponent(reviewer.username)}`;
     } else {
       requestUrl += `creatorId=${encodeURIComponent(reviewer.id)}`;
+    }
+    
+    // Try to get current session and create auth code for seamless login
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token && session?.refresh_token) {
+        // Call API to generate a temporary code
+        const response = await fetch('https://www.appauro.com/api/auth/app-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            accessToken: session.access_token,
+            refreshToken: session.refresh_token 
+          }),
+        });
+        
+        if (response.ok) {
+          const { code } = await response.json();
+          if (code) {
+            requestUrl += `&authCode=${encodeURIComponent(code)}`;
+          }
+        }
+      }
+    } catch (error) {
+      // If auth code generation fails, just continue without it
+      console.warn('Failed to generate auth code:', error);
     }
     
     try {
