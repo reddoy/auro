@@ -20,3 +20,4 @@ comment on column public.profiles.reviewer_approved is 'Reviewer approval status
 -- When reviewer_approved is 'rejected' or null, is_reviewer should be false
 
 
+
