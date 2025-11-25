@@ -169,15 +169,14 @@ export default function AuthScreen() {
       length: pwd.length >= 8,
       uppercase: /[A-Z]/.test(pwd),
       lowercase: /[a-z]/.test(pwd),
-      number: /\d/.test(pwd),
-      special: /[!@#$%^&*(),.?":{}|<>]/.test(pwd)
+      number: /\d/.test(pwd)
     };
     return requirements;
   };
 
   const isPasswordValid = (pwd: string) => {
     const reqs = validatePassword(pwd);
-    return reqs.length && reqs.uppercase && reqs.lowercase && reqs.number && reqs.special;
+    return reqs.length && reqs.uppercase && reqs.lowercase && reqs.number;
   };
 
   const [isGoogleHovered, setIsGoogleHovered] = useState(false);
@@ -326,7 +325,7 @@ export default function AuthScreen() {
           isSubmittingRef.current = false;
           setLoading(false); // Reset loading state
           Alert.alert('Password Requirements', 
-            'Password must include:\n• At least 8 characters\n• One uppercase letter\n• One lowercase letter\n• One number\n• One special character');
+            'Password must include:\n• At least 8 characters\n• One uppercase letter\n• One lowercase letter\n• One number');
           return;
         }
         
@@ -1194,7 +1193,6 @@ export default function AuthScreen() {
                   <PasswordRequirement met={validatePassword(password).uppercase} text="Uppercase letter" />
                   <PasswordRequirement met={validatePassword(password).lowercase} text="Lowercase letter" />
                   <PasswordRequirement met={validatePassword(password).number} text="Number" />
-                  <PasswordRequirement met={validatePassword(password).special} text="Special character" />
                 </View>
               )}
             </MotionView>

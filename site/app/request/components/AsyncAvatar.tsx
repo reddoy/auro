@@ -87,13 +87,11 @@ export default function AsyncAvatar({ avatarPathOrUrl, alt, size = 64 }: Props) 
           height: dimension,
           borderRadius: '50%',
           overflow: 'hidden',
-          background: '#A89BC5',
+          background: '#3a3a3a',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           boxSizing: 'border-box',
-          border: '2px solid #FF6F00',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
           position: 'relative',
         }}
         role="img"

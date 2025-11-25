@@ -4775,11 +4775,6 @@ footer {
   border-radius: 50%;
   overflow: hidden;
   margin-bottom: 16px;
-  border: 3px solid var(--border);
-}
-
-.creator-card.selected .creator-avatar {
-  border-color: var(--grad-start);
 }
 
 .creator-avatar img {

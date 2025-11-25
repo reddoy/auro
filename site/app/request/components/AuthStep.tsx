@@ -383,6 +383,7 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
                   placeholder={isSignUp ? "Create a password (min 6 characters)" : "Enter your password"}
                   minLength={6}
                   required
+                  autoComplete={isSignUp ? "new-password" : "current-password"}
                   aria-describedby={error ? 'password-error' : undefined}
                   aria-invalid={!!error && (!password || password.length < 6)}
                 />

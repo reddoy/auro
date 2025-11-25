@@ -459,7 +459,7 @@ export default function FoundingReviewerApplyPage() {
   }, [password]);
 
   const isPasswordValid = useMemo(() => {
-    return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password) && /[^A-Za-z0-9]/.test(password);
+    return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password);
   }, [password]);
 
   const passwordsMatch = useMemo(() => password && passwordConfirm && password === passwordConfirm, [password, passwordConfirm]);
@@ -554,7 +554,7 @@ export default function FoundingReviewerApplyPage() {
     if (step === 3) {
       // Password creation and account sign-up
       if (!password || !passwordConfirm) { setError('Please create and confirm your password'); return; }
-      if (!isPasswordValid) { setError('Password must be at least 8 chars with uppercase, lowercase, number, and symbol'); return; }
+      if (!isPasswordValid) { setError('Password must be at least 8 chars with uppercase, lowercase, and number'); return; }
       if (!passwordsMatch) { setError('Passwords do not match'); return; }
       try {
         setLoading(true);
@@ -1231,6 +1231,7 @@ export default function FoundingReviewerApplyPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Create a strong password"
+                    autoComplete="new-password"
                     className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                   <div className="flex items-center justify-between text-xs">
@@ -1261,6 +1262,7 @@ export default function FoundingReviewerApplyPage() {
                     value={passwordConfirm}
                     onChange={(e) => setPasswordConfirm(e.target.value)}
                     placeholder="Re-enter your password"
+                    autoComplete="new-password"
                     className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 {!passwordsMatch && passwordConfirm.length > 0 && (
@@ -1288,10 +1290,6 @@ export default function FoundingReviewerApplyPage() {
                   <li className={`flex items-center ${/\d/.test(password) ? 'text-green-400' : ''}`}>
                     <Check className={`w-3 h-3 mr-2 ${/\d/.test(password) ? 'text-green-400' : 'text-gray-500'}`} />
                     One number
-                  </li>
-                  <li className={`flex items-center ${/[^A-Za-z0-9]/.test(password) ? 'text-green-400' : ''}`}>
-                    <Check className={`w-3 h-3 mr-2 ${/[^A-Za-z0-9]/.test(password) ? 'text-green-400' : 'text-gray-500'}`} />
-                    One special character
                   </li>
                 </ul>
             </div>

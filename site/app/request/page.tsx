@@ -117,10 +117,8 @@ export default function RequestPage() {
       }
       
       if (flowState.currentStep && flowState.requestData) {
-        // Don't restore to 'auth' step - that means user was in the middle of auth
-        if (flowState.currentStep === 'auth') {
-          return false;
-        }
+        // Restore the step and data
+        // If step was 'auth', we'll let the auth listener handle advancing to payment
         setCurrentStep(flowState.currentStep);
         setRequestData(flowState.requestData);
         console.log('[RequestPage] Restored flow state:', flowState.currentStep);
@@ -141,13 +139,15 @@ export default function RequestPage() {
 
   // Handle URL parameters to pre-populate creator selection
   // Process after auth check is complete (works for both authenticated and unauthenticated users)
+  // Only runs once when auth is checked, not on every step change
   useEffect(() => {
-    if (typeof window !== 'undefined' && authChecked) {
+    if (typeof window !== 'undefined' && authChecked && currentStep === 'intro') {
       const urlParams = new URLSearchParams(window.location.search);
       const creatorSlug = urlParams.get('creatorSlug');
       const creatorId = urlParams.get('creatorId');
       
-      // Process URL params for all users (authenticated or not)
+      // Process URL params only if we're still on intro step
+      // Don't override if user has already progressed through the flow
       if (creatorSlug || creatorId) {
         // Try to restore flow state first (for OAuth return)
         const restored = restoreFlowState();
@@ -160,13 +160,11 @@ export default function RequestPage() {
             setRequestData(prev => ({ ...prev, creatorId }));
           }
           // Only change step if we're still on intro (don't override if user has progressed)
-          if (currentStep === 'intro') {
-            setCurrentStep('creator-selection');
-          }
+          setCurrentStep('creator-selection');
         }
       }
     }
-  }, [authChecked]);
+  }, [authChecked, currentStep]);
 
   // Scroll to top on step change for better UX
   useEffect(() => {
@@ -201,6 +199,7 @@ export default function RequestPage() {
 
   useEffect(() => {
     // Initialize Supabase client only on the client side
+    // CRITICAL: This should only run once on mount, not on every step change
     if (typeof window !== 'undefined') {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -233,7 +232,6 @@ export default function RequestPage() {
               if (!client?.auth) {
                 console.error('Supabase client or auth is null');
                 setIsAuthenticated(false);
-                setCurrentStep('auth');
                 setAuthChecked(true);
                 setIsInitializing(false);
                 return;
@@ -248,24 +246,9 @@ export default function RequestPage() {
               // Check if we should restore from saved state (for OAuth return)
               const restored = restoreFlowState();
               if (!restored) {
-                // Check URL params for preselected creator
-                if (typeof window !== 'undefined') {
-                  const urlParams = new URLSearchParams(window.location.search);
-                  const creatorSlug = urlParams.get('creatorSlug');
-                  const creatorId = urlParams.get('creatorId');
-                  
-                  if (creatorSlug || creatorId) {
-                    if (creatorSlug) {
-                      setRequestData(prev => ({ ...prev, creatorSlug }));
-                    } else if (creatorId) {
-                      setRequestData(prev => ({ ...prev, creatorId }));
-                    }
-                    setCurrentStep('creator-selection');
-                  } else {
-                    // Start from intro for all users (authenticated or not)
-                    setCurrentStep('intro');
-                  }
-                } else {
+                // Only set initial step if we haven't restored state AND we're still on the initial step
+                // Don't override if user has already navigated to a step
+                if (currentStepRef.current === 'intro') {
                   setCurrentStep('intro');
                 }
               }
@@ -293,9 +276,11 @@ export default function RequestPage() {
               setIsInitializing(false);
             } catch (error) {
               console.error('Auth check error:', error);
-              // On error, still allow browsing - start from intro
+              // On error, still allow browsing - don't reset step if user has progressed
               setIsAuthenticated(false);
-              setCurrentStep('intro');
+              if (currentStepRef.current === 'intro') {
+                setCurrentStep('intro');
+              }
               setAuthChecked(true);
               setIsInitializing(false);
             }
@@ -315,14 +300,18 @@ export default function RequestPage() {
             
             // Only auto-advance if user just completed authentication (not if they were already authenticated)
             // Use ref to get the latest currentStep value
-            if (isRealUser && currentStepRef.current === 'auth' && event === 'SIGNED_IN') {
+            if (isRealUser && event === 'SIGNED_IN') {
               setRequestData(prev => ({ ...prev, userId: session!.user!.id }));
-              // After auth, go to payment step
-              setCurrentStep('payment');
-              // Clear saved state since we're advancing
-              try {
-                localStorage.removeItem('auro_request_flow_state');
-              } catch {}
+              
+              // If user was on auth step, advance to payment
+              // If they were on another step and just authenticated, stay on that step
+              if (currentStepRef.current === 'auth') {
+                setCurrentStep('payment');
+                // Clear saved state since we're advancing
+                try {
+                  localStorage.removeItem('auro_request_flow_state');
+                } catch {}
+              }
             }
             
             // Ensure profile exists server-side whenever we get a real session
@@ -352,7 +341,8 @@ export default function RequestPage() {
         setIsInitializing(false);
       }
     }
-  }, [currentStep]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   const updateRequestData = (updates: Partial<RequestData>) => {
     setRequestData(prev => ({ ...prev, ...updates }));

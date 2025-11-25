@@ -116,6 +116,7 @@ function Inner() {
                 placeholder="New password"
                 required
                 minLength={8}
+                autoComplete="new-password"
                 className="w-full px-4 py-3 rounded-xl bg-[#2C1746] border border-[rgba(255,255,255,0.1)] text-white placeholder-[#C7BFD9] focus:outline-none focus:border-[#FF2D55] pr-12"
               />
               <button
@@ -144,6 +145,7 @@ function Inner() {
                 placeholder="Confirm new password"
                 required
                 minLength={8}
+                autoComplete="new-password"
                 className="w-full px-4 py-3 rounded-xl bg-[#2C1746] border border-[rgba(255,255,255,0.1)] text-white placeholder-[#C7BFD9] focus:outline-none focus:border-[#FF2D55] pr-12"
               />
               <button
