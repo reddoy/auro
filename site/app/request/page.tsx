@@ -151,32 +151,59 @@ export default function RequestPage() {
   // Only runs once when auth is checked, not on every step change
   const urlParamsProcessed = useRef(false);
   useEffect(() => {
-    if (typeof window !== 'undefined' && authChecked && currentStep === 'intro' && !urlParamsProcessed.current) {
+    if (typeof window !== 'undefined' && authChecked && !urlParamsProcessed.current) {
       const urlParams = new URLSearchParams(window.location.search);
       const creatorSlug = urlParams.get('creatorSlug');
       const creatorId = urlParams.get('creatorId');
+      const authCode = urlParams.get('authCode');
       
-      // Process URL params only if we're still on intro step and haven't processed them yet
-      // Don't override if user has already progressed through the flow
+      // Process URL params if we have creator params (coming from app)
+      // Don't require currentStep === 'intro' - we want to process these even if step changed
       if (creatorSlug || creatorId) {
         // Try to restore flow state first (for OAuth return)
         const restored = restoreFlowState();
         
         if (!restored) {
           // Only set creator if we didn't restore from saved state
-          if (creatorSlug) {
+          // Check if creator is already set (might have been set during auth code processing)
+          const needsCreator = !requestData.creatorSlug && !requestData.creatorId;
+          if (needsCreator) {
+            if (creatorSlug) {
+              setRequestData(prev => ({ ...prev, creatorSlug }));
+            } else if (creatorId) {
+              setRequestData(prev => ({ ...prev, creatorId }));
+            }
+          }
+          
+          // If we're coming from app (has authCode or creator params), skip to photo-upload
+          // Only change step if we're still on intro or creator-selection (don't override if already advanced)
+          if (authCode || creatorSlug || creatorId) {
+            // Coming from app - skip directly to photo-upload
+            // But only if we haven't already advanced past intro/creator-selection
+            if (currentStep === 'intro' || currentStep === 'creator-selection') {
+              console.log('[RequestPage] Processing creator params from app, advancing to photo-upload');
+              setCurrentStep('photo-upload');
+            }
+          } else if (currentStep === 'intro') {
+            // Coming from web directly - go to creator-selection
+            setCurrentStep('creator-selection');
+          }
+        } else {
+          // State was restored, but make sure creator is set if we have it in URL
+          // (in case restored state didn't have creator)
+          if (creatorSlug && !requestData.creatorSlug && !requestData.creatorId) {
             setRequestData(prev => ({ ...prev, creatorSlug }));
-          } else if (creatorId) {
+          } else if (creatorId && !requestData.creatorId && !requestData.creatorSlug) {
             setRequestData(prev => ({ ...prev, creatorId }));
           }
-          // Skip creator-selection step and go directly to photo-upload when coming from app
-          // This provides a smoother experience when user has already selected a reviewer in the app
-          setCurrentStep('photo-upload');
         }
+        urlParamsProcessed.current = true;
+      } else if (currentStep === 'intro' && !urlParamsProcessed.current) {
+        // No creator params, but we're on intro - this is normal web flow
         urlParamsProcessed.current = true;
       }
     }
-  }, [authChecked, currentStep]);
+  }, [authChecked, currentStep, requestData.creatorSlug, requestData.creatorId]);
 
   // Scroll to top on step change for better UX
   useEffect(() => {
@@ -271,6 +298,22 @@ export default function RequestPage() {
                         setIsAuthenticated(isRealUser);
                         
                         console.log('[RequestPage] Session established from app, user:', userData.id);
+                        
+                        // Process creator params immediately after auth code exchange
+                        // This ensures creator is set and we advance to photo-upload even if URL params processing hasn't run yet
+                        const creatorSlug = urlParams.get('creatorSlug');
+                        const creatorId = urlParams.get('creatorId');
+                        
+                        if (creatorSlug || creatorId) {
+                          console.log('[RequestPage] Processing creator params after auth code exchange');
+                          if (creatorSlug) {
+                            setRequestData(prev => ({ ...prev, creatorSlug }));
+                          } else if (creatorId) {
+                            setRequestData(prev => ({ ...prev, creatorId }));
+                          }
+                          // Advance to photo-upload since user came from app with selected reviewer
+                          setCurrentStep('photo-upload');
+                        }
                         
                         // Remove authCode from URL to clean it up
                         urlParams.delete('authCode');
