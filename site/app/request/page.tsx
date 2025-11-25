@@ -121,20 +121,45 @@ export default function RequestPage() {
       const stepToRestore = flowState.currentStep || flowState.step;
       
       if (stepToRestore) {
-        // Restore the step
-        setCurrentStep(stepToRestore);
+        // Only restore if we're not already on a later step (don't go backwards)
+        const currentIndex = STEPS.indexOf(currentStepRef.current);
+        const restoreIndex = STEPS.indexOf(stepToRestore as Step);
         
-        // Restore requestData if available (should always be present in new saves)
-        if (flowState.requestData) {
-          setRequestData(flowState.requestData);
-          console.log('[RequestPage] Restored flow state with data:', stepToRestore);
+        // Only restore if the saved step is at or after our current step
+        // This prevents going backwards if user has already progressed
+        if (restoreIndex >= currentIndex || currentIndex === 0) {
+          // Restore the step
+          setCurrentStep(stepToRestore);
+          
+          // Restore requestData if available (should always be present in new saves)
+          // Merge with existing data to preserve any new data that might have been added
+          if (flowState.requestData) {
+            setRequestData(prev => ({
+              ...prev,
+              ...flowState.requestData,
+              // Preserve current values if they exist and saved ones don't
+              photos: flowState.requestData.photos || prev.photos,
+              message: flowState.requestData.message || prev.message,
+              consent: flowState.requestData.consent || prev.consent,
+            }));
+            console.log('[RequestPage] Restored flow state with data:', stepToRestore, {
+              hasPhotos: !!(flowState.requestData.photos?.datingProfileScreenshots?.length || flowState.requestData.photos?.outfits?.length || flowState.requestData.photos?.roomTourPhotos?.length),
+              hasMessage: !!flowState.requestData.message,
+              hasCreator: !!(flowState.requestData.creatorId || flowState.requestData.creatorSlug),
+            });
+          } else {
+            console.log('[RequestPage] Restored flow state (step only):', stepToRestore);
+          }
+          
+          // Don't remove yet - let auth listener handle cleanup after advancing
+          // It will be cleaned up when auth listener advances to payment step
+          return true;
         } else {
-          console.log('[RequestPage] Restored flow state (step only):', stepToRestore);
+          console.log('[RequestPage] Not restoring state - already on later step:', currentStepRef.current, 'vs', stepToRestore);
+          // Clean up old state since we're already past it
+          localStorage.removeItem('auro_request_flow_state');
+          return false;
         }
-        
-        // Don't remove yet - let auth listener handle cleanup after advancing
-        // It will be cleaned up when auth listener advances to payment step
-        return true;
       }
     } catch (e) {
       console.warn('[RequestPage] Failed to restore flow state:', e);
@@ -357,27 +382,29 @@ export default function RequestPage() {
               setIsAuthenticated(isRealUser);
               
               // Check if we should restore from saved state (for OAuth return)
-              // IMPORTANT: Restore state AFTER checking auth, so we know if user is authenticated
-              // But don't restore if user is authenticated and we're coming back from OAuth
-              // (let the auth listener handle it to avoid race conditions)
+              // IMPORTANT: Always try to restore state if it exists, regardless of auth status
+              // The auth listener will handle advancing if needed
               const hasSavedState = typeof window !== 'undefined' && localStorage.getItem('auro_request_flow_state');
               
-              if (!isRealUser && hasSavedState) {
-                // User not authenticated yet, but we have saved state - restore it
-                // The auth listener will handle advancing when session is established
+              if (hasSavedState) {
+                // Always restore state if it exists (coming back from OAuth)
                 const restored = restoreFlowState();
-                if (!restored && currentStepRef.current === 'intro') {
+                
+                if (restored && isRealUser) {
+                  // User is authenticated and state was restored
+                  // If we restored to 'auth' step, immediately advance to payment since user is already authenticated
+                  setTimeout(() => {
+                    if (currentStepRef.current === 'auth') {
+                      console.log('[RequestPage] User authenticated and on auth step, advancing to payment');
+                      setCurrentStep('payment');
+                      try {
+                        localStorage.removeItem('auro_request_flow_state');
+                      } catch {}
+                    }
+                  }, 200);
+                } else if (!restored && currentStepRef.current === 'intro') {
+                  // Failed to restore, set to intro
                   setCurrentStep('intro');
-                }
-              } else if (isRealUser && hasSavedState) {
-                // User is authenticated and we have saved state - restore and check if we need to advance
-                const restored = restoreFlowState();
-                if (restored && currentStepRef.current === 'auth') {
-                  // User was on auth step and is now authenticated, advance to payment
-                  setCurrentStep('payment');
-                  try {
-                    localStorage.removeItem('auro_request_flow_state');
-                  } catch {}
                 }
               } else if (!hasSavedState) {
                 // No saved state, just set initial step if needed
@@ -451,21 +478,21 @@ export default function RequestPage() {
                     setRequestData(flowState.requestData);
                     const stepToRestore = flowState.currentStep || flowState.step;
                     if (stepToRestore) {
-                      // Use setTimeout to ensure state updates are processed
-                      setTimeout(() => {
-                        setCurrentStep(stepToRestore);
-                        // If we restored to auth step but user is now authenticated, advance to payment
-                        if (stepToRestore === 'auth') {
-                          setTimeout(() => {
-                            setCurrentStep('payment');
-                            // Clear saved state since we're advancing
-                            try {
-                              localStorage.removeItem('auro_request_flow_state');
-                            } catch {}
-                          }, 100);
-                        }
-                      }, 100);
-                      return; // Exit early since we're handling state restoration
+                      // Restore the step
+                      setCurrentStep(stepToRestore);
+                      
+                      // If we restored to auth step but user is now authenticated, immediately advance to payment
+                      if (stepToRestore === 'auth') {
+                        console.log('[RequestPage] Restored to auth step but user is authenticated, advancing to payment');
+                        setTimeout(() => {
+                          setCurrentStep('payment');
+                          // Clear saved state since we're advancing
+                          try {
+                            localStorage.removeItem('auro_request_flow_state');
+                          } catch {}
+                        }, 300);
+                        return; // Exit early since we're handling state restoration
+                      }
                     }
                   } else {
                     // State is expired, clean it up
@@ -489,7 +516,7 @@ export default function RequestPage() {
                     localStorage.removeItem('auro_request_flow_state');
                   } catch {}
                 }
-              }, 200);
+              }, 300);
             }
             
             // Ensure profile exists server-side whenever we get a real session

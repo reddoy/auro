@@ -182,12 +182,18 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, re
       // Save the full flow state to localStorage so we can restore it after OAuth
       // This includes all the requestData (photos, message, consent, etc.)
       try {
-        // First, call the parent's save function if provided to ensure state is saved
+        // First, call the parent's save function if provided to ensure state is saved with latest values
+        // This uses refs to get the absolute latest state
         if (onSaveState) {
           onSaveState();
         }
         
-        // Also explicitly save the state here with the full requestData
+        // Wait a moment to ensure parent's save completed, then save again with explicit requestData
+        // This ensures we have the latest state even if parent's save hasn't completed yet
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Also explicitly save the state here with the full requestData as a backup
+        // Use the requestData prop which should have the latest values
         const savedState = {
           currentStep: 'auth', // We're on the auth step
           requestData: requestData || {
@@ -201,7 +207,13 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, re
           timestamp: Date.now(),
         };
         localStorage.setItem('auro_request_flow_state', JSON.stringify(savedState));
-        console.log('[AuthStep] Saved full flow state before OAuth redirect:', savedState);
+        console.log('[AuthStep] Saved full flow state before OAuth redirect:', {
+          step: savedState.currentStep,
+          hasPhotos: !!(savedState.requestData.photos.datingProfileScreenshots?.length || savedState.requestData.photos.outfits?.length || savedState.requestData.photos.roomTourPhotos?.length),
+          hasMessage: !!savedState.requestData.message,
+          hasCreator: !!(savedState.requestData.creatorId || savedState.requestData.creatorSlug),
+          timestamp: savedState.timestamp
+        });
       } catch (e) {
         console.warn('[AuthStep] Failed to save flow state:', e);
       }
