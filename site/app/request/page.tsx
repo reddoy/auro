@@ -453,6 +453,7 @@ export default function RequestPage() {
             }}
             supabase={supabase}
             preselectedCreatorSlug={requestData.creatorSlug}
+            preselectedCreatorId={requestData.creatorId}
             isInitializing={isInitializing}
           />
         );

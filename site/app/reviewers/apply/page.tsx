@@ -1233,6 +1233,10 @@ export default function FoundingReviewerApplyPage() {
                     placeholder="Create a strong password"
                     autoComplete="new-password"
                     className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    style={{
+                      WebkitTextFillColor: '#ffffff',
+                      WebkitBoxShadow: '0 0 0px 1000px rgba(255, 255, 255, 0.1) inset',
+                    }}
                   />
                   <div className="flex items-center justify-between text-xs">
                     <span className={`${isPasswordValid ? 'text-green-400' : 'text-red-400'}`}>
@@ -1264,6 +1268,10 @@ export default function FoundingReviewerApplyPage() {
                     placeholder="Re-enter your password"
                     autoComplete="new-password"
                     className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    style={{
+                      WebkitTextFillColor: '#ffffff',
+                      WebkitBoxShadow: '0 0 0px 1000px rgba(255, 255, 255, 0.1) inset',
+                    }}
                   />
                 {!passwordsMatch && passwordConfirm.length > 0 && (
                     <div className="text-xs text-red-400">Passwords do not match</div>

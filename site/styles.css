@@ -5454,6 +5454,27 @@ footer {
   cursor: not-allowed;
 }
 
+/* Fix Apple autofill text visibility */
+.form-field input:-webkit-autofill,
+.form-field input:-webkit-autofill:hover,
+.form-field input:-webkit-autofill:focus,
+.form-field input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--text) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg) inset !important;
+  box-shadow: 0 0 0px 1000px var(--bg) inset !important;
+  color: var(--text) !important;
+}
+
+.form-field input[type="password"]:-webkit-autofill,
+.form-field input[type="password"]:-webkit-autofill:hover,
+.form-field input[type="password"]:-webkit-autofill:focus,
+.form-field input[type="password"]:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--text) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg) inset !important;
+  box-shadow: 0 0 0px 1000px var(--bg) inset !important;
+  color: var(--text) !important;
+}
+
 .form-field textarea {
   background: var(--bg);
   color: var(--text);

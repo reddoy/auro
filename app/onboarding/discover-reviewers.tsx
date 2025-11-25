@@ -109,7 +109,7 @@ export default function DiscoverReviewersScreen() {
         colors={[Colors.brand.background, Colors.brand.cardBackground]}
         style={styles.backgroundGradient}
       />
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
           <Text style={styles.title}>Discover Reviewers</Text>
         </MotionView>

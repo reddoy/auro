@@ -118,6 +118,10 @@ function Inner() {
                 minLength={8}
                 autoComplete="new-password"
                 className="w-full px-4 py-3 rounded-xl bg-[#2C1746] border border-[rgba(255,255,255,0.1)] text-white placeholder-[#C7BFD9] focus:outline-none focus:border-[#FF2D55] pr-12"
+                style={{
+                  WebkitTextFillColor: '#ffffff',
+                  WebkitBoxShadow: '0 0 0px 1000px #2C1746 inset',
+                }}
               />
               <button
                 type="button"
@@ -147,6 +151,10 @@ function Inner() {
                 minLength={8}
                 autoComplete="new-password"
                 className="w-full px-4 py-3 rounded-xl bg-[#2C1746] border border-[rgba(255,255,255,0.1)] text-white placeholder-[#C7BFD9] focus:outline-none focus:border-[#FF2D55] pr-12"
+                style={{
+                  WebkitTextFillColor: '#ffffff',
+                  WebkitBoxShadow: '0 0 0px 1000px #2C1746 inset',
+                }}
               />
               <button
                 type="button"

@@ -20,10 +20,11 @@ type Props = {
   onSelect: (creatorId: string, creatorSlug: string) => void;
   supabase: any;
   preselectedCreatorSlug?: string;
+  preselectedCreatorId?: string;
   isInitializing?: boolean;
 };
 
-export default function CreatorSelection({ selectedCreator, onSelect, supabase, preselectedCreatorSlug, isInitializing }: Props) {
+export default function CreatorSelection({ selectedCreator, onSelect, supabase, preselectedCreatorSlug, preselectedCreatorId, isInitializing }: Props) {
   const [creators, setCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(false); // Start as false, will be set to true when we start fetching
   const [searchTerm, setSearchTerm] = useState('');
@@ -94,11 +95,21 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
 
         setCreators(filteredCreators);
         
-        // Auto-select creator if preselectedCreatorSlug is provided
-        if (preselectedCreatorSlug && filteredCreators.length > 0) {
-          const preselectedCreator = filteredCreators.find(c => c.username === preselectedCreatorSlug);
+        // Auto-select creator if preselectedCreatorSlug or preselectedCreatorId is provided
+        if (filteredCreators.length > 0) {
+          let preselectedCreator: Creator | undefined;
+          
+          if (preselectedCreatorSlug) {
+            preselectedCreator = filteredCreators.find(c => c.username === preselectedCreatorSlug);
+          } else if (preselectedCreatorId) {
+            preselectedCreator = filteredCreators.find(c => c.id === preselectedCreatorId);
+          }
+          
           if (preselectedCreator) {
-            onSelect(preselectedCreator.id, preselectedCreator.username);
+            // Use setTimeout to ensure the component has fully rendered before auto-selecting
+            setTimeout(() => {
+              onSelect(preselectedCreator!.id, preselectedCreator!.username);
+            }, 100);
           }
         }
       } catch (error: any) {
@@ -112,7 +123,7 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
     if (supabase && !isInitializing) {
       fetchCreators();
     }
-  }, [supabase, preselectedCreatorSlug, onSelect, isInitializing]);
+  }, [supabase, preselectedCreatorSlug, preselectedCreatorId, onSelect, isInitializing]);
 
   const filteredCreators = creators.filter(creator => {
     const searchLower = searchTerm.toLowerCase();
