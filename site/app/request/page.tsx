@@ -116,12 +116,21 @@ export default function RequestPage() {
         return false;
       }
       
-      if (flowState.currentStep && flowState.requestData) {
-        // Restore the step and data
-        // If step was 'auth', we'll let the auth listener handle advancing to payment
-        setCurrentStep(flowState.currentStep);
-        setRequestData(flowState.requestData);
-        console.log('[RequestPage] Restored flow state:', flowState.currentStep);
+      // Support both 'step' (old format) and 'currentStep' (new format) for backward compatibility
+      const stepToRestore = flowState.currentStep || flowState.step;
+      
+      if (stepToRestore) {
+        // Restore the step
+        setCurrentStep(stepToRestore);
+        
+        // Restore requestData if available (should always be present in new saves)
+        if (flowState.requestData) {
+          setRequestData(flowState.requestData);
+          console.log('[RequestPage] Restored flow state with data:', stepToRestore);
+        } else {
+          console.log('[RequestPage] Restored flow state (step only):', stepToRestore);
+        }
+        
         // Don't remove yet - let auth listener handle cleanup after advancing
         // It will be cleaned up when auth listener advances to payment step
         return true;
@@ -504,6 +513,8 @@ export default function RequestPage() {
             onNext={nextStep}
             onBack={previousStep}
             supabase={supabase}
+            requestData={requestData}
+            onSaveState={saveFlowState}
           />
         );
       case 'payment':

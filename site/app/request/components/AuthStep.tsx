@@ -2,14 +2,30 @@
 
 import React, { useEffect, useState } from 'react';
 
+type RequestData = {
+  creatorId?: string;
+  creatorSlug?: string;
+  photos: { outfits: string[]; roomTourPhotos: string[]; datingProfileScreenshots: string[] };
+  message: string;
+  consent: {
+    shareOnSocial: boolean;
+    agreedAt: string;
+  };
+  userId?: string;
+  requestId?: string;
+  uploadSessionId?: string;
+};
+
 type Props = {
   isAuthenticated: boolean;
   onNext: () => void;
   onBack: () => void;
   supabase: any;
+  requestData?: RequestData;
+  onSaveState?: () => void;
 };
 
-export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: Props) {
+export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, requestData, onSaveState }: Props) {
   const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -163,13 +179,29 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase }: 
     setError('');
 
     try {
-      // Save the current state to localStorage so we can restore it after OAuth
+      // Save the full flow state to localStorage so we can restore it after OAuth
+      // This includes all the requestData (photos, message, consent, etc.)
       try {
+        // First, call the parent's save function if provided to ensure state is saved
+        if (onSaveState) {
+          onSaveState();
+        }
+        
+        // Also explicitly save the state here with the full requestData
         const savedState = {
-          step: 'auth', // We're on the auth step
+          currentStep: 'auth', // We're on the auth step
+          requestData: requestData || {
+            photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
+            message: '',
+            consent: {
+              shareOnSocial: false,
+              agreedAt: ''
+            }
+          },
           timestamp: Date.now(),
         };
         localStorage.setItem('auro_request_flow_state', JSON.stringify(savedState));
+        console.log('[AuthStep] Saved full flow state before OAuth redirect:', savedState);
       } catch (e) {
         console.warn('[AuthStep] Failed to save flow state:', e);
       }
