@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import AsyncAvatar from './AsyncAvatar';
 
 type Creator = {
@@ -30,6 +30,7 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string>('');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const hasAutoSelectedRef = useRef(false);
 
   useEffect(() => {
     const fetchCreators = async () => {
@@ -65,7 +66,6 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
           .from('profiles')
           .select('id, first_name, last_name, username, avatar_url, skills, hourly_rate, rating_average, bio, links, stripe_connect_account_id')
           .eq('is_reviewer', 'approved') // Only show approved reviewers
-          .not('stripe_connect_account_id', 'is', null) // Only show reviewers with Connect accounts
           .not('hourly_rate', 'is', null) // Only show reviewers who have set their rate
           .gt('hourly_rate', 0) // Only show reviewers with positive rates
           .order('rating_average', { ascending: false, nullsFirst: false });
@@ -95,8 +95,9 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
 
         setCreators(filteredCreators);
         
-        // Auto-select creator if preselectedCreatorSlug or preselectedCreatorId is provided
-        if (filteredCreators.length > 0) {
+        // Auto-select and advance if preselectedCreatorSlug or preselectedCreatorId is provided
+        // This happens when user comes from the app with a preselected reviewer
+        if (filteredCreators.length > 0 && !hasAutoSelectedRef.current) {
           let preselectedCreator: Creator | undefined;
           
           if (preselectedCreatorSlug) {
@@ -105,11 +106,12 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
             preselectedCreator = filteredCreators.find(c => c.id === preselectedCreatorId);
           }
           
-          if (preselectedCreator) {
-            // Use setTimeout to ensure the component has fully rendered before auto-selecting
+          if (preselectedCreator && onSelect) {
+            hasAutoSelectedRef.current = true;
+            // Use setTimeout to ensure the component has fully rendered and all reviewers are visible before auto-selecting
             setTimeout(() => {
               onSelect(preselectedCreator!.id, preselectedCreator!.username);
-            }, 100);
+            }, 300);
           }
         }
       } catch (error: any) {
@@ -136,7 +138,20 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
     );
   });
 
-  
+  // Scroll to preselected creator when it loads
+  useEffect(() => {
+    if (selectedCreator && creators.length > 0 && !loading) {
+      const preselectedId = preselectedCreatorId || (preselectedCreatorSlug ? creators.find(c => c.username === preselectedCreatorSlug)?.id : null);
+      if (preselectedId) {
+        setTimeout(() => {
+          const element = document.querySelector(`[data-creator-id="${preselectedId}"]`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 300);
+      }
+    }
+  }, [selectedCreator, creators, loading, preselectedCreatorId, preselectedCreatorSlug]);
 
   const handleCreatorSelect = (creator: Creator) => {
     onSelect(creator.id, creator.username);
@@ -173,6 +188,7 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
         {filteredCreators.map((creator) => (
           <div
             key={creator.id}
+            data-creator-id={creator.id}
             className={`creator-card ${selectedCreator === creator.id || selectedCreator === creator.username ? 'selected' : ''}`}
             onClick={() => handleCreatorSelect(creator)}
           >
