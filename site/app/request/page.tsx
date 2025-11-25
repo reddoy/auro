@@ -43,8 +43,8 @@ type Step = typeof STEPS[number];
 
 export default function RequestPage() {
   const router = useRouter();
-  // Start with 'auth' step for unauthenticated users - will be updated after auth check
-  const [currentStep, setCurrentStep] = useState<Step>('auth');
+  // Start with 'intro' step - users can browse the flow without auth, auth required only for payment
+  const [currentStep, setCurrentStep] = useState<Step>('intro');
   const [requestData, setRequestData] = useState<RequestData>({
     photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
     message: '',
@@ -101,7 +101,7 @@ export default function RequestPage() {
   }, []);
 
   // Restore flow state from localStorage (if returning from OAuth)
-  // NOTE: This should ONLY be called when user is authenticated
+  // Can be called for any user - will restore state if available (typically after OAuth)
   const restoreFlowState = useCallback(() => {
     if (typeof window === 'undefined') return false;
     try {
@@ -135,23 +135,19 @@ export default function RequestPage() {
     return false;
   }, []);
 
-  // CRITICAL: Ensure unauthenticated users are always on auth step
-  useEffect(() => {
-    if (authChecked && !isAuthenticated && currentStep !== 'auth') {
-      setCurrentStep('auth');
-    }
-  }, [authChecked, isAuthenticated, currentStep]);
+  // Check if user needs to authenticate before proceeding to payment
+  // Allow users to browse through intro, creator-selection, photo-upload, prompt-answers, consent
+  // Only require auth when they try to go to payment
 
   // Handle URL parameters to pre-populate creator selection
-  // Only process after auth check is complete
+  // Process after auth check is complete (works for both authenticated and unauthenticated users)
   useEffect(() => {
-    if (typeof window !== 'undefined' && authChecked && isAuthenticated) {
+    if (typeof window !== 'undefined' && authChecked) {
       const urlParams = new URLSearchParams(window.location.search);
       const creatorSlug = urlParams.get('creatorSlug');
       const creatorId = urlParams.get('creatorId');
       
-      // Only process URL params if user is authenticated
-      // Unauthenticated users should see auth step first
+      // Process URL params for all users (authenticated or not)
       if (creatorSlug || creatorId) {
         // Try to restore flow state first (for OAuth return)
         const restored = restoreFlowState();
@@ -163,11 +159,14 @@ export default function RequestPage() {
           } else if (creatorId) {
             setRequestData(prev => ({ ...prev, creatorId }));
           }
-          setCurrentStep('creator-selection');
+          // Only change step if we're still on intro (don't override if user has progressed)
+          if (currentStep === 'intro') {
+            setCurrentStep('creator-selection');
+          }
         }
       }
     }
-  }, [authChecked, isAuthenticated]);
+  }, [authChecked]);
 
   // Scroll to top on step change for better UX
   useEffect(() => {
@@ -244,23 +243,40 @@ export default function RequestPage() {
               const { data: { session } } = await client.auth.getSession();
               const isRealUser = !!session?.user && (session.user as any)?.app_metadata?.provider !== 'anon';
               
-              // If no real user, don't sign in anonymously yet - just set auth step immediately
-              if (!isRealUser) {
-                setIsAuthenticated(false);
-                setCurrentStep('auth');
-                setAuthChecked(true);
-                setIsInitializing(false);
-                return;
-              }
-              
-              // User is authenticated - proceed with normal flow
-              setIsAuthenticated(true);
+              setIsAuthenticated(isRealUser);
               
               // Check if we should restore from saved state (for OAuth return)
               const restored = restoreFlowState();
               if (!restored) {
-                // If not restored and user is authenticated, start from intro
-                setCurrentStep('intro');
+                // Check URL params for preselected creator
+                if (typeof window !== 'undefined') {
+                  const urlParams = new URLSearchParams(window.location.search);
+                  const creatorSlug = urlParams.get('creatorSlug');
+                  const creatorId = urlParams.get('creatorId');
+                  
+                  if (creatorSlug || creatorId) {
+                    if (creatorSlug) {
+                      setRequestData(prev => ({ ...prev, creatorSlug }));
+                    } else if (creatorId) {
+                      setRequestData(prev => ({ ...prev, creatorId }));
+                    }
+                    setCurrentStep('creator-selection');
+                  } else {
+                    // Start from intro for all users (authenticated or not)
+                    setCurrentStep('intro');
+                  }
+                } else {
+                  setCurrentStep('intro');
+                }
+              }
+              
+              // If no real user, still allow browsing but sign in anonymously for storage uploads
+              if (!isRealUser) {
+                try {
+                  await client.auth.signInAnonymously();
+                } catch (anonErr) {
+                  console.warn('Anonymous sign-in failed:', anonErr);
+                }
               }
               
               // Now sign in anonymously for storage uploads (only if needed)
@@ -277,9 +293,9 @@ export default function RequestPage() {
               setIsInitializing(false);
             } catch (error) {
               console.error('Auth check error:', error);
-              // On error, default to auth step
+              // On error, still allow browsing - start from intro
               setIsAuthenticated(false);
-              setCurrentStep('auth');
+              setCurrentStep('intro');
               setAuthChecked(true);
               setIsInitializing(false);
             }
@@ -301,6 +317,7 @@ export default function RequestPage() {
             // Use ref to get the latest currentStep value
             if (isRealUser && currentStepRef.current === 'auth' && event === 'SIGNED_IN') {
               setRequestData(prev => ({ ...prev, userId: session!.user!.id }));
+              // After auth, go to payment step
               setCurrentStep('payment');
               // Clear saved state since we're advancing
               try {
@@ -351,7 +368,17 @@ export default function RequestPage() {
   const nextStep = () => {
     const currentIndex = STEPS.indexOf(currentStep);
     if (currentIndex < STEPS.length - 1) {
-      setCurrentStep(STEPS[currentIndex + 1]);
+      const nextStepName = STEPS[currentIndex + 1];
+      
+      // Require authentication before proceeding to payment step
+      if (nextStepName === 'payment' && !isAuthenticated) {
+        // Save current state and redirect to auth
+        saveFlowState();
+        setCurrentStep('auth');
+        return;
+      }
+      
+      setCurrentStep(nextStepName);
     }
   };
 
@@ -412,17 +439,11 @@ export default function RequestPage() {
     }
 
     // Render the actual step content
-    // CRITICAL: Prevent showing ANY step except 'auth' if user is not authenticated
-    // This is a safety check - the useEffect above should handle this, but this prevents flash
-    if (!isAuthenticated && currentStep !== 'auth') {
-      return (
-        <div className="loading-container">
-          <div style={{ textAlign: 'center', padding: '40px' }}>
-            <div className="loading-spinner" style={{ margin: '0 auto 20px' }}></div>
-            <p style={{ color: '#fff', fontSize: '16px' }}>Redirecting to authentication...</p>
-          </div>
-        </div>
-      );
+    // Only require auth for payment step - allow browsing other steps
+    if (currentStep === 'payment' && !isAuthenticated) {
+      // If somehow they got to payment without auth, redirect to auth
+      setCurrentStep('auth');
+      return null;
     }
 
     switch (currentStep) {
