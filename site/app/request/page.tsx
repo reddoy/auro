@@ -290,16 +290,53 @@ export default function RequestPage() {
               }
               
               // Check session first (faster than getUser)
-              const { data: { session } } = await client.auth.getSession();
-              const isRealUser = !!session?.user && (session.user as any)?.app_metadata?.provider !== 'anon';
+              // Retry logic: When coming back from OAuth, session might not be immediately available
+              let session = null;
+              let isRealUser = false;
+              let retries = 0;
+              const maxRetries = 3;
+              
+              while (retries < maxRetries) {
+                const { data: { session: currentSession } } = await client.auth.getSession();
+                if (currentSession?.user) {
+                  session = currentSession;
+                  isRealUser = !!session.user && (session.user as any)?.app_metadata?.provider !== 'anon';
+                  break;
+                }
+                // Wait a bit before retrying (session might still be processing from OAuth)
+                if (retries < maxRetries - 1) {
+                  await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                retries++;
+              }
               
               setIsAuthenticated(isRealUser);
               
               // Check if we should restore from saved state (for OAuth return)
-              const restored = restoreFlowState();
-              if (!restored) {
-                // Only set initial step if we haven't restored state AND we're still on the initial step
-                // Don't override if user has already navigated to a step
+              // IMPORTANT: Restore state AFTER checking auth, so we know if user is authenticated
+              // But don't restore if user is authenticated and we're coming back from OAuth
+              // (let the auth listener handle it to avoid race conditions)
+              const hasSavedState = typeof window !== 'undefined' && localStorage.getItem('auro_request_flow_state');
+              
+              if (!isRealUser && hasSavedState) {
+                // User not authenticated yet, but we have saved state - restore it
+                // The auth listener will handle advancing when session is established
+                const restored = restoreFlowState();
+                if (!restored && currentStepRef.current === 'intro') {
+                  setCurrentStep('intro');
+                }
+              } else if (isRealUser && hasSavedState) {
+                // User is authenticated and we have saved state - restore and check if we need to advance
+                const restored = restoreFlowState();
+                if (restored && currentStepRef.current === 'auth') {
+                  // User was on auth step and is now authenticated, advance to payment
+                  setCurrentStep('payment');
+                  try {
+                    localStorage.removeItem('auro_request_flow_state');
+                  } catch {}
+                }
+              } else if (!hasSavedState) {
+                // No saved state, just set initial step if needed
                 if (currentStepRef.current === 'intro') {
                   setCurrentStep('intro');
                 }
@@ -346,24 +383,69 @@ export default function RequestPage() {
             console.error('Cannot set up auth listener - Supabase client or auth is null');
             return;
           }
-          const { data: { subscription } } = client.auth.onAuthStateChange((event: any, session: any) => {
+          const { data: { subscription } } = client.auth.onAuthStateChange(async (event: any, session: any) => {
             const isRealUser = !!session?.user && (session.user as any)?.app_metadata?.provider !== 'anon';
             setIsAuthenticated(isRealUser);
+            
+            console.log('[RequestPage] Auth state change:', event, 'isRealUser:', isRealUser, 'currentStep:', currentStepRef.current);
             
             // Only auto-advance if user just completed authentication (not if they were already authenticated)
             // Use ref to get the latest currentStep value
             if (isRealUser && event === 'SIGNED_IN') {
               setRequestData(prev => ({ ...prev, userId: session!.user!.id }));
               
-              // If user was on auth step, advance to payment
-              // If they were on another step and just authenticated, stay on that step
-              if (currentStepRef.current === 'auth') {
-                setCurrentStep('payment');
-                // Clear saved state since we're advancing
+              // Check if we need to restore state (in case auth state change happened before state restoration)
+              // This is critical for OAuth flows where session might be established after page load
+              const savedState = localStorage.getItem('auro_request_flow_state');
+              if (savedState) {
                 try {
+                  const flowState = JSON.parse(savedState);
+                  const age = Date.now() - (flowState.timestamp || 0);
+                  if (age <= 30 * 60 * 1000 && flowState.requestData) {
+                    console.log('[RequestPage] Restoring state in auth listener:', flowState.currentStep || flowState.step);
+                    // Restore the full state including requestData
+                    setRequestData(flowState.requestData);
+                    const stepToRestore = flowState.currentStep || flowState.step;
+                    if (stepToRestore) {
+                      // Use setTimeout to ensure state updates are processed
+                      setTimeout(() => {
+                        setCurrentStep(stepToRestore);
+                        // If we restored to auth step but user is now authenticated, advance to payment
+                        if (stepToRestore === 'auth') {
+                          setTimeout(() => {
+                            setCurrentStep('payment');
+                            // Clear saved state since we're advancing
+                            try {
+                              localStorage.removeItem('auro_request_flow_state');
+                            } catch {}
+                          }, 100);
+                        }
+                      }, 100);
+                      return; // Exit early since we're handling state restoration
+                    }
+                  } else {
+                    // State is expired, clean it up
+                    localStorage.removeItem('auro_request_flow_state');
+                  }
+                } catch (e) {
+                  console.warn('[RequestPage] Failed to restore state in auth listener:', e);
                   localStorage.removeItem('auro_request_flow_state');
-                } catch {}
+                }
               }
+              
+              // If user was on auth step (or just restored to auth step), advance to payment
+              // If they were on another step and just authenticated, stay on that step
+              // Use setTimeout to ensure we're checking the latest step value
+              setTimeout(() => {
+                if (currentStepRef.current === 'auth') {
+                  console.log('[RequestPage] Advancing from auth to payment after SIGNED_IN');
+                  setCurrentStep('payment');
+                  // Clear saved state since we're advancing
+                  try {
+                    localStorage.removeItem('auro_request_flow_state');
+                  } catch {}
+                }
+              }, 200);
             }
             
             // Ensure profile exists server-side whenever we get a real session
