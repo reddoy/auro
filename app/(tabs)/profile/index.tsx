@@ -359,13 +359,13 @@ export default function ProfileScreen() {
         <MotionView entering={subtleFadeIn()} style={styles.header}>
           <MotionView entering={subtleFadeIn()} style={styles.headerContent}>
             <MotionView entering={subtleFadeIn()} style={styles.profileSection}>
-              <View style={{ marginRight: 20 }}>
+              <RNView style={{ marginRight: 20, backgroundColor: 'transparent' }}>
                 <SkeletonCircle size={94} />
-              </View>
-              <View style={{ flex: 1 }}>
+              </RNView>
+              <RNView style={{ flex: 1, backgroundColor: 'transparent' }}>
                 <SkeletonBlock width="75%" height={32} />
                 <SkeletonBlock width="50%" height={16} style={{ marginTop: 10 }} />
-              </View>
+              </RNView>
             </MotionView>
             <SkeletonBlock width="60%" height={50} radius={24} />
           </MotionView>
@@ -394,28 +394,28 @@ export default function ProfileScreen() {
 
         <MotionView entering={cardEntrance(3)} style={styles.actionsSection}>
           {[0, 1].map((index) => (
-            <View
+            <RNView
               key={index}
               style={[
                 styles.actionItem,
-                { borderBottomWidth: index === 1 ? 0 : StyleSheet.hairlineWidth },
+                { borderBottomWidth: index === 1 ? 0 : StyleSheet.hairlineWidth, backgroundColor: 'transparent' },
               ]}
             >
-              <View style={styles.actionIconContainer}>
+              <RNView style={[styles.actionIconContainer, { backgroundColor: 'transparent' }]}>
                 <SkeletonCircle size={44} />
-              </View>
-              <View style={{ flex: 1 }}>
+              </RNView>
+              <RNView style={{ flex: 1, backgroundColor: 'transparent' }}>
                 <SkeletonBlock width="60%" height={18} />
-              </View>
+              </RNView>
               <SkeletonBlock width={18} height={18} radius={9} />
-            </View>
+            </RNView>
           ))}
         </MotionView>
 
         <MotionView entering={cardEntrance(4)} style={styles.dangerSection}>
-          <View style={styles.logoutButtonDark}>
+          <RNView style={[styles.logoutButtonDark, { backgroundColor: 'transparent' }]}>
             <SkeletonBlock width="40%" height={18} />
-          </View>
+          </RNView>
         </MotionView>
       </ScrollView>
     );

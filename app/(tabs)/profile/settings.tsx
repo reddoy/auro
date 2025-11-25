@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Switch, TextInput, TouchableOpacity, View, KeyboardAvoidingView, Platform, View as RNView } from 'react-native';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -164,13 +164,13 @@ export default function ProfileSettingsScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <View style={[styles.header, { paddingTop: 12 }]}>
-          <View style={{ marginRight: 12 }}>
+        <RNView style={[styles.header, { paddingTop: 12, backgroundColor: 'transparent' }]}>
+          <RNView style={{ marginRight: 12, backgroundColor: 'transparent' }}>
             <SkeletonCircle size={40} />
-          </View>
+          </RNView>
           <SkeletonBlock width={140} height={24} />
-          <View style={styles.headerSpacer} />
-        </View>
+          <RNView style={[styles.headerSpacer, { backgroundColor: 'transparent' }]} />
+        </RNView>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={{ paddingBottom: 120 }}
@@ -178,10 +178,10 @@ export default function ProfileSettingsScreen() {
         >
           <MotionView entering={cardEntrance(0)} style={styles.card}>
             <SkeletonBlock width="50%" height={24} />
-            <View style={{ alignItems: 'center', marginTop: 24 }}>
+            <RNView style={{ alignItems: 'center', marginTop: 24, backgroundColor: 'transparent' }}>
               <SkeletonCircle size={120} />
               <SkeletonBlock width="60%" height={14} style={{ marginTop: 16 }} />
-            </View>
+            </RNView>
           </MotionView>
 
           <MotionView entering={cardEntrance(1)} style={styles.card}>
@@ -214,11 +214,11 @@ export default function ProfileSettingsScreen() {
             />
           </MotionView>
 
-          <View style={styles.saveBar}>
+          <RNView style={[styles.saveBar, { backgroundColor: 'transparent' }]}>
             <MotionView entering={cardEntrance(4)} style={[styles.saveButton, styles.saveButtonDisabled]}>
               <SkeletonBlock width="40%" height={18} />
             </MotionView>
-          </View>
+          </RNView>
         </ScrollView>
       </View>
     );

@@ -273,14 +273,14 @@ export default function DiscoverReviewersScreen() {
         {skeletonVisible && (
           <Animated.View style={[styles.skeletonContainer, { opacity: skeletonOpacity }]} pointerEvents="none">
           {[...Array(6)].map((_, index) => (
-            <View key={index} style={styles.skeletonRow}>
-              <View style={styles.skeletonAvatar} />
-              <View style={styles.skeletonContent}>
-                <View style={[styles.skeletonLine, { width: '60%', marginBottom: 8 }]} />
-                <View style={[styles.skeletonLine, { width: '40%', marginBottom: 12 }]} />
-                <View style={[styles.skeletonLine, { width: '50%' }]} />
-              </View>
-            </View>
+            <RNView key={index} style={styles.skeletonRow}>
+              <RNView style={styles.skeletonAvatar} />
+              <RNView style={styles.skeletonContent}>
+                <RNView style={[styles.skeletonLine, { width: '60%', marginBottom: 8 }]} />
+                <RNView style={[styles.skeletonLine, { width: '40%', marginBottom: 12 }]} />
+                <RNView style={[styles.skeletonLine, { width: '50%' }]} />
+              </RNView>
+            </RNView>
           ))}
           </Animated.View>
         )}

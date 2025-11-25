@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { StyleSheet, TouchableOpacity, FlatList, RefreshControl, Platform, Alert, Linking, ScrollView } from 'react-native';
+import { StyleSheet, TouchableOpacity, FlatList, RefreshControl, Platform, Alert, Linking, ScrollView, View as RNView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -46,9 +46,9 @@ export default function TransactionBreakdownScreen() {
   const renderSkeleton = (overlay = false) => {
     const header = (
       <MotionView entering={subtleFadeIn()} style={[styles.header, { paddingTop: 12 }]}>
-        <View style={{ marginRight: 12 }}>
+        <RNView style={{ marginRight: 12, backgroundColor: 'transparent' }}>
           <SkeletonCircle size={40} />
-        </View>
+        </RNView>
         <SkeletonBlock width={180} height={24} radius={12} />
       </MotionView>
     );
@@ -70,13 +70,13 @@ export default function TransactionBreakdownScreen() {
         </MotionView>
         {[...Array(3)].map((_, idx) => (
           <MotionView key={idx} entering={cardEntrance(idx + 1)} style={styles.transactionCard}>
-            <View style={styles.transactionSkeletonHeader}>
-              <View style={{ flex: 1 }}>
+            <RNView style={styles.transactionSkeletonHeader}>
+              <RNView style={{ flex: 1, backgroundColor: 'transparent' }}>
                 <SkeletonBlock width="70%" height={18} />
                 <SkeletonBlock width="45%" height={12} style={{ marginTop: 8 }} />
-              </View>
+              </RNView>
               <SkeletonBlock width={72} height={26} radius={12} />
-            </View>
+            </RNView>
             <SkeletonBlock width="80%" height={12} style={{ marginBottom: 16 }} />
             <SkeletonParagraph
               lines={4}

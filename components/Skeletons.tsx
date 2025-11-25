@@ -113,7 +113,7 @@ export function SkeletonParagraph({
   style,
 }: SkeletonParagraphProps) {
   return (
-    <View style={style}>
+    <View style={[{ backgroundColor: 'transparent' }, style]}>
       {Array.from({ length: lines }).map((_, index) => (
         <SkeletonBlock
           key={index}

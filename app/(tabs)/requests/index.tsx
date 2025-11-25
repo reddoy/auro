@@ -337,14 +337,14 @@ export default function RequestsScreen() {
       entering={cardEntrance(index)}
       style={[styles.requestCard, { backgroundColor: Colors.brand.cardBackground }]}
     > 
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <View style={[styles.influencerImage, { backgroundColor: 'rgba(255,255,255,0.1)' }]} />
-        <View style={{ flex: 1 }}>
-          <View style={{ height: 12, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 6, marginBottom: 10, width: '60%' }} />
-          <View style={{ height: 10, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 6, marginBottom: 6, width: '40%' }} />
-        </View>
-      </View>
-      <View style={{ height: 10, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 6, marginTop: 16, width: '80%' }} />
+      <RNView style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent' }}>
+        <RNView style={[styles.influencerImage, { backgroundColor: 'rgba(255,255,255,0.1)' }]} />
+        <RNView style={{ flex: 1, backgroundColor: 'transparent' }}>
+          <RNView style={{ height: 12, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 6, marginBottom: 10, width: '60%' }} />
+          <RNView style={{ height: 10, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 6, marginBottom: 6, width: '40%' }} />
+        </RNView>
+      </RNView>
+      <RNView style={{ height: 10, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 6, marginTop: 16, width: '80%' }} />
     </MotionView>
   );
 
@@ -396,11 +396,11 @@ export default function RequestsScreen() {
     <View style={[styles.container, { paddingTop: 0 }]}>
       {headerComponent}
       {!hasShownSkeleton && loading ? (
-        <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 24 }}>
+        <RNView style={{ flex: 1, paddingHorizontal: 16, paddingTop: 24, backgroundColor: 'transparent' }}>
           {[...Array(4)].map((_, i) => (
             <SkeletonCard key={`s-${i}`} index={i} />
           ))}
-        </View>
+        </RNView>
       ) : (
         <MotionView 
           entering={hasShownSkeleton && !loading ? subtleFadeIn() : undefined}

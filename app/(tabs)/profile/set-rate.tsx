@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, Alert, View, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { StyleSheet, TouchableOpacity, Alert, View, TextInput, KeyboardAvoidingView, Platform, ScrollView, View as RNView } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -73,13 +73,13 @@ export default function SetRateScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        <View style={[styles.header, { paddingTop: 12 }]}>
-          <View style={{ marginRight: 12 }}>
+        <RNView style={[styles.header, { paddingTop: 12, backgroundColor: 'transparent' }]}>
+          <RNView style={{ marginRight: 12, backgroundColor: 'transparent' }}>
             <SkeletonCircle size={40} />
-          </View>
+          </RNView>
           <SkeletonBlock width={160} height={24} radius={12} />
-          <View style={styles.headerSpacer} />
-        </View>
+          <RNView style={[styles.headerSpacer, { backgroundColor: 'transparent' }]} />
+        </RNView>
 
         <ScrollView
           style={styles.scrollView}
