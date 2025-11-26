@@ -15,6 +15,7 @@ import { Image } from 'expo-image';
 import SimplePhotoModal from '@/components/SimplePhotoModal';
 import ImageGalleryModal from '@/components/ImageGalleryModal';
 import FullScreenPhotoModal from '@/components/FullScreenPhotoModal';
+import VideoReviewPhotoZoomModal from '@/components/VideoReviewPhotoZoomModal';
 import { signRequestMediaUrls, getSignedRequestMediaUrl } from '@/lib/uploads';
 import RatingBar from '@/components/RatingBar';
 import MediaRecorder from '@/components/MediaRecorder';
@@ -30,6 +31,38 @@ import DatingProfilePhotoGallery from '@/components/DatingProfilePhotoGallery';
 import StarRating from '@/components/StarRating';
 
 // Removed unused URL helper functions since we're not showing social links in this screen
+
+const ratingMoodThemes = [
+  {
+    min: 7,
+    label: 'Looks great',
+    helper: 'Ready to hit send.',
+    color: Colors.brand.status.completed,
+  },
+  {
+    min: 4,
+    label: 'Solid but room to tweak',
+    helper: 'Call out the polish moves.',
+    color: Colors.brand.status.in_progress,
+  },
+  {
+    min: 1,
+    label: 'Needs work',
+    helper: 'Highlight what to fix first.',
+    color: Colors.brand.status.rejected,
+  },
+];
+
+const getRatingMoodTheme = (value: number) => {
+  if (value >= 7) return ratingMoodThemes[0];
+  if (value >= 4) return ratingMoodThemes[1];
+  if (value >= 1) return ratingMoodThemes[2];
+  return {
+    color: 'rgba(255, 255, 255, 0.6)',
+    label: 'Tap a star to rate',
+    helper: 'Gut check your first impression.',
+  };
+};
 
 export default function ReviewerRequestScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -56,18 +89,6 @@ export default function ReviewerRequestScreen() {
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [zoomedPhotoUri, setZoomedPhotoUri] = useState<string>('');
   
-  // Zoom state and refs
-  const zoomScale = useRef(new Animated.Value(1)).current;
-  const zoomTranslateX = useRef(new Animated.Value(0)).current;
-  const zoomTranslateY = useRef(new Animated.Value(0)).current;
-  const [zoomLastScale, setZoomLastScale] = useState(1);
-  const [zoomLastTranslateX, setZoomLastTranslateX] = useState(0);
-  const [zoomLastTranslateY, setZoomLastTranslateY] = useState(0);
-  const [zoomCurrentScale, setZoomCurrentScale] = useState(1);
-  const zoomGestureScale = useRef(1);
-  const zoomGestureTranslateX = useRef(0);
-  const zoomGestureTranslateY = useRef(0);
-  
   // Earnings UI
   const amountCents = (request as any)?.amount_cents as number | undefined;
   const auroFeeCents = (request as any)?.application_fee_cents as number | undefined;
@@ -88,6 +109,7 @@ export default function ReviewerRequestScreen() {
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const scrollViewRef = useRef<ScrollView | null>(null);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const ratingMood = getRatingMoodTheme(overallRating);
 
   // Pros and cons tag options
   const prosTags = ['Great photos', 'Great lighting', 'Clever prompts', 'Strong style', 'Good variety', 'Authentic', 'Well composed', 'Eye-catching'];
@@ -148,206 +170,9 @@ export default function ReviewerRequestScreen() {
   const recorderLeft = 16;
   const recorderSize = 130; // Increased from 90 for better visibility
 
-  // Zoom PanResponder for photo zoom functionality - iOS-like behavior
-  const zoomPanResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: (evt) => {
-        // Always capture if 2 touches (pinch) or already zoomed
-        return evt.nativeEvent.touches.length === 2 || zoomCurrentScale > 1;
-      },
-      onMoveShouldSetPanResponder: (evt, gestureState) => {
-        // More sensitive detection for iOS-like feel
-        if (evt.nativeEvent.touches.length === 2) return true;
-        if (zoomCurrentScale > 1) return true;
-        // Detect if user is trying to pan when zoomed
-        return Math.abs(gestureState.dx) > 2 || Math.abs(gestureState.dy) > 2;
-      },
-      onPanResponderGrant: (evt) => {
-        // Set offsets from last known values
-        zoomScale.setOffset(zoomLastScale);
-        zoomTranslateX.setOffset(zoomLastTranslateX);
-        zoomTranslateY.setOffset(zoomLastTranslateY);
-        zoomScale.setValue(0);
-        zoomTranslateX.setValue(0);
-        zoomTranslateY.setValue(0);
-        
-        zoomGestureScale.current = zoomLastScale;
-        zoomGestureTranslateX.current = 0;
-        zoomGestureTranslateY.current = 0;
-        
-        if (evt.nativeEvent.touches.length === 2) {
-          const touch1 = evt.nativeEvent.touches[0];
-          const touch2 = evt.nativeEvent.touches[1];
-          const distance = Math.sqrt(
-            Math.pow(touch2.pageX - touch1.pageX, 2) + 
-            Math.pow(touch2.pageY - touch1.pageY, 2)
-          );
-          const centerX = (touch1.pageX + touch2.pageX) / 2;
-          const centerY = (touch1.pageY + touch2.pageY) / 2;
-          
-          (evt as any).initialDistance = distance;
-          (evt as any).initialScale = zoomLastScale;
-          (evt as any).initialCenterX = centerX;
-          (evt as any).initialCenterY = centerY;
-          (evt as any).initialTranslateX = zoomLastTranslateX;
-          (evt as any).initialTranslateY = zoomLastTranslateY;
-        } else if (zoomCurrentScale > 1) {
-          // Store initial pan position
-          (evt as any).initialPanX = zoomLastTranslateX;
-          (evt as any).initialPanY = zoomLastTranslateY;
-        }
-      },
-      onPanResponderMove: (evt, gestureState) => {
-        const { touches } = evt.nativeEvent;
-        
-        if (touches.length === 2) {
-          // Pinch to zoom - iOS-like behavior
-          const touch1 = touches[0];
-          const touch2 = touches[1];
-          const distance = Math.sqrt(
-            Math.pow(touch2.pageX - touch1.pageX, 2) + 
-            Math.pow(touch2.pageY - touch1.pageY, 2)
-          );
-          
-          const initialDistance = (evt as any).initialDistance;
-          const initialScale = (evt as any).initialScale || 1;
-          
-          if (initialDistance && initialDistance > 0) {
-            const scaleFactor = distance / initialDistance;
-            const newScale = Math.max(0.5, Math.min(5, initialScale * scaleFactor));
-            
-            // Calculate center point for zoom
-            const centerX = (touch1.pageX + touch2.pageX) / 2;
-            const centerY = (touch1.pageY + touch2.pageY) / 2;
-            const initialCenterX = (evt as any).initialCenterX || windowWidth / 2;
-            const initialCenterY = (evt as any).initialCenterY || windowHeight / 2;
-            
-            // Adjust translation to zoom towards touch center
-            const scaleDelta = newScale - initialScale;
-            const translateXDelta = (initialCenterX - windowWidth / 2) * (scaleDelta / initialScale);
-            const translateYDelta = (initialCenterY - windowHeight / 2) * (scaleDelta / initialScale);
-            
-            const baseTranslateX = (evt as any).initialTranslateX || 0;
-            const baseTranslateY = (evt as any).initialTranslateY || 0;
-            
-            zoomGestureScale.current = newScale;
-            zoomGestureTranslateX.current = baseTranslateX - translateXDelta;
-            zoomGestureTranslateY.current = baseTranslateY - translateYDelta;
-            
-            zoomScale.setValue(newScale - initialScale);
-            zoomTranslateX.setValue(zoomGestureTranslateX.current - baseTranslateX);
-            zoomTranslateY.setValue(zoomGestureTranslateY.current - baseTranslateY);
-            
-            setZoomCurrentScale(newScale);
-          }
-        } else if (zoomCurrentScale > 1 && touches.length === 1) {
-          // Pan when zoomed - smooth iOS-like panning
-          const initialPanX = (evt as any).initialPanX || 0;
-          const initialPanY = (evt as any).initialPanY || 0;
-          
-          zoomGestureTranslateX.current = initialPanX + gestureState.dx;
-          zoomGestureTranslateY.current = initialPanY + gestureState.dy;
-          
-          zoomTranslateX.setValue(gestureState.dx);
-          zoomTranslateY.setValue(gestureState.dy);
-        }
-      },
-      onPanResponderRelease: () => {
-        // Get final values
-        const finalScale = zoomGestureScale.current;
-        const finalTranslateX = zoomGestureTranslateX.current;
-        const finalTranslateY = zoomGestureTranslateY.current;
-        
-        // Clamp scale
-        const clampedScale = Math.max(1, Math.min(5, finalScale));
-        
-        // Calculate proper pan boundaries based on image dimensions
-        // For contain fit, we need to account for image aspect ratio
-        const scaledWidth = windowWidth * clampedScale;
-        const scaledHeight = windowHeight * clampedScale;
-        const maxTranslateX = Math.max(0, (scaledWidth - windowWidth) / 2);
-        const maxTranslateY = Math.max(0, (scaledHeight - windowHeight) / 2);
-        
-        const clampedTranslateX = Math.max(-maxTranslateX, Math.min(maxTranslateX, finalTranslateX));
-        const clampedTranslateY = Math.max(-maxTranslateY, Math.min(maxTranslateY, finalTranslateY));
-        
-        // Smooth spring animation to final position
-        Animated.parallel([
-          Animated.spring(zoomScale, {
-            toValue: clampedScale - zoomLastScale,
-            useNativeDriver: true,
-            tension: 80,
-            friction: 8,
-            overshootClamping: true,
-          }),
-          Animated.spring(zoomTranslateX, {
-            toValue: clampedTranslateX - zoomLastTranslateX,
-            useNativeDriver: true,
-            tension: 80,
-            friction: 8,
-            overshootClamping: true,
-          }),
-          Animated.spring(zoomTranslateY, {
-            toValue: clampedTranslateY - zoomLastTranslateY,
-            useNativeDriver: true,
-            tension: 80,
-            friction: 8,
-            overshootClamping: true,
-          }),
-        ]).start(() => {
-          // Update last known values
-          setZoomLastScale(clampedScale);
-          setZoomLastTranslateX(clampedTranslateX);
-          setZoomLastTranslateY(clampedTranslateY);
-          setZoomCurrentScale(clampedScale);
-          
-          zoomGestureScale.current = clampedScale;
-          zoomGestureTranslateX.current = clampedTranslateX;
-          zoomGestureTranslateY.current = clampedTranslateY;
-          
-          // Flatten offsets and set new base values
-          zoomScale.flattenOffset();
-          zoomTranslateX.flattenOffset();
-          zoomTranslateY.flattenOffset();
-          
-          zoomScale.setValue(0);
-          zoomTranslateX.setValue(0);
-          zoomTranslateY.setValue(0);
-          
-          zoomScale.setOffset(clampedScale);
-          zoomTranslateX.setOffset(clampedTranslateX);
-          zoomTranslateY.setOffset(clampedTranslateY);
-        });
-      },
-      onPanResponderTerminationRequest: () => {
-        // Don't allow termination if zoomed
-        return zoomCurrentScale <= 1;
-      },
-    })
-  ).current;
-
   const handleCloseZoom = () => {
-    setZoomLastScale(1);
-    setZoomLastTranslateX(0);
-    setZoomLastTranslateY(0);
-    setZoomCurrentScale(1);
-    zoomGestureScale.current = 1;
-    zoomGestureTranslateX.current = 0;
-    zoomGestureTranslateY.current = 0;
-    zoomScale.setValue(1);
-    zoomTranslateX.setValue(0);
-    zoomTranslateY.setValue(0);
     setIsPhotoZoomed(false);
     setZoomedPhotoUri('');
-  };
-
-  // Animated style - offsets are handled in PanResponder, values are relative
-  const zoomAnimatedStyle = {
-    transform: [
-      { scale: zoomScale },
-      { translateX: zoomTranslateX },
-      { translateY: zoomTranslateY },
-    ],
   };
   
   // Video review is now the only option - no individual section ratings needed
@@ -363,9 +188,9 @@ export default function ReviewerRequestScreen() {
     }
   }, [request?.notes]);
   
-  // Create combined slides array: profile + section cards + photos + photo notes + rating input + pros + cons + overall summary + prosConsSummary + save
+  // Create combined slides array: profile + section cards + photos + photo notes + rating input + overall note + pros + cons + overall summary + prosConsSummary + save
   const allSlides = React.useMemo(() => {
-    const slides: Array<{type: 'profile' | 'section' | 'photo' | 'photoNote' | 'rating' | 'pros' | 'cons' | 'overall' | 'prosConsSummary' | 'save', data: any, index: number}> = [];
+    const slides: Array<{type: 'profile' | 'section' | 'photo' | 'photoNote' | 'rating' | 'overallNote' | 'pros' | 'cons' | 'overall' | 'prosConsSummary' | 'save', data: any, index: number}> = [];
     let slideIndex = 0;
 
     slides.push({
@@ -398,42 +223,49 @@ export default function ReviewerRequestScreen() {
       });
     }
 
-    // First: Overall Rating slide (just rating and note input)
+    // First: Overall Rating slide (just rating with stars 1-10)
     slides.push({
       type: 'rating',
       data: { name: reviewee?.displayName || 'User' },
       index: slideIndex++
     });
 
-    // Second: Pros selection slide
+    // Second: Overall Note slide (just note input)
+    slides.push({
+      type: 'overallNote',
+      data: { name: reviewee?.displayName || 'User' },
+      index: slideIndex++
+    });
+
+    // Third: Pros selection slide
     slides.push({
       type: 'pros',
       data: { name: reviewee?.displayName || 'User' },
       index: slideIndex++
     });
 
-    // Third: Cons selection slide
+    // Fourth: Cons selection slide
     slides.push({
       type: 'cons',
       data: { name: reviewee?.displayName || 'User' },
       index: slideIndex++
     });
 
-    // Fourth: Overall summary slide (profile photo with rating displayed, no pros/cons)
+    // Fifth: Overall summary slide (profile photo with rating displayed, no pros/cons)
     slides.push({
       type: 'overall',
       data: { name: reviewee?.displayName || 'User', profilePicture: avatarUri },
       index: slideIndex++
     });
 
-    // Fifth: Pros and Cons summary slide
+    // Sixth: Pros and Cons summary slide
     slides.push({
       type: 'prosConsSummary',
       data: { name: reviewee?.displayName || 'User' },
       index: slideIndex++
     });
 
-    // Sixth: Save slide (final slide with save button)
+    // Seventh: Save slide (final slide with save button)
     slides.push({
       type: 'save',
       data: { name: reviewee?.displayName || 'User' },
@@ -662,7 +494,7 @@ export default function ReviewerRequestScreen() {
       const updated = await submitRequestReview({
         requestId: request.id,
         review: {
-          ratings: { overall: overallRating }, // Use 1-5 scale directly (validation expects 1-5)
+          ratings: { overall: overallRating }, // Use 1-10 scale
           feedback: {
             strengths: selectedPros.length > 0 ? selectedPros : undefined,
             improvements: selectedCons.length > 0 ? selectedCons : undefined,
@@ -1219,48 +1051,138 @@ export default function ReviewerRequestScreen() {
                         </Text>
                       </RNView>
                       
-                      {/* Star Rating - tap a star 1-5 */}
-                      <RNView style={{ marginTop: 8, marginBottom: Platform.OS === 'ios' ? 20 : 32, alignItems: 'center', width: '100%', paddingHorizontal: 20 }}>
-                        <Text style={[styles.overlayText, { marginBottom: 16, fontSize: 15, textAlign: 'center' }]}>Tap a star to rate:</Text>
-                        <RNView style={{ flexDirection: 'row', gap: 16, justifyContent: 'center', alignItems: 'center' }}>
-                          {[1, 2, 3, 4, 5].map((value) => {
-                            const isActive = value <= overallRating;
-                            return (
-                              <TouchableOpacity
-                                key={value}
-                                onPress={() => setOverallRating(value)}
-                                activeOpacity={0.8}
-                                style={{
-                                  padding: 6,
-                                  borderRadius: 24,
-                                }}
-                              >
-                                <FontAwesome
-                                  name={isActive ? 'star' : 'star-o'}
-                                  size={42}
-                                  color={isActive ? Colors.brand.accentOrange : 'rgba(255, 255, 255, 0.4)'}
-                                />
-                              </TouchableOpacity>
-                            );
-                          })}
-                        </RNView>
-                        {overallRating > 0 && (
-                          <Text style={[styles.overlayText, { marginTop: 12, fontSize: 14, textAlign: 'center', color: Colors.brand.accentOrange, fontWeight: '700' }]}>
-                            {ratingLabels[overallRating]} ({overallRating} {overallRating === 1 ? 'star' : 'stars'})
-                          </Text>
-                        )}
-                      </RNView>
+                      {/* Star Rating - tap a star 1-10 */}
+                      <RNView style={{ marginTop: 8, marginBottom: Platform.OS === 'ios' ? 24 : 36, alignItems: 'center', width: '100%', paddingHorizontal: 20 }}>
+                        <Text style={[styles.overlayText, { marginBottom: 16, fontSize: 15, textAlign: 'center' }]}>
+                          Tap a star to rate:
+                        </Text>
 
-                      <RNView style={{ marginTop: Platform.OS === 'ios' ? 12 : 20, marginBottom: Platform.OS === 'ios' ? 40 : 0, width: '100%', alignItems: 'center', paddingHorizontal: 20 }}>
-                        <Text style={[styles.overlayText, { marginBottom: 10, fontSize: 15, textAlign: 'center', width: '100%' }]}>Overall Note</Text>
+                        <ScrollView
+                          horizontal
+                          showsHorizontalScrollIndicator={false}
+                          contentContainerStyle={{
+                            paddingHorizontal: Platform.OS === 'ios' ? 6 : 2,
+                          }}
+                          style={{ width: '100%' }}
+                        >
+                          <RNView style={{ flexDirection: 'row', gap: 10, justifyContent: 'center', alignItems: 'center', flexWrap: 'nowrap', width: '100%' }}>
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => {
+                              const isActive = value <= overallRating;
+                              return (
+                                <TouchableOpacity
+                                  key={value}
+                                  onPress={() => setOverallRating(value)}
+                                  activeOpacity={0.8}
+                                  style={{
+                                    padding: 6,
+                                    borderRadius: 20,
+                                  }}
+                                >
+                                  <FontAwesome
+                                    name={isActive ? 'star' : 'star-o'}
+                                    size={28}
+                                    color={isActive ? ratingMood.color : 'rgba(255, 255, 255, 0.35)'}
+                                  />
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </RNView>
+                        </ScrollView>
+
+                        <RNView style={{ width: '100%', marginTop: 20, alignItems: 'center', gap: 8 }}>
+                          <RNView style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', gap: 8 }}>
+                            <Text style={[styles.overlayTitle, { fontSize: 40, color: ratingMood.color }]}>{overallRating || '—'}</Text>
+                            <Text style={[styles.overlayText, { fontSize: 18, fontWeight: '600', opacity: 0.7 }]}>/ 10</Text>
+                          </RNView>
+                          <Text style={[styles.overlayText, { color: ratingMood.color, fontWeight: '700', fontSize: 15, textAlign: 'center' }]}>
+                            {ratingMood.label}
+                          </Text>
+                          <Text style={[styles.overlayText, { fontSize: 13, textAlign: 'center', color: 'rgba(255,255,255,0.7)' }]}>
+                            {ratingMood.helper}
+                          </Text>
+                          <RNView style={{ width: '100%', marginTop: 12 }}>
+                            <RNView
+                              style={{
+                                height: 12,
+                                borderRadius: 999,
+                                backgroundColor: 'rgba(255,255,255,0.12)',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              <RNView
+                                style={{
+                                  height: '100%',
+                                  width: `${(overallRating / 10) * 100}%`,
+                                  backgroundColor: overallRating ? ratingMood.color : 'transparent',
+                                }}
+                              />
+                            </RNView>
+                            <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 }}>
+                              {[
+                                { label: '1-3', color: Colors.brand.status.rejected },
+                                { label: '4-6', color: Colors.brand.status.in_progress },
+                                { label: '7-10', color: Colors.brand.status.completed },
+                              ].map((band) => (
+                                <RNView key={band.label} style={{ alignItems: 'center', flex: 1 }}>
+                                  <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                    <RNView style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: band.color }} />
+                                    <Text style={[styles.overlayText, { fontSize: 12 }]}>{band.label}</Text>
+                                  </RNView>
+                                </RNView>
+                              ))}
+                            </RNView>
+                          </RNView>
+                        </RNView>
+                      </RNView>
+                    </RNView>
+                  </ScrollView>
+                )}
+
+                {slide.type === 'overallNote' && (
+                  <ScrollView 
+                    style={{ flex: 1, width: '100%' }}
+                    contentContainerStyle={{ 
+                      flexGrow: 1,
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      paddingTop: Platform.OS === 'ios' ? 10 : 20,
+                      paddingBottom: Platform.OS === 'ios' ? 80 : 20,
+                      paddingHorizontal: 0,
+                    }}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                    <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 0, paddingBottom: 0 }] }>
+                      {/* Auro Logo and Title */}
+                      <RNView style={{ alignItems: 'center', marginBottom: 32, width: '100%' }}>
+                        <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                          <Image 
+                            source={require('@/auro_aura_logo_nobg.png')} 
+                            style={{ width: 64, height: 32 }} 
+                            contentFit="contain" 
+                          />
+                          <Text style={{ color: Colors.brand.textPrimary, fontSize: 32, fontWeight: '900', letterSpacing: 0.5 }}>
+                            Auro
+                          </Text>
+                        </RNView>
+                        <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 6, fontSize: 28, paddingHorizontal: 20 }]}>
+                          Overall Note
+                        </Text>
+                        <Text style={[styles.overlayText, { marginBottom: 0, textAlign: 'center', width: '100%', fontSize: 16, paddingHorizontal: 20 }]}>
+                          Share a summary for {slide.data.name}
+                        </Text>
+                      </RNView>
+                      
+                      {/* Overall Note Input */}
+                      <RNView style={{ marginTop: 20, width: '100%', alignItems: 'center', paddingHorizontal: 20 }}>
                         <TextInput
-                          style={[styles.overallNoteInput, { width: '100%', maxHeight: 120 }]}
+                          style={[styles.overallNoteInput, { width: '100%', minHeight: 150, maxHeight: 200 }]}
                           placeholder="Share a short summary to pair with your video review"
                           placeholderTextColor={Colors.brand.textSecondary}
                           multiline
                           value={overallNote}
                           onChangeText={setOverallNote}
-                          numberOfLines={4}
+                          numberOfLines={8}
                           textAlignVertical="top"
                         />
                       </RNView>
@@ -1411,24 +1333,11 @@ export default function ReviewerRequestScreen() {
                 )}
                 
                 {slide.type === 'overall' && (
-                  <ScrollView 
-                    style={{ flex: 1, width: '100%' }}
-                    contentContainerStyle={{ 
-                      flexGrow: 1,
-                      alignItems: 'center',
-                      justifyContent: 'flex-start',
-                      paddingTop: Platform.OS === 'ios' ? 10 : 20,
-                      paddingBottom: Platform.OS === 'ios' ? 80 : 20,
-                      paddingHorizontal: 0,
-                    }}
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
-                  >
-                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 0, paddingBottom: 0 }] }>
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 0, paddingBottom: 0, flex: 1 }] }>
                     {/* Auro Logo */}
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 72, height: 36, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 6, fontSize: 28, paddingHorizontal: 20 }]}>
-                      {reviewer?.displayName || reviewer?.full_name || reviewer?.username || 'Reviewer'} rated you a {overallRating > 0 ? overallRating : 'X'}/5
+                      {reviewer?.displayName || reviewer?.full_name || reviewer?.username || 'Reviewer'} rated you a {overallRating > 0 ? overallRating : 'X'}/10
                     </Text>
                     <Text style={[styles.overlayText, { marginBottom: Platform.OS === 'ios' ? 16 : 24, textAlign: 'center', width: '100%', fontSize: 16, paddingHorizontal: 20 }]}>Your final review for {slide.data.name}</Text>
                     
@@ -1506,11 +1415,11 @@ export default function ReviewerRequestScreen() {
                         <Text style={[styles.overlayText, { marginBottom: 12, fontSize: 16, fontWeight: '700', textAlign: 'center' }]}>Overall Rating</Text>
                         <RNView style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', marginBottom: 12, gap: 8 }}>
                           <Text style={[styles.overlayTitle, { fontSize: 48, fontWeight: '900', color: Colors.brand.accentOrange }]}>{overallRating}</Text>
-                          <Text style={[styles.overlayText, { fontSize: 24, fontWeight: '700', opacity: 0.7 }]}>/ 5</Text>
+                          <Text style={[styles.overlayText, { fontSize: 24, fontWeight: '700', opacity: 0.7 }]}>/ 10</Text>
                         </RNView>
-                        <RNView style={{ flexDirection: 'row', gap: 4, marginBottom: 8 }}>
-                          {Array.from({ length: 5 }, (_, i) => (
-                            <Text key={i} style={{ fontSize: 24, color: i < overallRating ? Colors.brand.accentOrange : 'rgba(255, 255, 255, 0.3)' }}>
+                        <RNView style={{ flexDirection: 'row', gap: 3, marginBottom: 8, flexWrap: 'wrap', justifyContent: 'center', maxWidth: '90%' }}>
+                          {Array.from({ length: 10 }, (_, i) => (
+                            <Text key={i} style={{ fontSize: 20, color: i < overallRating ? Colors.brand.accentOrange : 'rgba(255, 255, 255, 0.3)' }}>
                               ⭐
                             </Text>
                           ))}
@@ -1528,24 +1437,10 @@ export default function ReviewerRequestScreen() {
                       </RNView>
                     )}
                   </RNView>
-                  </ScrollView>
                 )}
                 
                 {slide.type === 'prosConsSummary' && (
-                  <ScrollView 
-                    style={{ flex: 1, width: '100%' }}
-                    contentContainerStyle={{ 
-                      flexGrow: 1,
-                      alignItems: 'center',
-                      justifyContent: 'flex-start',
-                      paddingTop: Platform.OS === 'ios' ? 10 : 20,
-                      paddingBottom: Platform.OS === 'ios' ? 80 : 20,
-                      paddingHorizontal: 0,
-                    }}
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
-                  >
-                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 0, paddingBottom: 0 }] }>
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 0, paddingBottom: 0, flex: 1 }] }>
                     {/* Auro Logo */}
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 72, height: 36, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 6, fontSize: 28, paddingHorizontal: 20 }]}>
@@ -1631,7 +1526,6 @@ export default function ReviewerRequestScreen() {
                       </RNView>
                     )}
                   </RNView>
-                  </ScrollView>
                 )}
                 
                 {slide.type === 'save' && (
@@ -1757,33 +1651,12 @@ export default function ReviewerRequestScreen() {
             </RNView>
           </RNView>
 
-          {/* Photo Zoom View - Full screen with pinch zoom, keeps recorder visible */}
-          {isPhotoZoomed && zoomedPhotoUri && (
-            <RNView style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#000', zIndex: 5, elevation: 5 }}>
-              {/* Done button - bottom center to avoid conflict with close button */}
-              <TouchableOpacity 
-                style={{ position: 'absolute', bottom: insets.bottom + 40, alignSelf: 'center', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24, backgroundColor: 'rgba(0, 0, 0, 0.7)', justifyContent: 'center', alignItems: 'center', zIndex: 20, elevation: 20 }}
-                onPress={handleCloseZoom}
-                activeOpacity={0.7}
-              >
-                <RNText style={{ color: '#fff', fontSize: 16, fontWeight: '600', letterSpacing: 0.5 }}>Done</RNText>
-              </TouchableOpacity>
-              
-              {/* Zoomable image */}
-              <RNView 
-                style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
-                {...zoomPanResponder.panHandlers}
-              >
-                <Animated.View style={[{ width: windowWidth, height: windowHeight, justifyContent: 'center', alignItems: 'center' }, zoomAnimatedStyle]}>
-                  <Image
-                    source={{ uri: zoomedPhotoUri }}
-                    style={{ width: windowWidth, height: windowHeight }}
-                    contentFit="contain"
-                  />
-                </Animated.View>
-              </RNView>
-            </RNView>
-          )}
+          {/* Photo Zoom Modal - Full screen with pinch zoom */}
+          <VideoReviewPhotoZoomModal 
+            visible={isPhotoZoomed} 
+            uri={zoomedPhotoUri} 
+            onClose={handleCloseZoom} 
+          />
 
           {/* Close button - positioned at top right for better accessibility */}
           <RNView style={{ position: 'absolute', top: insets.top + 12, right: 16, zIndex: 11, elevation: 11 }}>

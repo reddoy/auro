@@ -165,6 +165,15 @@ export default function RequestPage() {
     }
   }, []);
 
+  const clearFlowState = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.removeItem('auro_request_flow_state');
+    } catch (e) {
+      console.warn('[RequestPage] Failed to clear flow state:', e);
+    }
+  }, []);
+
   // Restore flow state from localStorage (if returning from OAuth)
   // Can be called for any user - will restore state if available (typically after OAuth)
   const restoreFlowState = useCallback(() => {
@@ -177,14 +186,14 @@ export default function RequestPage() {
       // Only restore if saved within last 30 minutes (OAuth shouldn't take that long)
       const age = Date.now() - (flowState.timestamp || 0);
       if (age > 30 * 60 * 1000) {
-        localStorage.removeItem('auro_request_flow_state');
+        clearFlowState();
         return false;
       }
       
       // Support both 'step' (old format) and 'currentStep' (new format) for backward compatibility
       const stepToRestore = flowState.currentStep || flowState.step;
       
-      if (stepToRestore) {
+      if (stepToRestore && STEPS.includes(stepToRestore as Step)) {
         // Only restore if we're not already on a later step (don't go backwards)
         const currentIndex = STEPS.indexOf(currentStepRef.current);
         const restoreIndex = STEPS.indexOf(stepToRestore as Step);
@@ -221,13 +230,16 @@ export default function RequestPage() {
         } else {
           console.log('[RequestPage] Not restoring state - already on later step:', currentStepRef.current, 'vs', stepToRestore);
           // Clean up old state since we're already past it
-          localStorage.removeItem('auro_request_flow_state');
+          clearFlowState();
           return false;
         }
+      } else if (stepToRestore) {
+        clearFlowState();
+        return false;
       }
     } catch (e) {
       console.warn('[RequestPage] Failed to restore flow state:', e);
-      localStorage.removeItem('auro_request_flow_state');
+      clearFlowState();
     }
     return false;
   }, []);
@@ -288,7 +300,7 @@ export default function RequestPage() {
           }
         }
         urlParamsProcessed.current = true;
-      } else if (currentStep === 'intro' && !urlParamsProcessed.current) {
+          } else if (currentStep === 'intro' && !urlParamsProcessed.current) {
         // No creator params, but we're on intro - this is normal web flow
         urlParamsProcessed.current = true;
       }
@@ -463,7 +475,7 @@ export default function RequestPage() {
                   setTimeout(() => {
                     setCurrentStep('payment');
                     try {
-                      localStorage.removeItem('auro_request_flow_state');
+                      clearFlowState();
                     } catch {}
                   }, 200);
                 } else if (restored && isRealUser) {
@@ -474,7 +486,7 @@ export default function RequestPage() {
                       console.log('[RequestPage] User authenticated and on auth step after restore, advancing to payment');
                       setCurrentStep('payment');
                       try {
-                        localStorage.removeItem('auro_request_flow_state');
+                        clearFlowState();
                       } catch {}
                     }
                   }, 200);
@@ -497,15 +509,6 @@ export default function RequestPage() {
               }
               
               // If no real user, still allow browsing but sign in anonymously for storage uploads
-              if (!isRealUser) {
-                try {
-                  await client.auth.signInAnonymously();
-                } catch (anonErr) {
-                  console.warn('Anonymous sign-in failed:', anonErr);
-                }
-              }
-              
-              // Now sign in anonymously for storage uploads (only if needed)
               try {
                 const { data: { user } } = await client.auth.getUser();
                 if (!user) {
@@ -560,7 +563,7 @@ export default function RequestPage() {
                     // Restore the full state including requestData
                     setRequestData(flowState.requestData);
                     const stepToRestore = flowState.currentStep || flowState.step;
-                    if (stepToRestore) {
+                      if (stepToRestore && STEPS.includes(stepToRestore as Step)) {
                       // Restore the step
                       setCurrentStep(stepToRestore);
                       
@@ -571,19 +574,21 @@ export default function RequestPage() {
                           setCurrentStep('payment');
                           // Clear saved state since we're advancing
                           try {
-                            localStorage.removeItem('auro_request_flow_state');
+                              clearFlowState();
                           } catch {}
                         }, 300);
                         return; // Exit early since we're handling state restoration
                       }
+                      } else if (stepToRestore) {
+                        clearFlowState();
                     }
                   } else {
                     // State is expired, clean it up
-                    localStorage.removeItem('auro_request_flow_state');
+                      clearFlowState();
                   }
                 } catch (e) {
                   console.warn('[RequestPage] Failed to restore state in auth listener:', e);
-                  localStorage.removeItem('auro_request_flow_state');
+                    clearFlowState();
                 }
               }
               
@@ -596,7 +601,7 @@ export default function RequestPage() {
                   setCurrentStep('payment');
                   // Clear saved state since we're advancing
                   try {
-                    localStorage.removeItem('auro_request_flow_state');
+                    clearFlowState();
                   } catch {}
                 }
               }, 300);
@@ -642,6 +647,19 @@ export default function RequestPage() {
   useEffect(() => {
     saveFlowState();
   }, [currentStep, requestData, saveFlowState]);
+
+  useEffect(() => {
+    if (!authChecked) return;
+    if (currentStep === 'payment' && !isAuthenticated) {
+      setCurrentStep('auth');
+    }
+  }, [authChecked, currentStep, isAuthenticated]);
+
+  useEffect(() => {
+    if (currentStep === 'download-app') {
+      clearFlowState();
+    }
+  }, [currentStep, clearFlowState]);
 
   const nextStep = () => {
     const currentIndex = STEPS.indexOf(currentStep);
@@ -720,14 +738,6 @@ export default function RequestPage() {
       );
     }
 
-    // Render the actual step content
-    // Only require auth for payment step - allow browsing other steps
-    if (currentStep === 'payment' && !isAuthenticated) {
-      // If somehow they got to payment without auth, redirect to auth
-      setCurrentStep('auth');
-      return null;
-    }
-
     switch (currentStep) {
       case 'intro':
         return (
@@ -800,6 +810,7 @@ export default function RequestPage() {
             requestData={requestData}
             onSuccess={(requestId) => {
               updateRequestData({ requestId });
+              clearFlowState();
               nextStep();
             }}
             onBack={previousStep}

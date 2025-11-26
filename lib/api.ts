@@ -357,8 +357,8 @@ export async function submitRequestReview(params: {
   
   // Validate ratings
   if (!review.ratings || typeof review.ratings.overall !== 'number' || 
-      review.ratings.overall < 1 || review.ratings.overall > 5) {
-    throw new Error('Overall rating must be between 1 and 5');
+      review.ratings.overall < 1 || review.ratings.overall > 10) {
+    throw new Error('Overall rating must be between 1 and 10');
   }
   
   // Validate video/image URLs if provided
