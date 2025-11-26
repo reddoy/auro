@@ -15,7 +15,7 @@ export default function Avatar({ src, alt, size = 48 }: { src?: string; alt: str
     width: size,
     height: size,
     borderRadius: '50%',
-    backgroundColor: '#A89BC5',
+    backgroundColor: '#2A1B3D', // Matches brand cardBackground
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',

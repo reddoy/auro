@@ -840,7 +840,7 @@ export default function AuthScreen() {
         <MotionView entering={ZoomIn.duration(400).delay(MotionDelays.quick)}>
           <View style={[styles.logoContainer, isCompact && styles.logoContainerCompact, styles.logoContainerOutside]}>
             <Image 
-              source={require('../auro_aura_logo_nobg.png')} 
+              source={require('@/auro_aura_logo_nobg.png')} 
               style={[styles.logoImage, isCompact && styles.logoImageCompact]}
               resizeMode="contain"
             />

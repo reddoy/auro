@@ -27,7 +27,7 @@ const brandColors = {
   shadow: 'rgba(0, 0, 0, 0.35)',
   shadowLight: 'rgba(0, 0, 0, 0.25)',
   shadowMedium: 'rgba(0, 0, 0, 0.45)',
-  avatarPlaceholder: '#A89BC5',
+  avatarPlaceholder: '#2A1B3D', // Matches cardBackground for consistent branding
 
   // Status
   success: '#3DDC84',

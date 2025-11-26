@@ -22,7 +22,7 @@ export default function Avatar({ src, alt, size = 64 }: { src?: string | null; a
         height: dimension, 
         borderRadius: '50%', 
         overflow: 'hidden', 
-        background: '#A89BC5',
+        background: '#2A1B3D', // Matches brand cardBackground
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

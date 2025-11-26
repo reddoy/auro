@@ -181,7 +181,7 @@ export default function IntroScreen() {
       <View style={{ paddingTop: insets.top + 10 }}>
         <MotionView entering={subtleFadeIn()} style={styles.logoContainer}>
           <Image 
-            source={require('../auro_aura_logo_nobg.png')} 
+            source={require('@/auro_aura_logo_nobg.png')} 
             style={[styles.logoImage, isCompact && styles.logoImageCompact]}
             resizeMode="contain"
           />

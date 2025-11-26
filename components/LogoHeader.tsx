@@ -39,7 +39,7 @@ export default function LogoHeader({
       <View style={[styles.safeAreaSpacer, { height: Platform.OS === 'web' ? 0 : insets.top }]} />
       <View style={styles.logoContainer}>
         <Image 
-          source={require('../auro_aura_logo_nobg.png')} 
+          source={require('@/auro_aura_logo_nobg.png')} 
           style={styles.logo}
           resizeMode="contain"
         />
