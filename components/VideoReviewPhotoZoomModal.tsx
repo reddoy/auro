@@ -144,11 +144,11 @@ export default function VideoReviewPhotoZoomModal({ visible, uri, onClose }: Pro
   };
 
   useAnimatedReaction(
-    () => scale.value,
-    (current) => {
-      runOnJS(setIsZoomed)(current > 1.02);
-    },
-    [scale]
+    () => scale.value > 1.02,
+    (currentZoomed, previousZoomed) => {
+      if (currentZoomed === previousZoomed) return;
+      runOnJS(setIsZoomed)(currentZoomed);
+    }
   );
 
   const handleClose = useCallback(() => {

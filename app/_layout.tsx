@@ -11,6 +11,7 @@ import 'react-native-reanimated';
 import 'react-native-url-polyfill/auto';
 import 'react-native-get-random-values';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StripeProvider } from '@/components/StripeProvider';
 import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
@@ -31,7 +32,7 @@ export {
 // unstable_settings removed - no longer needed in current Expo Router version
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -213,29 +214,31 @@ function RootLayoutNav() {
   if (!sessionChecked) return null;
 
   return (
-    <SafeAreaProvider>
-      <StripeProvider
-        publishableKey={
-          (Constants.expoConfig?.extra as any)?.stripePublishableKey ||
-          (Constants.manifest2 as any)?.extra?.stripePublishableKey ||
-          ''
-        }
-      >
-        <ThemeProvider value={customTheme}>
-          <ToastProvider>
-            <View style={{ flex: 1 }}>
-              {!pathname?.includes('/onboarding') && !pathname?.includes('/auth') && !pathname?.includes('/intro') && <LogoHeader />}
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="index" />
-                <Stack.Screen name="intro" />
-                <Stack.Screen name="auth" />
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-              </Stack>
-            </View>
-          </ToastProvider>
-        </ThemeProvider>
-      </StripeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <StripeProvider
+          publishableKey={
+            (Constants.expoConfig?.extra as any)?.stripePublishableKey ||
+            (Constants.manifest2 as any)?.extra?.stripePublishableKey ||
+            ''
+          }
+        >
+          <ThemeProvider value={customTheme}>
+            <ToastProvider>
+              <View style={{ flex: 1 }}>
+                {!pathname?.includes('/onboarding') && !pathname?.includes('/auth') && !pathname?.includes('/intro') && <LogoHeader />}
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="index" />
+                  <Stack.Screen name="intro" />
+                  <Stack.Screen name="auth" />
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+                </Stack>
+              </View>
+            </ToastProvider>
+          </ThemeProvider>
+        </StripeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
