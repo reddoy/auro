@@ -59,10 +59,28 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, re
       return;
     }
 
-    if (!supabase?.auth) {
+    // Validate Supabase client before attempting sign-up
+    if (!supabase) {
+      console.error('[AuthStep] Supabase client is null');
       setError('Authentication service is not available. Please refresh the page.');
       return;
     }
+
+    if (!supabase.auth) {
+      console.error('[AuthStep] Supabase auth is null');
+      setError('Authentication service is not available. Please refresh the page.');
+      return;
+    }
+
+    // Validate Supabase URL and key are configured
+    const supabaseUrl = (supabase as any)?.supabaseUrl || (supabase as any)?.supabaseKey;
+    if (!supabaseUrl) {
+      console.error('[AuthStep] Supabase URL/key not configured');
+      setError('Database connection not configured. Please contact support.');
+      return;
+    }
+
+    console.log('[AuthStep] Starting sign-up with validated Supabase client');
 
     setLoading(true);
     setError('');
@@ -85,7 +103,41 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, re
         }
       });
 
-      if (error) throw error;
+      // Log signup attempt details for debugging email issues
+      console.log('[AuthStep] Signup attempt:', {
+        email,
+        hasError: !!error,
+        errorMessage: error?.message,
+        errorCode: error?.status || error?.code,
+        errorDetails: error,
+        userCreated: !!data?.user,
+        userId: data?.user?.id,
+        sessionCreated: !!data?.session,
+        emailRedirectTo: redirectTo,
+        supabaseUrl: supabase?.supabaseUrl || 'unknown',
+        note: 'If confirmation email not received, check Supabase SMTP settings and spam folder'
+      });
+
+      if (error) {
+        console.error('[AuthStep] Signup error details:', {
+          message: error.message,
+          status: error.status,
+          code: error.code,
+          name: error.name,
+          fullError: error
+        });
+        throw error;
+      }
+
+      if (!data?.user) {
+        console.error('[AuthStep] Signup succeeded but no user created!', {
+          data,
+          email,
+          hasData: !!data,
+          hasUser: !!data?.user
+        });
+        throw new Error('Sign up completed but user was not created. Please try again or contact support.');
+      }
 
       if (data.user) {
         // Best-effort: save identifiers for server-side linking and later resume
@@ -120,7 +172,52 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, re
         onNext();
       }
     } catch (error: any) {
-      setError(error.message || 'Sign up failed');
+      console.error('[AuthStep] Signup catch block:', {
+        error,
+        message: error?.message,
+        status: error?.status,
+        code: error?.code,
+        name: error?.name,
+        stack: error?.stack
+      });
+      
+      // Provide more specific error messages
+      let errorMessage = 'Sign up failed';
+      
+      // Check for "user already exists" errors first - check multiple variations
+      const errorMsg = String(error?.message || '').toLowerCase();
+      const errorCode = error?.status || error?.code || '';
+      const errorCodeStr = String(errorCode).toLowerCase();
+      
+      if (
+        errorMsg.includes('already registered') ||
+        errorMsg.includes('user already exists') ||
+        errorMsg.includes('email address is already registered') ||
+        errorMsg.includes('already exists') ||
+        errorMsg.includes('duplicate') ||
+        errorCode === 422 ||
+        errorCodeStr.includes('422')
+      ) {
+        errorMessage = 'An account with this email already exists. Please sign in instead.';
+        // Automatically switch to sign-in mode for better UX, but keep the error message
+        setTimeout(() => {
+          setIsSignUp(false);
+          // Keep the error message visible even after switching tabs
+          setError(errorMessage);
+        }, 100);
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.status === 400) {
+        errorMessage = 'Invalid sign-up information. Please check your email and password.';
+      } else if (error?.status === 429) {
+        errorMessage = 'Too many sign-up attempts. Please wait a moment and try again.';
+      } else if (error?.code === 'PGRST301' || error?.message?.includes('network')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (error?.message?.includes('signup')) {
+        errorMessage = 'Sign-up is currently disabled. Please contact support.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -315,7 +412,10 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, re
               className={`auth-tab ${isSignUp ? 'active' : ''}`}
               onClick={() => {
                 setIsSignUp(true);
-                setError('');
+                // Only clear error if it's not the "already exists" message
+                if (!error?.includes('already exists')) {
+                  setError('');
+                }
               }}
             >
               Sign Up
@@ -325,7 +425,10 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, re
               className={`auth-tab ${!isSignUp ? 'active' : ''}`}
               onClick={() => {
                 setIsSignUp(false);
-                setError('');
+                // Only clear error if it's not the "already exists" message
+                if (!error?.includes('already exists')) {
+                  setError('');
+                }
               }}
             >
               Sign In

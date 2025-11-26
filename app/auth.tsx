@@ -440,6 +440,16 @@ export default function AuthScreen() {
           },
         });
         
+        // Log signup attempt details for debugging email issues
+        console.log('[Auth] Signup attempt:', {
+          email,
+          hasError: !!error,
+          errorMessage: error?.message,
+          userCreated: !!signUpData?.user,
+          sessionCreated: !!signUpData?.session,
+          emailRedirectTo: redirectTo,
+        });
+        
         if (error) {
           isSubmittingRef.current = false;
           setLoading(false); // Reset loading state
@@ -520,7 +530,9 @@ export default function AuthScreen() {
             email: signUpData.user.email,
             emailConfirmed: isEmailConfirmed,
             emailConfirmedAt: signUpData.user.email_confirmed_at,
-            hasSession: hasValidSession
+            hasSession: hasValidSession,
+            emailRedirectTo: redirectTo,
+            note: 'If confirmation email not received, check Supabase SMTP settings and spam folder'
           });
           
           // CRITICAL: For email/password signup, ALWAYS redirect to confirm screen
