@@ -30,10 +30,10 @@ export default function ReviewerSubmitScreen() {
       return null;
     }
   }, [request?.notes]);
-  const [overall, setOverall] = useState('8');
-  const [attractiveness, setAttractiveness] = useState('8');
-  const [wardrobe, setWardrobe] = useState('8');
-  const [room, setRoom] = useState('8');
+  const [overall, setOverall] = useState('3');
+  const [attractiveness, setAttractiveness] = useState('3');
+  const [wardrobe, setWardrobe] = useState('3');
+  const [room, setRoom] = useState('3');
   const [strengths, setStrengths] = useState('');
   const [improvements, setImprovements] = useState('');
   const [generalFeedback, setGeneralFeedback] = useState('');
@@ -109,15 +109,38 @@ export default function ReviewerSubmitScreen() {
   const onSubmit = async () => {
     if (!id) return;
     try {
+      // Validate ratings are between 1 and 5
+      const overallNum = Number(overall);
+      const attractivenessNum = Number(attractiveness);
+      const wardrobeNum = Number(wardrobe);
+      const roomNum = Number(room);
+      
+      if (!overallNum || overallNum < 1 || overallNum > 5) {
+        Alert.alert('Invalid Rating', 'Overall rating must be between 1 and 5');
+        return;
+      }
+      if (attractiveness && (attractivenessNum < 1 || attractivenessNum > 5)) {
+        Alert.alert('Invalid Rating', 'Attractiveness rating must be between 1 and 5');
+        return;
+      }
+      if (wardrobe && (wardrobeNum < 1 || wardrobeNum > 5)) {
+        Alert.alert('Invalid Rating', 'Wardrobe rating must be between 1 and 5');
+        return;
+      }
+      if (room && (roomNum < 1 || roomNum > 5)) {
+        Alert.alert('Invalid Rating', 'Room rating must be between 1 and 5');
+        return;
+      }
+      
       const toList = (txt: string) => txt.split('\n').map(s => s.trim()).filter(Boolean);
       await submitRequestReview({
         requestId: String(id),
         review: {
           ratings: {
-            overall: Number(overall) || 0,
-            attractiveness: Number(attractiveness) || 0,
-            wardrobe: Number(wardrobe) || 0,
-            room: Number(room) || 0,
+            overall: overallNum,
+            attractiveness: attractivenessNum || undefined,
+            wardrobe: wardrobeNum || undefined,
+            room: roomNum || undefined,
           },
           feedback: {
             strengths: toList(strengths),
@@ -241,7 +264,7 @@ export default function ReviewerSubmitScreen() {
 
       {(request?.status === 'paid' || request?.status === 'in_progress') ? (
         <>
-          <Text style={styles.label}>Ratings (0-10)</Text>
+          <Text style={styles.label}>Ratings (1-5)</Text>
           <View style={styles.row}>
             <TextInput style={styles.input} keyboardType="numeric" value={overall} onChangeText={setOverall} placeholder="Overall" placeholderTextColor="#9ca3af" />
             <TextInput style={styles.input} keyboardType="numeric" value={attractiveness} onChangeText={setAttractiveness} placeholder="Attractiveness" placeholderTextColor="#9ca3af" />

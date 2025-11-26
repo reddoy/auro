@@ -651,11 +651,25 @@ export default function ReviewerRequestScreen() {
         const res = await uploadRequestMedia(videoUri, { category: 'other' });
         uploadedVideoUrl = res.publicUrl;
       }
+      // Convert photoNotes from Record<number, string> to Record<string, string> for API
+      const photoNotesStringKeys: Record<string, string> = {};
+      Object.entries(photoNotes).forEach(([key, value]) => {
+        if (value && value.trim()) {
+          photoNotesStringKeys[String(key)] = value.trim();
+        }
+      });
+      
       const updated = await submitRequestReview({
         requestId: request.id,
         review: {
-          ratings: { overall: overallRating * 2 }, // Convert 1-5 scale to 2-10 scale for overall rating
-          feedback: { strengths: [], improvements: [], generalFeedback: overallNote.trim() || 'Video review completed', sectionNotes: {} } as any,
+          ratings: { overall: overallRating }, // Use 1-5 scale directly (validation expects 1-5)
+          feedback: {
+            strengths: selectedPros.length > 0 ? selectedPros : undefined,
+            improvements: selectedCons.length > 0 ? selectedCons : undefined,
+            generalFeedback: overallNote.trim() || 'Video review completed',
+            sectionNotes: {},
+            photoNotes: Object.keys(photoNotesStringKeys).length > 0 ? photoNotesStringKeys : undefined,
+          } as any,
         },
         videoUrl: uploadedVideoUrl || null,
         imageUrl: null,
@@ -1414,7 +1428,7 @@ export default function ReviewerRequestScreen() {
                     {/* Auro Logo */}
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 72, height: 36, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 6, fontSize: 28, paddingHorizontal: 20 }]}>
-                      {reviewer?.displayName || reviewer?.full_name || reviewer?.username || 'Reviewer'} rated you a {overallRating > 0 ? overallRating * 2 : 'X'}/10
+                      {reviewer?.displayName || reviewer?.full_name || reviewer?.username || 'Reviewer'} rated you a {overallRating > 0 ? overallRating : 'X'}/5
                     </Text>
                     <Text style={[styles.overlayText, { marginBottom: Platform.OS === 'ios' ? 16 : 24, textAlign: 'center', width: '100%', fontSize: 16, paddingHorizontal: 20 }]}>Your final review for {slide.data.name}</Text>
                     
@@ -1491,8 +1505,8 @@ export default function ReviewerRequestScreen() {
                       <RNView style={{ marginTop: 8, alignItems: 'center', width: '100%', marginBottom: Platform.OS === 'ios' ? 16 : 24, paddingHorizontal: 20 }}>
                         <Text style={[styles.overlayText, { marginBottom: 12, fontSize: 16, fontWeight: '700', textAlign: 'center' }]}>Overall Rating</Text>
                         <RNView style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', marginBottom: 12, gap: 8 }}>
-                          <Text style={[styles.overlayTitle, { fontSize: 48, fontWeight: '900', color: Colors.brand.accentOrange }]}>{overallRating * 2}</Text>
-                          <Text style={[styles.overlayText, { fontSize: 24, fontWeight: '700', opacity: 0.7 }]}>/ 10</Text>
+                          <Text style={[styles.overlayTitle, { fontSize: 48, fontWeight: '900', color: Colors.brand.accentOrange }]}>{overallRating}</Text>
+                          <Text style={[styles.overlayText, { fontSize: 24, fontWeight: '700', opacity: 0.7 }]}>/ 5</Text>
                         </RNView>
                         <RNView style={{ flexDirection: 'row', gap: 4, marginBottom: 8 }}>
                           {Array.from({ length: 5 }, (_, i) => (
