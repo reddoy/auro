@@ -453,6 +453,24 @@ export default function ReviewerRequestScreen() {
     };
   }, []);
 
+  // Scroll to rating slide when modal opens if no rating is set
+  useEffect(() => {
+    if (recordingModeOpen && overallRating === 0 && scrollViewRef.current && allSlides.length > 0) {
+      // Find the index of the rating slide
+      const ratingSlideIndex = allSlides.findIndex(slide => slide.type === 'rating');
+      if (ratingSlideIndex >= 0) {
+        // Small delay to ensure the modal is fully rendered
+        setTimeout(() => {
+          scrollViewRef.current?.scrollTo({
+            y: ratingSlideIndex * windowHeight,
+            animated: true,
+          });
+          setCurrentPhotoIndex(ratingSlideIndex);
+        }, 300);
+      }
+    }
+  }, [recordingModeOpen, overallRating, allSlides.length, windowHeight]);
+
   // Create sections for VideoReviewSection
   const reviewSections = React.useMemo(() => {
     if (!signedProfilePhotos.length) return [];
@@ -809,14 +827,26 @@ export default function ReviewerRequestScreen() {
                 </TouchableOpacity>
               </RNView>
             ) : (
-              <RNView style={styles.videoReviewCompleteContainer}>
-                <RNView style={styles.videoReviewCompleteBadge}>
-                  <Text style={styles.videoReviewCompleteIcon}>✅</Text>
-                  <Text style={styles.videoReviewCompleteText}>Video Review Complete</Text>
+              <RNView style={styles.videoReviewContent}>
+                <RNView style={styles.videoReviewCompleteContainer}>
+                  <RNView style={styles.videoReviewCompleteBadge}>
+                    <Text style={styles.videoReviewCompleteIcon}>✅</Text>
+                    <Text style={styles.videoReviewCompleteText}>Video Saved</Text>
+                  </RNView>
+                  <Text style={styles.videoReviewCompleteHint}>
+                    Your video has been saved. You can continue editing your review or submit when ready.
+                  </Text>
                 </RNView>
-                <Text style={styles.videoReviewCompleteHint}>
-                  Ready to submit! Your video will be attached to the review.
-                </Text>
+                <TouchableOpacity 
+                  style={styles.videoReviewStartButton} 
+                  onPress={() => {
+                    setIsVideoReviewMode(true);
+                    setRecordingModeOpen(true);
+                  }}
+                >
+                  <Text style={styles.videoReviewStartButtonIcon}>✏️</Text>
+                  <Text style={styles.videoReviewStartButtonText}>Continue Editing Review</Text>
+                </TouchableOpacity>
               </RNView>
             )}
 

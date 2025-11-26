@@ -550,6 +550,18 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, re
               >
                 {loading ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Sign In')}
               </button>
+
+              {!isSignUp && (
+                <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                  <a 
+                    href="/auth/forgot-password"
+                    className="link-button"
+                    style={{ fontSize: '14px', color: '#FF2D55' }}
+                  >
+                    Forgot Password?
+                  </a>
+                </div>
+              )}
             </div>
 
           <div className="auth-switch">

@@ -947,6 +947,24 @@ export default function ProfileScreen() {
           </MotionPressable>
         </MotionView>
 
+        <MotionView entering={nextEntrance()} style={styles.helpSection}>
+          <Text style={styles.helpText}>
+            Need help or want to share your feedback? Please reach out to{' '}
+            <Text 
+              style={styles.helpEmail}
+              onPress={() => {
+                if (Platform.OS === 'web') {
+                  window.location.href = 'mailto:rj@appauro.com';
+                } else {
+                  Linking.openURL('mailto:rj@appauro.com');
+                }
+              }}
+            >
+              rj@appauro.com
+            </Text>
+          </Text>
+        </MotionView>
+
         <MotionView entering={nextEntrance()} style={styles.dangerSection}>
           <MotionPressable style={styles.logoutButtonDark} onPress={handleLogout}>
             <View style={styles.logoutButtonBorder} />
@@ -1114,6 +1132,31 @@ const styles = StyleSheet.create({
   actionIcon: { fontSize: 20, zIndex: 1 },
   actionText: { flex: 1, fontSize: 18, color: Colors.brand.textPrimary, fontWeight: '500' },
   actionArrow: { fontSize: 22, color: Colors.brand.textLight },
+  helpSection: { 
+    margin: 16, 
+    marginBottom: 8,
+    backgroundColor: Colors.brand.cardBackground, 
+    borderRadius: 20, 
+    padding: 20, 
+    shadowColor: Colors.brand.shadow, 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 12, 
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 111, 0, 0.2)',
+  },
+  helpText: {
+    fontSize: 14,
+    color: Colors.brand.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  helpEmail: {
+    color: Colors.brand.accentMagenta,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
   dangerSection: { margin: 16, marginBottom: 120 },
   logoutButtonDark: { backgroundColor: Colors.brand.cardBackground, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, shadowColor: Colors.brand.shadow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 6, overflow: 'hidden', position: 'relative', borderWidth: 2, borderColor: Colors.brand.accentOrange },
   logoutButtonBorder: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderRadius: 26, borderWidth: 2, borderColor: Colors.brand.accentOrange },

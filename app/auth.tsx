@@ -1310,13 +1310,12 @@ export default function AuthScreen() {
           </>
         )}
 
-        {isLogin && !isCompact && !forgotPasswordMode && (
+        {!forgotPasswordMode && shouldShowEmailPassword && (
           <MotionView entering={subtleFadeIn().delay(MotionDelays.section * 1.5)}>
             <TouchableOpacity 
               style={styles.forgotPassword}
               onPress={() => {
-                setForgotPasswordEmail(email);
-                setForgotPasswordMode(true);
+                router.push('/auth/forgot-password');
               }}
             >
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
