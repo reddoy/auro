@@ -5592,14 +5592,27 @@ footer {
 }
 
 /* Payment Step */
+.payment-main-card {
+  background: rgba(30, 30, 40, 0.8);
+  border-radius: 24px;
+  padding: 40px;
+  margin: 0 auto;
+  max-width: 1200px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .payment-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 32px;
-  margin-bottom: 32px;
+  gap: 40px;
 }
 
 @media (max-width: 768px) {
+  .payment-main-card {
+    padding: 24px;
+  }
+  
   .payment-container {
     grid-template-columns: 1fr;
     gap: 24px;
@@ -5629,16 +5642,15 @@ footer {
 }
 
 .order-summary {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .order-summary h3 {
   font-size: 20px;
   font-weight: 700;
-  color: var(--text);
+  color: white;
   margin-bottom: 20px;
 }
 
@@ -5648,9 +5660,10 @@ footer {
   gap: 12px;
   margin-bottom: 20px;
   padding: 16px;
-  background: var(--card);
+  background: white;
   border-radius: 12px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .reviewer-avatar {
@@ -5676,25 +5689,21 @@ footer {
   color: #1a1a1a;
   margin: 0 0 4px 0;
   font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 16px;
 }
 
 .reviewer-info p {
   color: #666666;
   margin: 0;
   font-size: 14px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .order-details {
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .order-item {
@@ -5702,8 +5711,8 @@ footer {
   justify-content: space-between;
   align-items: center;
   padding: 8px 0;
-  color: var(--text-2);
-  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 15px;
 }
 
 .order-item span:first-child {
@@ -5721,7 +5730,7 @@ footer {
 
 .order-divider {
   height: 1px;
-  background: var(--border);
+  background: rgba(255, 255, 255, 0.1);
   margin: 12px 0;
 }
 
@@ -5732,8 +5741,7 @@ footer {
   padding: 8px 0;
   font-weight: 700;
   font-size: 18px;
-  color: var(--text);
-  white-space: nowrap;
+  color: white;
 }
 
 .order-total span:first-child {
@@ -5752,12 +5760,14 @@ footer {
   border: 1px solid rgba(255, 111, 0, 0.2);
   border-radius: 12px;
   padding: 16px;
+  margin-bottom: 24px;
 }
 
 .review-includes h4 {
-  color: var(--text);
+  color: white;
   margin: 0 0 12px 0;
   font-weight: 600;
+  font-size: 16px;
 }
 
 .review-includes ul {
@@ -5767,9 +5777,10 @@ footer {
 }
 
 .review-includes li {
-  color: var(--text-2);
-  margin-bottom: 6px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8px;
   font-size: 14px;
+  line-height: 1.5;
 }
 
 .escrow-protection {
@@ -5836,8 +5847,8 @@ footer {
   align-items: flex-start;
   gap: 12px;
   padding: 16px;
-  background: var(--bg);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
 }
 
@@ -5848,31 +5859,27 @@ footer {
 }
 
 .security-badge strong {
-  color: var(--text);
+  color: white;
   display: block;
   margin-bottom: 4px;
   font-size: 15px;
   line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-weight: 600;
 }
 
 .security-badge p {
-  color: var(--text-2);
+  color: rgba(255, 255, 255, 0.7);
   margin: 0;
   font-size: 13px;
   line-height: 1.4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .payment-button {
   width: 100%;
-  padding: 16px;
+  padding: 18px 24px;
   font-size: 18px;
-  background: linear-gradient(135deg, var(--grad-start), var(--grad-end));
+  font-weight: 600;
+  background: linear-gradient(135deg, #ff6f00 0%, #9333ea 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -5900,18 +5907,45 @@ footer {
 }
 
 .payment-note {
-  text-align: center;
-  color: var(--text-2);
-  font-size: 14px;
-  line-height: 1.5;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  line-height: 1.6;
   margin-top: 16px;
 }
 
 .payment-note p {
-  margin: 8px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin: 10px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.payment-note-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.payment-back-button {
+  width: 100%;
+  margin-top: auto;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.payment-back-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: white;
+  transform: translateY(-1px);
 }
 
 /* Download App */

@@ -15,7 +15,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [creatorInfo, setCreatorInfo] = useState<any>(null);
-  const [price, setPrice] = useState(10); // Default price
+  const [price, setPrice] = useState(75); // Default price
 
   useEffect(() => {
     const fetchCreatorInfo = async () => {
@@ -41,7 +41,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
           // Construct full_name from first_name and last_name for backward compatibility
           const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ') || null;
           setCreatorInfo({ ...data, full_name: fullName });
-          setPrice(data.hourly_rate || 10);
+          setPrice(data.hourly_rate || 75);
         }
       } catch (error) {
         console.error('Error fetching creator info:', error);
@@ -175,124 +175,126 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
         <p>Secure payment processing powered by Stripe</p>
       </div>
 
-      <div className="payment-container">
-        {/* Order Summary */}
-        <div className="order-summary">
-          <h3>Order Summary</h3>
-          
-          {creatorInfo && (
-            <div className="reviewer-summary">
-              <div className="reviewer-avatar">
-                <AsyncAvatar
-                  avatarPathOrUrl={creatorInfo.avatar_url}
-                  alt={`${creatorInfo.full_name || creatorInfo.username}`}
-                  size={48}
-                />
-              </div>
-              <div className="reviewer-info">
-                <h4>{creatorInfo.full_name || creatorInfo.username}</h4>
-                <p>Your selected reviewer</p>
-              </div>
-            </div>
-          )}
-
-          <div className="order-details">
-            <div className="order-item">
-              <span>Personal Review</span>
-              <span>${price}</span>
-            </div>
+      <div className="payment-main-card">
+        <div className="payment-container">
+          {/* Order Summary */}
+          <div className="order-summary">
+            <h3>Order Summary</h3>
             
-            <div className="order-item">
-              <span>Processing Fee</span>
-              <span>$0</span>
-            </div>
-            
-            <div className="order-divider"></div>
-            
-            <div className="order-total">
-              <span>Total</span>
-              <span>${price}</span>
-            </div>
-          </div>
-
-          <div className="review-includes">
-            <h4>Your review includes:</h4>
-            <ul>
-              <li>✅ Detailed attractiveness rating (1-10)</li>
-              <li>✅ Wardrobe and style feedback</li>
-              <li>✅ Dating profile optimization</li>
-              <li>✅ Personalized improvement suggestions</li>
-              <li>✅ Honest, constructive feedback</li>
-              <li>✅ Delivered within 48 hours</li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Payment Info */}
-        <div className="payment-info">
-          <div className="security-badges">
-            <div className="security-badge">
-              <span className="security-icon">🔒</span>
-              <div>
-                <strong>Secure Payment</strong>
-                <p>SSL encrypted & PCI compliant</p>
+            {creatorInfo && (
+              <div className="reviewer-summary">
+                <div className="reviewer-avatar">
+                  <AsyncAvatar
+                    avatarPathOrUrl={creatorInfo.avatar_url}
+                    alt={`${creatorInfo.full_name || creatorInfo.username}`}
+                    size={48}
+                  />
+                </div>
+                <div className="reviewer-info">
+                  <h4>{creatorInfo.full_name || creatorInfo.username}</h4>
+                  <p>Your selected reviewer</p>
+                </div>
               </div>
-            </div>
-            
-            <div className="security-badge">
-              <span className="security-icon">⚡</span>
-              <div>
-                <strong>Fast Delivery</strong>
-                <p>Reviews completed within 48 hours</p>
-              </div>
-            </div>
-            
-            <div className="security-badge">
-              <span className="security-icon">💝</span>
-              <div>
-                <strong>Satisfaction Guaranteed</strong>
-                <p>Quality feedback or money back</p>
-              </div>
-            </div>
-          </div>
-
-          {error && (
-            <div className="error-message">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={handlePayment}
-            disabled={loading}
-            className="btn-primary payment-button"
-          >
-            {loading ? (
-              <span className="button-loading">
-                <span className="spinner"></span>
-                Processing...
-              </span>
-            ) : (
-              `Pay $${price} with Stripe`
             )}
-          </button>
 
-          <div className="payment-note">
-            <p>
-              🔐 Your payment is processed securely by Stripe. We never store your payment information.
-            </p>
-            <p>
-              📱 After payment, you'll get access to download our mobile app to track your review progress.
-            </p>
+            <div className="order-details">
+              <div className="order-item">
+                <span>Personal Review</span>
+                <span>${price}</span>
+              </div>
+              
+              <div className="order-item">
+                <span>Processing Fee</span>
+                <span>$0</span>
+              </div>
+              
+              <div className="order-divider"></div>
+              
+              <div className="order-total">
+                <span>Total</span>
+                <span>${price}</span>
+              </div>
+            </div>
+
+            <div className="review-includes">
+              <h4>Your review includes:</h4>
+              <ul>
+                <li>✅ Detailed attractiveness rating (1-10)</li>
+                <li>✅ Wardrobe and style feedback</li>
+                <li>✅ Dating profile optimization</li>
+                <li>✅ Personalized improvement suggestions</li>
+                <li>✅ Honest, constructive feedback</li>
+                <li>✅ Delivered within 48 hours</li>
+              </ul>
+            </div>
+
+            <button type="button" onClick={onBack} className="btn-secondary payment-back-button">
+              Back
+            </button>
+          </div>
+
+          {/* Payment Info */}
+          <div className="payment-info">
+            <div className="security-badges">
+              <div className="security-badge">
+                <span className="security-icon">🔒</span>
+                <div>
+                  <strong>Secure Payment</strong>
+                  <p>SSL encrypted & PCI compliant</p>
+                </div>
+              </div>
+              
+              <div className="security-badge">
+                <span className="security-icon">⚡</span>
+                <div>
+                  <strong>Fast Delivery</strong>
+                  <p>Reviews completed within 48 hours</p>
+                </div>
+              </div>
+              
+              <div className="security-badge">
+                <span className="security-icon">💝</span>
+                <div>
+                  <strong>Satisfaction Guaranteed</strong>
+                  <p>Quality feedback or money back</p>
+                </div>
+              </div>
+            </div>
+
+            {error && (
+              <div className="error-message">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handlePayment}
+              disabled={loading}
+              className="btn-primary payment-button"
+            >
+              {loading ? (
+                <span className="button-loading">
+                  <span className="spinner"></span>
+                  Processing...
+                </span>
+              ) : (
+                `Pay $${price} with Stripe`
+              )}
+            </button>
+
+            <div className="payment-note">
+              <p>
+                <span className="payment-note-icon">🏦</span>
+                Your payment is processed securely by Stripe. We never store your payment information.
+              </p>
+              <p>
+                <span className="payment-note-icon">📱</span>
+                After payment, you'll get access to download our mobile app to track your review progress.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-
-      <div className="step-actions">
-        <button type="button" onClick={onBack} className="btn-secondary">
-          Back
-        </button>
       </div>
     </div>
   );
