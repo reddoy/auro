@@ -44,16 +44,80 @@ type Step = typeof STEPS[number];
 
 export default function RequestPage() {
   const router = useRouter();
-  // Start with 'intro' step - users can browse the flow without auth, auth required only for payment
-  const [currentStep, setCurrentStep] = useState<Step>('intro');
-  const [requestData, setRequestData] = useState<RequestData>({
-    photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
-    message: '',
-    consent: {
-      shareOnSocial: false,
-      agreedAt: ''
+  
+  // Initialize currentStep from localStorage if available (for OAuth return)
+  // Use lazy initializer to check localStorage only once on mount
+  const [currentStep, setCurrentStep] = useState<Step>(() => {
+    if (typeof window === 'undefined') return 'intro';
+    try {
+      const saved = localStorage.getItem('auro_request_flow_state');
+      if (saved) {
+        const flowState = JSON.parse(saved);
+        const age = Date.now() - (flowState.timestamp || 0);
+        // Only use saved state if it's recent (within 30 minutes)
+        if (age <= 30 * 60 * 1000) {
+          const stepToRestore = flowState.currentStep || flowState.step;
+          if (stepToRestore && STEPS.includes(stepToRestore as Step)) {
+            console.log('[RequestPage] Initializing from saved state:', stepToRestore);
+            return stepToRestore as Step;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[RequestPage] Failed to read saved state on init:', e);
     }
+    return 'intro';
   });
+  
+  // Initialize requestData from localStorage if available
+  const [requestData, setRequestData] = useState<RequestData>(() => {
+    if (typeof window === 'undefined') {
+      return {
+        photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
+        message: '',
+        consent: {
+          shareOnSocial: false,
+          agreedAt: ''
+        }
+      };
+    }
+    try {
+      const saved = localStorage.getItem('auro_request_flow_state');
+      if (saved) {
+        const flowState = JSON.parse(saved);
+        const age = Date.now() - (flowState.timestamp || 0);
+        if (age <= 30 * 60 * 1000 && flowState.requestData) {
+          console.log('[RequestPage] Initializing requestData from saved state');
+          // Use saved data with fallbacks for required properties
+          const saved = flowState.requestData;
+          return {
+            photos: saved.photos || { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
+            message: saved.message || '',
+            consent: saved.consent || {
+              shareOnSocial: false,
+              agreedAt: ''
+            },
+            creatorId: saved.creatorId,
+            creatorSlug: saved.creatorSlug,
+            userId: saved.userId,
+            requestId: saved.requestId,
+            uploadSessionId: saved.uploadSessionId,
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('[RequestPage] Failed to read saved requestData on init:', e);
+    }
+    return {
+      photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
+      message: '',
+      consent: {
+        shareOnSocial: false,
+        agreedAt: ''
+      }
+    };
+  });
+  
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [supabase, setSupabase] = useState<any>(null);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -388,14 +452,26 @@ export default function RequestPage() {
               
               if (hasSavedState) {
                 // Always restore state if it exists (coming back from OAuth)
+                // Note: State may have already been restored during initialization, but we check again
+                // to ensure we have the latest requestData
                 const restored = restoreFlowState();
                 
-                if (restored && isRealUser) {
+                // If user is authenticated and we're on 'auth' step (either from init or restore),
+                // advance to payment immediately
+                if (isRealUser && currentStepRef.current === 'auth') {
+                  console.log('[RequestPage] User authenticated and on auth step, advancing to payment');
+                  setTimeout(() => {
+                    setCurrentStep('payment');
+                    try {
+                      localStorage.removeItem('auro_request_flow_state');
+                    } catch {}
+                  }, 200);
+                } else if (restored && isRealUser) {
                   // User is authenticated and state was restored
                   // If we restored to 'auth' step, immediately advance to payment since user is already authenticated
                   setTimeout(() => {
                     if (currentStepRef.current === 'auth') {
-                      console.log('[RequestPage] User authenticated and on auth step, advancing to payment');
+                      console.log('[RequestPage] User authenticated and on auth step after restore, advancing to payment');
                       setCurrentStep('payment');
                       try {
                         localStorage.removeItem('auro_request_flow_state');
@@ -407,8 +483,15 @@ export default function RequestPage() {
                   setCurrentStep('intro');
                 }
               } else if (!hasSavedState) {
-                // No saved state, just set initial step if needed
-                if (currentStepRef.current === 'intro') {
+                // No saved state, but if user is authenticated and on 'auth' step, advance to payment
+                // This handles the case where state was cleared but user is still authenticated
+                if (isRealUser && currentStepRef.current === 'auth') {
+                  console.log('[RequestPage] User authenticated on auth step (no saved state), advancing to payment');
+                  setTimeout(() => {
+                    setCurrentStep('payment');
+                  }, 200);
+                } else if (currentStepRef.current === 'intro') {
+                  // No saved state, just set initial step if needed
                   setCurrentStep('intro');
                 }
               }
