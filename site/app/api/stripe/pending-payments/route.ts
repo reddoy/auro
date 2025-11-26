@@ -26,7 +26,7 @@ export async function GET(req: Request) {
       .from('profiles')
       .select('stripe_connect_account_id')
       .eq('id', reviewerId)
-      .eq('is_reviewer', true)
+      .eq('is_reviewer', 'approved')
       .maybeSingle();
       
     if (profErr) {

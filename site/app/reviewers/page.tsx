@@ -39,7 +39,7 @@ export default function ReviewersIndexPage() {
         const { data, error } = await supabase
           .from('profiles')
           .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, bio, links')
-          .eq('is_reviewer', true)
+          .eq('is_reviewer', 'approved')
           .order('rating_average', { ascending: false, nullsFirst: false });
 
         if (error) throw error;

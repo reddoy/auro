@@ -37,7 +37,7 @@ export async function POST(req: Request) {
             .from('profiles')
             .select('id')
             .eq('username', creatorSlug)
-            .eq('is_reviewer', true)
+            .eq('is_reviewer', 'approved')
             .maybeSingle();
           targetReviewerId = (profile as any)?.id;
         }
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
             .eq('id', fallbackUserId)
             .maybeSingle();
           
-          if ((userProfile as any)?.is_reviewer) {
+          if ((userProfile as any)?.is_reviewer === 'approved') {
             return new Response(JSON.stringify({ 
               error: 'Reviewers cannot purchase reviews for their own account. Please select a different reviewer.' 
             }), { status: 400 });
@@ -107,7 +107,7 @@ export async function POST(req: Request) {
             .from('profiles')
             .select('id, hourly_rate, stripe_connect_account_id')
             .eq('username', creatorSlug)
-            .eq('is_reviewer', true)
+            .eq('is_reviewer', 'approved')
             .maybeSingle();
           if (profile) {
             const hr = Number((profile as any)?.hourly_rate);
@@ -123,7 +123,7 @@ export async function POST(req: Request) {
             .from('profiles')
             .select('hourly_rate, stripe_connect_account_id')
             .eq('id', resolvedCreatorId)
-            .eq('is_reviewer', true)
+            .eq('is_reviewer', 'approved')
             .maybeSingle();
           if (profile2) {
             const hr2 = Number((profile2 as any)?.hourly_rate);
@@ -140,7 +140,7 @@ export async function POST(req: Request) {
               .from('profiles')
               .select('stripe_connect_account_id')
               .eq('id', resolvedCreatorId)
-              .eq('is_reviewer', true)
+              .eq('is_reviewer', 'approved')
               .maybeSingle();
             connectAccountId = (profile as any)?.stripe_connect_account_id || undefined;
           } catch {}
@@ -174,8 +174,8 @@ export async function POST(req: Request) {
           return new Response(JSON.stringify({ error: 'Reviewer not found.' }), { status: 404 });
         }
         
-        if (!(reviewerRow as any)?.is_reviewer) {
-          return new Response(JSON.stringify({ error: 'Selected user is not a reviewer. Please choose another reviewer.' }), { status: 400 });
+        if ((reviewerRow as any)?.is_reviewer !== 'approved') {
+          return new Response(JSON.stringify({ error: 'Selected user is not an approved reviewer. Please choose another reviewer.' }), { status: 400 });
         }
         
         // Check if reviewer has completed their profile (has a rate set)

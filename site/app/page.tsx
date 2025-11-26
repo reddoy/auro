@@ -40,7 +40,7 @@ function HomePageContent() {
         const { data, error } = await supabase
           .from('profiles')
           .select('id', { count: 'exact' })
-          .eq('is_reviewer', true);
+          .eq('is_reviewer', 'approved');
 
         if (error) {
           console.error('Failed to fetch reviewer count:', error.message);

@@ -25,11 +25,11 @@ export default function ReviewerCounter({ maxReviewers = 35, className = '' }: R
           return;
         }
         
-        // Count only verified reviewers: profiles where is_reviewer = true
+        // Count only verified reviewers: profiles where is_reviewer = 'approved'
         const { count, error } = await supabase
           .from('profiles')
           .select('*', { count: 'exact', head: true })
-          .eq('is_reviewer', true);
+          .eq('is_reviewer', 'approved');
 
         if (error) {
           console.error('Error fetching reviewer count:', error);

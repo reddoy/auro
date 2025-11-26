@@ -27,7 +27,7 @@ export default function ConditionalNav() {
         const { count, error: profileError } = await supabase
           .from('profiles')
           .select('*', { count: 'exact', head: true })
-          .eq('is_reviewer', true);
+          .eq('is_reviewer', 'approved');
 
         if (!profileError) {
           setCount(count || 0);

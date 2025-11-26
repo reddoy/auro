@@ -425,7 +425,7 @@ export default function FoundingReviewerApplyPage() {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('id', { count: 'exact' })
-          .eq('is_reviewer', true)
+          .eq('is_reviewer', 'approved')
           .eq('reviewer_signup_status', 'completed');
         
         if (!profileError && profileData) {

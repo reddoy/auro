@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       .from('profiles')
       .select('stripe_connect_account_id')
       .eq('id', reviewerId)
-      .eq('is_reviewer', true)
+      .eq('is_reviewer', 'approved')
       .maybeSingle();
     const connectAccountId = (profile as any)?.stripe_connect_account_id as string | undefined;
     if (!connectAccountId) {
