@@ -363,9 +363,9 @@ export default function ReviewerRequestScreen() {
     }
   }, [request?.notes]);
   
-  // Create combined slides array: profile + section cards + photos + photo notes + rating input + pros + cons + overall summary
+  // Create combined slides array: profile + section cards + photos + photo notes + rating input + pros + cons + overall summary + prosConsSummary + save
   const allSlides = React.useMemo(() => {
-    const slides: Array<{type: 'profile' | 'section' | 'photo' | 'photoNote' | 'rating' | 'pros' | 'cons' | 'overall', data: any, index: number}> = [];
+    const slides: Array<{type: 'profile' | 'section' | 'photo' | 'photoNote' | 'rating' | 'pros' | 'cons' | 'overall' | 'prosConsSummary' | 'save', data: any, index: number}> = [];
     let slideIndex = 0;
 
     slides.push({
@@ -419,10 +419,24 @@ export default function ReviewerRequestScreen() {
       index: slideIndex++
     });
 
-    // Fourth: Overall summary slide (profile photo with rating and notes displayed)
+    // Fourth: Overall summary slide (profile photo with rating displayed, no pros/cons)
     slides.push({
       type: 'overall',
       data: { name: reviewee?.displayName || 'User', profilePicture: avatarUri },
+      index: slideIndex++
+    });
+
+    // Fifth: Pros and Cons summary slide
+    slides.push({
+      type: 'prosConsSummary',
+      data: { name: reviewee?.displayName || 'User' },
+      index: slideIndex++
+    });
+
+    // Sixth: Save slide (final slide with save button)
+    slides.push({
+      type: 'save',
+      data: { name: reviewee?.displayName || 'User' },
       index: slideIndex++
     });
 
@@ -1459,9 +1473,46 @@ export default function ReviewerRequestScreen() {
                         </RNView>
                       </RNView>
                     )}
+
+                    {/* Overall Note Display (Read-only) */}
+                    {overallNote.trim() && (
+                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: Platform.OS === 'ios' ? 12 : 0, paddingHorizontal: 20 }}>
+                        <Text style={[styles.overlayText, { marginBottom: 8, fontSize: 15, fontWeight: '600', textAlign: 'center', width: '100%' }]}>Your Note:</Text>
+                        <RNView style={[styles.overallNoteInput, { backgroundColor: Colors.brand.cardBackgroundLight, padding: 12, width: '100%', maxHeight: 100 }]}>
+                          <Text style={[styles.overlayText, { textAlign: 'left', fontSize: 14, lineHeight: 20 }]} numberOfLines={4}>{overallNote}</Text>
+                        </RNView>
+                      </RNView>
+                    )}
+                  </RNView>
+                  </ScrollView>
+                )}
+                
+                {slide.type === 'prosConsSummary' && (
+                  <ScrollView 
+                    style={{ flex: 1, width: '100%' }}
+                    contentContainerStyle={{ 
+                      flexGrow: 1,
+                      alignItems: 'center',
+                      justifyContent: 'flex-start',
+                      paddingTop: Platform.OS === 'ios' ? 10 : 20,
+                      paddingBottom: Platform.OS === 'ios' ? 80 : 20,
+                      paddingHorizontal: 0,
+                    }}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                  >
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 0, paddingBottom: 0 }] }>
+                    {/* Auro Logo */}
+                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 72, height: 36, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
+                    <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 6, fontSize: 28, paddingHorizontal: 20 }]}>
+                      Pros & Cons Summary
+                    </Text>
+                    <Text style={[styles.overlayText, { marginBottom: Platform.OS === 'ios' ? 16 : 24, textAlign: 'center', width: '100%', fontSize: 16, paddingHorizontal: 20 }]}>
+                      Your selected pros and cons for {slide.data.name}
+                    </Text>
                     
                     {/* Selected Pros */}
-                    {selectedPros.length > 0 && (
+                    {selectedPros.length > 0 ? (
                       <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: Platform.OS === 'ios' ? 12 : 16, paddingHorizontal: 20 }}>
                         <Text style={[styles.overlayText, { marginBottom: Platform.OS === 'ios' ? 8 : 12, fontSize: 16, textAlign: 'center', width: '100%', fontWeight: '700', color: Colors.brand.status.completed }]}>
                           ✓ Pros ({selectedPros.length})
@@ -1490,10 +1541,16 @@ export default function ReviewerRequestScreen() {
                           ))}
                         </RNView>
                       </RNView>
+                    ) : (
+                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: Platform.OS === 'ios' ? 12 : 16, paddingHorizontal: 20 }}>
+                        <Text style={[styles.overlayText, { fontSize: 14, textAlign: 'center', width: '100%', color: 'rgba(255, 255, 255, 0.5)' }]}>
+                          No pros selected
+                        </Text>
+                      </RNView>
                     )}
                     
                     {/* Selected Cons */}
-                    {selectedCons.length > 0 && (
+                    {selectedCons.length > 0 ? (
                       <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: Platform.OS === 'ios' ? 12 : 16, paddingHorizontal: 20 }}>
                         <Text style={[styles.overlayText, { marginBottom: Platform.OS === 'ios' ? 8 : 12, fontSize: 16, textAlign: 'center', width: '100%', fontWeight: '700', color: Colors.brand.status.rejected }]}>
                           ✗ Cons ({selectedCons.length})
@@ -1522,35 +1579,51 @@ export default function ReviewerRequestScreen() {
                           ))}
                         </RNView>
                       </RNView>
-                    )}
-
-                    {/* Overall Note Display (Read-only) */}
-                    {overallNote.trim() && (
-                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: Platform.OS === 'ios' ? 12 : 0, paddingHorizontal: 20 }}>
-                        <Text style={[styles.overlayText, { marginBottom: 8, fontSize: 15, fontWeight: '600', textAlign: 'center', width: '100%' }]}>Your Note:</Text>
-                        <RNView style={[styles.overallNoteInput, { backgroundColor: Colors.brand.cardBackgroundLight, padding: 12, width: '100%', maxHeight: 100 }]}>
-                          <Text style={[styles.overlayText, { textAlign: 'left', fontSize: 14, lineHeight: 20 }]} numberOfLines={4}>{overallNote}</Text>
-                        </RNView>
+                    ) : (
+                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: Platform.OS === 'ios' ? 12 : 16, paddingHorizontal: 20 }}>
+                        <Text style={[styles.overlayText, { fontSize: 14, textAlign: 'center', width: '100%', color: 'rgba(255, 255, 255, 0.5)' }]}>
+                          No cons selected
+                        </Text>
                       </RNView>
                     )}
+                  </RNView>
+                  </ScrollView>
+                )}
+                
+                {slide.type === 'save' && (
+                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center', paddingTop: 0, paddingBottom: 0, flex: 1 }] }>
+                    {/* Auro Logo */}
+                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 72, height: 36, marginBottom: 24, alignSelf: 'center' }} contentFit="contain" />
+                    <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 12, fontSize: 28, paddingHorizontal: 20 }]}>
+                      Save Video Review
+                    </Text>
+                    <Text style={[styles.overlayText, { marginBottom: 40, textAlign: 'center', width: '100%', fontSize: 16, paddingHorizontal: 20 }]}>
+                      Your video review will be saved. You can submit it from the main review page when you're ready.
+                    </Text>
                     
-                    {/* Finish Video Review Button */}
+                    {/* Save Video Review Button */}
                     <TouchableOpacity
-                      onPress={handleSubmitReview}
-                      disabled={!canSubmit || submitting}
+                      onPress={() => {
+                        // Stop recording if still recording
+                        if (recordingTimerRef.current) {
+                          clearInterval(recordingTimerRef.current);
+                          recordingTimerRef.current = null;
+                        }
+                        // Close the recording modal and return to main review page
+                        setRecordingModeOpen(false);
+                        setIsVideoReviewMode(false);
+                      }}
                       style={[
                         styles.actionButton, 
                         styles.acceptButton, 
-                        { marginTop: 20, marginBottom: Platform.OS === 'ios' ? 20 : 0, alignSelf: 'center' },
-                        (!canSubmit || submitting) && styles.disabledButton
+                        { marginTop: 20, alignSelf: 'center', minWidth: 200 },
                       ]}
                     >
                       <Text style={styles.actionButtonText}>
-                        {submitting ? 'Submitting...' : 'Finish Video Review'}
+                        Save the Video Review
                       </Text>
                     </TouchableOpacity>
                   </RNView>
-                  </ScrollView>
                 )}
               </RNView>
             ))}
