@@ -84,7 +84,7 @@ export default function ReviewerSubmitScreen() {
     try {
       const updated = await acceptRequest(String(id));
       setRequest(updated);
-      show('Accepted. You can start the review.');
+      show('Accepted! You can start the review. ✅');
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to accept request');
     }
@@ -99,7 +99,7 @@ export default function ReviewerSubmitScreen() {
     try {
       const updated = await denyRequest(String(id));
       setRequest(updated);
-      show('Declined the request.');
+      show('Declined the request. ❌');
       router.back();
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to decline request');
@@ -149,7 +149,7 @@ export default function ReviewerSubmitScreen() {
           },
         },
       });
-      show('Review submitted.');
+      show('Review submitted! ✨');
       router.back();
     } catch (e: any) {
       Alert.alert('Failed to submit', e?.message || 'Please try again');

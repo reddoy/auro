@@ -10,14 +10,40 @@ import Animated, {
   useSharedValue, 
   withTiming 
 } from 'react-native-reanimated';
+import MediaRecorder from '@/components/MediaRecorder';
 
 type Props = {
   visible: boolean;
   uri: string;
   onClose: () => void;
+  reviewerName?: string;
+  showVideoRecorder?: boolean;
+  recorderTop?: number;
+  recorderLeft?: number;
+  recorderSize?: number;
+  // MediaRecorder props
+  videoUri?: string | null;
+  onRecorded?: (uri: string) => void;
+  onVideoUriChange?: (uri: string | null) => void;
+  onRecordingStart?: () => void;
+  onRecordingStop?: () => void;
 };
 
-export default function VideoReviewPhotoZoomModal({ visible, uri, onClose }: Props) {
+export default function VideoReviewPhotoZoomModal({ 
+  visible, 
+  uri, 
+  onClose,
+  reviewerName,
+  showVideoRecorder = false,
+  recorderTop = 16,
+  recorderLeft = 16,
+  recorderSize = 130,
+  videoUri,
+  onRecorded,
+  onVideoUriChange,
+  onRecordingStart,
+  onRecordingStop,
+}: Props) {
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
   const maxScale = 5;
@@ -175,16 +201,13 @@ export default function VideoReviewPhotoZoomModal({ visible, uri, onClose }: Pro
 
   if (!visible) return null;
 
-  return (
-    <Modal 
-      visible={visible} 
-      animationType="fade" 
-      onRequestClose={handleClose}
-      presentationStyle={Platform.OS === 'ios' ? 'fullScreen' : undefined}
-      accessibilityViewIsModal={true}
-      accessibilityLabel="Full screen photo viewer"
-    >
-      <View style={styles.container}>
+  // If showVideoRecorder is false, render as overlay (not a separate modal) so parent's MediaRecorder stays visible
+  const containerStyle = showVideoRecorder 
+    ? styles.container 
+    : [styles.container, { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100 }];
+
+  const content = (
+    <View style={containerStyle}>
         {/* Tap outside to close - only when not zoomed */}
         {!isZoomed && (
           <TouchableOpacity 
@@ -196,7 +219,7 @@ export default function VideoReviewPhotoZoomModal({ visible, uri, onClose }: Pro
         
         {/* Close button - top right */}
         <TouchableOpacity 
-          style={[styles.closeButton, { top: insets.top + 16, right: 16 }]} 
+          style={[styles.closeButton, { top: insets.top + 16, right: 16, zIndex: 20 }]} 
           onPress={handleClose}
           activeOpacity={0.7}
           accessibilityLabel="Close photo viewer"
@@ -204,9 +227,32 @@ export default function VideoReviewPhotoZoomModal({ visible, uri, onClose }: Pro
         >
           <Text style={styles.closeButtonText}>✕</Text>
         </TouchableOpacity>
+
+        {/* Video recorder and reviewer name overlay - always visible on top */}
+        {showVideoRecorder && visible && (
+          <View style={[styles.recorderOverlay, { top: insets.top + recorderTop, left: recorderLeft, zIndex: 20, elevation: 20 }]} pointerEvents="box-none">
+            <View style={{ zIndex: 21, elevation: 21, backgroundColor: 'transparent' }}>
+              <MediaRecorder
+                onRecorded={onRecorded}
+                variant="corner"
+                circleSize={recorderSize}
+                hideButtons={true}
+                value={videoUri || undefined}
+                onVideoUriChange={onVideoUriChange}
+                onRecordingStart={onRecordingStart}
+                onRecordingStop={onRecordingStop}
+              />
+            </View>
+            {reviewerName && (
+              <View style={[styles.reviewerNamePanel, { zIndex: 21, elevation: 21 }]}>
+                <Text style={styles.reviewerNameText}>{reviewerName}</Text>
+              </View>
+            )}
+          </View>
+        )}
         
         {/* Zoomable image */}
-        <View style={styles.imageContainer}>
+        <View style={styles.imageContainer} pointerEvents="box-none">
           <GestureDetector gesture={combinedGesture}>
             <Animated.View style={[styles.animatedContainer, animatedStyle]}>
               <Image
@@ -225,18 +271,24 @@ export default function VideoReviewPhotoZoomModal({ visible, uri, onClose }: Pro
             <Text style={styles.hintText}>Pinch + drag to explore • Double tap to reset</Text>
           </View>
         )}
-
-        {/* Bottom close control */}
-        <TouchableOpacity
-          style={[styles.bottomCloseButton, { bottom: insets.bottom + 24 }]}
-          onPress={handleClose}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Close photo viewer"
-        >
-          <Text style={styles.bottomCloseText}>✕ Close</Text>
-        </TouchableOpacity>
       </View>
+  );
+
+  // If showVideoRecorder is false, render as overlay instead of Modal
+  if (!showVideoRecorder) {
+    return content;
+  }
+
+  return (
+    <Modal 
+      visible={visible} 
+      animationType="fade" 
+      onRequestClose={handleClose}
+      presentationStyle={Platform.OS === 'ios' ? 'fullScreen' : undefined}
+      accessibilityViewIsModal={true}
+      accessibilityLabel="Full screen photo viewer"
+    >
+      {content}
     </Modal>
   );
 }
@@ -294,20 +346,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  bottomCloseButton: {
+  recorderOverlay: {
     position: 'absolute',
-    alignSelf: 'center',
-    paddingHorizontal: 22,
-    paddingVertical: 12,
-    borderRadius: 28,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.25)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: 'transparent',
   },
-  bottomCloseText: {
+  reviewerNamePanel: {
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    borderRadius: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    minWidth: 90,
+    alignItems: 'center',
+  },
+  reviewerNameText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 22,
+    fontWeight: '800',
     letterSpacing: 0.5,
+    textAlign: 'center',
   },
 });

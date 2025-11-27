@@ -268,15 +268,61 @@ export default function TransactionBreakdownScreen() {
       };
     }
 
-    // Use payment_status if available, otherwise fall back to old logic
+    // FIRST: Check if payment is held due to Stripe not being set up
+    // This check must come before payment_status check to ensure we show the correct message
+    if (transaction.payment_distribution_error) {
+      const errorLower = transaction.payment_distribution_error.toLowerCase();
+      if (errorLower.includes('payment held') || 
+          errorLower.includes('stripe connect account') || 
+          errorLower.includes('not set up') ||
+          errorLower.includes('stripe account') ||
+          errorLower.includes('connect account')) {
+        return {
+          status: 'held',
+          message: 'Awaiting Stripe setup',
+          color: '#f59e0b',
+          icon: '⚠️'
+        };
+      }
+      // Other payment errors
+      return {
+        status: 'failed',
+        message: 'Payment failed - will retry automatically',
+        color: '#ef4444',
+        icon: '❌'
+      };
+    }
+
+    // SECOND: Check if Stripe is not set up and payment hasn't been distributed
+    // If reviewer doesn't have Stripe set up, show awaiting setup message
+    if (!profile?.stripe_connect_account_id && !transaction.payment_distributed) {
+      return {
+        status: 'held',
+        message: 'Awaiting Stripe setup',
+        color: '#f59e0b',
+        icon: '⚠️'
+      };
+    }
+
+    // THIRD: Use payment_status if available, otherwise fall back to old logic
     if (transaction.payment_status) {
       switch (transaction.payment_status) {
         case 'paid':
+          // Only show "paid" if payment was actually distributed
+          if (transaction.payment_distributed) {
+            return {
+              status: 'paid',
+              message: 'Payment sent to your account',
+              color: '#10b981',
+              icon: '✅'
+            };
+          }
+          // If payment_status is 'paid' but not distributed, it's likely queued
           return {
-            status: 'paid',
-            message: 'Payment sent to your account',
-            color: '#10b981',
-            icon: '✅'
+            status: 'queued',
+            message: 'Awaiting Stripe setup',
+            color: '#f59e0b',
+            icon: '⚠️'
           };
         case 'failed':
           return {
@@ -302,7 +348,7 @@ export default function TransactionBreakdownScreen() {
       }
     }
 
-    // Fallback to old logic
+    // Fallback to old logic - only show "paid" if actually distributed
     if (transaction.payment_distributed) {
       return {
         status: 'paid',
@@ -312,33 +358,14 @@ export default function TransactionBreakdownScreen() {
       };
     }
 
-    // Check if payment is held due to Stripe not being set up
-    if (transaction.payment_distribution_error) {
-      const errorLower = transaction.payment_distribution_error.toLowerCase();
-      if (errorLower.includes('payment held') || 
-          errorLower.includes('stripe connect account') || 
-          errorLower.includes('not set up')) {
-        return {
-          status: 'held',
-          message: 'Payout attempted but Stripe not set up',
-          color: '#f59e0b',
-          icon: '⚠️'
-        };
-      }
-      // Other payment errors
-      return {
-        status: 'failed',
-        message: 'Payment failed - will retry automatically',
-        color: '#ef4444',
-        icon: '❌'
-      };
-    }
-
+    // Default: awaiting payout (either settlement or Stripe setup)
     return {
       status: 'queued',
-      message: 'Awaiting settlement (5-7 business days)',
+      message: profile?.stripe_connect_account_id 
+        ? 'Awaiting settlement (5-7 business days)'
+        : 'Awaiting Stripe setup',
       color: '#f59e0b',
-      icon: '⏳'
+      icon: '⚠️'
     };
   };
 

@@ -564,7 +564,7 @@ export default function ProfileScreen() {
                 <View style={styles.setupIndicatorContent}>
                   <Text style={styles.setupIndicatorIcon}>⚠️</Text>
                   <View style={styles.setupIndicatorTextContainer}>
-                    <Text style={styles.setupIndicatorTitle}>Complete Stripe Connect Setup</Text>
+                    <Text style={styles.setupIndicatorTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>Complete Stripe Connect Setup</Text>
                     <Text style={styles.setupIndicatorSubtitle}>Required to receive payments</Text>
                   </View>
                   <Text style={styles.setupIndicatorArrow}>→</Text>
@@ -914,35 +914,6 @@ export default function ProfileScreen() {
               <Text style={styles.actionIcon}>⚙️</Text>
             </View>
             <Text style={styles.actionText}>Account Settings</Text>
-            <Text style={styles.actionArrow}>›</Text>
-          </MotionPressable>
-
-
-          <MotionPressable style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/hinge-clone')} accessibilityLabel="Open Hinge profile clone">
-            <View style={styles.actionIconContainer}>
-              <ExpoLinearGradient
-                colors={['#FF6B6B', '#FF8E8E']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.actionIconGradient}
-              />
-              <Text style={styles.actionIcon}>💕</Text>
-            </View>
-            <Text style={styles.actionText}>Hinge Profile Clone</Text>
-            <Text style={styles.actionArrow}>›</Text>
-          </MotionPressable>
-
-          <MotionPressable style={styles.actionItem} onPress={() => router.push('/(tabs)/profile/test-notifications')} accessibilityLabel="Test notifications">
-            <View style={styles.actionIconContainer}>
-              <ExpoLinearGradient
-                colors={['#8B5CF6', '#A78BFA']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.actionIconGradient}
-              />
-              <Text style={styles.actionIcon}>🔔</Text>
-            </View>
-            <Text style={styles.actionText}>Test Notifications</Text>
             <Text style={styles.actionArrow}>›</Text>
           </MotionPressable>
         </MotionView>

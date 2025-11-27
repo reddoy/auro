@@ -35,22 +35,22 @@ export default function TestNotificationsScreen() {
       tests: [
         {
           label: 'Success Message',
-          action: () => testToast('Review submitted successfully!'),
+          action: () => testToast('Review submitted successfully! ✨'),
           description: 'Standard success toast',
         },
         {
           label: 'Info Message',
-          action: () => testToast('Accepted. You can start the review.'),
+          action: () => testToast('Accepted! You can start the review. ✅'),
           description: 'Info toast message',
         },
         {
           label: 'Action Confirmed',
-          action: () => testToast('Declined the request.'),
+          action: () => testToast('Declined the request. ❌'),
           description: 'Action confirmation toast',
         },
         {
           label: 'Short Message',
-          action: () => testToast('Saved!'),
+          action: () => testToast('Saved! 💾'),
           description: 'Brief toast notification',
         },
         {
@@ -68,7 +68,7 @@ export default function TestNotificationsScreen() {
           label: 'Review Completed',
           action: () => testPushNotification(
             'Review Completed!',
-            'Your review is ready. Tap to view your feedback.',
+            'Your review is ready! Tap to view your feedback. ✨',
             'review_completed',
             'test-request-1'
           ),
@@ -77,8 +77,8 @@ export default function TestNotificationsScreen() {
         {
           label: 'Request Accepted',
           action: () => testPushNotification(
-            'Request Accepted',
-            'A new review request has been accepted. Start reviewing now!',
+            'Request Accepted!',
+            'A new review request has been accepted! Start reviewing now! 🎉',
             'request_accepted',
             'test-request-2'
           ),
@@ -87,8 +87,8 @@ export default function TestNotificationsScreen() {
         {
           label: 'Payment Received',
           action: () => testPushNotification(
-            'Payment Received',
-            'Your payment has been processed successfully.',
+            'Payment Received!',
+            'Your payment has been processed successfully! 💰',
             'payment_received',
             'test-request-3'
           ),
@@ -97,8 +97,8 @@ export default function TestNotificationsScreen() {
         {
           label: 'New Request',
           action: () => testPushNotification(
-            'New Review Request',
-            'You have a new review request waiting for your response.',
+            'New Review Request!',
+            'You have a new review request waiting for your response! 📬',
             'new_request',
             'test-request-4'
           ),
@@ -107,8 +107,8 @@ export default function TestNotificationsScreen() {
         {
           label: 'Review Submitted',
           action: () => testPushNotification(
-            'Review Submitted',
-            'Your review has been submitted and is being processed.',
+            'Review Submitted!',
+            'Your review has been submitted and is being processed! 🚀',
             'review_submitted',
             'test-request-5'
           ),

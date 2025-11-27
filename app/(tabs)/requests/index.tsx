@@ -430,6 +430,7 @@ export default function RequestsScreen() {
                     ? "You haven't received any review requests yet. Share your profile link to start getting requests!"
                     : "Start your journey by requesting your first review from an influencer!"}
                   icon="⭐"
+                  // Always show "Discover Reviewers" button - reviewers should be able to browse other reviewer profiles
                   actionLabel="Discover Reviewers"
                   onAction={handleNewRequest}
                 />
