@@ -15,6 +15,7 @@ import { useToast } from '@/components/Toast';
 import Avatar from '@/components/Avatar';
 import { MotionPressable, MotionView, cardEntrance, cardExit, subtleFadeIn } from '@/components/motion';
 import EmptyState from '@/components/EmptyState';
+import { copyToClipboard } from '@/lib/clipboard';
 
 export default function RequestsScreen() {
   const insets = useSafeAreaInsets();
@@ -26,6 +27,7 @@ export default function RequestsScreen() {
   const [userMap, setUserMap] = useState<Record<string, { id: string; displayName: string; avatarUrl?: string | null }>>({});
   const [userAvatarMap, setUserAvatarMap] = useState<Record<string, string | undefined>>({});
   const [isReviewer, setIsReviewer] = useState(false);
+  const [userProfile, setUserProfile] = useState<{ id: string; username?: string | null } | null>(null);
   const receivedCount = requests.length;
   const [filter, setFilter] = useState<'active' | 'completed' | 'archived'>('active');
   const [refreshing, setRefreshing] = useState(false);
@@ -55,6 +57,7 @@ export default function RequestsScreen() {
         }
         const reviewerMode = !!(profile as any)?.is_reviewer;
         setIsReviewer(reviewerMode);
+        setUserProfile({ id: profile.id, username: (profile as any)?.username });
         const reqs = reviewerMode ? await getRequestsByReviewer(profile.id) : await getRequestsByUser(profile.id);
         setRequests(reqs);
         console.log('[my-reviews] initial load fetched requests', {
@@ -145,6 +148,7 @@ export default function RequestsScreen() {
         }
         const reviewerMode = !!(profile as any)?.is_reviewer;
         setIsReviewer(reviewerMode);
+        setUserProfile({ id: profile.id, username: (profile as any)?.username });
         const reqs = reviewerMode ? await getRequestsByReviewer(profile.id) : await getRequestsByUser(profile.id);
         setRequests(reqs);
         console.log('[my-reviews] refresh fetched requests', {
@@ -247,6 +251,23 @@ export default function RequestsScreen() {
   const handleNewRequest = () => {
     router.push('/(tabs)/requests/new');
   };
+
+  const handleCopyProfileLink = useCallback(async () => {
+    if (!userProfile?.id) {
+      Alert.alert('Error', 'Profile not loaded');
+      return;
+    }
+
+    try {
+      const slug = userProfile.username || userProfile.id;
+      const profileUrl = `https://www.appauro.com/${slug}`;
+      
+      await copyToClipboard(profileUrl);
+      Alert.alert('Copied!', 'Your profile link has been copied to clipboard. You can now paste it in your social media bios!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to copy link to clipboard');
+    }
+  }, [userProfile]);
 
   // Payment is handled on web only. In-app pay is disabled.
 
@@ -362,6 +383,15 @@ export default function RequestsScreen() {
         <Text style={styles.titlePlain}>My Reviews</Text>
         <Text style={styles.subtitlePlain} numberOfLines={1}>Track your review requests and feedback</Text>
 
+        <MotionPressable
+          onPress={handleNewRequest}
+          style={styles.discoverButton}
+          scaleEffect={false}
+          accessibilityRole="button"
+        >
+          <Text style={styles.discoverButtonText}>Discover Reviewers</Text>
+        </MotionPressable>
+
         <RNView style={[styles.countersRowPlain, { justifyContent: 'center' }]}>
           <MotionPressable
             onPress={() => setFilter('active')}
@@ -420,20 +450,29 @@ export default function RequestsScreen() {
               />
             }
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 24, paddingHorizontal: 16, paddingTop: 0 }}
+            contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 16, paddingTop: 0 }}
             ListHeaderComponent={null}
             ListEmptyComponent={(
-              <View style={{ paddingHorizontal: 16, paddingTop: 24 }}>
+              <View style={{ paddingHorizontal: 16, paddingTop: 24, alignItems: 'center' }}>
                 <EmptyState
                   title="No reviews yet"
                   message={isReviewer 
-                    ? "You haven't received any review requests yet. Share your profile link to start getting requests!"
-                    : "Start your journey by requesting your first review from an influencer!"}
+                    ? "You haven't received any review requests yet."
+                    : "Start your journey by requesting your first review from one of our Reviewers!"}
                   icon="⭐"
-                  // Always show "Discover Reviewers" button - reviewers should be able to browse other reviewer profiles
-                  actionLabel="Discover Reviewers"
-                  onAction={handleNewRequest}
                 />
+                {isReviewer && (
+                  <RNView style={styles.shareProfileSection}>
+                    <MotionPressable
+                      onPress={handleCopyProfileLink}
+                      style={styles.shareProfileButton}
+                      scaleEffect={false}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.shareProfileButtonText}>Share your profile link</Text>
+                    </MotionPressable>
+                  </RNView>
+                )}
               </View>
             )}
           />
@@ -512,7 +551,7 @@ const styles = StyleSheet.create({
   subtitlePlain: {
     fontSize: 16,
     color: Colors.brand.textSecondary,
-    marginBottom: 28,
+    marginBottom: 12,
     textAlign: 'center',
     opacity: 0.9,
     fontWeight: '500',
@@ -822,7 +861,49 @@ const styles = StyleSheet.create({
     color: Colors.brand.textSecondary,
     fontWeight: '600',
   },
-  
+  discoverButton: {
+    backgroundColor: Colors.brand.accentOrange,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    marginTop: 0,
+    marginBottom: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  discoverButtonText: {
+    color: Colors.brand.textOnGradient,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  shareProfileSection: {
+    alignItems: 'center',
+    marginTop: -20,
+    backgroundColor: 'transparent',
+  },
+  shareProfileButton: {
+    backgroundColor: Colors.brand.accentOrange,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  shareProfileButtonText: {
+    color: Colors.brand.textOnGradient,
+    fontSize: 16,
+    fontWeight: '700',
+  },
 });
 
 

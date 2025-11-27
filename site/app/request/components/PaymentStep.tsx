@@ -216,6 +216,22 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
               </div>
             </div>
 
+            <button
+              type="button"
+              onClick={handlePayment}
+              disabled={loading}
+              className="btn-primary payment-button"
+            >
+              {loading ? (
+                <span className="button-loading">
+                  <span className="spinner"></span>
+                  Processing...
+                </span>
+              ) : (
+                `Pay $${price} with Stripe`
+              )}
+            </button>
+
             <div className="review-includes">
               <h4>Your review includes:</h4>
               <ul>
@@ -227,10 +243,6 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
                 <li>✅ Delivered within 48 hours</li>
               </ul>
             </div>
-
-            <button type="button" onClick={onBack} className="btn-secondary payment-back-button">
-              Back
-            </button>
           </div>
 
           {/* Payment Info */}
@@ -248,7 +260,6 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
                 <span className="security-icon">⚡</span>
                 <div>
                   <strong>Fast Delivery</strong>
-                  <p>Reviews completed within 48 hours</p>
                 </div>
               </div>
               
@@ -256,32 +267,20 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
                 <span className="security-icon">💝</span>
                 <div>
                   <strong>Satisfaction Guaranteed</strong>
-                  <p>Quality feedback or money back</p>
+                  <p>Quality feedback</p>
                 </div>
               </div>
             </div>
+
+            <button type="button" onClick={onBack} className="btn-secondary payment-back-button">
+              Back
+            </button>
 
             {error && (
               <div className="error-message">
                 {error}
               </div>
             )}
-
-            <button
-              type="button"
-              onClick={handlePayment}
-              disabled={loading}
-              className="btn-primary payment-button"
-            >
-              {loading ? (
-                <span className="button-loading">
-                  <span className="spinner"></span>
-                  Processing...
-                </span>
-              ) : (
-                `Pay $${price} with Stripe`
-              )}
-            </button>
 
             <div className="payment-note">
               <p>

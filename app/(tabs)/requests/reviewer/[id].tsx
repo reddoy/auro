@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Platform, Linking, Animated, LayoutAnimation, useWindowDimensions, PanResponder, Text as RNText, Keyboard } from 'react-native';
+import { StyleSheet, View as RNView, TouchableOpacity, Alert, ScrollView, Modal, TextInput, Platform, Linking, Animated, LayoutAnimation, useWindowDimensions, PanResponder, Text as RNText, Keyboard, Pressable } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { VideoView, useVideoPlayer } from 'expo-video';
 
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
@@ -31,6 +32,58 @@ import DatingProfilePhotoGallery from '@/components/DatingProfilePhotoGallery';
 import StarRating from '@/components/StarRating';
 
 // Removed unused URL helper functions since we're not showing social links in this screen
+
+// Video Player Preview Component for Completed Reviews
+const VideoPlayerPreview = ({ videoUrl, onPress }: { videoUrl: string; onPress: () => void }) => {
+  const videoPlayer = useVideoPlayer(videoUrl, (player) => {
+    player.loop = true;
+    player.muted = true;
+    player.play();
+  });
+
+  const [isPlaying, setIsPlaying] = useState(true);
+
+  useEffect(() => {
+    if (!videoPlayer) return;
+    const subscription = videoPlayer.addListener('playingChange', (playing) => {
+      setIsPlaying(playing);
+    });
+    return () => subscription.remove();
+  }, [videoPlayer]);
+
+  return (
+    <Pressable onPress={onPress} style={styles.videoPreviewContainer}>
+      <VideoView
+        style={styles.videoPreview}
+        player={videoPlayer}
+        contentFit="cover"
+        nativeControls={false}
+      />
+      <RNView style={styles.videoPreviewOverlay}>
+        <Text style={styles.videoPreviewPlayIcon}>▶</Text>
+      </RNView>
+    </Pressable>
+  );
+};
+
+// Fullscreen Video Player Component
+const FullscreenVideoPlayer = ({ videoUrl }: { videoUrl: string }) => {
+  const videoPlayer = useVideoPlayer(videoUrl, (player) => {
+    player.loop = false;
+    player.muted = false;
+  });
+
+  return (
+    <RNView style={styles.fullscreenVideoWrapper}>
+      <VideoView
+        style={styles.fullscreenVideo}
+        player={videoPlayer}
+        contentFit="contain"
+        nativeControls={true}
+      />
+    </RNView>
+  );
+};
 
 const ratingMoodThemes = [
   {
@@ -88,6 +141,9 @@ export default function ReviewerRequestScreen() {
   const [currentPhotoUri, setCurrentPhotoUri] = useState<string>('');
   const [isPhotoZoomed, setIsPhotoZoomed] = useState(false);
   const [zoomedPhotoUri, setZoomedPhotoUri] = useState<string>('');
+  const [videoModalVisible, setVideoModalVisible] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [signedVideoUrl, setSignedVideoUrl] = useState<string | null>(null);
   
   // Earnings UI
   const amountCents = (request as any)?.amount_cents as number | undefined;
@@ -403,6 +459,20 @@ export default function ReviewerRequestScreen() {
           } else {
             setSignedProfilePhotos([]);
           }
+          
+          // Sign video URL if review is completed
+          if (req?.status === 'completed' && (req as any)?.review?.media?.videoUrl) {
+            try {
+              const videoUrl = (req as any).review.media.videoUrl;
+              const signed = await getSignedRequestMediaUrl(videoUrl);
+              setSignedVideoUrl(signed);
+            } catch {
+              // If signing fails, use original URL
+              setSignedVideoUrl((req as any).review.media.videoUrl);
+            }
+          } else {
+            setSignedVideoUrl(null);
+          }
 
           // No longer loading selfie - using user's profile picture instead
         } catch {}
@@ -636,6 +706,23 @@ export default function ReviewerRequestScreen() {
                 : '❌ Request was denied and refunded'
               }
             </Text>
+            {request.status === 'completed' && signedVideoUrl && (
+              <RNView style={styles.completedVideoSection}>
+                <Text style={styles.completedVideoTitle}>Your Video Review</Text>
+                <RNView style={styles.completedVideoPreview}>
+                  <VideoPlayerPreview 
+                    videoUrl={signedVideoUrl}
+                    onPress={() => setVideoModalVisible(true)}
+                  />
+                </RNView>
+                <TouchableOpacity 
+                  style={[styles.actionButton, { backgroundColor: Colors.brand.accentMagenta, marginTop: 12 }]} 
+                  onPress={() => setVideoModalVisible(true)}
+                >
+                  <Text style={styles.actionButtonText}>View Full Video Review</Text>
+                </TouchableOpacity>
+              </RNView>
+            )}
           </View>
         )}
 
@@ -716,6 +803,37 @@ export default function ReviewerRequestScreen() {
           </RNView>
         )}
       </ScrollView>
+      
+      {/* Fullscreen Video Modal for Completed Reviews */}
+      {request?.status === 'completed' && signedVideoUrl && (
+        <Modal
+          visible={videoModalVisible}
+          animationType="fade"
+          transparent={false}
+          onRequestClose={() => setVideoModalVisible(false)}
+        >
+          <View style={styles.videoModalContainer}>
+            <SafeAreaView style={styles.videoModalSafeArea} edges={['top', 'bottom', 'left', 'right']}>
+              <RNView style={styles.videoModalHeader}>
+                <TouchableOpacity 
+                  onPress={() => setVideoModalVisible(false)}
+                  style={styles.videoModalCloseButton}
+                >
+                  <Text style={styles.videoModalCloseText}>✕</Text>
+                </TouchableOpacity>
+                <Text style={styles.videoModalTitle}>Your Video Review</Text>
+                <RNView style={{ width: 40 }} />
+              </RNView>
+              <RNView style={styles.videoModalContent}>
+                <FullscreenVideoPlayer 
+                  videoUrl={signedVideoUrl}
+                />
+              </RNView>
+            </SafeAreaView>
+          </View>
+        </Modal>
+      )}
+      
       {/* Immersive recording modal with rating and note controls */}
       <Modal 
         visible={recordingModeOpen} 
@@ -2122,5 +2240,101 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.brand.textOnGradient,
     letterSpacing: 0.35,
+  },
+  completedVideoSection: {
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.brand.border,
+  },
+  completedVideoTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+    marginBottom: 12,
+  },
+  completedVideoPreview: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: Colors.brand.cardBackgroundSecondary,
+  },
+  videoPreviewContainer: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+  },
+  videoPreview: {
+    width: '100%',
+    height: '100%',
+  },
+  videoPreviewOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  videoPreviewPlayIcon: {
+    fontSize: 48,
+    color: '#fff',
+    fontWeight: '900',
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  videoModalContainer: {
+    flex: 1,
+    backgroundColor: Colors.brand.background,
+  },
+  videoModalSafeArea: {
+    flex: 1,
+  },
+  videoModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.brand.border,
+  },
+  videoModalCloseButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  videoModalCloseText: {
+    fontSize: 24,
+    color: Colors.brand.textPrimary,
+    fontWeight: '300',
+  },
+  videoModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+  },
+  videoModalContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  fullscreenVideoWrapper: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullscreenVideo: {
+    width: '100%',
+    height: '100%',
   },
 });

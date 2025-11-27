@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, View as RNView, Linking, Platform, Pressable, useWindowDimensions } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, View as RNView, Linking, Platform, Pressable, useWindowDimensions, Modal } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 
@@ -20,10 +20,10 @@ import PhotoCarousel from '@/components/PhotoCarousel';
 import StatusBadge from '@/components/StatusBadge';
 import Avatar from '@/components/Avatar';
 import { getSignedAvatarUrl } from '@/lib/profile';
-import * as Sharing from 'expo-sharing';
 import StarRating from '@/components/StarRating';
 import ReviewerReviewModal from '@/components/ReviewerReviewModal';
 import { VideoView, useVideoPlayer } from 'expo-video';
+import type { DbReviewerSummary } from '@/types';
 
 export default function ReviewDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -45,6 +45,8 @@ export default function ReviewDetailScreen() {
   const [hasViewedReview, setHasViewedReview] = React.useState(false);
   const [autoPromptShown, setAutoPromptShown] = React.useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = React.useState(false);
+  const [videoModalVisible, setVideoModalVisible] = React.useState(false);
+  const [reviewer, setReviewer] = React.useState<DbReviewerSummary | null>(null);
 
   const statusBanner = React.useMemo(() => {
     const s = request?.status as string | undefined;
@@ -134,6 +136,7 @@ export default function ReviewDetailScreen() {
         if (req?.influencerId) {
           const rev = await getReviewerById(String(req.influencerId));
           if (rev) {
+            setReviewer(rev);
             setInfluencerName(rev.displayName);
             try {
               // Normalize known copy/paste artifacts (e.g., leading '@') and re-sign
@@ -184,27 +187,11 @@ export default function ReviewDetailScreen() {
     return () => clearTimeout(promptTimer);
   }, [hasViewedReview, autoPromptShown, reviewerReview, review, request?.status]);
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Loading...</Text>
-      </View>
-    );
-  }
-
-  if (!request) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Review not found</Text>
-      </View>
-    );
-  }
-
-
+  // Extract media URLs before early returns to ensure hooks are always called
   const mediaVideoUrl = review?.media?.videoUrl as string | undefined;
   const mediaImageUrl = review?.media?.imageUrl as string | undefined;
   
-  // Video player setup
+  // Video player setup - must be before early returns to maintain hook order
   const videoPlayer = useVideoPlayer(mediaVideoUrl || '', (player) => {
     if (mediaVideoUrl) {
       player.loop = false;
@@ -229,15 +216,19 @@ export default function ReviewDetailScreen() {
       subscription.remove();
     };
   }, [videoPlayer]);
-  
-  const toggleVideoPlayback = () => {
-    if (!videoPlayer) return;
-    if (isVideoPlaying) {
-      videoPlayer.pause();
-    } else {
-      videoPlayer.play();
+
+  // Fullscreen video player for modal - must be before early returns
+  const fullscreenVideoPlayer = useVideoPlayer(mediaVideoUrl || '', (player) => {
+    if (mediaVideoUrl) {
+      player.loop = false;
+      player.muted = false;
     }
-  };
+  });
+
+  React.useEffect(() => {
+    if (!fullscreenVideoPlayer || !mediaVideoUrl) return;
+    fullscreenVideoPlayer.replace(mediaVideoUrl);
+  }, [fullscreenVideoPlayer, mediaVideoUrl]);
 
   const ratingEntries = React.useMemo(() => {
     if (!review?.ratings) return [];
@@ -262,41 +253,43 @@ export default function ReviewDetailScreen() {
     );
   }, [review?.feedback?.sectionNotes?.datingProfile, review?.feedback?.sectionNotes?.socials]);
 
-  const openTikTok = async () => {
-    try {
-      const uri = mediaVideoUrl || mediaImageUrl;
-      if (uri && (await Sharing.isAvailableAsync())) {
-        await Sharing.shareAsync(uri);
-        return;
-      }
-    } catch {}
-    try {
-      const tiktokUrl = Platform.select({ ios: 'musically://camera', android: 'snssdk1128://openRecord' });
-      if (tiktokUrl && (await Linking.canOpenURL(tiktokUrl))) {
-        await Linking.openURL(tiktokUrl);
-        return;
-      }
-    } catch {}
-    Linking.openURL('https://www.tiktok.com/upload');
+  const toggleVideoPlayback = () => {
+    if (!videoPlayer) return;
+    if (isVideoPlaying) {
+      videoPlayer.pause();
+    } else {
+      videoPlayer.play();
+    }
   };
 
-  const openInstagramReels = async () => {
-    try {
-      const uri = mediaVideoUrl || mediaImageUrl;
-      if (uri && (await Sharing.isAvailableAsync())) {
-        await Sharing.shareAsync(uri);
-        return;
-      }
-    } catch {}
-    try {
-      const igUrl = Platform.select({ ios: 'instagram://camera', android: 'instagram://camera' });
-      if (igUrl && (await Linking.canOpenURL(igUrl))) {
-        await Linking.openURL(igUrl);
-        return;
-      }
-    } catch {}
-    Linking.openURL('https://www.instagram.com');
+  const openSocialLink = (platform: 'instagram' | 'tiktok') => {
+    if (!reviewer?.links) return;
+    const handle = reviewer.links[platform];
+    if (!handle) return;
+    
+    const normalizedHandle = handle.replace(/^@/, '').trim();
+    if (platform === 'instagram') {
+      Linking.openURL(`https://instagram.com/${normalizedHandle}`);
+    } else if (platform === 'tiktok') {
+      Linking.openURL(`https://tiktok.com/@${normalizedHandle}`);
+    }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>Loading...</Text>
+      </View>
+    );
+  }
+
+  if (!request) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>Review not found</Text>
+      </View>
+    );
+  }
 
   // Calculate available height for content section
   // Top section (video circle + name): 80px height + 20px marginBottom = 100px
@@ -512,14 +505,45 @@ export default function ReviewDetailScreen() {
             ) : null}
 
             <View style={styles.actionsSection}>
-        {request?.status === 'completed' && (mediaVideoUrl || mediaImageUrl) ? (
+        {request?.status === 'completed' && mediaVideoUrl ? (
           <>
-            <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#000' }]} onPress={openTikTok}>
-              <Text style={styles.actionButtonText}>Post to TikTok</Text>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: Colors.brand.accentMagenta }]} 
+              onPress={() => setVideoModalVisible(true)}
+            >
+              <Text style={styles.actionButtonText}>View Video Review</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#E1306C' }]} onPress={openInstagramReels}>
-              <Text style={styles.actionButtonText}>Post to Instagram Reels</Text>
-            </TouchableOpacity>
+            <RNView style={{ height: 8 }} />
+          </>
+        ) : null}
+
+        {request?.status === 'completed' && shareConsent && mediaVideoUrl ? (
+          <>
+            <Text style={styles.shareSectionTitle}>Share Video Review</Text>
+            <Text style={styles.shareSectionSubtitle}>Visit {reviewer?.displayName || 'reviewer'}'s social media to share this review</Text>
+            <RNView style={styles.socialLinksContainer}>
+              {reviewer?.links?.instagram ? (
+                <TouchableOpacity 
+                  style={[styles.socialLinkButton, { backgroundColor: '#E1306C' }]} 
+                  onPress={() => openSocialLink('instagram')}
+                >
+                  <Text style={styles.socialLinkButtonText}>Share on Instagram</Text>
+                </TouchableOpacity>
+              ) : null}
+              {reviewer?.links?.tiktok ? (
+                <TouchableOpacity 
+                  style={[styles.socialLinkButton, { backgroundColor: '#000' }]} 
+                  onPress={() => openSocialLink('tiktok')}
+                >
+                  <Text style={styles.socialLinkButtonText}>Share on TikTok</Text>
+                </TouchableOpacity>
+              ) : null}
+              {(!reviewer?.links?.instagram && !reviewer?.links?.tiktok) ? (
+                <Text style={styles.noSocialLinksText}>
+                  {reviewer?.displayName || 'Reviewer'} hasn't added social media links yet.
+                </Text>
+              ) : null}
+            </RNView>
             <RNView style={{ height: 8 }} />
           </>
         ) : null}
@@ -590,6 +614,41 @@ export default function ReviewDetailScreen() {
           }}
         />
       )}
+      
+      {/* Fullscreen Video Modal */}
+      <Modal
+        visible={videoModalVisible}
+        animationType="fade"
+        transparent={false}
+        onRequestClose={() => setVideoModalVisible(false)}
+      >
+        <View style={styles.videoModalContainer}>
+          <SafeAreaView style={styles.videoModalSafeArea} edges={['top', 'bottom', 'left', 'right']}>
+            <RNView style={styles.videoModalHeader}>
+              <TouchableOpacity 
+                onPress={() => setVideoModalVisible(false)}
+                style={styles.videoModalCloseButton}
+              >
+                <Text style={styles.videoModalCloseText}>✕</Text>
+              </TouchableOpacity>
+              <Text style={styles.videoModalTitle}>Video Review</Text>
+              <RNView style={{ width: 40 }} />
+            </RNView>
+            <RNView style={styles.videoModalContent}>
+              {mediaVideoUrl && (
+                <RNView style={styles.fullscreenVideoWrapper}>
+                  <VideoView
+                    style={styles.fullscreenVideo}
+                    player={fullscreenVideoPlayer}
+                    contentFit="contain"
+                    nativeControls={true}
+                  />
+                </RNView>
+              )}
+            </RNView>
+          </SafeAreaView>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -942,5 +1001,89 @@ const styles = StyleSheet.create({
     color: Colors.brand.textSecondary,
     lineHeight: 20,
     marginTop: 8,
+  },
+  shareSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+    marginBottom: 8,
+    marginTop: 8,
+  },
+  shareSectionSubtitle: {
+    fontSize: 14,
+    color: Colors.brand.textSecondary,
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  socialLinksContainer: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  socialLinkButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  socialLinkButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  noSocialLinksText: {
+    fontSize: 14,
+    color: Colors.brand.textSecondary,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: 16,
+  },
+  videoModalContainer: {
+    flex: 1,
+    backgroundColor: Colors.brand.background,
+  },
+  videoModalSafeArea: {
+    flex: 1,
+  },
+  videoModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.brand.border,
+  },
+  videoModalCloseButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  videoModalCloseText: {
+    fontSize: 24,
+    color: Colors.brand.textPrimary,
+    fontWeight: '300',
+  },
+  videoModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+  },
+  videoModalContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  fullscreenVideoWrapper: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullscreenVideo: {
+    width: '100%',
+    height: '100%',
   },
 });
