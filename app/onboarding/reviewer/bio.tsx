@@ -15,7 +15,7 @@ export default function BioScreen() {
   const [bio, setBio] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const handleClose = () => {
+  const handleClose = async () => {
     Alert.alert(
       'Are you sure you want to quit?',
       'You\'re not going to get submitted to be a reviewer.',
@@ -27,8 +27,16 @@ export default function BioScreen() {
         {
           text: 'Quit',
           style: 'destructive',
-          onPress: () => {
-            router.back();
+          onPress: async () => {
+            // Clear the onboarding_step preference so the app doesn't redirect back here on restart
+            try {
+              await updateProfilePreferences({ onboarding_step: null });
+            } catch (e) {
+              console.warn('Failed to clear onboarding_step:', e);
+            }
+            // Navigate directly to profile tab instead of going back
+            // This ensures we can exit even if there's no back stack
+            router.replace('/(tabs)/profile');
           },
         },
       ],

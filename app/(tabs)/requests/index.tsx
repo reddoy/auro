@@ -33,25 +33,30 @@ export default function RequestsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const skipNextFocusRefresh = useRef(true);
   const loadingRef = useRef(loading);
-  const [hasShownSkeleton, setHasShownSkeleton] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
+  const initialLoadCompleteRef = useRef(false);
+  const hasAnimatedListRef = useRef(false);
 
   useEffect(() => {
     loadingRef.current = loading;
   }, [loading]);
 
   useEffect(() => {
-    if (!loading && !hasShownSkeleton) {
-      setHasShownSkeleton(true);
+    if (!initialLoad && !hasAnimatedListRef.current) {
+      hasAnimatedListRef.current = true;
     }
-  }, [loading, hasShownSkeleton]);
+  }, [initialLoad]);
 
   useEffect(() => {
     const run = async () => {
+      if (initialLoadCompleteRef.current) return;
       console.log('[my-reviews] initial load started');
       try {
         const profile = await getUserProfile();
         if (!profile?.id) {
           setRequests([]);
+          setInitialLoad(false);
+          initialLoadCompleteRef.current = true;
           console.log('[my-reviews] no profile found during initial load');
           return;
         }
@@ -123,6 +128,11 @@ export default function RequestsScreen() {
 
       } finally {
         setLoading(false);
+        // Set initialLoad to false after a microtask to ensure all state updates are batched
+        Promise.resolve().then(() => {
+          setInitialLoad(false);
+          initialLoadCompleteRef.current = true;
+        });
         console.log('[my-reviews] initial load finished');
       }
     };
@@ -272,6 +282,7 @@ export default function RequestsScreen() {
   // Payment is handled on web only. In-app pay is disabled.
 
   const renderReceivedItem = ({ item, index }: { item: DbRequestSummary; index: number }) => {
+    const cardEntering = hasAnimatedListRef.current ? undefined : cardEntrance(index);
     const reviewer = revMap[item.influencerId];
     const reviewee = item.userId ? userMap[item.userId] : undefined;
     const avatarUri = isReviewer
@@ -285,7 +296,7 @@ export default function RequestsScreen() {
         key={item.id}
         style={styles.requestCard}
         onPress={() => handleRequestPress(item.id)}
-        entering={cardEntrance(index)}
+        entering={cardEntering}
         exiting={cardExit()}
         accessibilityRole="button"
         accessibilityLabel={`Open request with ${displayName}`}
@@ -353,11 +364,10 @@ export default function RequestsScreen() {
     );
   };
 
-  const SkeletonCard = ({ index }: { index: number }) => (
-    <MotionView
-      entering={cardEntrance(index)}
+  const SkeletonCard = ({ index: _index }: { index: number }) => (
+    <RNView
       style={[styles.requestCard, { backgroundColor: Colors.brand.cardBackground }]}
-    > 
+    >
       <RNView style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent' }}>
         <RNView style={[styles.influencerImage, { backgroundColor: 'rgba(255,255,255,0.1)' }]} />
         <RNView style={{ flex: 1, backgroundColor: 'transparent' }}>
@@ -366,7 +376,7 @@ export default function RequestsScreen() {
         </RNView>
       </RNView>
       <RNView style={{ height: 10, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 6, marginTop: 16, width: '80%' }} />
-    </MotionView>
+    </RNView>
   );
 
   const data = requests.filter(r => {
@@ -377,9 +387,15 @@ export default function RequestsScreen() {
   });
   const renderItem = renderReceivedItem;
 
+  // Calculate counts for filter pills (use 0 during initial load to prevent flashing)
+  const activeCount = initialLoad ? 0 : requests.filter(r => (r.status === 'pending' || r.status === 'accepted' || r.status === 'paid' || r.status === 'in_progress') && !r.archived_at).length;
+  const completedCount = initialLoad ? 0 : requests.filter(r => r.status === 'completed' && !r.archived_at).length;
+  const archivedCount = initialLoad ? 0 : requests.filter(r => !!r.archived_at).length;
+
+  // Header component - always visible, never part of skeleton
   const headerComponent = (
-    <MotionView entering={subtleFadeIn()} style={styles.headerPlain}>
-      <MotionView entering={subtleFadeIn()} style={styles.headerContentPlain}>
+    <RNView style={styles.headerPlain}>
+      <RNView style={styles.headerContentPlain}>
         <Text style={styles.titlePlain}>My Reviews</Text>
         <Text style={styles.subtitlePlain} numberOfLines={1}>Track your review requests and feedback</Text>
 
@@ -399,7 +415,7 @@ export default function RequestsScreen() {
             scaleEffect={false}
             accessibilityRole="button"
           >
-            <Text style={styles.counterTextPlain}>Active {requests.filter(r => (r.status === 'pending' || r.status === 'accepted' || r.status === 'paid' || r.status === 'in_progress') && !r.archived_at).length}</Text>
+            <Text style={styles.counterTextPlain}>Active {activeCount}</Text>
           </MotionPressable>
           <MotionPressable
             onPress={() => setFilter('completed')}
@@ -407,7 +423,7 @@ export default function RequestsScreen() {
             scaleEffect={false}
             accessibilityRole="button"
           >
-            <Text style={styles.counterTextPlain}>Completed {requests.filter(r => r.status === 'completed' && !r.archived_at).length}</Text>
+            <Text style={styles.counterTextPlain}>Completed {completedCount}</Text>
           </MotionPressable>
           <MotionPressable
             onPress={() => setFilter('archived')}
@@ -415,17 +431,17 @@ export default function RequestsScreen() {
             scaleEffect={false}
             accessibilityRole="button"
           >
-            <Text style={styles.counterTextPlain}>Archived {requests.filter(r => !!r.archived_at).length}</Text>
+            <Text style={styles.counterTextPlain}>Archived {archivedCount}</Text>
           </MotionPressable>
         </RNView>
-      </MotionView>
-    </MotionView>
+      </RNView>
+    </RNView>
   );
 
   return (
     <View style={[styles.container, { paddingTop: 0 }]}>
       {headerComponent}
-      {!hasShownSkeleton && loading ? (
+      {initialLoad ? (
         <RNView style={{ flex: 1, paddingHorizontal: 16, paddingTop: 24, backgroundColor: 'transparent' }}>
           {[...Array(4)].map((_, i) => (
             <SkeletonCard key={`s-${i}`} index={i} />
@@ -433,7 +449,7 @@ export default function RequestsScreen() {
         </RNView>
       ) : (
         <MotionView 
-          entering={hasShownSkeleton && !loading ? subtleFadeIn() : undefined}
+          entering={subtleFadeIn()}
           style={{ flex: 1 }}
         >
           <FlatList

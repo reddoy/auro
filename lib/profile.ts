@@ -49,11 +49,33 @@ export function resolveOnboardingDestination(profile: Profile | null | undefined
   }
   
   const preferences = profile?.preferences || {};
+  // If user has completed initial onboarding, always go to main app
+  // (This prevents redirecting users who manually toggle to reviewer from being
+  //  sent back to onboarding on app restart)
   if (preferences?.onboarding_completed) {
     return '/(tabs)/requests';
   }
 
   const step = preferences?.onboarding_step || null;
+  
+  // Only redirect to reviewer onboarding if the user is actually a reviewer
+  // and hasn't completed initial onboarding. This prevents redirecting users
+  // who manually navigated to onboarding and then dismissed it.
+  const isReviewerOnboardingStep = step && (
+    step === 'reviewer_bio' ||
+    step === 'reviewer_rate' ||
+    step === 'reviewer_profile_picture' ||
+    step === 'reviewer_stripe' ||
+    step === 'reviewer_share_link' ||
+    step === 'reviewer_review_pending'
+  );
+  
+  // If it's a reviewer onboarding step but the user is not currently a reviewer,
+  // don't redirect them (they may have dismissed the onboarding)
+  if (isReviewerOnboardingStep && !profile.is_reviewer) {
+    return '/(tabs)/requests';
+  }
+  
   switch (step) {
     case 'reviewer_bio':
       return '/onboarding/reviewer/bio';

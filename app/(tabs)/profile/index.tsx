@@ -697,16 +697,11 @@ export default function ProfileScreen() {
                       if (val) {
                         try {
                           // Determine which onboarding step to start from based on existing profile data
-                          const { route, step } = getReviewerOnboardingStartStep(profile);
+                          const { route } = getReviewerOnboardingStartStep(profile);
                           
-                          // Set onboarding preferences to indicate they're starting reviewer onboarding
-                          await updateProfilePreferences({
-                            onboarding_role: 'reviewer',
-                            onboarding_step: step,
-                            onboarding_completed: false,
-                          });
-                          
-                          // Navigate to the appropriate onboarding step
+                          // Navigate directly without setting onboarding preferences
+                          // This prevents the app from redirecting to onboarding on restart
+                          // (onboarding preferences are only for initial signup flow)
                           router.push(route);
                         } catch (e: any) {
                           Alert.alert('Error', e?.message || 'Failed to start reviewer onboarding');

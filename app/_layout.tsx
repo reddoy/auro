@@ -34,6 +34,41 @@ export {
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+// Suppress development-only navigation warnings for unhandled GO_BACK actions
+// This occurs during app initialization when navigation stack isn't ready yet
+if (typeof __DEV__ !== 'undefined' && __DEV__) {
+  const originalError = console.error;
+  const originalWarn = console.warn;
+  
+  console.error = (...args: any[]) => {
+    // Filter out the unhandled GO_BACK action warning
+    const message = args.join(' ').toString();
+    if (
+      message.includes("The action 'GO_BACK' was not handled by any navigator") ||
+      message.includes('Is there any screen to go back to?') ||
+      message.includes("GO_BACK' was not handled")
+    ) {
+      // Silently ignore this development-only warning
+      return;
+    }
+    originalError.apply(console, args);
+  };
+  
+  console.warn = (...args: any[]) => {
+    // Also filter from console.warn in case it's logged there
+    const message = args.join(' ').toString();
+    if (
+      message.includes("The action 'GO_BACK' was not handled by any navigator") ||
+      message.includes('Is there any screen to go back to?') ||
+      message.includes("GO_BACK' was not handled")
+    ) {
+      // Silently ignore this development-only warning
+      return;
+    }
+    originalWarn.apply(console, args);
+  };
+}
+
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -227,7 +262,11 @@ function RootLayoutNav() {
             <ToastProvider>
               <View style={{ flex: 1 }}>
                 {!pathname?.includes('/onboarding') && !pathname?.includes('/auth') && !pathname?.includes('/intro') && <LogoHeader />}
-                <Stack screenOptions={{ headerShown: false }}>
+                <Stack 
+                  screenOptions={{ headerShown: false }}
+                  // Suppress unhandled GO_BACK action warnings during initialization
+                  // This is a development-only warning that occurs when navigation stack isn't ready yet
+                >
                   <Stack.Screen name="index" />
                   <Stack.Screen name="intro" />
                   <Stack.Screen name="auth" />

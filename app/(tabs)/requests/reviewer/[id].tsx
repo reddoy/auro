@@ -15,7 +15,6 @@ import StatusBadge from '@/components/StatusBadge';
 import { Image } from 'expo-image';
 import SimplePhotoModal from '@/components/SimplePhotoModal';
 import ImageGalleryModal from '@/components/ImageGalleryModal';
-import FullScreenPhotoModal from '@/components/FullScreenPhotoModal';
 import VideoReviewPhotoZoomModal from '@/components/VideoReviewPhotoZoomModal';
 import { signRequestMediaUrls, getSignedRequestMediaUrl } from '@/lib/uploads';
 import RatingBar from '@/components/RatingBar';
@@ -1959,7 +1958,12 @@ export default function ReviewerRequestScreen() {
         </RNView>
       </Modal>
       <ImageGalleryModal visible={galleryOpen} uris={galleryUris} initialIndex={galleryIndex} onClose={() => setGalleryOpen(false)} />
-      <FullScreenPhotoModal visible={photoModalOpen} uri={currentPhotoUri} onClose={() => setPhotoModalOpen(false)} />
+      {currentPhotoUri ? (
+        <ImageGalleryModal visible={photoModalOpen} uris={[currentPhotoUri]} initialIndex={0} onClose={() => {
+          setPhotoModalOpen(false);
+          setCurrentPhotoUri('');
+        }} />
+      ) : null}
     </SafeAreaView>
   );
 }
