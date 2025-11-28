@@ -240,7 +240,6 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
                 <li>✅ Dating profile optimization</li>
                 <li>✅ Personalized improvement suggestions</li>
                 <li>✅ Honest, constructive feedback</li>
-                <li>✅ Delivered within 48 hours</li>
               </ul>
             </div>
           </div>
@@ -253,13 +252,6 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
                 <div>
                   <strong>Secure Payment</strong>
                   <p>SSL encrypted & PCI compliant</p>
-                </div>
-              </div>
-              
-              <div className="security-badge">
-                <span className="security-icon">⚡</span>
-                <div>
-                  <strong>Fast Delivery</strong>
                 </div>
               </div>
               

@@ -537,7 +537,7 @@ export async function denyRequest(id: string): Promise<DbRequestSummary> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         requestId: id, 
-        reason: 'reviewer_denied',
+        reason: 'requested_by_customer',
         partial: false
       })
     });

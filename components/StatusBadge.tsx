@@ -57,7 +57,7 @@ export default function StatusBadge({ status, label, style, textStyle, accessibi
 
 const styles = StyleSheet.create({
   badge: {
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: BorderRadius.md,

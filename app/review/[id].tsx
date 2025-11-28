@@ -309,9 +309,26 @@ export default function ReviewDetailScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
       <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: Platform.OS === 'web' ? 24 : 24, paddingHorizontal: 16, flexGrow: 1 }}>
-        {/* Top Section: Reviewer (small) and Reviewee (big) profile photos */}
+        {/* Top Section: Reviewee (big) and Reviewer (small) profile photos */}
         <View style={styles.topProfileSection}>
-          {/* Reviewer - Small circular photo with name */}
+          {/* Reviewee - Small circular photo with name */}
+          {revieweeAvatar && (
+            <RNView style={styles.revieweeProfileContainer}>
+              <TouchableOpacity
+                onPress={() => {
+                  setGalleryUris([revieweeAvatar]);
+                  setGalleryIndex(0);
+                  setGalleryOpen(true);
+                }}
+                style={styles.reviewerPhotoWrapper}
+              >
+                <Avatar uri={revieweeAvatar} name={revieweeName} size={80} />
+              </TouchableOpacity>
+              <Text style={styles.reviewerName}>{revieweeName}</Text>
+            </RNView>
+          )}
+
+          {/* Reviewer - Bigger circular photo with name */}
           <RNView style={styles.reviewerProfileContainer}>
             <TouchableOpacity
               onPress={() => {
@@ -321,35 +338,18 @@ export default function ReviewDetailScreen() {
                   setGalleryOpen(true);
                 }
               }}
-              style={styles.reviewerPhotoWrapper}
+              style={styles.revieweePhotoWrapper}
             >
-              <Avatar uri={influencerAvatar} name={influencerName} size={80} />
+              <Image 
+                source={{ uri: influencerAvatar }} 
+                style={styles.revieweePhoto} 
+                contentFit="cover" 
+                transition={200} 
+                cachePolicy="none" 
+              />
             </TouchableOpacity>
-            <Text style={styles.reviewerName}>{influencerName}</Text>
+            <Text style={styles.revieweeName}>{influencerName}</Text>
           </RNView>
-
-          {/* Reviewee - Bigger circular photo with name */}
-          {revieweeAvatar && (
-            <RNView style={styles.revieweeProfileContainer}>
-              <TouchableOpacity
-                onPress={() => {
-                  setGalleryUris([revieweeAvatar]);
-                  setGalleryIndex(0);
-                  setGalleryOpen(true);
-                }}
-                style={styles.revieweePhotoWrapper}
-              >
-                <Image 
-                  source={{ uri: revieweeAvatar }} 
-                  style={styles.revieweePhoto} 
-                  contentFit="cover" 
-                  transition={200} 
-                  cachePolicy="none" 
-                />
-              </TouchableOpacity>
-              <Text style={styles.revieweeName}>{revieweeName}</Text>
-            </RNView>
-          )}
 
           {/* Payment Amount */}
           {amountCents && (
@@ -361,7 +361,9 @@ export default function ReviewDetailScreen() {
           {/* Status Message */}
           {statusBanner && (
             <RNView style={styles.statusMessageTop}>
-              <StatusBadge status={request.status as any} label={statusBanner.labelOverride} />
+              <RNView style={styles.statusBadgeContainer}>
+                <StatusBadge status={request.status as any} label={statusBanner.labelOverride} />
+              </RNView>
               <Text style={styles.statusMessageText}>{statusBanner.text}</Text>
             </RNView>
           )}
@@ -898,6 +900,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   statusMessageTop: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  statusBadgeContainer: {
     alignItems: 'center',
     width: '100%',
   },

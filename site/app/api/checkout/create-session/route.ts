@@ -288,36 +288,48 @@ export async function POST(req: Request) {
               const reviewerId = (requestData as any)?.influencer_id as string | undefined;
               const revieweeId = (requestData as any)?.user_id as string | undefined;
               
-              // Safety check: ensure we have a reviewer ID and it's not the same as the reviewee
-              if (reviewerId && reviewerId !== revieweeId) {
-                // Get reviewer's push token
+              // Multiple safety checks: ensure we have a reviewer ID, it's not the same as the reviewee,
+              // and the reviewer is actually an approved reviewer
+              if (reviewerId && revieweeId && reviewerId !== revieweeId && reviewerId.trim() !== revieweeId.trim()) {
+                // Get reviewer's profile to verify they are an approved reviewer and get push token
                 const { data: reviewerProfile } = await admin
                   .from('profiles')
-                  .select('push_token')
+                  .select('push_token, is_reviewer, id')
                   .eq('id', reviewerId)
                   .maybeSingle();
                 
-                if (reviewerProfile?.push_token) {
-                  // Send push notification via Expo API to the REVIEWER only
-                  await fetch('https://exp.host/--/api/v2/push/send', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Accept': 'application/json',
-                      'Accept-Encoding': 'gzip, deflate',
-                    },
-                    body: JSON.stringify({
-                      to: reviewerProfile.push_token,
-                      sound: 'default',
-                      title: 'New Review Request! 🎉',
-                      body: 'Someone just requested a review from you!',
-                      data: {
-                        type: 'new_request',
-                        requestId: ensuredRequestId,
+                // Double-check: verify this profile is actually the reviewer (not reviewee) and is approved
+                if (reviewerProfile && reviewerProfile.id === reviewerId && reviewerProfile.id !== revieweeId && reviewerProfile.is_reviewer === 'approved') {
+                  if (reviewerProfile.push_token) {
+                    // Send push notification via Expo API to the REVIEWER only
+                    await fetch('https://exp.host/--/api/v2/push/send', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Accept-Encoding': 'gzip, deflate',
                       },
-                      priority: 'high',
-                    }),
-                  }).catch(err => console.error('Failed to send new request notification:', err));
+                      body: JSON.stringify({
+                        to: reviewerProfile.push_token,
+                        sound: 'default',
+                        title: 'New Review Request! 🎉',
+                        body: 'Someone just requested a review from you!',
+                        data: {
+                          type: 'new_request',
+                          requestId: ensuredRequestId,
+                        },
+                        priority: 'high',
+                      }),
+                    }).catch(err => console.error('Failed to send new request notification:', err));
+                  }
+                } else {
+                  console.warn('[create-session] Skipping notification: reviewer validation failed', {
+                    reviewerId,
+                    revieweeId,
+                    reviewerProfileId: reviewerProfile?.id,
+                    isReviewer: reviewerProfile?.is_reviewer,
+                    requestId: ensuredRequestId,
+                  });
                 }
               } else {
                 console.warn('[create-session] Skipping notification: invalid reviewer ID or reviewer is same as reviewee', {
