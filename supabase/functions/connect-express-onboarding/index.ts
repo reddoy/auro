@@ -74,11 +74,12 @@ serve(async (req) => {
     }
 
     const siteUrl = Deno.env.get("NEXT_PUBLIC_SITE_URL") || "https://www.appauro.com";
+    const successUrl = returnUrl || `${siteUrl}/auth/stripe-connect-success`;
     const link = await stripe.accountLinks.create({
       account: connectAccountId!,
       type: "account_onboarding",
-      return_url: returnUrl || siteUrl,
-      refresh_url: returnUrl || siteUrl,
+      return_url: successUrl,
+      refresh_url: successUrl,
     });
     return json({ url: link.url, accountId: connectAccountId });
   } catch (e) {

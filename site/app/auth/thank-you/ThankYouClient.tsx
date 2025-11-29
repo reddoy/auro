@@ -34,16 +34,16 @@ export default function ThankYouClient() {
         <div className="flex flex-col items-center text-center">
           <div className="text-6xl mb-6">🎉</div>
           
-          <h1 className="text-white text-2xl font-semibold mb-3">Thank You for Signing Up!</h1>
+          <h1 className="text-white text-2xl font-semibold mb-3">Email Confirmed! 🎉</h1>
           <p className="text-[#C7BFD9] mt-2 mb-6">
-            Your email has been confirmed. You're all set! Head to Discover Reviewers anytime to request feedback when you're ready.
+            Thank you for confirming your email. You're all set! Please navigate back to sign in within the app.
           </p>
 
           <RequestLink>Request a review</RequestLink>
           
           <div className="mt-6 grid grid-cols-1 gap-3 w-full">
             <a 
-              href="https://apps.apple.com/" 
+              href="https://apps.apple.com/app/auro" 
               target="_blank" 
               rel="noopener noreferrer"
               className="block w-full rounded-2xl px-5 py-3 text-center font-semibold" 
@@ -52,7 +52,7 @@ export default function ThankYouClient() {
               Download on the App Store
             </a>
             <a 
-              href="https://play.google.com/store" 
+              href="https://play.google.com/store/apps/details?id=com.auro" 
               target="_blank" 
               rel="noopener noreferrer"
               className="block w-full rounded-2xl px-5 py-3 text-center font-semibold" 

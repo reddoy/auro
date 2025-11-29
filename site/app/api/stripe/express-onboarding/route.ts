@@ -66,11 +66,12 @@ export async function POST(req: Request) {
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com';
+    const successUrl = returnUrl || `${siteUrl}/auth/stripe-connect-success`;
     const accountLink = await stripe.accountLinks.create({
       account: connectAccountId!,
       type: 'account_onboarding',
-      return_url: returnUrl || siteUrl,
-      refresh_url: returnUrl || siteUrl,
+      return_url: successUrl,
+      refresh_url: successUrl,
     });
 
     // Note: Once the reviewer completes Stripe onboarding and payouts are enabled,

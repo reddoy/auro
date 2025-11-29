@@ -798,11 +798,11 @@ export default function ProfileScreen() {
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>
                     <Text style={{ color: Colors.brand.textSecondary, marginBottom: 8 }}>Share Your Reviewer Profile</Text>
                     <MotionPressable
-                      onPress={handleCopyReviewerLink}
-                      accessibilityLabel="Copy reviewer link"
+                      onPress={() => router.push('/(tabs)/profile/profile-link')}
+                      accessibilityLabel="Edit profile link"
                       style={styles.shareProfileButton}
                     >
-                      <Text style={styles.shareProfileButtonText}>🔗 Share Profile Link</Text>
+                      <Text style={styles.shareProfileButtonText}>🔗 Profile Link</Text>
                     </MotionPressable>
                   </View>
                   <View style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackground }}>

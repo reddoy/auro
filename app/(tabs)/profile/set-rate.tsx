@@ -169,9 +169,9 @@ export default function SetRateScreen() {
                         <Text style={[styles.breakdownValue, styles.breakdownFee]}>-${auroFee.toFixed(2)}</Text>
                       </View>
                       <View style={[styles.breakdownDivider, { marginTop: 8 }]} />
-                      <View style={styles.breakdownRow}>
+                      <View style={[styles.breakdownRow, styles.breakdownTotalRow]}>
                         <Text style={styles.breakdownTotalLabel}>Your take-home</Text>
-                        <Text style={styles.breakdownTotalValue}>${reviewerTakeHome.toFixed(2)} (80%)</Text>
+                        <Text style={styles.breakdownTotalValue}>${reviewerTakeHome.toFixed(2)}</Text>
                       </View>
                       <View style={styles.breakdownRow}>
                         <Text style={[styles.breakdownLabel, { fontSize: 12, fontStyle: 'italic', color: Colors.brand.textSecondary }]}>
@@ -314,11 +314,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: Colors.brand.textPrimary,
+    letterSpacing: 0.2,
   },
   breakdownTotalValue: {
     fontSize: 24,
     fontWeight: '800',
     color: '#10b981',
+    letterSpacing: 0.3,
+  },
+  breakdownTotalRow: {
+    paddingVertical: 12,
+    marginTop: 4,
   },
   saveButton: {
     backgroundColor: Colors.brand.accentOrange,

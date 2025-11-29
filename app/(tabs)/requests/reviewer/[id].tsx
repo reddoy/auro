@@ -310,7 +310,7 @@ export default function ReviewerRequestScreen() {
     // Fifth: Overall summary slide (profile photo with rating displayed, no pros/cons)
     slides.push({
       type: 'overall',
-      data: { name: reviewee?.displayName || 'User', profilePicture: avatarUri },
+      data: { name: reviewee?.displayName || 'User', profilePicture: avatarUri, reviewerAvatarUri: reviewerAvatarUri },
       index: slideIndex++
     });
 
@@ -329,7 +329,7 @@ export default function ReviewerRequestScreen() {
     });
 
     return slides;
-  }, [signedProfilePhotos, avatarUri, reviewee?.displayName, parsedNotes?.message]);
+  }, [signedProfilePhotos, avatarUri, reviewerAvatarUri, reviewee?.displayName, parsedNotes?.message]);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -437,30 +437,9 @@ export default function ReviewerRequestScreen() {
             : [];
 
           let photosToSign = datingProfilePhotos.length ? datingProfilePhotos : basePhotos;
-          
-          // Add fake placeholder images for testing (always add for now to see the gallery)
-          // In production, remove this and uncomment the conditional check below
-          photosToSign = [
-            'https://picsum.photos/seed/dating1/400/600',
-            'https://picsum.photos/seed/dating2/400/600',
-            'https://picsum.photos/seed/dating3/400/600',
-            'https://picsum.photos/seed/dating4/400/600',
-            'https://picsum.photos/seed/dating5/400/600',
-            'https://picsum.photos/seed/dating6/400/600',
-          ];
-          // Original logic (for production):
-          // if (photosToSign.length === 0) {
-          //   photosToSign = [...];
-          // }
 
           if (photosToSign.length) {
-            // If using placeholder images, use them directly (they're already URLs)
-            // Otherwise sign the URLs
-            if (photosToSign.some(url => url.includes('picsum.photos'))) {
-              setSignedProfilePhotos(photosToSign);
-            } else {
-              setSignedProfilePhotos(await signRequestMediaUrls(photosToSign));
-            }
+            setSignedProfilePhotos(await signRequestMediaUrls(photosToSign));
           } else {
             setSignedProfilePhotos([]);
           }
@@ -1479,7 +1458,7 @@ export default function ReviewerRequestScreen() {
                     {/* Both Profile Pictures - Circular, side by side - At Top */}
                     <RNView style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 18, marginBottom: 20, width: '100%', paddingHorizontal: 20 }}>
                       {/* Reviewer Profile Picture */}
-                      {reviewerAvatarUri ? (
+                      {(slide.data.reviewerAvatarUri || reviewerAvatarUri) ? (
                         <RNView style={{ alignItems: 'center', gap: 6 }}>
                           <TouchableOpacity
                             style={{ 
@@ -1490,12 +1469,15 @@ export default function ReviewerRequestScreen() {
                               elevation: 8,
                             }}
                             onPress={() => {
-                              setCurrentPhotoUri(reviewerAvatarUri);
-                              setPhotoModalOpen(true);
+                              const reviewerUri = slide.data.reviewerAvatarUri || reviewerAvatarUri;
+                              if (reviewerUri) {
+                                setCurrentPhotoUri(reviewerUri);
+                                setPhotoModalOpen(true);
+                              }
                             }}
                           >
                             <Avatar 
-                              uri={reviewerAvatarUri} 
+                              uri={slide.data.reviewerAvatarUri || reviewerAvatarUri} 
                               name={reviewerDisplayName === 'Reviewer' ? 'You' : reviewerDisplayName} 
                               size={120} 
                             />

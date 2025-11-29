@@ -6,6 +6,8 @@ export default function ProfileStackLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="settings" options={{ headerShown: false }} />
+      <Stack.Screen name="set-rate" options={{ headerShown: false }} />
+      <Stack.Screen name="profile-link" options={{ headerShown: false }} />
       <Stack.Screen name="video-review-demo" options={{ headerShown: false }} />
     </Stack>
   );
