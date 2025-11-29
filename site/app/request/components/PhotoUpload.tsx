@@ -316,9 +316,6 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
       </div>
 
       <div className="step-actions">
-        <button type="button" onClick={onBack} className="btn-secondary">
-          Back
-        </button>
         <button 
           type="button" 
           onClick={onNext} 
@@ -326,6 +323,9 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
           disabled={!canProceed}
         >
           Continue
+        </button>
+        <button type="button" onClick={onBack} className="btn-secondary">
+          Back
         </button>
       </div>
     </div>

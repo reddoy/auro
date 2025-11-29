@@ -16,6 +16,7 @@ import Avatar from '@/components/Avatar';
 import { MotionPressable, MotionView, cardEntrance, cardExit, subtleFadeIn } from '@/components/motion';
 import EmptyState from '@/components/EmptyState';
 import { copyToClipboard } from '@/lib/clipboard';
+import { SkeletonBlock, SkeletonCircle } from '@/components/Skeletons';
 
 export default function RequestsScreen() {
   const insets = useSafeAreaInsets();
@@ -338,7 +339,7 @@ export default function RequestsScreen() {
           <RNView style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackgroundLight, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: Colors.brand.border }}>
             <Text style={{ color: Colors.brand.textSecondary, fontWeight: '700' }}>Payment pending</Text>
             <Text style={{ color: Colors.brand.textSecondary, marginTop: 4 }}>
-              {isReviewer ? 'Waiting for the requester to finish payment. They have 30 days to finish payment.' : 'Please check your email regarding payment. You have 30 days to complete payment.'}
+              {isReviewer ? 'Waiting for the requester to finish payment. They have 48 hours to finish payment.' : 'Please check your email regarding payment. You have 48 hours to complete payment.'}
             </Text>
           </RNView>
         ) : null}
@@ -364,18 +365,20 @@ export default function RequestsScreen() {
     );
   };
 
-  const SkeletonCard = ({ index: _index }: { index: number }) => (
+  const SkeletonCard = ({ index }: { index: number }) => (
     <RNView
       style={[styles.requestCard, { backgroundColor: Colors.brand.cardBackground }]}
     >
       <RNView style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent' }}>
-        <RNView style={[styles.influencerImage, { backgroundColor: 'rgba(255,255,255,0.1)' }]} />
+        <RNView style={{ marginRight: 16, backgroundColor: 'transparent' }}>
+          <SkeletonCircle size={60} delay={index * 100} />
+        </RNView>
         <RNView style={{ flex: 1, backgroundColor: 'transparent' }}>
-          <RNView style={{ height: 12, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 6, marginBottom: 10, width: '60%' }} />
-          <RNView style={{ height: 10, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 6, marginBottom: 6, width: '40%' }} />
+          <SkeletonBlock width="60%" height={12} radius={6} delay={index * 100 + 50} style={{ marginBottom: 10 }} />
+          <SkeletonBlock width="40%" height={10} radius={6} delay={index * 100 + 100} style={{ marginBottom: 6 }} />
         </RNView>
       </RNView>
-      <RNView style={{ height: 10, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 6, marginTop: 16, width: '80%' }} />
+      <SkeletonBlock width="80%" height={10} radius={6} delay={index * 100 + 150} style={{ marginTop: 16 }} />
     </RNView>
   );
 

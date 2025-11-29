@@ -256,6 +256,14 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
               </div>
               
               <div className="security-badge">
+                <span className="security-icon">⚡</span>
+                <div>
+                  <strong>Fast Delivery</strong>
+                  <p>48 hour delivery or your money back</p>
+                </div>
+              </div>
+              
+              <div className="security-badge">
                 <span className="security-icon">💝</span>
                 <div>
                   <strong>Satisfaction Guaranteed</strong>

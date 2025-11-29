@@ -259,6 +259,16 @@ export default function TransactionBreakdownScreen() {
   );
 
   const getPaymentStatus = (transaction: TransactionItem) => {
+    // FIRST: Check if request was rejected (reviewer denied)
+    if (transaction.status === 'rejected') {
+      return {
+        status: 'rejected',
+        message: 'Review Denied - Requestor Refunded',
+        color: '#ef4444',
+        icon: '❌'
+      };
+    }
+    
     if (transaction.status !== 'completed') {
       return {
         status: 'pending',
@@ -421,7 +431,7 @@ export default function TransactionBreakdownScreen() {
       case 'rejected':
         return {
           status: 'rejected',
-          message: 'Review request rejected',
+          message: 'Review Denied - Refunded',
           color: '#ef4444',
           icon: '❌'
         };

@@ -155,6 +155,8 @@ export async function POST(req: Request) {
                 stripe_fee_cents: typeof stripeFeeCents === 'number' ? stripeFeeCents : null,
                 net_amount_cents: typeof netAmountCents === 'number' ? netAmountCents : null,
                 amount_cents: typeof amountCents === 'number' ? amountCents : undefined,
+                // Set 48-hour deadline for reviewer to accept
+                accept_by: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
               };
               
               // Only update application_fee_cents if we have a valid value

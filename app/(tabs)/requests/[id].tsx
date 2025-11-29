@@ -170,7 +170,7 @@ export default function ReviewerSubmitScreen() {
             <StatusBadge status={request.status as any} />
             {request.status === 'in_progress' ? (
               <Text style={{ color: Colors.brand.textSecondary, fontSize: 12 }}>
-                Reviewer is working on your review. They have 30 days to complete it or your money back.
+                Reviewer is working on your review. They have 48 hours to complete it or your money back.
               </Text>
             ) : null}
           </RNView>

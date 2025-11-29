@@ -143,7 +143,7 @@ export default function CheckoutSuccessPage() {
             </div>
             <div className="feature-item">
               <div className="feature-dot"></div>
-              <span>Full refund if review not delivered within 30 days</span>
+              <span>Full refund if review not delivered within 48 hours</span>
             </div>
             <div className="feature-item">
               <div className="feature-dot"></div>

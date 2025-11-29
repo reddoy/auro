@@ -56,16 +56,16 @@ export default function ReviewDetailScreen() {
     const s = request?.status as string | undefined;
     if (!s) return null;
     if (s === 'pending') {
-      return { labelOverride: 'Pending', text: 'Please check your email regarding payment. You have 30 days to complete payment.' };
+      return { labelOverride: 'Pending', text: 'Please check your email regarding payment. You have 48 hours to complete payment.' };
     }
     if (s === 'accepted') {
-      return { labelOverride: undefined, text: 'Please check your email regarding payment. You have 30 days to complete payment.' };
+      return { labelOverride: undefined, text: 'Please check your email regarding payment. You have 48 hours to complete payment.' };
     }
     if (s === 'paid') {
-      return { labelOverride: 'Pending acceptance', text: 'Awaiting reviewer approval — if declined or no response in 30 days, you will be refunded.' };
+      return { labelOverride: 'Pending acceptance', text: 'Awaiting reviewer approval — if declined or no response in 48 hours, you will be refunded.' };
     }
     if (s === 'in_progress') {
-      return { labelOverride: undefined, text: 'Pending review means the reviewer accepted your request and now has 30 days to submit your review.' };
+      return { labelOverride: undefined, text: 'Pending review means the reviewer accepted your request and now has 48 hours to submit your review.' };
     }
     if (s === 'completed') {
       return { labelOverride: 'Review Submitted', text: 'Review Submitted means the reviewer has completed the review.' };
@@ -307,7 +307,16 @@ export default function ReviewDetailScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
+      {/* Header with Back Button */}
+      <RNView style={styles.headerContainer}>
+        <TouchableOpacity 
+          onPress={() => router.push('/(tabs)/requests')}
+          style={styles.backButton}
+        >
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+      </RNView>
       <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: Platform.OS === 'web' ? 24 : 24, paddingHorizontal: 16, flexGrow: 1 }}>
         {/* Top Section: Reviewee (big) and Reviewer (small) profile photos */}
         <View style={styles.topProfileSection}>
@@ -556,15 +565,6 @@ export default function ReviewDetailScreen() {
         >
           <Text style={styles.actionButtonText}>Request Another Review</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.secondaryButton]}
-          onPress={() => router.push('/(tabs)/requests')}
-        >
-          <Text style={[styles.actionButtonText, styles.secondaryButtonText]}>
-            Back to Home
-          </Text>
-        </TouchableOpacity>
             </View>
       </ScrollView>
       <ImageGalleryModal visible={galleryOpen} uris={galleryUris} initialIndex={galleryIndex} onClose={() => setGalleryOpen(false)} />
@@ -623,6 +623,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.brand.background,
+  },
+  headerContainer: {
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingHorizontal: 16,
+    backgroundColor: Colors.brand.background,
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.brand.textPrimary,
   },
   // New Video Review Top Section Styles
   videoReviewTopSection: {

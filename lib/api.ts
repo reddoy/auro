@@ -321,9 +321,19 @@ export async function getRequestsByReviewer(reviewerId: string): Promise<DbReque
 
 // New: update a request status
 export async function updateRequestStatus(requestId: string, status: string): Promise<DbRequestSummary> {
+  // When accepting a request (status -> 'in_progress'), set accept_by and deliver_by deadlines
+  const updateData: any = { status };
+  if (status === 'in_progress') {
+    const now = new Date();
+    // Set accept_by to now (when reviewer accepts)
+    updateData.accept_by = now.toISOString();
+    // Set deliver_by to 48 hours from now (when reviewer must complete)
+    updateData.deliver_by = new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString();
+  }
+  
   const { data, error } = await supabase
     .from('requests')
-    .update({ status })
+    .update(updateData)
     .eq('id', requestId)
     .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps')
     .maybeSingle();

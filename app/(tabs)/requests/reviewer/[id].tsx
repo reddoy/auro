@@ -401,11 +401,14 @@ export default function ReviewerRequestScreen() {
           setReviewee(profile);
           
           if (profile?.avatarUrl) {
-            let uri = profile.avatarUrl;
-            if (uri && !/^https?:\/\//i.test(uri)) {
-              try { uri = (await getSignedAvatarUrl(uri)) || uri; } catch {}
+            try {
+              // Always try to sign the URL - getSignedAvatarUrl handles both paths and full URLs
+              const signed = await getSignedAvatarUrl(profile.avatarUrl);
+              setAvatarUri(signed || profile.avatarUrl);
+            } catch {
+              // Fallback to original URL if signing fails
+              setAvatarUri(profile.avatarUrl);
             }
-            setAvatarUri(uri);
           }
         }
         
@@ -415,11 +418,14 @@ export default function ReviewerRequestScreen() {
           setReviewer(reviewerProfile);
           
           if (reviewerProfile?.avatarUrl) {
-            let reviewerUri = reviewerProfile.avatarUrl;
-            if (reviewerUri && !/^https?:\/\//i.test(reviewerUri)) {
-              try { reviewerUri = (await getSignedAvatarUrl(reviewerUri)) || reviewerUri; } catch {}
+            try {
+              // Always try to sign the URL - getSignedAvatarUrl handles both paths and full URLs
+              const signed = await getSignedAvatarUrl(reviewerProfile.avatarUrl);
+              setReviewerAvatarUri(signed || reviewerProfile.avatarUrl);
+            } catch {
+              // Fallback to original URL if signing fails
+              setReviewerAvatarUri(reviewerProfile.avatarUrl);
             }
-            setReviewerAvatarUri(reviewerUri);
           }
         }
         // Sign media URLs for reliable viewing
@@ -631,9 +637,9 @@ export default function ReviewerRequestScreen() {
           expressUrl={expressUrl}
           statusMessage={
             request.status === 'in_progress' 
-              ? 'You have 30 days to complete this review. After 30 days, the requester is refunded.'
+              ? 'You have 48 hours to complete this review. After 48 hours, the requester is refunded.'
               : (request.status === 'pending' || request.status === 'accepted')
-              ? 'Waiting for the requester to finish payment. They have 30 days to finish payment.'
+              ? 'Waiting for the requester to finish payment. They have 48 hours to finish payment.'
               : undefined
           }
         />
@@ -1477,25 +1483,22 @@ export default function ReviewerRequestScreen() {
                         <RNView style={{ alignItems: 'center', gap: 6 }}>
                           <TouchableOpacity
                             style={{ 
-                              width: 120, 
-                              height: 120,
-                              borderRadius: 60, 
-                              overflow: 'hidden',
-                              alignSelf: 'center',
                               shadowColor: Colors.brand.shadow,
                               shadowOffset: { width: 0, height: 8 },
                               shadowOpacity: 0.4,
                               shadowRadius: 12,
                               elevation: 8,
-                              borderWidth: 3,
-                              borderColor: Colors.brand.accentOrange,
                             }}
                             onPress={() => {
                               setCurrentPhotoUri(reviewerAvatarUri);
                               setPhotoModalOpen(true);
                             }}
                           >
-                            <Image source={{ uri: reviewerAvatarUri }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                            <Avatar 
+                              uri={reviewerAvatarUri} 
+                              name={reviewerDisplayName === 'Reviewer' ? 'You' : reviewerDisplayName} 
+                              size={120} 
+                            />
                           </TouchableOpacity>
                           <Text style={[styles.overlayText, { fontSize: 13, fontWeight: '700', textAlign: 'center', color: Colors.brand.textPrimary }]}>
                             {reviewerDisplayName === 'Reviewer' ? 'You' : reviewerDisplayName}
@@ -1550,9 +1553,9 @@ export default function ReviewerRequestScreen() {
                           lineHeight: 26,
                           color: Colors.brand.textPrimary,
                         }]}
-                        numberOfLines={2}
+                        numberOfLines={1}
                         adjustsFontSizeToFit
-                        minimumFontScale={0.8}
+                        minimumFontScale={0.75}
                       >
                         {reviewerDisplayName} rated your dating profile
                       </Text>
