@@ -317,9 +317,6 @@ export default function RequestsScreen() {
                 status={item.status as any}
                 label={isReviewer && item.status === 'paid' ? 'Pending acceptance' : undefined}
               />
-              {item.status === 'paid' && (item as any).review ? (
-                <StatusBadge status={'completed'} label="Review Submitted" />
-              ) : null}
             </RNView>
           </View>
         </View>

@@ -24,6 +24,7 @@ export default function AvatarUploader(props: Props) {
   const { uri, onUploaded, onRemoved, size = 96, accessibilityLabel, previousPathOrUrl } = props;
   const [uploading, setUploading] = useState(false);
   const [showAddPhoto, setShowAddPhoto] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const avatarContainerRef = useRef<any>(null);
 
   const radius = useMemo(() => size / 2, [size]);
@@ -38,15 +39,18 @@ export default function AvatarUploader(props: Props) {
     }
   }, []);
 
-  // Show "Add Photo" only after a delay if no URI is provided
+  // Show "Add Photo" if no URI is provided or if image failed to load
   useEffect(() => {
-    if (!uri) {
-      const timer = setTimeout(() => setShowAddPhoto(true), 1000);
+    if (!uri || imageError) {
+      // Show immediately if there's an error, otherwise show after a short delay
+      const delay = imageError ? 0 : 500;
+      const timer = setTimeout(() => setShowAddPhoto(true), delay);
       return () => clearTimeout(timer);
     } else {
       setShowAddPhoto(false);
+      setImageError(false);
     }
-  }, [uri]);
+  }, [uri, imageError]);
 
   const requestPermission = useCallback(async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -148,8 +152,16 @@ export default function AvatarUploader(props: Props) {
           dataSet: { backgroundColor: '#2A1B3D' },
         })}
       >
-        {uri ? (
-          <Image source={{ uri }} style={{ width: size, height: size, borderRadius: radius }} contentFit="cover" transition={200} />
+        {uri && !imageError ? (
+          <Image 
+            source={{ uri }} 
+            style={{ width: size, height: size, borderRadius: radius }} 
+            contentFit="cover" 
+            transition={200}
+            onError={() => {
+              setImageError(true);
+            }}
+          />
         ) : showAddPhoto ? (
           <RNText style={styles.placeholderText}>Add Photo</RNText>
         ) : (
