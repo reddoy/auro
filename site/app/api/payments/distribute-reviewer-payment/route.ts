@@ -221,7 +221,14 @@ export async function POST(req: Request) {
     try {
       // Check account balance before attempting transfer
       // Only use AVAILABLE balance for transfers (not pending)
-      const auroAccountId = 'acct_1S0FmFBCrjcqavov'; // Correct test account ID
+      const auroAccountId = process.env.STRIPE_PLATFORM_ACCOUNT_ID || '';
+      if (!auroAccountId) {
+        console.error('❌ Missing STRIPE_PLATFORM_ACCOUNT_ID environment variable');
+        return new Response(JSON.stringify({ 
+          error: 'Server configuration error: Stripe platform account not configured',
+          errorType: 'MISSING_CONFIG'
+        }), { status: 500 });
+      }
       
       console.log('🔍 Checking balance for account:', auroAccountId);
       

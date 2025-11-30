@@ -2,6 +2,9 @@ import React from 'react';
 import { StyleSheet, ScrollView, TouchableOpacity, View as RNView, Linking, Platform, Pressable, useWindowDimensions, Modal } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import * as Notifications from 'expo-notifications';
+import * as Sharing from 'expo-sharing';
 
 import { Text, View } from '@/components/Themed';
 import {
@@ -24,7 +27,6 @@ import StarRating from '@/components/StarRating';
 import ReviewerReviewModal from '@/components/ReviewerReviewModal';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import type { DbReviewerSummary } from '@/types';
-import DatingProfilePhotoGallery from '@/components/DatingProfilePhotoGallery';
 
 export default function ReviewDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -47,6 +49,8 @@ export default function ReviewDetailScreen() {
   const [autoPromptShown, setAutoPromptShown] = React.useState(false);
   const [isVideoPlaying, setIsVideoPlaying] = React.useState(false);
   const [videoModalVisible, setVideoModalVisible] = React.useState(false);
+  const [hasViewedVideo, setHasViewedVideo] = React.useState(false);
+  const [promptAfterVideoShown, setPromptAfterVideoShown] = React.useState(false);
   const [reviewer, setReviewer] = React.useState<DbReviewerSummary | null>(null);
   
   // Get payment amount
@@ -180,16 +184,69 @@ export default function ReviewDetailScreen() {
     run();
   }, [id]);
 
+  // Show reviewer review modal after they view the video and close it
   React.useEffect(() => {
-    if (!hasViewedReview || autoPromptShown || reviewerReview || !review || request?.status !== 'completed') {
+    if (!hasViewedVideo || promptAfterVideoShown || reviewerReview || !review || request?.status !== 'completed') {
       return;
     }
+    
+    // Small delay to let the video modal fully close
     const promptTimer = setTimeout(() => {
       setReviewerReviewModalOpen(true);
-      setAutoPromptShown(true);
-    }, 1200);
+      setPromptAfterVideoShown(true);
+    }, 500);
+    
     return () => clearTimeout(promptTimer);
-  }, [hasViewedReview, autoPromptShown, reviewerReview, review, request?.status]);
+  }, [hasViewedVideo, promptAfterVideoShown, reviewerReview, review, request?.status]);
+
+  // Schedule push notification 1 day after review is viewed if reviewer review not submitted
+  React.useEffect(() => {
+    // Don't schedule if still loading - wait until reviewer review is loaded
+    if (loading || !hasViewedReview || reviewerReview || !review || request?.status !== 'completed' || !request?.id) {
+      return;
+    }
+    
+    // Schedule a local notification for 1 day later
+    const scheduleReminderNotification = async () => {
+      try {
+        // Double-check that reviewer review doesn't exist before scheduling
+        // This prevents race conditions where the review was loaded after the effect ran
+        const existingReview = await getReviewerReviewByRequestId(String(request.id));
+        if (existingReview) {
+          // Review exists, update state and don't schedule
+          setReviewerReview(existingReview);
+          return;
+        }
+        
+        const oneDayFromNow = new Date();
+        oneDayFromNow.setDate(oneDayFromNow.getDate() + 1);
+        
+        // Check if notification was already scheduled for this request
+        const notificationKey = `reviewer_review_reminder_${request.id}`;
+        const existingScheduled = await Notifications.getAllScheduledNotificationsAsync();
+        const alreadyScheduled = existingScheduled.some(n => n.identifier === notificationKey);
+        
+        if (!alreadyScheduled) {
+          await Notifications.scheduleNotificationAsync({
+            identifier: notificationKey,
+            content: {
+              title: 'Review Your Reviewer',
+              body: `You haven't reviewed ${influencerName} yet. Share your experience!`,
+              data: { requestId: request.id, type: 'reviewer_review_reminder' },
+              sound: true,
+            },
+            trigger: {
+              date: oneDayFromNow,
+            },
+          });
+        }
+      } catch (error) {
+        console.error('Failed to schedule reviewer review reminder notification:', error);
+      }
+    };
+    
+    scheduleReminderNotification();
+  }, [loading, hasViewedReview, reviewerReview, review, request?.status, request?.id, influencerName]);
 
   // Extract media URLs before early returns to ensure hooks are always called
   const mediaVideoUrl = review?.media?.videoUrl as string | undefined;
@@ -234,20 +291,6 @@ export default function ReviewDetailScreen() {
     fullscreenVideoPlayer.replace(mediaVideoUrl);
   }, [fullscreenVideoPlayer, mediaVideoUrl]);
 
-  const ratingEntries = React.useMemo(() => {
-    if (!review?.ratings) return [];
-    const entries = [
-      {
-        key: 'overall',
-        label: 'Overall',
-        description: 'Overall dating profile vibe',
-        value: review.ratings.overall,
-      },
-    ];
-    return entries.filter(
-      (entry) => typeof entry.value === 'number' && (entry.value ?? 0) > 0
-    );
-  }, [review?.ratings]);
 
   const datingProfileNotes = React.useMemo(() => {
     return (
@@ -256,6 +299,20 @@ export default function ReviewDetailScreen() {
       null
     );
   }, [review?.feedback?.sectionNotes?.datingProfile, review?.feedback?.sectionNotes?.socials]);
+
+  // Rating color and label helpers (matching video review feature)
+  // Define these functions early to ensure they're always accessible
+  const getRatingColor = React.useCallback((rating: number) => {
+    if (rating >= 7) return Colors.brand.status.completed; // Green
+    if (rating >= 4) return Colors.brand.status.in_progress; // Amber
+    return Colors.brand.status.rejected; // Red
+  }, []);
+
+  const getRatingLabel = React.useCallback((rating: number) => {
+    if (rating >= 7) return 'Looks great';
+    if (rating >= 4) return 'Solid but room to tweak';
+    return 'Needs work';
+  }, []);
 
   const toggleVideoPlayback = () => {
     if (!videoPlayer) return;
@@ -266,16 +323,51 @@ export default function ReviewDetailScreen() {
     }
   };
 
-  const openSocialLink = (platform: 'instagram' | 'tiktok') => {
-    if (!reviewer?.links) return;
-    const handle = reviewer.links[platform];
-    if (!handle) return;
+  const openSocialLink = async (platform: 'instagram' | 'tiktok') => {
+    if (!mediaVideoUrl) {
+      return;
+    }
     
-    const normalizedHandle = handle.replace(/^@/, '').trim();
-    if (platform === 'instagram') {
-      Linking.openURL(`https://instagram.com/${normalizedHandle}`);
-    } else if (platform === 'tiktok') {
-      Linking.openURL(`https://tiktok.com/@${normalizedHandle}`);
+    try {
+      // Check if sharing is available
+      if (await Sharing.isAvailableAsync()) {
+        // Use native share sheet to share the video
+        await Sharing.shareAsync(mediaVideoUrl, {
+          mimeType: 'video/mp4',
+          dialogTitle: `Share on ${platform === 'instagram' ? 'Instagram' : 'TikTok'}`,
+        });
+      } else {
+        // Fallback: try to open the app directly
+        if (platform === 'instagram') {
+          const igUrl = Platform.select({ 
+            ios: 'instagram://camera', 
+            android: 'instagram://camera' 
+          });
+          if (igUrl) {
+            const supported = await Linking.canOpenURL(igUrl);
+            if (supported) {
+              await Linking.openURL(igUrl);
+            } else {
+              Linking.openURL('https://www.instagram.com');
+            }
+          }
+        } else if (platform === 'tiktok') {
+          const tiktokUrl = Platform.select({ 
+            ios: 'musically://camera', 
+            android: 'snssdk1128://openRecord' 
+          });
+          if (tiktokUrl) {
+            const supported = await Linking.canOpenURL(tiktokUrl);
+            if (supported) {
+              await Linking.openURL(tiktokUrl);
+            } else {
+              Linking.openURL('https://www.tiktok.com/upload');
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to share:', error);
     }
   };
 
@@ -307,17 +399,15 @@ export default function ReviewDetailScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
       {/* Header with Back Button */}
-      <RNView style={styles.headerContainer}>
-        <TouchableOpacity 
-          onPress={() => router.push('/(tabs)/requests')}
-          style={styles.backButton}
-        >
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-      </RNView>
-      <ScrollView contentContainerStyle={{ paddingTop: 12, paddingBottom: Platform.OS === 'web' ? 24 : 24, paddingHorizontal: 16, flexGrow: 1 }}>
+      <TouchableOpacity 
+        style={[styles.backButton, { top: Platform.OS === 'ios' ? 48 : 58 }]}
+        onPress={() => router.push('/(tabs)/requests')}
+      >
+        <Ionicons name="arrow-back" size={24} color={Colors.brand.textPrimary} />
+      </TouchableOpacity>
+      <ScrollView contentContainerStyle={{ paddingTop: 0, paddingBottom: Platform.OS === 'web' ? 24 : 24, paddingHorizontal: 16, flexGrow: 1 }}>
         {/* Top Section: Reviewee (big) and Reviewer (small) profile photos */}
         <View style={styles.topProfileSection}>
           {/* Reviewee - Small circular photo with name */}
@@ -357,15 +447,25 @@ export default function ReviewDetailScreen() {
                 cachePolicy="none" 
               />
             </TouchableOpacity>
-            <Text style={styles.revieweeName}>{influencerName}</Text>
+            {review?.ratings?.overall ? (
+              <RNView style={styles.ratingDisplayContainer}>
+                <Text style={styles.ratingNameText}>
+                  {influencerName.split(' ')[0]} rated you
+                </Text>
+                <RNView style={styles.ratingNumberContainer}>
+                  <Text style={[styles.ratingNumber, { color: getRatingColor(review.ratings.overall) }]}>
+                    {review.ratings.overall}
+                  </Text>
+                  <Text style={styles.ratingOutOf}>/ 10</Text>
+                </RNView>
+                <Text style={[styles.ratingLabel, { color: getRatingColor(review.ratings.overall) }]}>
+                  {getRatingLabel(review.ratings.overall)}
+                </Text>
+              </RNView>
+            ) : (
+              <Text style={styles.revieweeName}>{influencerName}</Text>
+            )}
           </RNView>
-
-          {/* Payment Amount */}
-          {amountCents && (
-            <Text style={styles.paymentAmountTop}>
-              You paid ${(amountCents / 100).toFixed(2)} for this review
-            </Text>
-          )}
 
           {/* Status Message */}
           {statusBanner && (
@@ -378,18 +478,59 @@ export default function ReviewDetailScreen() {
           )}
         </View>
 
-        {/* Dating Profile Gallery Section */}
-        {signedProfilePhotos.length > 0 && (
+        {/* View Video Review Button - moved up here */}
+        {request?.status === 'completed' && mediaVideoUrl ? (
+          <View style={styles.videoButtonSection}>
+            <TouchableOpacity 
+              style={[styles.primaryActionButton, { backgroundColor: Colors.brand.accentMagenta }]} 
+              onPress={() => setVideoModalVisible(true)}
+            >
+              <Text style={styles.primaryActionButtonText}>🎥 View Video Review</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {/* About Section - moved above gallery */}
+        {parsedNotes?.message ? (
           <View style={styles.mediaSection}>
-            <Text style={styles.sectionTitle}>Dating Profile Gallery</Text>
-            <DatingProfilePhotoGallery
-              uris={signedProfilePhotos}
-              onPhotoPress={(index) => {
-                setGalleryUris(signedProfilePhotos);
-                setGalleryIndex(index);
-                setGalleryOpen(true);
-              }}
-            />
+            <Text style={styles.sectionTitle}>About {revieweeName.split(' ')[0]}</Text>
+            <Text style={styles.bioText}>{parsedNotes.message}</Text>
+          </View>
+        ) : null}
+
+        {/* Dating Profile Gallery Section - Vertical scroll with comments */}
+        {signedProfilePhotos.length > 0 && (
+          <View style={styles.datingProfileSection}>
+            <Text style={styles.sectionTitle}>Dating Profile</Text>
+            {signedProfilePhotos.map((photoUri, index) => {
+              const photoNote = review?.feedback?.photoNotes?.[index] || 
+                               review?.feedback?.photoNotes?.[String(index)] || 
+                               null;
+              return (
+                <RNView key={index} style={styles.photoWithComment}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setGalleryUris(signedProfilePhotos);
+                      setGalleryIndex(index);
+                      setGalleryOpen(true);
+                    }}
+                    activeOpacity={0.9}
+                  >
+                    <Image 
+                      source={{ uri: photoUri }} 
+                      style={styles.datingProfilePhoto} 
+                      contentFit="cover" 
+                      transition={200} 
+                    />
+                  </TouchableOpacity>
+                  <View style={styles.photoCommentContainer}>
+                    <Text style={[styles.photoCommentText, !photoNote && styles.photoCommentTextNoComment]}>
+                      {photoNote || 'No comment left'}
+                    </Text>
+                  </View>
+                </RNView>
+              );
+            })}
           </View>
         )}
 
@@ -399,60 +540,31 @@ export default function ReviewDetailScreen() {
 
             {/* Consent pill is now shown inside the status card */}
 
-            {/* Bio Section */}
-            {parsedNotes?.message ? (
-              <View style={styles.mediaSection}>
-                <Text style={styles.sectionTitle}>What the review wanted you to know about them</Text>
-                <Text style={styles.bioText}>{parsedNotes.message}</Text>
-              </View>
-            ) : null}
 
-            {ratingEntries.length > 0 ? (
-        <View style={styles.ratingsSection}>
-          <Text style={styles.sectionTitle}>Your Ratings</Text>
-          <RNView
-            style={[
-              styles.ratingsGrid,
-              ratingEntries.length === 1 && styles.singleRatingGrid,
-            ]}
-          >
-            {ratingEntries.map((entry) => (
-              <View
-                key={entry.key}
-                style={[
-                  styles.ratingCard,
-                  ratingEntries.length === 1 && styles.ratingCardFull,
-                ]}
-              >
-                <StarRating
-                  rating={entry.value ?? 0}
-                  category={entry.label}
-                  size={ratingEntries.length === 1 ? 'large' : 'medium'}
-                />
-                {entry.description ? (
-                  <Text style={styles.ratingDescription}>{entry.description}</Text>
-                ) : null}
-              </View>
-            ))}
-          </RNView>
-            </View>
-            ) : null}
 
             <View style={styles.feedbackSection}>
         <Text style={styles.sectionTitle}>Feedback</Text>
         
         <View style={styles.feedbackCard}>
           <Text style={styles.feedbackTitle}>✨ Your Strengths</Text>
-          {review?.feedback?.strengths?.map((strength: string, index: number) => (
-            <Text key={index} style={styles.feedbackItem}>• {strength}</Text>
-          ))}
+          <RNView style={styles.feedbackItemsContainer}>
+            {review?.feedback?.strengths?.map((strength: string, index: number) => (
+              <RNView key={index} style={[styles.feedbackPill, styles.strengthPill]}>
+                <Text style={styles.feedbackPillText}>{strength}</Text>
+              </RNView>
+            ))}
+          </RNView>
         </View>
 
         <View style={styles.feedbackCard}>
           <Text style={styles.feedbackTitle}>🎯 Areas for Improvement</Text>
-          {review?.feedback?.improvements?.map((improvement: string, index: number) => (
-            <Text key={index} style={styles.feedbackItem}>• {improvement}</Text>
-          ))}
+          <RNView style={styles.feedbackItemsContainer}>
+            {review?.feedback?.improvements?.map((improvement: string, index: number) => (
+              <RNView key={index} style={[styles.feedbackPill, styles.improvementPill]}>
+                <Text style={styles.feedbackPillText}>{improvement}</Text>
+              </RNView>
+            ))}
+          </RNView>
         </View>
 
         <View style={styles.feedbackCard}>
@@ -480,61 +592,19 @@ export default function ReviewDetailScreen() {
             ) : null}
 
             <View style={styles.actionsSection}>
-        {request?.status === 'completed' && mediaVideoUrl ? (
-          <>
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: Colors.brand.accentMagenta }]} 
-              onPress={() => setVideoModalVisible(true)}
-            >
-              <Text style={styles.actionButtonText}>View Video Review</Text>
-            </TouchableOpacity>
-            <RNView style={{ height: 8 }} />
-          </>
-        ) : null}
-
-        {request?.status === 'completed' && shareConsent && mediaVideoUrl ? (
-          <>
-            <Text style={styles.shareSectionTitle}>Share Video Review</Text>
-            <Text style={styles.shareSectionSubtitle}>Visit {reviewer?.displayName || 'reviewer'}'s social media to share this review</Text>
-            <RNView style={styles.socialLinksContainer}>
-              {reviewer?.links?.instagram ? (
-                <TouchableOpacity 
-                  style={[styles.socialLinkButton, { backgroundColor: '#E1306C' }]} 
-                  onPress={() => openSocialLink('instagram')}
-                >
-                  <Text style={styles.socialLinkButtonText}>Share on Instagram</Text>
-                </TouchableOpacity>
-              ) : null}
-              {reviewer?.links?.tiktok ? (
-                <TouchableOpacity 
-                  style={[styles.socialLinkButton, { backgroundColor: '#000' }]} 
-                  onPress={() => openSocialLink('tiktok')}
-                >
-                  <Text style={styles.socialLinkButtonText}>Share on TikTok</Text>
-                </TouchableOpacity>
-              ) : null}
-              {(!reviewer?.links?.instagram && !reviewer?.links?.tiktok) ? (
-                <Text style={styles.noSocialLinksText}>
-                  {reviewer?.displayName || 'Reviewer'} hasn't added social media links yet.
-                </Text>
-              ) : null}
-            </RNView>
-            <RNView style={{ height: 8 }} />
-          </>
-        ) : null}
-        
-        {/* Reviewer Review Button - only show if review is completed */}
+        {/* Reviewer Review Button - after review content */}
         {request?.status === 'completed' && review ? (
           <>
-            <TouchableOpacity 
-              style={[styles.actionButton, { backgroundColor: Colors.brand.accentMagenta }]}
-              onPress={() => setReviewerReviewModalOpen(true)}
-            >
-              <Text style={styles.actionButtonText}>
-                {reviewerReview ? 'Update Your Review of Reviewer' : 'Review Your Reviewer'}
-              </Text>
-            </TouchableOpacity>
-            {reviewerReview && (
+            {!reviewerReview ? (
+              <TouchableOpacity 
+                style={[styles.secondaryActionButton, { backgroundColor: Colors.brand.accentMagenta }]}
+                onPress={() => setReviewerReviewModalOpen(true)}
+              >
+                <Text style={styles.secondaryActionButtonText}>
+                  ⭐ Review Your Reviewer
+                </Text>
+              </TouchableOpacity>
+            ) : (
               <View style={styles.reviewerReviewCard}>
                 <Text style={styles.reviewerReviewTitle}>Your Review of {influencerName}</Text>
                 <RNView style={styles.reviewerReviewRating}>
@@ -555,15 +625,39 @@ export default function ReviewDetailScreen() {
                 )}
               </View>
             )}
-            <RNView style={{ height: 8 }} />
+            <RNView style={{ height: 16 }} />
+          </>
+        ) : null}
+
+        {/* Share Section - less prominent, at bottom */}
+        {request?.status === 'completed' && shareConsent && mediaVideoUrl ? (
+          <>
+            <Text style={styles.shareSectionTitle}>Share Video Review</Text>
+            <Text style={styles.shareSectionSubtitle}>Share your review video on social media</Text>
+            <RNView style={styles.socialLinksContainer}>
+              <TouchableOpacity 
+                style={[styles.socialLinkButton, { backgroundColor: '#E1306C' }]} 
+                onPress={() => openSocialLink('instagram')}
+              >
+                <Text style={styles.socialLinkButtonText}>📷 Share on Instagram</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.socialLinkButton, { backgroundColor: '#161823', borderWidth: 1, borderColor: Colors.brand.border }]} 
+                onPress={() => openSocialLink('tiktok')}
+              >
+                <Text style={styles.socialLinkButtonText}>🎵 Share on TikTok</Text>
+              </TouchableOpacity>
+            </RNView>
+            <RNView style={{ height: 16 }} />
           </>
         ) : null}
         
+        {/* Request Another Review - secondary style button at bottom */}
         <TouchableOpacity 
-          style={styles.actionButton}
+          style={styles.tertiaryActionButton}
           onPress={() => router.push('/(tabs)/requests/new')}
         >
-          <Text style={styles.actionButtonText}>Request Another Review</Text>
+          <Text style={styles.tertiaryActionButtonText}>✨ Request Another Review</Text>
         </TouchableOpacity>
             </View>
       </ScrollView>
@@ -574,9 +668,16 @@ export default function ReviewDetailScreen() {
           requestId={String(id)}
           reviewerName={influencerName}
           onClose={() => setReviewerReviewModalOpen(false)}
-          onSuccess={(review) => {
+          onSuccess={async (review) => {
             setReviewerReview(review);
             setReviewerReviewModalOpen(false);
+            // Cancel any scheduled reminder notification for this request
+            try {
+              const notificationKey = `reviewer_review_reminder_${id}`;
+              await Notifications.cancelScheduledNotificationAsync(notificationKey);
+            } catch (error) {
+              console.error('Failed to cancel reminder notification:', error);
+            }
           }}
         />
       )}
@@ -586,13 +687,19 @@ export default function ReviewDetailScreen() {
         visible={videoModalVisible}
         animationType="fade"
         transparent={false}
-        onRequestClose={() => setVideoModalVisible(false)}
+        onRequestClose={() => {
+          setVideoModalVisible(false);
+          setHasViewedVideo(true);
+        }}
       >
         <View style={styles.videoModalContainer}>
           <SafeAreaView style={styles.videoModalSafeArea} edges={['top', 'bottom', 'left', 'right']}>
             <RNView style={styles.videoModalHeader}>
               <TouchableOpacity 
-                onPress={() => setVideoModalVisible(false)}
+                onPress={() => {
+                  setVideoModalVisible(false);
+                  setHasViewedVideo(true);
+                }}
                 style={styles.videoModalCloseButton}
               >
                 <Text style={styles.videoModalCloseText}>✕</Text>
@@ -624,21 +731,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.brand.background,
   },
-  headerContainer: {
-    paddingTop: 8,
-    paddingBottom: 8,
-    paddingHorizontal: 16,
-    backgroundColor: Colors.brand.background,
-  },
   backButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.brand.textPrimary,
+    position: 'absolute',
+    left: 20,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.brand.cardBackground,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   // New Video Review Top Section Styles
   videoReviewTopSection: {
@@ -826,6 +933,33 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 10,
   },
+  datingProfileSection: {
+    marginTop: 16,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  photoWithComment: {
+    marginBottom: 24,
+  },
+  datingProfilePhoto: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 16,
+    backgroundColor: Colors.brand.cardBackgroundLight,
+  },
+  photoCommentContainer: {
+    marginTop: 12,
+    paddingHorizontal: 4,
+  },
+  photoCommentText: {
+    fontSize: 15,
+    color: Colors.brand.textPrimary,
+    lineHeight: 22,
+  },
+  photoCommentTextNoComment: {
+    color: Colors.brand.textSecondary,
+    fontStyle: 'italic',
+  },
   feedbackCard: {
     backgroundColor: Colors.brand.cardBackgroundLight,
     borderRadius: 20,
@@ -850,6 +984,30 @@ const styles = StyleSheet.create({
     color: Colors.brand.textSecondary,
     lineHeight: 22,
     marginBottom: 6,
+  },
+  feedbackItemsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  feedbackPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+  },
+  strengthPill: {
+    backgroundColor: '#22c55e',
+  },
+  improvementPill: {
+    backgroundColor: '#ef4444',
+  },
+  feedbackPillText: {
+    fontSize: 13,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontFamily: 'Poppins_600SemiBold',
   },
   generalFeedback: {
     fontSize: 14,
@@ -908,12 +1066,47 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: 'Poppins_700Bold',
   },
-  paymentAmountTop: {
-    fontSize: 16,
+  ratingDisplayContainer: {
+    alignItems: 'center',
+    marginTop: 12,
+    width: '100%',
+  },
+  ratingNameText: {
+    fontSize: 15,
     fontWeight: '600',
-    color: Colors.brand.textPrimary,
-    marginBottom: 16,
+    color: Colors.brand.textSecondary,
     textAlign: 'center',
+    marginBottom: 8,
+    fontFamily: 'Poppins_600SemiBold',
+  },
+  ratingNumberContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  ratingNumber: {
+    fontSize: 48,
+    fontWeight: '900',
+    lineHeight: 52,
+    fontFamily: 'Poppins_700Bold',
+  },
+  ratingOutOf: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.brand.textSecondary,
+    opacity: 0.7,
+    lineHeight: 26,
+    paddingBottom: 4,
+    fontFamily: 'Poppins_700Bold',
+  },
+  ratingLabel: {
+    fontSize: 16,
+    fontWeight: '800',
+    textAlign: 'center',
+    letterSpacing: 0.3,
+    fontFamily: 'Poppins_700Bold',
   },
   statusMessageTop: {
     alignItems: 'center',
@@ -951,9 +1144,61 @@ const styles = StyleSheet.create({
   mediaHeading: { marginTop: 20 },
   videoThumb: { width: '100%', aspectRatio: 1.77, borderRadius: 12 },
   videoHint: { color: Colors.brand.textSecondary, marginTop: 6, fontSize: 12 },
+  videoButtonSection: {
+    marginHorizontal: 16,
+    marginTop: 20,
+    marginBottom: 24,
+  },
+  primaryActionButton: {
+    backgroundColor: Colors.brand.accentMagenta,
+    paddingVertical: 18,
+    paddingHorizontal: 30,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: Colors.brand.accentMagenta,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  primaryActionButtonText: {
+    color: Colors.brand.textOnGradient,
+    fontSize: 17,
+    fontWeight: 'bold',
+    fontFamily: 'Poppins_700Bold',
+  },
   actionsSection: {
     margin: 15,
     marginBottom: 30,
+  },
+  secondaryActionButton: {
+    backgroundColor: Colors.brand.accentMagenta,
+    paddingVertical: 16,
+    paddingHorizontal: 30,
+    borderRadius: 14,
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  secondaryActionButtonText: {
+    color: Colors.brand.textOnGradient,
+    fontSize: 16,
+    fontWeight: 'bold',
+    fontFamily: 'Poppins_700Bold',
+  },
+  tertiaryActionButton: {
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    paddingVertical: 14,
+    paddingHorizontal: 30,
+    borderRadius: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.brand.border,
+  },
+  tertiaryActionButtonText: {
+    color: Colors.brand.textPrimary,
+    fontSize: 15,
+    fontWeight: '600',
+    fontFamily: 'Poppins_600SemiBold',
   },
   infoBanner: {
     marginHorizontal: 15,
@@ -1090,16 +1335,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   socialLinkButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   socialLinkButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '600',
+    fontFamily: 'Poppins_600SemiBold',
   },
   noSocialLinksText: {
     fontSize: 14,

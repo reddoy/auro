@@ -53,9 +53,28 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'Missing fileName or contentType' }), { status: 400, headers: { ...corsHeaders(req), 'content-type': 'application/json' } });
     }
 
+    // File type validation - only allow image types
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+    const fileExt = (fileName.split('.').pop() || '').toLowerCase();
+    
+    if (!allowedExtensions.includes(fileExt)) {
+      return new Response(JSON.stringify({ error: `Invalid file type. Allowed types: ${allowedExtensions.join(', ')}` }), { status: 400, headers: { ...corsHeaders(req), 'content-type': 'application/json' } });
+    }
+    
+    if (!allowedMimeTypes.includes(contentType.toLowerCase())) {
+      return new Response(JSON.stringify({ error: `Invalid content type. Allowed types: ${allowedMimeTypes.join(', ')}` }), { status: 400, headers: { ...corsHeaders(req), 'content-type': 'application/json' } });
+    }
+
+    // File size validation - check if fileSize is provided (client should send this)
+    const { fileSize } = body || {};
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    if (fileSize && fileSize > MAX_FILE_SIZE) {
+      return new Response(JSON.stringify({ error: `File size exceeds maximum of ${MAX_FILE_SIZE / 1024 / 1024}MB` }), { status: 400, headers: { ...corsHeaders(req), 'content-type': 'application/json' } });
+    }
+
     const safeCategory = (category || 'web').toString().replace(/[^a-zA-Z0-9_-]/g, '');
     const safeSession = (uploadSessionId || 'anon').toString().replace(/[^a-zA-Z0-9_-]/g, '');
-    const fileExt = (fileName.split('.').pop() || 'jpg').toLowerCase();
     const objectPath = `temp-uploads/${safeSession}/${safeCategory}/${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
 
     const bucket = (safeCategory === 'selfie' || safeCategory === 'avatar') ? avatarBucket : requestMediaBucket;

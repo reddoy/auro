@@ -211,6 +211,16 @@ export async function updateProfile(partial: Partial<Profile>): Promise<Profile>
     }
   }
 
+  // Validate hourly_rate if being updated
+  if (mergedPartial.hourly_rate !== undefined) {
+    const MIN_RATE = 10;
+    const MAX_RATE = 500;
+    const rate = mergedPartial.hourly_rate;
+    if (rate !== null && (typeof rate !== 'number' || isNaN(rate) || rate < MIN_RATE || rate > MAX_RATE)) {
+      throw new Error(`Hourly rate must be between $${MIN_RATE} and $${MAX_RATE}`);
+    }
+  }
+
   const update = { id: user.id, ...seeded, ...mergedPartial } as Partial<Profile> & { id: string };
   const { data, error } = await supabase
     .from('profiles')

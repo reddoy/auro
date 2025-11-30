@@ -658,125 +658,114 @@ export default function ProfileScreen() {
               ) : null}
               
               {/* Reviewer Status Toggle */}
-              <View style={styles.reviewerStatusRow}>
-                <MotionView entering={subtleFadeIn()} style={styles.reviewerStatusControls}>
-                  <MotionView entering={subtleFadeIn()} style={[
-                    styles.statusIndicator, 
-                    profile?.is_reviewer === 'approved' && styles.statusIndicatorActive,
-                    profile?.is_reviewer === 'pending' && styles.statusIndicatorPending
-                  ]}>
-                    <Text 
-                      style={[
-                        styles.statusIndicatorText, 
-                        profile?.is_reviewer === 'approved' && styles.statusIndicatorTextActive,
-                        profile?.is_reviewer === 'pending' && styles.statusIndicatorTextPending
-                      ]}
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
-                    >
-                      {profile?.is_reviewer === 'pending' 
-                        ? '⏳ Pending' 
-                        : profile?.is_reviewer === 'approved'
-                        ? '✓ Active' 
-                        : '○ Inactive'}
-                    </Text>
-                  </MotionView>
-                  <Switch
-                    value={profile?.is_reviewer === 'approved'}
-                    disabled={profile?.is_reviewer === 'pending'}
-                    onValueChange={async (val) => {
-                      // Don't allow toggling if pending approval
-                      if (profile?.is_reviewer === 'pending') {
-                        Alert.alert(
-                          'Pending Approval',
-                          'Your reviewer application is currently pending approval. You\'ll be notified via email once your application has been reviewed.'
-                        );
-                        return;
-                      }
-                      // If enabling, navigate to reviewer onboarding flow
-                      if (val) {
-                        try {
-                          // Determine which onboarding step to start from based on existing profile data
-                          const { route } = getReviewerOnboardingStartStep(profile);
-                          
-                          // Navigate directly without setting onboarding preferences
-                          // This prevents the app from redirecting to onboarding on restart
-                          // (onboarding preferences are only for initial signup flow)
-                          router.push(route);
-                        } catch (e: any) {
-                          Alert.alert('Error', e?.message || 'Failed to start reviewer onboarding');
-                        }
-                        return;
-                      }
-
-                      // If disabling, check for pending reviews first
-                      try {
-                        if (!profile?.id) {
-                          Alert.alert('Error', 'Unable to verify your profile');
+              {profile?.is_reviewer !== 'pending' && (
+                <View style={styles.reviewerStatusRow}>
+                  <MotionView entering={subtleFadeIn()} style={styles.reviewerStatusControls}>
+                    <MotionView entering={subtleFadeIn()} style={[
+                      styles.statusIndicator, 
+                      profile?.is_reviewer === 'approved' && styles.statusIndicatorActive
+                    ]}>
+                      <Text 
+                        style={[
+                          styles.statusIndicatorText, 
+                          profile?.is_reviewer === 'approved' && styles.statusIndicatorTextActive
+                        ]}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
+                        {profile?.is_reviewer === 'approved'
+                          ? '✓ Active' 
+                          : '○ Inactive'}
+                      </Text>
+                    </MotionView>
+                    <Switch
+                      value={profile?.is_reviewer === 'approved'}
+                      onValueChange={async (val) => {
+                        // If enabling, navigate to reviewer onboarding flow
+                        if (val) {
+                          try {
+                            // Determine which onboarding step to start from based on existing profile data
+                            const { route } = getReviewerOnboardingStartStep(profile);
+                            
+                            // Navigate directly without setting onboarding preferences
+                            // This prevents the app from redirecting to onboarding on restart
+                            // (onboarding preferences are only for initial signup flow)
+                            router.push(route);
+                          } catch (e: any) {
+                            Alert.alert('Error', e?.message || 'Failed to start reviewer onboarding');
+                          }
                           return;
                         }
 
-                        // Check for pending reviews (accepted, paid, or in_progress)
-                        const requests = await getRequestsByReviewer(profile.id);
-                        const pendingReviews = requests.filter(
-                          (r) => (r.status === 'accepted' || r.status === 'paid' || r.status === 'in_progress')
-                        );
+                        // If disabling, check for pending reviews first
+                        try {
+                          if (!profile?.id) {
+                            Alert.alert('Error', 'Unable to verify your profile');
+                            return;
+                          }
 
-                        if (pendingReviews.length > 0) {
-                          // Show warning dialog with details
-                          const pendingCount = pendingReviews.length;
-                          const totalPending = pendingReviews.reduce((sum, r) => {
-                            // Only count amounts for paid/in_progress reviews that have payment info
-                            if (r.status === 'paid' || r.status === 'in_progress') {
-                              const amount = r.reviewer_amount_cents || ((r.amount_cents || 0) - (r.application_fee_cents || 0));
-                              return sum + amount;
-                            }
-                            // For 'accepted' status, payment might not be complete yet, so return 0
-                            return sum;
-                          }, 0) / 100;
-
-                          Alert.alert(
-                            'Pending Reviews',
-                            `You have ${pendingCount} pending review${pendingCount > 1 ? 's' : ''} that need to be completed${totalPending > 0 ? ` ($${totalPending.toFixed(2)} in pending earnings)` : ''}.\n\nDisabling your reviewer status will prevent you from completing these reviews. You can still complete them if you re-enable your reviewer status later.\n\nDo you want to continue?`,
-                            [
-                              {
-                                text: 'Cancel',
-                                style: 'cancel',
-                                onPress: () => {
-                                  // Reset switch to true since we're canceling
-                                  // The Switch is controlled by profile.is_reviewer, so this will reset it visually
-                                  if (profile) {
-                                    setProfile({ ...profile, is_reviewer: true });
-                                  }
-                                },
-                              },
-                              {
-                                text: 'Disable Anyway',
-                                style: 'destructive',
-                                onPress: () => {
-                                  // Show confirmation modal requiring typing "auro"
-                                  setConfirmText('');
-                                  setShowConfirmModal(true);
-                                },
-                              },
-                            ],
-                            { cancelable: true }
+                          // Check for pending reviews (accepted, paid, or in_progress)
+                          const requests = await getRequestsByReviewer(profile.id);
+                          const pendingReviews = requests.filter(
+                            (r) => (r.status === 'accepted' || r.status === 'paid' || r.status === 'in_progress')
                           );
-                        } else {
-                          // No pending reviews, show confirmation modal requiring typing "auro"
-                          setConfirmText('');
-                          setShowConfirmModal(true);
+
+                          if (pendingReviews.length > 0) {
+                            // Show warning dialog with details
+                            const pendingCount = pendingReviews.length;
+                            const totalPending = pendingReviews.reduce((sum, r) => {
+                              // Only count amounts for paid/in_progress reviews that have payment info
+                              if (r.status === 'paid' || r.status === 'in_progress') {
+                                const amount = r.reviewer_amount_cents || ((r.amount_cents || 0) - (r.application_fee_cents || 0));
+                                return sum + amount;
+                              }
+                              // For 'accepted' status, payment might not be complete yet, so return 0
+                              return sum;
+                            }, 0) / 100;
+
+                            Alert.alert(
+                              'Pending Reviews',
+                              `You have ${pendingCount} pending review${pendingCount > 1 ? 's' : ''} that need to be completed${totalPending > 0 ? ` ($${totalPending.toFixed(2)} in pending earnings)` : ''}.\n\nDisabling your reviewer status will prevent you from completing these reviews. You can still complete them if you re-enable your reviewer status later.\n\nDo you want to continue?`,
+                              [
+                                {
+                                  text: 'Cancel',
+                                  style: 'cancel',
+                                  onPress: () => {
+                                    // Reset switch to true since we're canceling
+                                    // The Switch is controlled by profile.is_reviewer, so this will reset it visually
+                                    if (profile) {
+                                      setProfile({ ...profile, is_reviewer: true });
+                                    }
+                                  },
+                                },
+                                {
+                                  text: 'Disable Anyway',
+                                  style: 'destructive',
+                                  onPress: () => {
+                                    // Show confirmation modal requiring typing "auro"
+                                    setConfirmText('');
+                                    setShowConfirmModal(true);
+                                  },
+                                },
+                              ],
+                              { cancelable: true }
+                            );
+                          } else {
+                            // No pending reviews, show confirmation modal requiring typing "auro"
+                            setConfirmText('');
+                            setShowConfirmModal(true);
+                          }
+                        } catch (e: any) {
+                          Alert.alert('Error', e?.message || 'Failed to check pending reviews');
                         }
-                      } catch (e: any) {
-                        Alert.alert('Error', e?.message || 'Failed to check pending reviews');
-                      }
-                    }}
-                    trackColor={{ false: '#3e3e3e', true: '#10b981' }}
-                    thumbColor={profile?.is_reviewer === 'approved' ? '#ffffff' : '#f4f3f4'}
-                    style={styles.reviewerSwitch}
-                  />
-                </MotionView>
-              </View>
+                      }}
+                      trackColor={{ false: '#3e3e3e', true: '#10b981' }}
+                      thumbColor={profile?.is_reviewer === 'approved' ? '#ffffff' : '#f4f3f4'}
+                      style={styles.reviewerSwitch}
+                    />
+                  </MotionView>
+                </View>
+              )}
               
               {/* Pending Approval Message */}
               {profile?.is_reviewer === 'pending' && (
@@ -790,6 +779,40 @@ export default function ProfileScreen() {
                       </Text>
                     </RNView>
                   </RNView>
+                  <MotionPressable
+                    entering={cardEntrance(2)}
+                    style={styles.revokeButton}
+                    onPress={() => {
+                      Alert.alert(
+                        'Revoke Reviewer Application',
+                        'Are you sure you want to revoke your reviewer application? You can always apply again later.',
+                        [
+                          {
+                            text: 'Cancel',
+                            style: 'cancel',
+                          },
+                          {
+                            text: 'Revoke',
+                            style: 'destructive',
+                            onPress: async () => {
+                              try {
+                                const updated = await updateProfile({ is_reviewer: null });
+                                setProfile(updated);
+                                Alert.alert(
+                                  'Application Revoked',
+                                  'Your reviewer application has been revoked. You can apply again anytime from your profile settings.'
+                                );
+                              } catch (e: any) {
+                                Alert.alert('Error', e?.message || 'Failed to revoke application');
+                              }
+                            },
+                          },
+                        ]
+                      );
+                    }}
+                  >
+                    <Text style={styles.revokeButtonText}>Revoke Application</Text>
+                  </MotionPressable>
                 </MotionView>
               )}
               
@@ -1795,6 +1818,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.brand.textSecondary,
     lineHeight: 20,
+    marginBottom: 16,
+  },
+  revokeButton: {
+    marginTop: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  revokeButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#ef4444',
   },
 });
 

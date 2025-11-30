@@ -109,26 +109,26 @@ export default function ReviewerSubmitScreen() {
   const onSubmit = async () => {
     if (!id) return;
     try {
-      // Validate ratings are between 1 and 5
+      // Validate ratings are between 1 and 10 (consistent with main reviewer screen)
       const overallNum = Number(overall);
       const attractivenessNum = Number(attractiveness);
       const wardrobeNum = Number(wardrobe);
       const roomNum = Number(room);
       
-      if (!overallNum || overallNum < 1 || overallNum > 5) {
-        Alert.alert('Invalid Rating', 'Overall rating must be between 1 and 5');
+      if (!overallNum || overallNum < 1 || overallNum > 10) {
+        Alert.alert('Invalid Rating', 'Overall rating must be between 1 and 10');
         return;
       }
-      if (attractiveness && (attractivenessNum < 1 || attractivenessNum > 5)) {
-        Alert.alert('Invalid Rating', 'Attractiveness rating must be between 1 and 5');
+      if (attractiveness && (attractivenessNum < 1 || attractivenessNum > 10)) {
+        Alert.alert('Invalid Rating', 'Attractiveness rating must be between 1 and 10');
         return;
       }
-      if (wardrobe && (wardrobeNum < 1 || wardrobeNum > 5)) {
-        Alert.alert('Invalid Rating', 'Wardrobe rating must be between 1 and 5');
+      if (wardrobe && (wardrobeNum < 1 || wardrobeNum > 10)) {
+        Alert.alert('Invalid Rating', 'Wardrobe rating must be between 1 and 10');
         return;
       }
-      if (room && (roomNum < 1 || roomNum > 5)) {
-        Alert.alert('Invalid Rating', 'Room rating must be between 1 and 5');
+      if (room && (roomNum < 1 || roomNum > 10)) {
+        Alert.alert('Invalid Rating', 'Room rating must be between 1 and 10');
         return;
       }
       

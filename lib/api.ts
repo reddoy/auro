@@ -175,11 +175,48 @@ export async function ensureProfileForCurrentUser(): Promise<boolean> {
   const firstName = nameParts[0] || null;
   const lastName = nameParts.slice(1).join(' ') || null;
   
+  // Generate unique username if needed
+  let username = user.user_metadata?.user_name || null;
+  if (!username && user.email) {
+    const baseUsername = String(user.email).split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').slice(0, 24);
+    if (baseUsername) {
+      // Check if username is already taken, append number if needed
+      let candidateUsername = baseUsername;
+      let attempts = 0;
+      const maxAttempts = 100;
+      
+      while (attempts < maxAttempts) {
+        const { data: existing } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', candidateUsername)
+          .maybeSingle();
+        
+        if (!existing) {
+          username = candidateUsername;
+          break;
+        }
+        
+        // Username taken, try with number suffix
+        attempts++;
+        const suffix = attempts.toString();
+        const maxBaseLength = 24 - suffix.length;
+        candidateUsername = baseUsername.slice(0, maxBaseLength) + suffix;
+      }
+      
+      // If we couldn't find a unique username after max attempts, use a random suffix
+      if (!username && attempts >= maxAttempts) {
+        const randomSuffix = Math.random().toString(36).slice(2, 6);
+        username = baseUsername.slice(0, 20) + randomSuffix;
+      }
+    }
+  }
+  
   const payload: any = {
     id: user.id,
     first_name: firstName,
     last_name: lastName,
-    username: user.user_metadata?.user_name || (user.email ? String(user.email).split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').slice(0, 24) : null),
+    username: username,
     avatar_url: user.user_metadata?.avatar_url || null,
   };
   
@@ -365,7 +402,7 @@ export async function submitRequestReview(params: {
     throw new Error('Invalid review data');
   }
   
-  // Validate ratings
+  // Validate ratings - using 1-10 scale (matches main reviewer screen and StarRating component)
   if (!review.ratings || typeof review.ratings.overall !== 'number' || 
       review.ratings.overall < 1 || review.ratings.overall > 10) {
     throw new Error('Overall rating must be between 1 and 10');
@@ -688,39 +725,28 @@ export async function submitReviewerReview(params: {
   // Check if review already exists
   const existing = await getReviewerReviewByRequestId(requestId);
   
-  let result;
+  // Prevent updates - once a review is submitted, it cannot be changed
   if (existing) {
-    // Update existing review
-    const { data, error } = await supabase
-      .from('reviewer_reviews')
-      .update({
-        rating,
-        comment: comment ?? null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', existing.id)
-      .select('id, request_id, reviewer_id, reviewee_id, rating, comment, created_at, updated_at')
-      .single();
-    if (error) throw error;
-    result = data;
-  } else {
-    // Create new review
-    const { data, error } = await supabase
-      .from('reviewer_reviews')
-      .insert({
-        request_id: requestId,
-        reviewer_id: request.influencerId,
-        reviewee_id: user.id,
-        rating,
-        comment: comment ?? null,
-      })
-      .select('id, request_id, reviewer_id, reviewee_id, rating, comment, created_at, updated_at')
-      .single();
-    if (error) throw error;
-    result = data;
+    throw new Error('Review has already been submitted and cannot be updated.');
   }
   
-  // Update reviewer's average rating
+  // Create new review
+  const { data, error } = await supabase
+    .from('reviewer_reviews')
+    .insert({
+      request_id: requestId,
+      reviewer_id: request.influencerId,
+      reviewee_id: user.id,
+      rating,
+      comment: comment ?? null,
+    })
+    .select('id, request_id, reviewer_id, reviewee_id, rating, comment, created_at, updated_at')
+    .single();
+  if (error) throw error;
+  const result = data;
+  
+  // Note: The database trigger should automatically update rating_average,
+  // but we keep this as a fallback. If it fails, the trigger will handle it.
   try {
     const { data: reviews } = await supabase
       .from('reviewer_reviews')
@@ -729,14 +755,20 @@ export async function submitReviewerReview(params: {
     
     if (reviews && reviews.length > 0) {
       const avgRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
-      await supabase
+      const { error: updateError } = await supabase
         .from('profiles')
         .update({ rating_average: Math.round(avgRating * 10) / 10 })
         .eq('id', request.influencerId);
+      
+      if (updateError) {
+        // Log but don't fail - the database trigger should handle this
+        console.warn('Client-side rating update failed (trigger should handle it):', updateError);
+      }
     }
   } catch (updateError) {
     // Don't fail the review submission if rating update fails
-    console.error('Failed to update reviewer rating:', updateError);
+    // The database trigger will handle updating the rating_average
+    console.warn('Rating update error (trigger should handle it):', updateError);
   }
   
   return {

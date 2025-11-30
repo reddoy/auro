@@ -28,6 +28,7 @@ export default function RequestsScreen() {
   const [userMap, setUserMap] = useState<Record<string, { id: string; displayName: string; avatarUrl?: string | null }>>({});
   const [userAvatarMap, setUserAvatarMap] = useState<Record<string, string | undefined>>({});
   const [isReviewer, setIsReviewer] = useState(false);
+  const [reviewerStatus, setReviewerStatus] = useState<'pending' | 'approved' | 'rejected' | null>(null);
   const [userProfile, setUserProfile] = useState<{ id: string; username?: string | null } | null>(null);
   const receivedCount = requests.length;
   const [filter, setFilter] = useState<'active' | 'completed' | 'archived'>('active');
@@ -62,36 +63,95 @@ export default function RequestsScreen() {
           return;
         }
         const reviewerMode = !!(profile as any)?.is_reviewer;
+        const reviewerStatusValue = (profile as any)?.is_reviewer;
         setIsReviewer(reviewerMode);
+        setReviewerStatus(reviewerStatusValue === 'approved' || reviewerStatusValue === 'pending' || reviewerStatusValue === 'rejected' ? reviewerStatusValue : null);
         setUserProfile({ id: profile.id, username: (profile as any)?.username });
-        const reqs = reviewerMode ? await getRequestsByReviewer(profile.id) : await getRequestsByUser(profile.id);
+        
+        // If user is a reviewer, fetch BOTH requests where they are reviewer AND where they are reviewee
+        let reqs: DbRequestSummary[] = [];
+        if (reviewerMode) {
+          const [reviewerReqs, revieweeReqs] = await Promise.all([
+            getRequestsByReviewer(profile.id),
+            getRequestsByUser(profile.id)
+          ]);
+          // Merge both sets, removing duplicates by ID
+          const reqMap = new Map<string, DbRequestSummary>();
+          [...reviewerReqs, ...revieweeReqs].forEach(req => {
+            reqMap.set(req.id, req);
+          });
+          reqs = Array.from(reqMap.values()).sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        } else {
+          reqs = await getRequestsByUser(profile.id);
+        }
+        
         setRequests(reqs);
         console.log('[my-reviews] initial load fetched requests', {
           count: reqs.length,
           reviewerMode,
         });
+        
         if (reviewerMode) {
-          // Build reviewee map for reviewer inbox
-          const userIds = Array.from(new Set(reqs.map(r => r.userId).filter(Boolean))) as string[];
-          const users = await Promise.all(userIds.map(uid => getProfileById(uid)));
+          // Build reviewee map for requests where user is reviewer
+          const reviewerReqUserIds = Array.from(new Set(reqs.filter(r => r.influencerId === profile.id).map(r => r.userId).filter(Boolean))) as string[];
+          // Build reviewer map for requests where user is reviewee
+          const revieweeReqReviewerIds = Array.from(new Set(reqs.filter(r => r.userId === profile.id).map(r => r.influencerId).filter(Boolean)));
+          
+          const [users, reviewers] = await Promise.all([
+            Promise.all(reviewerReqUserIds.map(uid => getProfileById(uid))),
+            Promise.all(revieweeReqReviewerIds.map(id => getReviewerById(String(id))))
+          ]);
+          
+          // Build user map for reviewees
           const uMap: Record<string, { id: string; displayName: string; avatarUrl?: string | null }> = {};
           users.forEach(u => { if (u) uMap[u.id] = u; });
           setUserMap(uMap);
+          
+          // Build reviewer map for reviewers
+          const rMap: Record<string, DbReviewerSummary> = {};
+          reviewers.forEach(rev => { if (rev) rMap[rev.id] = rev; });
+          setRevMap(rMap);
+          
+          // Prefetch signed avatar URLs for both users and reviewers
           try {
-            const entries = await Promise.all(
-              users.filter(Boolean).map(async (u) => {
-                const usr = u as { id: string; displayName: string; avatarUrl?: string | null };
-                const raw = (usr.avatarUrl || '').trim().replace(/^@+/, '');
-                let uri = raw;
-                if (raw) {
-                  try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
-                }
-                return [usr.id, uri] as const;
-              })
-            );
+            const [userEntries, reviewerEntries] = await Promise.all([
+              Promise.all(
+                users.filter(Boolean).map(async (u) => {
+                  const usr = u as { id: string; displayName: string; avatarUrl?: string | null };
+                  const raw = (usr.avatarUrl || '').trim().replace(/^@+/, '');
+                  let uri = raw;
+                  if (raw) {
+                    try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
+                  }
+                  return [usr.id, uri] as const;
+                })
+              ),
+              Promise.all(
+                reviewers.filter(Boolean).map(async (rev) => {
+                  const r = rev as DbReviewerSummary;
+                  const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
+                  let uri = raw;
+                  if (raw) {
+                    try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
+                  }
+                  return [r.id, uri] as const;
+                })
+              )
+            ]);
+            
             setUserAvatarMap((prev) => {
               const merged: Record<string, string | undefined> = { ...prev };
-              for (const [id, uri] of entries) {
+              for (const [id, uri] of userEntries) {
+                merged[id] = uri || prev[id];
+              }
+              return merged;
+            });
+            
+            setAvatarMap((prev) => {
+              const merged: Record<string, string | undefined> = { ...prev };
+              for (const [id, uri] of reviewerEntries) {
                 merged[id] = uri || prev[id];
               }
               return merged;
@@ -158,9 +218,30 @@ export default function RequestsScreen() {
           return;
         }
         const reviewerMode = !!(profile as any)?.is_reviewer;
+        const reviewerStatusValue = (profile as any)?.is_reviewer;
         setIsReviewer(reviewerMode);
+        setReviewerStatus(reviewerStatusValue === 'approved' || reviewerStatusValue === 'pending' || reviewerStatusValue === 'rejected' ? reviewerStatusValue : null);
         setUserProfile({ id: profile.id, username: (profile as any)?.username });
-        const reqs = reviewerMode ? await getRequestsByReviewer(profile.id) : await getRequestsByUser(profile.id);
+        
+        // If user is a reviewer, fetch BOTH requests where they are reviewer AND where they are reviewee
+        let reqs: DbRequestSummary[] = [];
+        if (reviewerMode) {
+          const [reviewerReqs, revieweeReqs] = await Promise.all([
+            getRequestsByReviewer(profile.id),
+            getRequestsByUser(profile.id)
+          ]);
+          // Merge both sets, removing duplicates by ID
+          const reqMap = new Map<string, DbRequestSummary>();
+          [...reviewerReqs, ...revieweeReqs].forEach(req => {
+            reqMap.set(req.id, req);
+          });
+          reqs = Array.from(reqMap.values()).sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        } else {
+          reqs = await getRequestsByUser(profile.id);
+        }
+        
         setRequests(reqs);
         console.log('[my-reviews] refresh fetched requests', {
           count: reqs.length,
@@ -168,26 +249,64 @@ export default function RequestsScreen() {
         });
 
         if (reviewerMode) {
-          const userIds = Array.from(new Set(reqs.map(r => r.userId).filter(Boolean))) as string[];
-          const users = await Promise.all(userIds.map(uid => getProfileById(uid)));
+          // Build reviewee map for requests where user is reviewer
+          const reviewerReqUserIds = Array.from(new Set(reqs.filter(r => r.influencerId === profile.id).map(r => r.userId).filter(Boolean))) as string[];
+          // Build reviewer map for requests where user is reviewee
+          const revieweeReqReviewerIds = Array.from(new Set(reqs.filter(r => r.userId === profile.id).map(r => r.influencerId).filter(Boolean)));
+          
+          const [users, reviewers] = await Promise.all([
+            Promise.all(reviewerReqUserIds.map(uid => getProfileById(uid))),
+            Promise.all(revieweeReqReviewerIds.map(id => getReviewerById(String(id))))
+          ]);
+          
+          // Build user map for reviewees
           const uMap: Record<string, { id: string; displayName: string; avatarUrl?: string | null }> = {};
           users.forEach(u => { if (u) uMap[u.id] = u; });
           setUserMap(uMap);
+          
+          // Build reviewer map for reviewers
+          const rMap: Record<string, DbReviewerSummary> = {};
+          reviewers.forEach(rev => { if (rev) rMap[rev.id] = rev; });
+          setRevMap(rMap);
+          
+          // Prefetch signed avatar URLs for both users and reviewers
           try {
-            const entries = await Promise.all(
-              users.filter(Boolean).map(async (u) => {
-                const usr = u as { id: string; displayName: string; avatarUrl?: string | null };
-                const raw = (usr.avatarUrl || '').trim().replace(/^@+/, '');
-                let uri = raw;
-                if (raw) {
-                  try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
-                }
-                return [usr.id, uri] as const;
-              })
-            );
+            const [userEntries, reviewerEntries] = await Promise.all([
+              Promise.all(
+                users.filter(Boolean).map(async (u) => {
+                  const usr = u as { id: string; displayName: string; avatarUrl?: string | null };
+                  const raw = (usr.avatarUrl || '').trim().replace(/^@+/, '');
+                  let uri = raw;
+                  if (raw) {
+                    try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
+                  }
+                  return [usr.id, uri] as const;
+                })
+              ),
+              Promise.all(
+                reviewers.filter(Boolean).map(async (rev) => {
+                  const r = rev as DbReviewerSummary;
+                  const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
+                  let uri = raw;
+                  if (raw) {
+                    try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
+                  }
+                  return [r.id, uri] as const;
+                })
+              )
+            ]);
+            
             setUserAvatarMap((prev) => {
               const merged: Record<string, string | undefined> = { ...prev };
-              for (const [id, uri] of entries) {
+              for (const [id, uri] of userEntries) {
+                merged[id] = uri || prev[id];
+              }
+              return merged;
+            });
+            
+            setAvatarMap((prev) => {
+              const merged: Record<string, string | undefined> = { ...prev };
+              for (const [id, uri] of reviewerEntries) {
                 merged[id] = uri || prev[id];
               }
               return merged;
@@ -250,9 +369,10 @@ export default function RequestsScreen() {
 
   const handleRequestPress = (requestId: string) => {
     const request = requests.find(r => r.id === requestId);
-    if (!request) return;
-    // Route based on role: reviewers go to reviewer detail; reviewees go to review detail
-    if (isReviewer) {
+    if (!request || !userProfile?.id) return;
+    // Route based on role for this specific request: if user is reviewer, go to reviewer detail; if reviewee, go to review detail
+    const userIsReviewer = request.influencerId === userProfile.id;
+    if (userIsReviewer) {
       router.push(`/requests/reviewer/${requestId}` as any);
     } else {
       router.push(`/review/${requestId}`);
@@ -284,14 +404,22 @@ export default function RequestsScreen() {
 
   const renderReceivedItem = ({ item, index }: { item: DbRequestSummary; index: number }) => {
     const cardEntering = hasAnimatedListRef.current ? undefined : cardEntrance(index);
+    
+    // Determine if current user is the reviewer or reviewee for this specific request
+    const userIsReviewer = userProfile?.id && item.influencerId === userProfile.id;
+    const userIsReviewee = userProfile?.id && item.userId === userProfile.id;
+    
     const reviewer = revMap[item.influencerId];
     const reviewee = item.userId ? userMap[item.userId] : undefined;
-    const avatarUri = isReviewer
+    
+    // Show reviewee info if user is reviewer, show reviewer info if user is reviewee
+    const avatarUri = userIsReviewer
       ? (item.userId ? userAvatarMap[item.userId] || reviewee?.avatarUrl || undefined : undefined)
       : (avatarMap[item.influencerId] || reviewer?.avatarUrl) || undefined;
-    const displayName = isReviewer
+    const displayName = userIsReviewer
       ? (reviewee?.displayName || 'User')
       : (reviewer?.displayName || 'Reviewer');
+    
     return (
       <MotionPressable
         key={item.id}
@@ -304,7 +432,7 @@ export default function RequestsScreen() {
       >
         <View style={styles.requestHeader}>
           <RNView style={styles.influencerImageWrapper}>
-            {/* For reviewers, show the reviewee avatar/name; for reviewees, show reviewer */}
+            {/* Show reviewee avatar/name if user is reviewer, show reviewer if user is reviewee */}
             <Avatar uri={avatarUri} name={displayName} size={60} />
           </RNView>
           <View style={styles.requestInfo}>
@@ -315,7 +443,7 @@ export default function RequestsScreen() {
             <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.brand.cardBackground }}>
               <StatusBadge
                 status={item.status as any}
-                label={isReviewer && item.status === 'paid' ? 'Pending acceptance' : undefined}
+                label={userIsReviewer && item.status === 'paid' ? 'Pending acceptance' : undefined}
               />
             </RNView>
           </View>
@@ -336,7 +464,7 @@ export default function RequestsScreen() {
           <RNView style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackgroundLight, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: Colors.brand.border }}>
             <Text style={{ color: Colors.brand.textSecondary, fontWeight: '700' }}>Payment pending</Text>
             <Text style={{ color: Colors.brand.textSecondary, marginTop: 4 }}>
-              {isReviewer ? 'Waiting for the requester to finish payment. They have 48 hours to finish payment.' : 'Please check your email regarding payment. You have 48 hours to complete payment.'}
+              {userIsReviewer ? 'Waiting for the requester to finish payment. They have 48 hours to finish payment.' : 'Please check your email regarding payment. You have 48 hours to complete payment.'}
             </Text>
           </RNView>
         ) : null}
@@ -472,12 +600,14 @@ export default function RequestsScreen() {
               <View style={{ paddingHorizontal: 16, paddingTop: 24, alignItems: 'center' }}>
                 <EmptyState
                   title="No reviews yet"
-                  message={isReviewer 
+                  message={isReviewer && reviewerStatus === 'approved'
                     ? "You haven't received any review requests yet."
+                    : isReviewer && reviewerStatus === 'pending'
+                    ? "Your reviewer application is pending approval. Once approved, you'll be able to receive review requests."
                     : "Start your journey by requesting your first review from one of our Reviewers!"}
                   icon="⭐"
                 />
-                {isReviewer && (
+                {isReviewer && reviewerStatus === 'approved' && (
                   <RNView style={styles.shareProfileSection}>
                     <MotionPressable
                       onPress={handleCopyProfileLink}

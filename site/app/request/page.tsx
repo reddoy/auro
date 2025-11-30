@@ -797,6 +797,13 @@ export default function RequestPage() {
       );
     }
 
+    // Guard: Prevent rendering payment step without authentication
+    // This avoids state mutation during render issues
+    if (currentStep === 'payment' && !isAuthenticated) {
+      // Return null - useEffect will handle redirect to auth
+      return null;
+    }
+
     switch (currentStep) {
       case 'intro':
         return (
