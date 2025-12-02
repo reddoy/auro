@@ -116,12 +116,29 @@ export async function POST(req: Request) {
       
       if (!existingProfile) {
         // Profile doesn't exist - create it with basic info
-        const { error: createErr } = await admin.from('profiles').insert({
+        // Use first_name and last_name instead of full_name
+        const profileData: any = {
           id: userId,
           email: email || '',
-          full_name: fullName || '',
           username: email?.split('@')[0] || `user_${userId.slice(0, 8)}`,
-        });
+        };
+        
+        // Add first_name and last_name if provided
+        if (firstName) profileData.first_name = firstName;
+        if (lastName) profileData.last_name = lastName;
+        
+        // If fullName is provided but no firstName/lastName, try to split it
+        if (!firstName && !lastName && fullName) {
+          const nameParts = fullName.trim().split(/\s+/);
+          if (nameParts.length > 0) {
+            profileData.first_name = nameParts[0];
+            if (nameParts.length > 1) {
+              profileData.last_name = nameParts.slice(1).join(' ');
+            }
+          }
+        }
+        
+        const { error: createErr } = await admin.from('profiles').insert(profileData);
         if (createErr) {
           console.error('Failed to create profile:', createErr);
           return new Response(JSON.stringify({ error: 'Failed to create profile: ' + createErr.message }), { status: 400 });
@@ -152,6 +169,10 @@ export async function POST(req: Request) {
       reviewer_signup_status: 'completed', // Mark as completed when they submit
       // DO NOT set is_reviewer=true here - only set it after manual approval
     };
+    
+    // Update first_name and last_name if provided
+    if (firstName) reviewerUpdates.first_name = firstName;
+    if (lastName) reviewerUpdates.last_name = lastName;
     
     console.log(`[ApplySignup] Setting reviewer_approved='pending' for user ${userId} (awaiting manual approval)`);
     
