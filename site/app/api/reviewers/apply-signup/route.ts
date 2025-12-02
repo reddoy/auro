@@ -151,30 +151,29 @@ export async function POST(req: Request) {
     // Check if user can complete reviewer signup (prevent duplicates)
     const { data: existingProfile } = await admin
       .from('profiles')
-      .select('reviewer_signup_status, is_reviewer')
+      .select('is_reviewer')
       .eq('id', userId)
       .single();
     
-    if (existingProfile?.reviewer_signup_status === 'completed') {
+    // Check if they already have a reviewer status (pending, approved, or rejected)
+    if (existingProfile?.is_reviewer === 'pending' || existingProfile?.is_reviewer === 'approved') {
       return new Response(JSON.stringify({ 
         error: 'You have already completed the reviewer application. An account with this email is already associated with our platform.' 
       }), { status: 400 });
     }
 
     // Now update ONLY reviewer-specific fields - don't touch core profile data
-    // IMPORTANT: Set reviewer_approved='pending' instead of is_reviewer=true
-    // is_reviewer will be set to true only after manual approval
+    // IMPORTANT: Set is_reviewer='pending' to await manual approval
+    // is_reviewer will be set to 'approved' only after manual approval
     const reviewerUpdates: any = {
-      reviewer_approved: 'pending', // Awaiting manual approval
-      reviewer_signup_status: 'completed', // Mark as completed when they submit
-      // DO NOT set is_reviewer=true here - only set it after manual approval
+      is_reviewer: 'pending', // Awaiting manual approval
     };
     
     // Update first_name and last_name if provided
     if (firstName) reviewerUpdates.first_name = firstName;
     if (lastName) reviewerUpdates.last_name = lastName;
     
-    console.log(`[ApplySignup] Setting reviewer_approved='pending' for user ${userId} (awaiting manual approval)`);
+    console.log(`[ApplySignup] Setting is_reviewer='pending' for user ${userId} (awaiting manual approval)`);
     
     // Only update bio if provided (empty string counts as intentional)
     if (typeof bio === 'string') reviewerUpdates.bio = bio;
@@ -208,7 +207,7 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: upErr.message }), { status: 400 });
     }
     
-    console.log(`[ApplySignup] Successfully updated profile for user ${userId} with reviewer_approved='pending' (awaiting manual approval)`);
+    console.log(`[ApplySignup] Successfully updated profile for user ${userId} with is_reviewer='pending' (awaiting manual approval)`);
 
     // Store socials if provided
     if (Array.isArray(socials) && socials.length) {
