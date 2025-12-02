@@ -1332,9 +1332,9 @@ export default function FoundingReviewerApplyPage() {
       )}
 
       {step === 4 && (
-        <div className="flex-1 flex items-center justify-center px-4 py-4 md:py-8 min-h-[calc(100vh-120px)]">
+        <div className="flex-1 flex items-start md:items-center justify-center px-4 py-2 md:py-8 min-h-[calc(100vh-120px)] overflow-y-auto">
           <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
-            <CardHeader className="text-center space-y-1 md:space-y-2 py-4 md:py-6">
+            <CardHeader className="text-center space-y-1 md:space-y-2 py-3 md:py-6">
               <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-full flex items-center justify-center mx-auto">
                 <User className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
               </div>
@@ -1344,7 +1344,7 @@ export default function FoundingReviewerApplyPage() {
               </CardDescription>
             </CardHeader>
           
-          <CardContent className="space-y-4 md:space-y-6 py-4 md:py-6">
+          <CardContent className="space-y-4 md:space-y-6 py-2 md:py-6">
             {error && (
               <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-3 py-2 md:px-4 md:py-3 rounded-lg text-xs md:text-sm">
                 {error}
@@ -1352,8 +1352,8 @@ export default function FoundingReviewerApplyPage() {
             )}
             
             <div className="space-y-4 md:space-y-6">
-              {/* Profile Picture Upload */}
-              <div className="space-y-3">
+              {/* Profile Picture Upload - Moved to top for mobile */}
+              <div className="space-y-2 md:space-y-3 pt-0 md:pt-0">
                 <label className="text-sm font-medium text-gray-300 text-center block">Profile Picture</label>
                 <div className="flex justify-center">
                   <WebAvatarUploader

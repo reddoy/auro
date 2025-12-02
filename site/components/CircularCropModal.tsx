@@ -130,7 +130,7 @@ export default function CircularCropModal({
         
         <CardContent className="space-y-4">
           {/* Crop Area */}
-          <div className="relative h-64 bg-black/50 rounded-lg overflow-hidden">
+          <div className="relative h-64 bg-black/50 rounded-lg overflow-hidden" style={{ touchAction: 'none' }}>
             <Cropper
               image={URL.createObjectURL(imageFile)}
               crop={crop}
@@ -139,8 +139,10 @@ export default function CircularCropModal({
               aspect={1}
               cropShape="round"
               showGrid={false}
-              restrictPosition
-              zoomWithScroll
+              restrictPosition={true}
+              zoomWithScroll={false}
+              minZoom={1}
+              maxZoom={3}
               onCropChange={onCropChange}
               onCropComplete={onCropAreaChange}
               onZoomChange={setZoom}
@@ -158,6 +160,7 @@ export default function CircularCropModal({
                 cropAreaStyle: {
                   border: '3px solid #fff',
                   boxShadow: '0 0 0 1px rgba(0,0,0,0.3)',
+                  // Static crop area - fixed size and position
                 },
                 mediaStyle: {
                   maxWidth: 'none',
