@@ -1613,75 +1613,80 @@ export default function FoundingReviewerApplyPage() {
 
       {step === 7 && (
         <div className="flex-1 flex items-center justify-center px-4 py-8 min-h-[calc(100vh-120px)]">
-          <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20 text-center">
-            <CardContent className="p-8 space-y-6">
-              <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto">
-                <Check className="w-10 h-10 text-white" />
+          <Card className="w-full max-w-lg bg-white/10 backdrop-blur-sm border-white/20">
+            <CardContent className="p-8 md:p-10 space-y-8">
+              {/* Success Icon */}
+              <div className="flex justify-center">
+                <div className="w-24 h-24 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30">
+                  <Check className="w-12 h-12 text-white" />
+                </div>
               </div>
               
-              <div className="space-y-3">
-                <h3 className="text-2xl font-bold text-white">Application Submitted! 🎉</h3>
-                <p className="text-gray-300 leading-relaxed">
+              {/* Success Message */}
+              <div className="text-center space-y-3">
+                <h3 className="text-3xl md:text-4xl font-bold text-white">Application Submitted! 🎉</h3>
+                <p className="text-base text-gray-300 leading-relaxed max-w-md mx-auto">
                   Thank you for applying to become a reviewer! We've received your application.
                 </p>
               </div>
 
               {/* Rohan's Message */}
-              <div className="bg-gradient-to-r from-orange-500/20 to-purple-600/20 border border-orange-500/30 rounded-lg p-4 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden flex-shrink-0 border-2 border-orange-500/50">
+              <div className="bg-gradient-to-br from-orange-500/20 via-pink-500/20 to-purple-600/20 border border-orange-500/30 rounded-xl p-6 space-y-4 backdrop-blur-sm">
+                <div className="flex items-center gap-4">
+                  <div className="relative w-20 h-20 rounded-full overflow-hidden flex-shrink-0 border-2 border-orange-500/50 shadow-lg">
                     <img
                       src="/rohan-headshot-backyard-min.jpg"
                       alt="Rohan"
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        // Fallback to regular headshot if backyard version doesn't exist
                         (e.target as HTMLImageElement).src = '/rohan-headshot.jpg';
                       }}
                     />
                   </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-sm text-white font-medium">Rohan O'Malley</p>
-                    <p className="text-xs text-gray-300">Founder</p>
+                  <div className="flex-1">
+                    <p className="text-base text-white font-semibold">Rohan O'Malley</p>
+                    <p className="text-sm text-gray-300">Founder</p>
                   </div>
                 </div>
-                <div className="space-y-2 text-sm text-gray-300 text-left">
-                  <p className="leading-relaxed">
-                    Hey! I go over every single application personally to make sure it aligns with our profile and aligns with our platform. We're going to be launching soon, and we'll let you know if you're accepted.
+                <div className="text-sm text-gray-200 leading-relaxed">
+                  <p>
+                    Hey! I go over every single application personally to make sure that your request aligns with our platform. We're going to be launching soon, and we'll let you know if you're accepted.
                   </p>
                 </div>
               </div>
 
-              <div className="bg-gradient-to-r from-blue-500/10 to-indigo-600/10 border border-blue-500/20 rounded-lg p-4 space-y-2">
-                <h4 className="text-sm font-semibold text-white">What happens next?</h4>
-                <div className="space-y-2 text-xs text-gray-300 text-left">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full flex-shrink-0"></div>
-                    <span>Check your email and verify your account</span>
+              {/* Next Steps */}
+              <div className="bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-600/10 border border-blue-500/20 rounded-xl p-6 space-y-4">
+                <h4 className="text-base font-semibold text-white text-center">What happens next?</h4>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full flex-shrink-0 mt-1.5"></div>
+                    <span className="text-sm text-gray-300 flex-1">Check your email and verify your account</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full flex-shrink-0"></div>
-                    <span>We'll personally review your application</span>
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full flex-shrink-0 mt-1.5"></div>
+                    <span className="text-sm text-gray-300 flex-1">We'll personally review your application</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full flex-shrink-0"></div>
-                    <span>You'll receive an email notification once your application is reviewed</span>
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full flex-shrink-0 mt-1.5"></div>
+                    <span className="text-sm text-gray-300 flex-1">You'll receive an email notification once your application is reviewed</span>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-4">
+              {/* Actions */}
+              <div className="space-y-4 pt-2">
                 <Button 
                   asChild
-                  className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+                  className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white py-6 text-base font-semibold rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
                 >
                   <a href="/">
                     Back to Home
                   </a>
                 </Button>
                 
-                <p className="text-xs text-gray-400">
-                  Questions? Reach out to us at support@appauro.com
+                <p className="text-xs text-gray-400 text-center">
+                  Questions? Reach out to us at <span className="text-orange-400">support@appauro.com</span>
                 </p>
               </div>
             </CardContent>
