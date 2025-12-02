@@ -53,37 +53,78 @@ export default function CircularCropModal({
       throw new Error('No 2d context');
     }
 
-    const maxSize = Math.max(image.width, image.height);
-    const safeArea = 2 * ((maxSize / 2) * Math.sqrt(2));
-
-    canvas.width = safeArea;
-    canvas.height = safeArea;
-
-    // Improve rendering on mobile by enabling high-quality smoothing
-    // and promoting layer stability during transforms
-    (ctx as any).imageSmoothingEnabled = true;
+    // Enable high-quality rendering
+    ctx.imageSmoothingEnabled = true;
     (ctx as any).imageSmoothingQuality = 'high';
 
-    ctx.translate(safeArea / 2, safeArea / 2);
-    ctx.rotate((rotation * Math.PI) / 180);
-    ctx.translate(-safeArea / 2, -safeArea / 2);
+    const { x, y, width, height } = pixelCrop;
 
-    ctx.drawImage(
-      image,
-      safeArea / 2 - image.width * 0.5,
-      safeArea / 2 - image.height * 0.5
-    );
+    // Calculate the size needed to accommodate rotation
+    const maxSize = Math.max(image.width, image.height);
+    const safeArea = rotation !== 0 ? 2 * ((maxSize / 2) * Math.sqrt(2)) : Math.max(image.width, image.height);
 
-    const data = ctx.getImageData(0, 0, safeArea, safeArea);
+    // Set canvas to final crop size
+    canvas.width = width;
+    canvas.height = height;
 
-    canvas.width = pixelCrop.width;
-    canvas.height = pixelCrop.height;
+    if (rotation !== 0) {
+      // Create a temporary canvas for rotation
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d');
+      if (!tempCtx) {
+        throw new Error('No 2d context for temp canvas');
+      }
 
-    ctx.putImageData(
-      data,
-      Math.round(0 - safeArea / 2 + image.width * 0.5 - pixelCrop.x),
-      Math.round(0 - safeArea / 2 + image.height * 0.5 - pixelCrop.y)
-    );
+      tempCanvas.width = safeArea;
+      tempCanvas.height = safeArea;
+      tempCtx.imageSmoothingEnabled = true;
+      (tempCtx as any).imageSmoothingQuality = 'high';
+
+      // Draw rotated image centered on temp canvas
+      tempCtx.translate(safeArea / 2, safeArea / 2);
+      tempCtx.rotate((rotation * Math.PI) / 180);
+      tempCtx.translate(-safeArea / 2, -safeArea / 2);
+      tempCtx.drawImage(
+        image,
+        safeArea / 2 - image.width * 0.5,
+        safeArea / 2 - image.height * 0.5
+      );
+
+      // Calculate the position of the original image on the rotated canvas
+      const imageX = safeArea / 2 - image.width * 0.5;
+      const imageY = safeArea / 2 - image.height * 0.5;
+
+      // The pixelCrop coordinates are relative to the original image
+      // Map them to the rotated canvas
+      const cropX = imageX + x;
+      const cropY = imageY + y;
+
+      // Draw the cropped portion
+      ctx.drawImage(
+        tempCanvas,
+        cropX,
+        cropY,
+        width,
+        height,
+        0,
+        0,
+        width,
+        height
+      );
+    } else {
+      // No rotation - direct crop
+      ctx.drawImage(
+        image,
+        x,
+        y,
+        width,
+        height,
+        0,
+        0,
+        width,
+        height
+      );
+    }
 
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
@@ -114,23 +155,23 @@ export default function CircularCropModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-3 md:p-4" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
-      <Card className="w-full max-w-md bg-gradient-to-br from-[#0c0325] to-[#1a0b3d] border-white/20 max-h-[95vh] md:max-h-[90vh] flex flex-col">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 md:pb-4 px-4 pt-4 flex-shrink-0">
-          <CardTitle className="text-base md:text-lg font-semibold text-white">Crop Your Photo</CardTitle>
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 md:p-4" style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))', paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
+      <Card className="w-full max-w-sm bg-gradient-to-br from-[#0c0325] to-[#1a0b3d] border-white/20 max-h-[90vh] md:max-h-[85vh] flex flex-col overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 md:pb-3 px-3 md:px-4 pt-3 md:pt-4 flex-shrink-0">
+          <CardTitle className="text-sm md:text-base font-semibold text-white">Crop Your Photo</CardTitle>
           <Button
             variant="ghost"
             size="sm"
             onClick={onCancel}
-            className="h-8 w-8 p-0 text-white hover:bg-white/10 active:bg-white/20"
+            className="h-7 w-7 md:h-8 md:w-8 p-0 text-white hover:bg-white/10 active:bg-white/20"
           >
-            <X className="h-4 w-4" />
+            <X className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
         </CardHeader>
         
-        <CardContent className="space-y-4 flex-1 flex flex-col min-h-0 overflow-y-auto px-4 pb-4">
+        <CardContent className="space-y-2 md:space-y-3 flex-1 flex flex-col min-h-0 overflow-y-auto px-3 md:px-4 pb-3 md:pb-4">
           {/* Crop Area */}
-          <div className="relative bg-black/50 rounded-lg overflow-hidden flex-shrink-0" style={{ touchAction: 'none', height: 'min(50vh, 350px)', minHeight: '250px', maxHeight: '400px', isolation: 'isolate' }}>
+          <div className="relative bg-black/50 rounded-lg overflow-hidden flex-shrink-0" style={{ touchAction: 'none', height: 'min(40vh, 280px)', minHeight: '220px', maxHeight: '320px', isolation: 'isolate' }}>
             <Cropper
               image={URL.createObjectURL(imageFile)}
               crop={crop}
@@ -176,10 +217,10 @@ export default function CircularCropModal({
           </div>
 
           {/* Controls */}
-          <div className="space-y-3 flex-shrink-0">
+          <div className="space-y-2 flex-shrink-0">
             {/* Zoom Slider */}
-            <div className="space-y-1.5">
-              <label className="text-xs md:text-sm font-medium text-gray-300">Zoom</label>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-300">Zoom</label>
               <input
                 type="range"
                 value={zoom}
@@ -187,21 +228,20 @@ export default function CircularCropModal({
                 max={3}
                 step={0.1}
                 onChange={(e) => setZoom(Number(e.target.value))}
-                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider"
+                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer slider"
               />
             </div>
 
             {/* Rotation */}
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="text-xs md:text-sm font-medium text-gray-300">Rotation</label>
+                <label className="text-xs font-medium text-gray-300">Rotation</label>
                 <button
                   onClick={() => setRotation((prev) => (prev + 90) % 360)}
-                  className="flex items-center gap-1.5 text-xs text-orange-400 hover:text-orange-300 active:opacity-70"
+                  className="flex items-center gap-1 text-xs text-orange-400 hover:text-orange-300 active:opacity-70"
                 >
-                  <RotateCw className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Rotate 90°</span>
-                  <span className="sm:hidden">90°</span>
+                  <RotateCw className="w-3 h-3" />
+                  <span>90°</span>
                 </button>
               </div>
               <input
@@ -211,28 +251,23 @@ export default function CircularCropModal({
                 max={360}
                 step={1}
                 onChange={(e) => setRotation(Number(e.target.value))}
-                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider"
+                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer slider"
               />
             </div>
           </div>
 
-          {/* Instructions */}
-          <div className="text-center text-xs md:text-sm text-gray-300 flex-shrink-0">
-            <p>Drag to position, use zoom and rotate to adjust</p>
-          </div>
-
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-2 pt-1 flex-shrink-0">
             <Button
               variant="outline"
               onClick={onCancel}
-              className="flex-1 h-11 bg-transparent border-white/20 text-white hover:bg-white/10 text-base font-medium"
+              className="flex-1 h-10 bg-transparent border-white/20 text-white hover:bg-white/10 text-sm font-medium"
             >
               Cancel
             </Button>
             <Button
               onClick={handleCrop}
-              className="flex-1 h-11 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white text-base font-medium"
+              className="flex-1 h-10 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white text-sm font-medium"
             >
               Use Photo
             </Button>
