@@ -114,9 +114,9 @@ export default function CircularCropModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md bg-gradient-to-br from-[#0c0325] to-[#1a0b3d] border-white/20">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))', paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+      <Card className="w-full max-w-md bg-gradient-to-br from-[#0c0325] to-[#1a0b3d] border-white/20 max-h-[90vh] flex flex-col">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 flex-shrink-0">
           <CardTitle className="text-lg font-semibold text-white">Crop Your Photo</CardTitle>
           <Button
             variant="ghost"
@@ -128,9 +128,9 @@ export default function CircularCropModal({
           </Button>
         </CardHeader>
         
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 flex-1 flex flex-col min-h-0 overflow-y-auto">
           {/* Crop Area */}
-          <div className="relative h-64 bg-black/50 rounded-lg overflow-hidden" style={{ touchAction: 'none' }}>
+          <div className="relative bg-black/50 rounded-lg overflow-hidden flex-shrink-0" style={{ touchAction: 'none', height: 'min(64vh, 400px)', minHeight: '280px' }}>
             <Cropper
               image={URL.createObjectURL(imageFile)}
               crop={crop}

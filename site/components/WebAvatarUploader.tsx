@@ -186,14 +186,14 @@ export default function WebAvatarUploader({
       <div className={`flex flex-col items-center space-y-4 ${className}`}>
         <div className="relative">
           <Card 
-            className={`cursor-pointer transition-all duration-200 hover:scale-105 ${
+            className={`cursor-pointer transition-all duration-200 hover:scale-105 border-0 ${
               uploading ? 'opacity-50 pointer-events-none' : ''
             }`}
             onClick={handleClick}
           >
             <CardContent className="p-0">
               <div 
-                className="relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-dashed border-gray-600 hover:border-orange-500 transition-colors"
+                className="relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-orange-500 transition-colors"
                 style={{ 
                   width: size, 
                   height: size,
@@ -251,13 +251,13 @@ export default function WebAvatarUploader({
               type="button"
               variant="destructive"
               size="sm"
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0"
+              className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0 bg-red-500 hover:bg-red-600 border-0 shadow-lg"
               onClick={(e) => {
                 e.stopPropagation();
                 handleRemoveAvatar();
               }}
             >
-              <X className="w-3 h-3" />
+              <X className="w-4 h-4 text-white stroke-2" />
             </Button>
           )}
         </div>
