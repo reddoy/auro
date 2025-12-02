@@ -1441,32 +1441,60 @@ export default function FoundingReviewerApplyPage() {
               </div>
 
               {/* Earnings Calculator */}
-              {hourlyRate && !isNaN(parseFloat(hourlyRate)) && parseFloat(hourlyRate) > 0 && (
-                <div className="bg-gradient-to-br from-green-500/20 via-emerald-500/20 to-teal-500/20 border border-green-500/30 rounded-xl p-6 space-y-4">
-                  <div className="text-center">
-                    <p className="text-sm text-gray-300 mb-2">If you're accepted, you could earn:</p>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-300">Per review:</span>
-                        <span className="text-2xl font-bold text-green-400">${parseFloat(hourlyRate).toFixed(0)}</span>
+              {hourlyRate && !isNaN(parseFloat(hourlyRate)) && parseFloat(hourlyRate) > 0 && (() => {
+                const rate = parseFloat(hourlyRate);
+                const takeHomeRate = rate * 0.8; // 80% take home
+                const platformFee = rate * 0.2; // 20% platform fee
+                
+                return (
+                  <div className="bg-gradient-to-br from-green-500/20 via-emerald-500/20 to-teal-500/20 border border-green-500/30 rounded-xl p-6 space-y-4">
+                    <div className="text-center">
+                      <p className="text-sm text-gray-300 mb-4">If you're accepted, here's what you'll take home:</p>
+                      
+                      {/* Breakdown */}
+                      <div className="bg-black/20 rounded-lg p-4 mb-4 space-y-3">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-300">Rate per review:</span>
+                            <span className="text-lg font-semibold text-white">${rate.toFixed(0)}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-gray-400">
+                            <span>Platform fee (20%):</span>
+                            <span>-${platformFee.toFixed(2)}</span>
+                          </div>
+                          <div className="pt-2 border-t border-green-500/20 flex items-center justify-between">
+                            <span className="text-sm font-medium text-green-300">You take home (80%):</span>
+                            <span className="text-2xl font-bold text-green-400">${takeHomeRate.toFixed(2)}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-300">5 reviews/week:</span>
-                        <span className="text-xl font-semibold text-green-300">${(parseFloat(hourlyRate) * 5).toFixed(0)}/week</span>
+
+                      {/* Projected Earnings */}
+                      <div className="space-y-2">
+                        <p className="text-xs text-gray-400 mb-2">Projected earnings (after 80% take-home):</p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-300">Per review:</span>
+                          <span className="text-xl font-bold text-green-400">${takeHomeRate.toFixed(2)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-300">5 reviews/week:</span>
+                          <span className="text-lg font-semibold text-green-300">${(takeHomeRate * 5).toFixed(2)}/week</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-300">20 reviews/month:</span>
+                          <span className="text-lg font-semibold text-green-300">${(takeHomeRate * 20).toFixed(2)}/month</span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-300">20 reviews/month:</span>
-                        <span className="text-xl font-semibold text-green-300">${(parseFloat(hourlyRate) * 20).toFixed(0)}/month</span>
+                      
+                      <div className="mt-4 pt-4 border-t border-green-500/20">
+                        <p className="text-xs text-green-300/80">
+                          💰 You keep 80% of earnings forever as a founding reviewer
+                        </p>
                       </div>
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-green-500/20">
-                      <p className="text-xs text-green-300/80">
-                        💰 You keep 80% of earnings forever as a founding reviewer
-                      </p>
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Default Earnings Info */}
               {(!hourlyRate || isNaN(parseFloat(hourlyRate)) || parseFloat(hourlyRate) <= 0) && (
