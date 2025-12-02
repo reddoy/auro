@@ -114,23 +114,23 @@ export default function CircularCropModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))', paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
-      <Card className="w-full max-w-md bg-gradient-to-br from-[#0c0325] to-[#1a0b3d] border-white/20 max-h-[90vh] flex flex-col">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 flex-shrink-0">
-          <CardTitle className="text-lg font-semibold text-white">Crop Your Photo</CardTitle>
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-3 md:p-4" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+      <Card className="w-full max-w-md bg-gradient-to-br from-[#0c0325] to-[#1a0b3d] border-white/20 max-h-[95vh] md:max-h-[90vh] flex flex-col">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 md:pb-4 px-4 pt-4 flex-shrink-0">
+          <CardTitle className="text-base md:text-lg font-semibold text-white">Crop Your Photo</CardTitle>
           <Button
             variant="ghost"
             size="sm"
             onClick={onCancel}
-            className="h-8 w-8 p-0 text-white hover:bg-white/10"
+            className="h-8 w-8 p-0 text-white hover:bg-white/10 active:bg-white/20"
           >
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
         
-        <CardContent className="space-y-4 flex-1 flex flex-col min-h-0 overflow-y-auto">
+        <CardContent className="space-y-4 flex-1 flex flex-col min-h-0 overflow-y-auto px-4 pb-4">
           {/* Crop Area */}
-          <div className="relative bg-black/50 rounded-lg overflow-hidden flex-shrink-0" style={{ touchAction: 'none', height: 'min(64vh, 400px)', minHeight: '280px' }}>
+          <div className="relative bg-black/50 rounded-lg overflow-hidden flex-shrink-0" style={{ touchAction: 'none', height: 'min(50vh, 350px)', minHeight: '250px', maxHeight: '400px', isolation: 'isolate' }}>
             <Cropper
               image={URL.createObjectURL(imageFile)}
               crop={crop}
@@ -155,28 +155,31 @@ export default function CircularCropModal({
                   // Prevent browser pinch-zoom conflicts with crop gestures on mobile
                   touchAction: 'none',
                   WebkitTransform: 'translateZ(0)',
-                  transform: 'translateZ(0)'
+                  transform: 'translateZ(0)',
+                  isolation: 'isolate'
                 },
                 cropAreaStyle: {
                   border: '3px solid #fff',
-                  boxShadow: '0 0 0 1px rgba(0,0,0,0.3)',
-                  // Static crop area - fixed size and position
+                  boxShadow: '0 0 0 2px rgba(0,0,0,0.5), 0 0 0 4px rgba(255,255,255,0.3)',
+                  zIndex: 100,
+                  position: 'relative'
                 },
                 mediaStyle: {
                   maxWidth: 'none',
                   willChange: 'transform',
                   WebkitTransform: 'translateZ(0)',
-                  transform: 'translateZ(0)'
+                  transform: 'translateZ(0)',
+                  zIndex: 1
                 },
               }}
             />
           </div>
 
           {/* Controls */}
-          <div className="space-y-4">
+          <div className="space-y-3 flex-shrink-0">
             {/* Zoom Slider */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Zoom</label>
+            <div className="space-y-1.5">
+              <label className="text-xs md:text-sm font-medium text-gray-300">Zoom</label>
               <input
                 type="range"
                 value={zoom}
@@ -189,15 +192,16 @@ export default function CircularCropModal({
             </div>
 
             {/* Rotation */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-300">Rotation</label>
+                <label className="text-xs md:text-sm font-medium text-gray-300">Rotation</label>
                 <button
                   onClick={() => setRotation((prev) => (prev + 90) % 360)}
-                  className="flex items-center gap-2 text-xs text-orange-400 hover:text-orange-300"
+                  className="flex items-center gap-1.5 text-xs text-orange-400 hover:text-orange-300 active:opacity-70"
                 >
-                  <RotateCw className="w-4 h-4" />
-                  Rotate 90°
+                  <RotateCw className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Rotate 90°</span>
+                  <span className="sm:hidden">90°</span>
                 </button>
               </div>
               <input
@@ -213,22 +217,22 @@ export default function CircularCropModal({
           </div>
 
           {/* Instructions */}
-          <div className="text-center text-sm text-gray-300">
-            <p>Drag to position, use zoom and rotate to adjust your photo</p>
+          <div className="text-center text-xs md:text-sm text-gray-300 flex-shrink-0">
+            <p>Drag to position, use zoom and rotate to adjust</p>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex space-x-3">
+          <div className="flex gap-3 pt-2">
             <Button
               variant="outline"
               onClick={onCancel}
-              className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+              className="flex-1 h-11 bg-transparent border-white/20 text-white hover:bg-white/10 text-base font-medium"
             >
               Cancel
             </Button>
             <Button
               onClick={handleCrop}
-              className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+              className="flex-1 h-11 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white text-base font-medium"
             >
               Use Photo
             </Button>
@@ -236,7 +240,7 @@ export default function CircularCropModal({
         </CardContent>
       </Card>
 
-      <style jsx>{`
+      <style jsx global>{`
         .slider::-webkit-slider-thumb {
           appearance: none;
           width: 20px;
@@ -263,6 +267,22 @@ export default function CircularCropModal({
 
         .slider::-moz-range-thumb:hover {
           box-shadow: 0 2px 12px rgba(255, 111, 0, 0.6);
+        }
+
+        /* Ensure crop area is always visible on top */
+        [data-testid="crop-container"] > div:last-child {
+          z-index: 100 !important;
+        }
+        
+        /* Ensure the crop area ring is visible */
+        .reactEasyCrop_CropArea {
+          z-index: 100 !important;
+          position: relative !important;
+        }
+        
+        /* Ensure the image is below the crop area */
+        .reactEasyCrop_Image {
+          z-index: 1 !important;
         }
       `}</style>
     </div>
