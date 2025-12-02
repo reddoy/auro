@@ -23,8 +23,6 @@ export default function FoundingReviewerApplyPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [hourlyRate, setHourlyRate] = useState<string>('');
-  const [instagramHandle, setInstagramHandle] = useState('');
-  const [tiktokHandle, setTiktokHandle] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
@@ -74,15 +72,13 @@ export default function FoundingReviewerApplyPage() {
         avatarUrl,
         avatarPath,
         hourlyRate,
-        instagramHandle,
-        tiktokHandle,
         timestamp: Date.now()
       };
       localStorage.setItem('auro_reviewer_form_data', JSON.stringify(formData));
     } catch (error) {
       console.warn('[ReviewerApply] Failed to save form data:', error);
     }
-  }, [step, firstName, lastName, email, phone, marketingConsent, avatarUrl, avatarPath, instagramHandle, tiktokHandle]);
+  }, [step, firstName, lastName, email, phone, marketingConsent, avatarUrl, avatarPath, hourlyRate]);
 
   const loadFormData = useCallback(() => {
     try {
@@ -100,8 +96,6 @@ export default function FoundingReviewerApplyPage() {
         setAvatarUrl(formData.avatarUrl || null);
         setAvatarPath(formData.avatarPath || null);
         setHourlyRate(formData.hourlyRate || '');
-        setInstagramHandle(formData.instagramHandle || '');
-        setTiktokHandle(formData.tiktokHandle || '');
           console.log('[ReviewerApply] Restored form data from localStorage');
           return true;
         } else {
@@ -130,7 +124,7 @@ export default function FoundingReviewerApplyPage() {
     if (step > 1) {
       saveFormData();
     }
-  }, [step, firstName, lastName, email, phone, marketingConsent, avatarUrl, avatarPath, hourlyRate, instagramHandle, tiktokHandle, saveFormData]);
+  }, [step, firstName, lastName, email, phone, marketingConsent, avatarUrl, avatarPath, hourlyRate, saveFormData]);
 
   // Check if resuming from OAuth - improved with retry logic
   useEffect(() => {
@@ -630,7 +624,17 @@ export default function FoundingReviewerApplyPage() {
       return;
     }
     if (step === 4) {
-      // Phone number step - submit application (profile picture step removed)
+      // Profile picture step - just move to next step (optional)
+      setStep(5);
+      return;
+    }
+    if (step === 5) {
+      // Rate step - just move to next step (optional)
+      setStep(6);
+      return;
+    }
+    if (step === 6) {
+      // Phone number step - submit application
       if (!phone || phone.trim().length === 0) { 
         setError('Please enter your phone number'); 
         return; 
@@ -677,8 +681,8 @@ export default function FoundingReviewerApplyPage() {
           avatarUrl: avatarUrl,
           avatarPath: avatarPath,
           socials: [],
-          instagramHandle: instagramHandle || null,
-          tiktokHandle: tiktokHandle || null,
+          instagramHandle: null,
+          tiktokHandle: null,
           phone: phone || null,
           marketingConsent,
           userId: signupUserId, // May be null, that's OK
@@ -727,7 +731,7 @@ export default function FoundingReviewerApplyPage() {
         }
         
         clearFormData(); // Clear saved data on successful submission
-        setStep(6);
+        setStep(7);
         setLoading(false);
         return;
         
@@ -756,8 +760,10 @@ export default function FoundingReviewerApplyPage() {
       { id: 1, label: 'Intro', shortLabel: 'Intro', icon: Star },
       { id: 2, label: 'Account', shortLabel: 'Account', icon: User },
       { id: 3, label: 'Password', shortLabel: 'Pass', icon: Lock },
-      { id: 4, label: 'Profile', shortLabel: 'Profile', icon: User },
-      { id: 6, label: 'Done', shortLabel: 'Done', icon: Check }
+      { id: 4, label: 'Photo', shortLabel: 'Photo', icon: User },
+      { id: 5, label: 'Rate', shortLabel: 'Rate', icon: DollarSign },
+      { id: 6, label: 'Phone', shortLabel: 'Phone', icon: Phone },
+      { id: 7, label: 'Done', shortLabel: 'Done', icon: Check }
     ];
 
     // Calculate progress percentage, capping at 100%
@@ -1338,9 +1344,9 @@ export default function FoundingReviewerApplyPage() {
               <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-full flex items-center justify-center mx-auto">
                 <User className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
               </div>
-              <CardTitle className="text-xl md:text-2xl font-bold text-white">Complete Your Profile</CardTitle>
+              <CardTitle className="text-xl md:text-2xl font-bold text-white">Add Your Photo</CardTitle>
               <CardDescription className="text-sm md:text-base text-gray-300">
-                Add your profile picture, set your rate, and contact information
+                Upload a clear profile picture of yourself
               </CardDescription>
             </CardHeader>
           
@@ -1352,32 +1358,73 @@ export default function FoundingReviewerApplyPage() {
             )}
             
             <div className="space-y-4 md:space-y-6">
-              {/* Profile Picture Upload - Moved to top for mobile */}
-              <div className="space-y-2 md:space-y-3 pt-0 md:pt-0">
-                <label className="text-sm font-medium text-gray-300 text-center block">Profile Picture</label>
-                <div className="flex justify-center">
-                  <WebAvatarUploader
-                    currentAvatarUrl={avatarUrl}
-                    onAvatarChange={(url, path) => {
-                      setAvatarUrl(url);
-                      setAvatarPath(path);
-                    }}
-                    size={120}
-                  />
-                </div>
-                <p className="text-xs text-gray-400 text-center">
-                  Optional: Upload a clear photo of yourself
+              {/* Profile Picture Upload */}
+              <div className="space-y-3 flex flex-col items-center">
+                <WebAvatarUploader
+                  currentAvatarUrl={avatarUrl}
+                  onAvatarChange={(url, path) => {
+                    setAvatarUrl(url);
+                    setAvatarPath(path);
+                  }}
+                  size={140}
+                />
+                <p className="text-sm text-gray-300 text-center max-w-sm">
+                  Optional: Upload a clear photo of yourself. This helps us get to know you better.
                 </p>
               </div>
+            </div>
 
-              {/* Hourly Rate */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-green-400" />
-                  Set Your Rate (per review)
+            {/* Actions */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setStep(isGoogleAuthed ? 2 : 3)}
+                className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+              <Button
+                onClick={handleNext}
+                className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+              >
+                Continue
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        </div>
+      )}
+
+      {step === 5 && (
+        <div className="flex-1 flex items-start md:items-center justify-center px-4 py-2 md:py-8 min-h-[calc(100vh-120px)] overflow-y-auto">
+          <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
+            <CardHeader className="text-center space-y-1 md:space-y-2 py-3 md:py-6">
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-green-500/20 to-green-600/20 rounded-full flex items-center justify-center mx-auto">
+                <DollarSign className="w-6 h-6 md:w-8 md:h-8 text-green-400" />
+              </div>
+              <CardTitle className="text-xl md:text-2xl font-bold text-white">Set Your Rate</CardTitle>
+              <CardDescription className="text-sm md:text-base text-gray-300">
+                Choose how much you'd like to earn per review
+              </CardDescription>
+            </CardHeader>
+          
+          <CardContent className="space-y-4 md:space-y-6 py-2 md:py-6">
+            {error && (
+              <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-3 py-2 md:px-4 md:py-3 rounded-lg text-xs md:text-sm">
+                {error}
+              </div>
+            )}
+            
+            <div className="space-y-6">
+              {/* Rate Input */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-gray-300 text-center block">
+                  Your Rate Per Review
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                  <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-bold text-gray-400">$</span>
                   <input
                     type="number"
                     value={hourlyRate}
@@ -1385,20 +1432,102 @@ export default function FoundingReviewerApplyPage() {
                     placeholder="25"
                     min="0"
                     step="1"
-                    className="w-full pl-8 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full pl-12 pr-6 py-4 text-2xl font-semibold bg-white/10 border-2 border-white/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500/50 text-center"
                   />
                 </div>
-                <p className="text-xs text-gray-400">
-                  Optional: Set your preferred rate per review (e.g., $25-50)
+                <p className="text-xs text-gray-400 text-center">
+                  Optional: Set your preferred rate (e.g., $25-50 per review)
                 </p>
               </div>
 
-              {/* Phone Number */}
+              {/* Earnings Calculator */}
+              {hourlyRate && !isNaN(parseFloat(hourlyRate)) && parseFloat(hourlyRate) > 0 && (
+                <div className="bg-gradient-to-br from-green-500/20 via-emerald-500/20 to-teal-500/20 border border-green-500/30 rounded-xl p-6 space-y-4">
+                  <div className="text-center">
+                    <p className="text-sm text-gray-300 mb-2">If you're accepted, you could earn:</p>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-300">Per review:</span>
+                        <span className="text-2xl font-bold text-green-400">${parseFloat(hourlyRate).toFixed(0)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-300">5 reviews/week:</span>
+                        <span className="text-xl font-semibold text-green-300">${(parseFloat(hourlyRate) * 5).toFixed(0)}/week</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-300">20 reviews/month:</span>
+                        <span className="text-xl font-semibold text-green-300">${(parseFloat(hourlyRate) * 20).toFixed(0)}/month</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-green-500/20">
+                      <p className="text-xs text-green-300/80">
+                        💰 You keep 80% of earnings forever as a founding reviewer
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Default Earnings Info */}
+              {(!hourlyRate || isNaN(parseFloat(hourlyRate)) || parseFloat(hourlyRate) <= 0) && (
+                <div className="bg-gradient-to-br from-orange-500/20 via-pink-500/20 to-purple-600/20 border border-orange-500/30 rounded-xl p-6 space-y-3">
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-white mb-2">Typical Earnings</p>
+                    <div className="space-y-2 text-sm text-gray-300">
+                      <p>Most reviewers earn <span className="text-orange-400 font-semibold">$25-50</span> per review</p>
+                      <p className="text-xs text-gray-400">You can set your own rate above, or we'll suggest one during onboarding</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setStep(4)}
+                className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+              <Button
+                onClick={handleNext}
+                className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+              >
+                Continue
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        </div>
+      )}
+
+      {step === 6 && (
+        <div className="flex-1 flex items-center justify-center px-4 py-4 md:py-8 min-h-[calc(100vh-120px)]">
+          <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
+            <CardHeader className="text-center space-y-1 md:space-y-2 py-4 md:py-6">
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-full flex items-center justify-center mx-auto">
+                <Phone className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
+              </div>
+              <CardTitle className="text-xl md:text-2xl font-bold text-white">Phone Number</CardTitle>
+              <CardDescription className="text-sm md:text-base text-gray-300">
+                We need your phone number to contact you about reviews
+              </CardDescription>
+            </CardHeader>
+          
+          <CardContent className="space-y-4 md:space-y-6 py-4 md:py-6">
+            {error && (
+              <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-3 py-2 md:px-4 md:py-3 rounded-lg text-xs md:text-sm">
+                {error}
+              </div>
+            )}
+            
+            <div className="space-y-3 md:space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-blue-400" />
-                  Phone Number
-                </label>
+                <label className="text-sm font-medium text-gray-300">Phone Number</label>
                 <input
                   type="tel"
                   value={phone}
@@ -1410,50 +1539,13 @@ export default function FoundingReviewerApplyPage() {
                   We'll use this to notify you about new review requests and payment updates.
                 </p>
               </div>
-
-              {/* Social Media Handles */}
-              <div className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                    <Instagram className="w-4 h-4 text-pink-400" />
-                    Instagram Handle
-                  </label>
-                  <input
-                    type="text"
-                    value={instagramHandle}
-                    onChange={(e) => setInstagramHandle(e.target.value)}
-                    placeholder="@yourusername"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-400">
-                    Optional: Your Instagram handle (without the @ symbol)
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                    <Music className="w-4 h-4 text-gray-400" />
-                    TikTok Handle
-                  </label>
-                  <input
-                    type="text"
-                    value={tiktokHandle}
-                    onChange={(e) => setTiktokHandle(e.target.value)}
-                    placeholder="@yourusername"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-400">
-                    Optional: Your TikTok handle (without the @ symbol)
-                  </p>
-                </div>
-              </div>
             </div>
 
             {/* Actions */}
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                onClick={() => setStep(isGoogleAuthed ? 2 : 3)}
+                onClick={() => setStep(5)}
                 className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -1473,7 +1565,7 @@ export default function FoundingReviewerApplyPage() {
         </div>
       )}
 
-      {step === 6 && (
+      {step === 7 && (
         <div className="flex-1 flex items-center justify-center px-4 py-8 min-h-[calc(100vh-120px)]">
           <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20 text-center">
             <CardContent className="p-8 space-y-6">
