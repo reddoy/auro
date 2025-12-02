@@ -635,6 +635,14 @@ export default function FoundingReviewerApplyPage() {
     }
     if (step === 6) {
       // Phone number step - submit application
+      if (!firstName || firstName.trim().length === 0) {
+        setError('Please enter your first name');
+        return;
+      }
+      if (!lastName || lastName.trim().length === 0) {
+        setError('Please enter your last name');
+        return;
+      }
       if (!phone || phone.trim().length === 0) { 
         setError('Please enter your phone number'); 
         return; 
@@ -1447,50 +1455,50 @@ export default function FoundingReviewerApplyPage() {
                 const platformFee = rate * 0.2; // 20% platform fee
                 
                 return (
-                  <div className="bg-gradient-to-br from-green-500/20 via-emerald-500/20 to-teal-500/20 border border-green-500/30 rounded-xl p-6 space-y-4">
-                    <div className="text-center">
-                      <p className="text-sm text-gray-300 mb-4">If you're accepted, here's what you'll take home:</p>
-                      
-                      {/* Breakdown */}
-                      <div className="bg-black/20 rounded-lg p-4 mb-4 space-y-3">
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-300">Rate per review:</span>
-                            <span className="text-lg font-semibold text-white">${rate.toFixed(0)}</span>
-                          </div>
-                          <div className="flex items-center justify-between text-xs text-gray-400">
-                            <span>Platform fee (20%):</span>
-                            <span>-${platformFee.toFixed(2)}</span>
-                          </div>
-                          <div className="pt-2 border-t border-green-500/20 flex items-center justify-between">
-                            <span className="text-sm font-medium text-green-300">You take home (80%):</span>
-                            <span className="text-2xl font-bold text-green-400">${takeHomeRate.toFixed(2)}</span>
-                          </div>
+                  <div className="space-y-4">
+                    {/* Breakdown Section */}
+                    <div className="bg-gradient-to-br from-green-500/20 via-emerald-500/20 to-teal-500/20 border border-green-500/30 rounded-xl p-5">
+                      <h3 className="text-sm font-semibold text-white mb-4 text-center">Your Take-Home Breakdown</h3>
+                      <div className="bg-black/30 rounded-lg p-4 space-y-3">
+                        <div className="flex items-center justify-between whitespace-nowrap">
+                          <span className="text-sm text-gray-300">Rate:</span>
+                          <span className="text-lg font-semibold text-white">${rate.toFixed(0)}</span>
+                        </div>
+                        <div className="flex items-center justify-between whitespace-nowrap text-xs text-gray-400">
+                          <span>Platform fee:</span>
+                          <span>-${platformFee.toFixed(2)}</span>
+                        </div>
+                        <div className="pt-3 border-t border-green-500/30 flex items-center justify-between whitespace-nowrap">
+                          <span className="text-sm font-semibold text-green-300">You take home:</span>
+                          <span className="text-2xl font-bold text-green-400">${takeHomeRate.toFixed(2)}</span>
                         </div>
                       </div>
+                    </div>
 
-                      {/* Projected Earnings */}
-                      <div className="space-y-2">
-                        <p className="text-xs text-gray-400 mb-2">Projected earnings (after 80% take-home):</p>
-                        <div className="flex items-center justify-between">
+                    {/* Projected Earnings Section */}
+                    <div className="bg-gradient-to-br from-blue-500/20 via-indigo-500/20 to-purple-600/20 border border-blue-500/30 rounded-xl p-5">
+                      <h3 className="text-sm font-semibold text-white mb-4 text-center">Projected Earnings</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between whitespace-nowrap">
                           <span className="text-sm text-gray-300">Per review:</span>
-                          <span className="text-xl font-bold text-green-400">${takeHomeRate.toFixed(2)}</span>
+                          <span className="text-xl font-bold text-blue-400">${takeHomeRate.toFixed(2)}</span>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-300">5 reviews/week:</span>
-                          <span className="text-lg font-semibold text-green-300">${(takeHomeRate * 5).toFixed(2)}/week</span>
+                        <div className="flex items-center justify-between whitespace-nowrap">
+                          <span className="text-sm text-gray-300">5/week:</span>
+                          <span className="text-lg font-semibold text-blue-300">${(takeHomeRate * 5).toFixed(2)}</span>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-300">20 reviews/month:</span>
-                          <span className="text-lg font-semibold text-green-300">${(takeHomeRate * 20).toFixed(2)}/month</span>
+                        <div className="flex items-center justify-between whitespace-nowrap">
+                          <span className="text-sm text-gray-300">20/month:</span>
+                          <span className="text-lg font-semibold text-blue-300">${(takeHomeRate * 20).toFixed(2)}</span>
                         </div>
                       </div>
-                      
-                      <div className="mt-4 pt-4 border-t border-green-500/20">
-                        <p className="text-xs text-green-300/80">
-                          💰 You keep 80% of earnings forever as a founding reviewer
-                        </p>
-                      </div>
+                    </div>
+
+                    {/* Note */}
+                    <div className="text-center">
+                      <p className="text-xs text-green-300/70 whitespace-nowrap">
+                        💰 80% take-home rate for founding reviewers
+                      </p>
                     </div>
                   </div>
                 );
@@ -1498,13 +1506,13 @@ export default function FoundingReviewerApplyPage() {
 
               {/* Default Earnings Info */}
               {(!hourlyRate || isNaN(parseFloat(hourlyRate)) || parseFloat(hourlyRate) <= 0) && (
-                <div className="bg-gradient-to-br from-orange-500/20 via-pink-500/20 to-purple-600/20 border border-orange-500/30 rounded-xl p-6 space-y-3">
-                  <div className="text-center">
-                    <p className="text-sm font-medium text-white mb-2">Typical Earnings</p>
-                    <div className="space-y-2 text-sm text-gray-300">
-                      <p>Most reviewers earn <span className="text-orange-400 font-semibold">$25-50</span> per review</p>
-                      <p className="text-xs text-gray-400">You can set your own rate above, or we'll suggest one during onboarding</p>
-                    </div>
+                <div className="bg-gradient-to-br from-orange-500/20 via-pink-500/20 to-purple-600/20 border border-orange-500/30 rounded-xl p-5">
+                  <div className="text-center space-y-2">
+                    <p className="text-sm font-semibold text-white">Typical Rate</p>
+                    <p className="text-sm text-gray-300 whitespace-nowrap">
+                      Most reviewers: <span className="text-orange-400 font-semibold">$25-50</span> per review
+                    </p>
+                    <p className="text-xs text-gray-400">Set your rate above or we'll suggest one</p>
                   </div>
                 </div>
               )}
@@ -1553,7 +1561,33 @@ export default function FoundingReviewerApplyPage() {
               </div>
             )}
             
-            <div className="space-y-3 md:space-y-4">
+            <div className="space-y-4 md:space-y-5">
+              {/* Name Fields */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">First Name</label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Jane"
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">Last Name</label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Doe"
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Phone Number */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Phone Number</label>
                 <input
@@ -1570,22 +1604,31 @@ export default function FoundingReviewerApplyPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 pt-2">
               <Button
                 variant="outline"
                 onClick={() => setStep(5)}
-                className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+                className="w-full bg-transparent border-white/20 text-white hover:bg-white/10"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
               <Button
                 onClick={handleNext}
-                disabled={loading || !phone}
-                className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+                disabled={loading || !phone || !firstName || !lastName}
+                className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white py-6 text-base font-semibold rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
               >
-                {loading ? 'Submitting...' : 'Complete Application'}
-                <ArrowRight className="w-4 h-4 ml-2" />
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                    Submitting...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    Complete Application
+                    <ArrowRight className="w-5 h-5" />
+                  </span>
+                )}
               </Button>
             </div>
           </CardContent>
