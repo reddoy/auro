@@ -8,6 +8,7 @@ import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
 import { ArrowLeft, ArrowRight, Check, Star, DollarSign, Users, Clock, Shield, Mail, Lock, User, FileText, Target, Phone, Instagram, Music } from 'lucide-react';
+import WebAvatarUploader from '../../../components/WebAvatarUploader';
 
 
 export default function FoundingReviewerApplyPage() {
@@ -21,6 +22,7 @@ export default function FoundingReviewerApplyPage() {
   const [marketingConsent, setMarketingConsent] = useState<boolean>(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
+  const [hourlyRate, setHourlyRate] = useState<string>('');
   const [instagramHandle, setInstagramHandle] = useState('');
   const [tiktokHandle, setTiktokHandle] = useState('');
   const [loading, setLoading] = useState(false);
@@ -71,6 +73,7 @@ export default function FoundingReviewerApplyPage() {
         marketingConsent,
         avatarUrl,
         avatarPath,
+        hourlyRate,
         instagramHandle,
         tiktokHandle,
         timestamp: Date.now()
@@ -94,10 +97,11 @@ export default function FoundingReviewerApplyPage() {
           setEmail(formData.email || '');
           setPhone(formData.phone || '');
           setMarketingConsent(formData.marketingConsent || false);
-          setAvatarUrl(formData.avatarUrl || null);
-          setAvatarPath(formData.avatarPath || null);
-          setInstagramHandle(formData.instagramHandle || '');
-          setTiktokHandle(formData.tiktokHandle || '');
+        setAvatarUrl(formData.avatarUrl || null);
+        setAvatarPath(formData.avatarPath || null);
+        setHourlyRate(formData.hourlyRate || '');
+        setInstagramHandle(formData.instagramHandle || '');
+        setTiktokHandle(formData.tiktokHandle || '');
           console.log('[ReviewerApply] Restored form data from localStorage');
           return true;
         } else {
@@ -126,7 +130,7 @@ export default function FoundingReviewerApplyPage() {
     if (step > 1) {
       saveFormData();
     }
-  }, [step, firstName, lastName, email, phone, marketingConsent, avatarUrl, avatarPath, instagramHandle, tiktokHandle, saveFormData]);
+  }, [step, firstName, lastName, email, phone, marketingConsent, avatarUrl, avatarPath, hourlyRate, instagramHandle, tiktokHandle, saveFormData]);
 
   // Check if resuming from OAuth - improved with retry logic
   useEffect(() => {
@@ -669,7 +673,7 @@ export default function FoundingReviewerApplyPage() {
         const requestData = {
           bio: '',
           focusAreas: '',
-          hourlyRate: null,
+          hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
           avatarUrl: avatarUrl,
           avatarPath: avatarPath,
           socials: [],
@@ -752,7 +756,7 @@ export default function FoundingReviewerApplyPage() {
       { id: 1, label: 'Intro', shortLabel: 'Intro', icon: Star },
       { id: 2, label: 'Account', shortLabel: 'Account', icon: User },
       { id: 3, label: 'Password', shortLabel: 'Pass', icon: Lock },
-      { id: 4, label: 'Phone', shortLabel: 'Phone', icon: Phone },
+      { id: 4, label: 'Profile', shortLabel: 'Profile', icon: User },
       { id: 6, label: 'Done', shortLabel: 'Done', icon: Check }
     ];
 
@@ -1332,11 +1336,11 @@ export default function FoundingReviewerApplyPage() {
           <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
             <CardHeader className="text-center space-y-1 md:space-y-2 py-4 md:py-6">
               <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-full flex items-center justify-center mx-auto">
-                <Phone className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
+                <User className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
               </div>
-              <CardTitle className="text-xl md:text-2xl font-bold text-white">Phone Number</CardTitle>
+              <CardTitle className="text-xl md:text-2xl font-bold text-white">Complete Your Profile</CardTitle>
               <CardDescription className="text-sm md:text-base text-gray-300">
-                We need your phone number to contact you about reviews
+                Add your profile picture, set your rate, and contact information
               </CardDescription>
             </CardHeader>
           
@@ -1347,9 +1351,54 @@ export default function FoundingReviewerApplyPage() {
               </div>
             )}
             
-            <div className="space-y-3 md:space-y-4">
+            <div className="space-y-4 md:space-y-6">
+              {/* Profile Picture Upload */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-gray-300 text-center block">Profile Picture</label>
+                <div className="flex justify-center">
+                  <WebAvatarUploader
+                    currentAvatarUrl={avatarUrl}
+                    onAvatarChange={(url, path) => {
+                      setAvatarUrl(url);
+                      setAvatarPath(path);
+                    }}
+                    size={120}
+                  />
+                </div>
+                <p className="text-xs text-gray-400 text-center">
+                  Optional: Upload a clear photo of yourself
+                </p>
+              </div>
+
+              {/* Hourly Rate */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">Phone Number</label>
+                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-green-400" />
+                  Set Your Rate (per review)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                  <input
+                    type="number"
+                    value={hourlyRate}
+                    onChange={(e) => setHourlyRate(e.target.value)}
+                    placeholder="25"
+                    min="0"
+                    step="1"
+                    className="w-full pl-8 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+                <p className="text-xs text-gray-400">
+                  Optional: Set your preferred rate per review (e.g., $25-50)
+                </p>
+              </div>
+
+              {/* Phone Number */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-blue-400" />
+                  Phone Number
+                </label>
                 <input
                   type="tel"
                   value={phone}
@@ -1435,34 +1484,53 @@ export default function FoundingReviewerApplyPage() {
               <div className="space-y-3">
                 <h3 className="text-2xl font-bold text-white">Application Submitted! 🎉</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  Thank you for applying to become a reviewer! We've received your application and will review it personally.
+                  Thank you for applying to become a reviewer! We've received your application.
                 </p>
               </div>
 
-              <div className="bg-gradient-to-r from-orange-500/20 to-purple-600/20 border border-orange-500/30 rounded-lg p-4 space-y-3">
-                <h4 className="text-lg font-semibold text-white">What happens next?</h4>
-                <div className="space-y-2 text-sm text-gray-300">
+              {/* Rohan's Message */}
+              <div className="bg-gradient-to-r from-orange-500/20 to-purple-600/20 border border-orange-500/30 rounded-lg p-4 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden flex-shrink-0 border-2 border-orange-500/50">
+                    <img
+                      src="/rohan-headshot-backyard-min.jpg"
+                      alt="Rohan"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to regular headshot if backyard version doesn't exist
+                        (e.target as HTMLImageElement).src = '/rohan-headshot.jpg';
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm text-white font-medium">Rohan O'Malley</p>
+                    <p className="text-xs text-gray-300">Founder</p>
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm text-gray-300 text-left">
+                  <p className="leading-relaxed">
+                    Hey! I go over every single application personally to make sure it aligns with our profile and aligns with our platform. We're going to be launching soon, and we'll let you know if you're accepted.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-blue-500/10 to-indigo-600/10 border border-blue-500/20 rounded-lg p-4 space-y-2">
+                <h4 className="text-sm font-semibold text-white">What happens next?</h4>
+                <div className="space-y-2 text-xs text-gray-300 text-left">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full flex-shrink-0"></div>
                     <span>Check your email and verify your account</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span>We'll personally review your application to ensure you align with our platform</span>
+                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full flex-shrink-0"></div>
+                    <span>We'll personally review your application</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span>You'll receive an email notification once your application is approved</span>
+                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full flex-shrink-0"></div>
+                    <span>You'll receive an email notification once your application is reviewed</span>
                   </div>
-                  
-                  {/* Approval Notice */}
-                  <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                    <p className="text-xs text-blue-300 text-center">
-                      ⏳ <strong>Review Process:</strong> We personally review each application to ensure quality. You'll be notified via email once your application has been reviewed.
-                    </p>
-                  </div>
-            </div>
-          </div>
+                </div>
+              </div>
 
               <div className="space-y-4">
                 <Button 

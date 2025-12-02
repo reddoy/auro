@@ -156,18 +156,22 @@ export async function POST(req: Request) {
       });
 
       // Use idempotency key to prevent duplicate refunds if called concurrently
-      const refund = await stripe.refunds.create({
-        payment_intent: paymentIntentId,
-        amount: refundAmount,
-        reason: reason || 'requested_by_customer',
-        idempotency_key: effectiveIdempotencyKey.slice(0, 255), // Stripe limits to 255 chars
-        metadata: {
-          request_id: requestId,
-          refund_reason: reason || 'automatic',
-          partial_refund: (partial || refundAmount < totalAmount).toString(),
-          idempotency_key: effectiveIdempotencyKey,
+      const refund = await stripe.refunds.create(
+        {
+          payment_intent: paymentIntentId,
+          amount: refundAmount,
+          reason: reason || 'requested_by_customer',
+          metadata: {
+            request_id: requestId,
+            refund_reason: reason || 'automatic',
+            partial_refund: (partial || refundAmount < totalAmount).toString(),
+            idempotency_key: effectiveIdempotencyKey,
+          },
         },
-      });
+        {
+          idempotencyKey: effectiveIdempotencyKey.slice(0, 255), // Stripe limits to 255 chars
+        }
+      );
 
       console.log('✅ Refund created successfully:', {
         refundId: refund.id,
