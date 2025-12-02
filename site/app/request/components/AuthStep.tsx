@@ -1,20 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-
-type RequestData = {
-  creatorId?: string;
-  creatorSlug?: string;
-  photos: { outfits: string[]; roomTourPhotos: string[]; datingProfileScreenshots: string[] };
-  message: string;
-  consent: {
-    shareOnSocial: boolean;
-    agreedAt: string;
-  };
-  userId?: string;
-  requestId?: string;
-  uploadSessionId?: string;
-};
+import type { RequestData } from '../page';
 
 type Props = {
   isAuthenticated: boolean;

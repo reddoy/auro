@@ -29,6 +29,8 @@ import SectionSlideCard from '@/components/SectionSlideCard';
 import ReviewStatusCard from '@/components/ReviewStatusCard';
 import DatingProfilePhotoGallery from '@/components/DatingProfilePhotoGallery';
 import StarRating from '@/components/StarRating';
+import ScreenRecordingGuide from '@/components/ScreenRecordingGuide';
+import VideoUploader from '@/components/VideoUploader';
 
 // Removed unused URL helper functions since we're not showing social links in this screen
 
@@ -164,6 +166,8 @@ export default function ReviewerRequestScreen() {
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const scrollViewRef = useRef<ScrollView | null>(null);
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const [showScreenRecordingGuide, setShowScreenRecordingGuide] = useState(false);
+  const [showUploadSection, setShowUploadSection] = useState(false);
   const ratingMood = getRatingMoodTheme(overallRating);
   const reviewerDisplayName = reviewer?.displayName || reviewer?.full_name || reviewer?.username || 'Reviewer';
 
@@ -1774,6 +1778,10 @@ export default function ReviewerRequestScreen() {
                   recordingTimerRef.current = null;
                 }
               }}
+              showScreenRecordingMode={true}
+              onPress={() => {
+                setShowScreenRecordingGuide(true);
+              }}
             />
             
             {/* Companion info panel - static reviewer name */}
@@ -1873,15 +1881,14 @@ export default function ReviewerRequestScreen() {
             />
           </RNView>
 
-          {/* Fixed Use/Re-record buttons at bottom when video is recorded */}
-          {videoUri && (
+          {/* Video upload section at bottom when guide is shown or video is uploaded */}
+          {(showUploadSection || videoUri) && (
             <RNView
               style={{
                 position: 'absolute',
                 bottom: insets.bottom + 20,
                 left: 0,
                 right: 0,
-                alignItems: 'center',
                 zIndex: 12,
                 elevation: 12,
                 paddingHorizontal: 20,
@@ -1889,59 +1896,66 @@ export default function ReviewerRequestScreen() {
             >
               <RNView
                 style={{
-                  flexDirection: 'row',
-                  gap: 12,
                   backgroundColor: 'rgba(0, 0, 0, 0.8)',
                   borderRadius: 16,
-                  paddingVertical: 12,
+                  paddingVertical: 16,
                   paddingHorizontal: 20,
                   borderWidth: 1,
                   borderColor: 'rgba(255, 255, 255, 0.2)',
                 }}
               >
-                <TouchableOpacity
-                  onPress={() => {
-                    setRecordingModeOpen(false);
-                    setIsVideoReviewMode(false);
-                    if (recordingTimerRef.current) {
-                      clearInterval(recordingTimerRef.current);
-                      recordingTimerRef.current = null;
-                    }
-                    setRecordingDuration(0);
-                    Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
+                <VideoUploader
+                  onVideoSelected={(uri) => {
+                    setVideoUri(uri);
+                    setShowUploadSection(false);
                   }}
-                  style={{
-                    paddingHorizontal: 24,
-                    paddingVertical: 12,
-                    borderRadius: 12,
-                    backgroundColor: Colors.brand.status.completed,
-                    minWidth: 100,
-                    alignItems: 'center',
+                  existingVideoUri={videoUri}
+                  onRemove={() => {
+                    setVideoUri(null);
+                    setShowUploadSection(false);
                   }}
-                >
-                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Use</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => setVideoUri(null)}
-                  style={{
-                    paddingHorizontal: 24,
-                    paddingVertical: 12,
-                    borderRadius: 12,
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    borderColor: 'rgba(255, 255, 255, 0.3)',
-                    minWidth: 100,
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Re-record</Text>
-                </TouchableOpacity>
+                />
+                {videoUri && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      setRecordingModeOpen(false);
+                      setIsVideoReviewMode(false);
+                      if (recordingTimerRef.current) {
+                        clearInterval(recordingTimerRef.current);
+                        recordingTimerRef.current = null;
+                      }
+                      setRecordingDuration(0);
+                      Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
+                    }}
+                    style={{
+                      marginTop: 12,
+                      paddingHorizontal: 24,
+                      paddingVertical: 14,
+                      borderRadius: 12,
+                      backgroundColor: Colors.brand.status.completed,
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Use This Video</Text>
+                  </TouchableOpacity>
+                )}
               </RNView>
             </RNView>
           )}
           
         </RNView>
       </Modal>
+      
+      {/* Screen Recording Guide Modal */}
+      <ScreenRecordingGuide
+        visible={showScreenRecordingGuide}
+        onClose={() => setShowScreenRecordingGuide(false)}
+        onContinue={() => {
+          setShowScreenRecordingGuide(false);
+          setShowUploadSection(true);
+        }}
+      />
+      
       <ImageGalleryModal visible={galleryOpen} uris={galleryUris} initialIndex={galleryIndex} onClose={() => setGalleryOpen(false)} />
       {currentPhotoUri ? (
         <ImageGalleryModal visible={photoModalOpen} uris={[currentPhotoUri]} initialIndex={0} onClose={() => {

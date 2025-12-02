@@ -21,7 +21,7 @@ export type RequestData = {
   photos: { outfits: string[]; roomTourPhotos: string[]; datingProfileScreenshots: string[] };
   message: string;
   consent: {
-    shareOnSocial: boolean;
+    shareOnSocial: boolean | undefined;
     agreedAt: string;
   };
   userId?: string;
@@ -76,7 +76,7 @@ export default function RequestPage() {
         photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
         message: '',
         consent: {
-          shareOnSocial: false,
+          shareOnSocial: undefined,
           agreedAt: ''
         }
       };
@@ -94,7 +94,7 @@ export default function RequestPage() {
             photos: saved.photos || { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
             message: saved.message || '',
             consent: saved.consent || {
-              shareOnSocial: false,
+              shareOnSocial: undefined,
               agreedAt: ''
             },
             creatorId: saved.creatorId,

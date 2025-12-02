@@ -52,13 +52,13 @@ export default function ThankYouScreen() {
           </MotionView>
           <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
             <Text style={styles.title}>
-              {isReviewer ? 'Welcome to the Auro Community!' : 'Thank You for Signing Up!'}
+              {isReviewer ? 'Thank You!' : 'Thank You for Signing Up!'}
             </Text>
           </MotionView>
           <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item * 2)}>
             <Text style={styles.message}>
               {isReviewer 
-                ? "You're all set! Share your profile link on socials to start receiving review requests and climb the leaderboard."
+                ? "We'll review your application and get back to you soon."
                 : "You're all set! Head to Discover Reviewers anytime to request feedback when you're ready."
               }
             </Text>

@@ -523,11 +523,13 @@ export default function ReviewDetailScreen() {
                       transition={200} 
                     />
                   </TouchableOpacity>
-                  <View style={styles.photoCommentContainer}>
-                    <Text style={[styles.photoCommentText, !photoNote && styles.photoCommentTextNoComment]}>
-                      {photoNote || 'No comment left'}
-                    </Text>
-                  </View>
+                  {photoNote && (
+                    <View style={styles.photoCommentContainer}>
+                      <Text style={styles.photoCommentText}>
+                        {photoNote}
+                      </Text>
+                    </View>
+                  )}
                 </RNView>
               );
             })}

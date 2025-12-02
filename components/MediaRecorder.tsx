@@ -16,9 +16,11 @@ type Props = {
   onRecordingStop?: () => void;
   hideButtons?: boolean;
   onVideoUriChange?: (uri: string | null) => void;
+  onPress?: () => void; // Callback when camera preview is tapped
+  showScreenRecordingMode?: boolean; // If true, show only camera preview without any buttons
 };
 
-export default function MediaRecorder({ photos = [], onRecorded, variant = 'inline', circleSize = 140, value = null, onRecordingStart, onRecordingStop, hideButtons = false, onVideoUriChange }: Props) {
+export default function MediaRecorder({ photos = [], onRecorded, variant = 'inline', circleSize = 140, value = null, onRecordingStart, onRecordingStop, hideButtons = false, onVideoUriChange, onPress, showScreenRecordingMode = false }: Props) {
   const cameraRef = useRef<CameraView | null>(null);
   const [type, setType] = useState<CameraType>('front');
   const [recording, setRecording] = useState(false);
@@ -94,6 +96,49 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
   // }
 
   if (variant === 'corner') {
+    // Screen recording mode: just show camera preview, no buttons
+    if (showScreenRecordingMode) {
+      return (
+        <View style={{ alignItems: 'flex-start', position: 'relative' }}>
+          <Pressable
+            onPress={onPress}
+            style={{ 
+              width: circleSize, 
+              height: circleSize, 
+              borderRadius: circleSize / 2, 
+              overflow: 'hidden', 
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              borderWidth: 3,
+              borderColor: 'rgba(255,255,255,0.4)',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.4,
+              shadowRadius: 10,
+              elevation: 10,
+            }}
+          >
+            {!permission?.granted ? (
+              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.brand.cardBackground }}>
+                <Pressable onPress={requestPermission} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, backgroundColor: Colors.brand.status.accepted }}>
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Enable</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <CameraView
+                ref={r => (cameraRef.current = r)}
+                style={{ width: '100%', height: '100%' }}
+                facing="front"
+                mode={"video" as any}
+                onCameraReady={() => setIsCameraReady(true)}
+                onError={() => setIsCameraReady(false)}
+              />
+            )}
+          </Pressable>
+        </View>
+      );
+    }
+
+    // Original mode with all buttons
     return (
       <View style={{ alignItems: 'flex-start', position: 'relative' }}>
         {/* Circular camera surface with subtle border for TikTok-style */}

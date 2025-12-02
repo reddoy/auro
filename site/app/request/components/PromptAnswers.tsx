@@ -84,6 +84,9 @@ export default function PromptAnswers({ message, onMessageChange, onNext, onBack
       </div>
 
       <div className="step-actions">
+        <button type="button" onClick={onBack} className="btn-secondary">
+          Back
+        </button>
         <button 
           type="button" 
           onClick={onNext} 
@@ -91,9 +94,6 @@ export default function PromptAnswers({ message, onMessageChange, onNext, onBack
           disabled={!canProceed}
         >
           Continue
-        </button>
-        <button type="button" onClick={onBack} className="btn-secondary">
-          Back
         </button>
       </div>
 
