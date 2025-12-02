@@ -24,6 +24,15 @@ export default function CircularCropModal({
   const [rotation, setRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
 
+  // Reset crop position when modal opens
+  React.useEffect(() => {
+    if (isOpen) {
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setRotation(0);
+    }
+  }, [isOpen]);
+
   const onCropChange = (location: { x: number; y: number }) => {
     setCrop(location);
   };
@@ -171,49 +180,26 @@ export default function CircularCropModal({
         
         <CardContent className="space-y-2 md:space-y-3 flex-1 flex flex-col min-h-0 overflow-y-auto px-3 md:px-4 pb-3 md:pb-4">
           {/* Crop Area */}
-          <div className="relative bg-black/50 rounded-lg overflow-hidden flex-shrink-0" style={{ touchAction: 'none', height: 'min(40vh, 280px)', minHeight: '220px', maxHeight: '320px', isolation: 'isolate' }}>
-            <Cropper
-              image={URL.createObjectURL(imageFile)}
-              crop={crop}
-              zoom={zoom}
-              rotation={rotation}
-              aspect={1}
-              cropShape="round"
-              showGrid={false}
-              restrictPosition={true}
-              zoomWithScroll={false}
-              minZoom={1}
-              maxZoom={3}
-              onCropChange={onCropChange}
-              onCropComplete={onCropAreaChange}
-              onZoomChange={setZoom}
-              onRotationChange={setRotation}
-              style={{
-                containerStyle: {
-                  width: '100%',
-                  height: '100%',
-                  position: 'relative',
-                  // Prevent browser pinch-zoom conflicts with crop gestures on mobile
-                  touchAction: 'none',
-                  WebkitTransform: 'translateZ(0)',
-                  transform: 'translateZ(0)',
-                  isolation: 'isolate'
-                },
-                cropAreaStyle: {
-                  border: '3px solid #fff',
-                  boxShadow: '0 0 0 2px rgba(0,0,0,0.5), 0 0 0 4px rgba(255,255,255,0.3)',
-                  zIndex: 100,
-                  position: 'relative'
-                },
-                mediaStyle: {
-                  maxWidth: 'none',
-                  willChange: 'transform',
-                  WebkitTransform: 'translateZ(0)',
-                  transform: 'translateZ(0)',
-                  zIndex: 1
-                },
-              }}
-            />
+          <div className="relative bg-black/50 rounded-lg overflow-hidden flex-shrink-0" style={{ touchAction: 'none', height: 'min(40vh, 280px)', minHeight: '220px', maxHeight: '320px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+              <Cropper
+                image={URL.createObjectURL(imageFile)}
+                crop={crop}
+                zoom={zoom}
+                rotation={rotation}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                restrictPosition={true}
+                zoomWithScroll={false}
+                minZoom={1}
+                maxZoom={3}
+                onCropChange={onCropChange}
+                onCropComplete={onCropAreaChange}
+                onZoomChange={setZoom}
+                onRotationChange={setRotation}
+              />
+            </div>
           </div>
 
           {/* Controls */}
@@ -304,15 +290,16 @@ export default function CircularCropModal({
           box-shadow: 0 2px 12px rgba(255, 111, 0, 0.6);
         }
 
-        /* Ensure crop area is always visible on top */
-        [data-testid="crop-container"] > div:last-child {
-          z-index: 100 !important;
+        /* Ensure crop area is centered and visible */
+        .reactEasyCrop_Container {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
         }
         
-        /* Ensure the crop area ring is visible */
+        /* Ensure the crop area ring is visible and centered */
         .reactEasyCrop_CropArea {
           z-index: 100 !important;
-          position: relative !important;
         }
         
         /* Ensure the image is below the crop area */
