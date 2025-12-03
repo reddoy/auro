@@ -6,8 +6,7 @@ import { useRouter } from 'next/navigation';
 import ReviewerCounter from '../../../components/ReviewerCounter';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Badge } from '../../../components/ui/badge';
-import { ArrowLeft, ArrowRight, Check, Star, DollarSign, Users, Clock, Shield, Mail, Lock, User, FileText, Target, Phone, Instagram, Music } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Star, DollarSign, Clock, Shield, Mail, Lock, User, FileText, Target, Phone, Instagram, Music } from 'lucide-react';
 import WebAvatarUploader from '../../../components/WebAvatarUploader';
 
 
@@ -197,7 +196,29 @@ export default function FoundingReviewerApplyPage() {
               const { given_name, family_name, email } = user.user_metadata;
               if (given_name) setFirstName(given_name);
               if (family_name) setLastName(family_name);
-              if (email) setEmail(email);
+              if (email) {
+                setEmail(email);
+                // Store email in localStorage for step 6 submission
+                try {
+                  localStorage.setItem('auro_signup_email', email);
+                  localStorage.setItem('auro_signup_user_id', user.id);
+                  if (given_name && family_name) {
+                    localStorage.setItem('auro_signup_full_name', `${given_name} ${family_name}`);
+                  }
+                } catch (storageError) {
+                  console.warn('[ReviewerApply] Failed to store OAuth data in localStorage:', storageError);
+                }
+              }
+            }
+            // Also check user.email directly if metadata doesn't have it
+            if (user.email && !email) {
+              setEmail(user.email);
+              try {
+                localStorage.setItem('auro_signup_email', user.email);
+                localStorage.setItem('auro_signup_user_id', user.id);
+              } catch (storageError) {
+                console.warn('[ReviewerApply] Failed to store OAuth data in localStorage:', storageError);
+              }
             }
           } catch (metadataError) {
             console.warn('[ReviewerApply] Failed to extract OAuth metadata:', metadataError);
@@ -353,7 +374,21 @@ export default function FoundingReviewerApplyPage() {
             if (session.user.app_metadata?.provider === 'google') {
               setIsGoogleAuthed(true);
             }
-            if (session.user.email) setEmail(session.user.email);
+            if (session.user.email) {
+              setEmail(session.user.email);
+              // Store email in localStorage for Google OAuth users
+              if (session.user.app_metadata?.provider === 'google') {
+                try {
+                  localStorage.setItem('auro_signup_email', session.user.email);
+                  localStorage.setItem('auro_signup_user_id', session.user.id);
+                  if (session.user.user_metadata?.given_name && session.user.user_metadata?.family_name) {
+                    localStorage.setItem('auro_signup_full_name', `${session.user.user_metadata.given_name} ${session.user.user_metadata.family_name}`);
+                  }
+                } catch (storageError) {
+                  console.warn('[ReviewerApply] Failed to store OAuth data in localStorage:', storageError);
+                }
+              }
+            }
             if (session.user.user_metadata?.given_name) setFirstName(session.user.user_metadata.given_name);
             if (session.user.user_metadata?.family_name) setLastName(session.user.user_metadata.family_name);
             
@@ -411,7 +446,7 @@ export default function FoundingReviewerApplyPage() {
     }
   }, [step, isGoogleAuthed]);
 
-  // Fetch reviewer count - only count completed reviewers
+  // Fetch reviewer count - only count approved reviewers
   useEffect(() => {
     const fetchReviewerCount = async () => {
       try {
@@ -419,15 +454,14 @@ export default function FoundingReviewerApplyPage() {
           console.error('[ReviewerApply] Supabase client is not available');
           return;
         }
-        // Count only completed reviewers from profiles table
-        const { data: profileData, error: profileError } = await supabase
+        // Count only approved reviewers from profiles table
+        const { count, error: profileError } = await supabase
           .from('profiles')
-          .select('id', { count: 'exact' })
-          .eq('is_reviewer', 'approved')
-          .eq('reviewer_signup_status', 'completed');
+          .select('*', { count: 'exact', head: true })
+          .eq('is_reviewer', 'approved');
         
-        if (!profileError && profileData) {
-          setReviewerCount(profileData.length || 0);
+        if (!profileError) {
+          setReviewerCount(count || 0);
           return;
         }
 
@@ -662,9 +696,36 @@ export default function FoundingReviewerApplyPage() {
         console.log('[ReviewerApply] Submitting application at step 4');
         
         // Always use the signup endpoint for simplicity - it handles both authenticated and unauthenticated cases
-        const signupUserId = localStorage.getItem('auro_signup_user_id');
-        const signupEmail = localStorage.getItem('auro_signup_email');
-        const signupFullName = localStorage.getItem('auro_signup_full_name') || '';
+        let signupUserId = localStorage.getItem('auro_signup_user_id');
+        let signupEmail = localStorage.getItem('auro_signup_email');
+        let signupFullName = localStorage.getItem('auro_signup_full_name') || '';
+        
+        // For Google OAuth users, also check current session if localStorage doesn't have email
+        if (!signupEmail && isGoogleAuthed) {
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user?.email) {
+              signupEmail = session.user.email;
+              signupUserId = session.user.id || null;
+              // Store for consistency
+              try {
+                if (signupEmail) {
+                  localStorage.setItem('auro_signup_email', signupEmail);
+                }
+                if (signupUserId) {
+                  localStorage.setItem('auro_signup_user_id', signupUserId);
+                }
+              } catch {}
+            }
+          } catch (sessionError) {
+            console.warn('[ReviewerApply] Failed to get session for Google OAuth user:', sessionError);
+          }
+        }
+        
+        // Also check email state variable as fallback
+        if (!signupEmail && email) {
+          signupEmail = email;
+        }
         
         if (!signupEmail) {
           setError('Please complete the signup process first. Go back to step 2 and create your account.');
@@ -725,17 +786,22 @@ export default function FoundingReviewerApplyPage() {
         
         console.log('[ReviewerApply] Application submitted successfully');
         
-        // Send confirmation email
-        try {
-          console.log('[ReviewerApply] Sending confirmation email...');
-          await fetch('/api/auth/resend-verification', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ email: signupEmail })
-          });
-          console.log('[ReviewerApply] Confirmation email sent successfully');
-        } catch (emailError) {
-          console.warn('[ReviewerApply] Failed to send confirmation email:', emailError);
+        // Send confirmation email only for regular email signups (not Google OAuth)
+        if (!isGoogleAuthed) {
+          try {
+            console.log('[ReviewerApply] Sending confirmation email...');
+            await fetch('/api/auth/resend-verification', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ email: signupEmail })
+            });
+            console.log('[ReviewerApply] Confirmation email sent successfully');
+          } catch (emailError) {
+            console.warn('[ReviewerApply] Failed to send confirmation email:', emailError);
+            // Don't fail the entire flow if email sending fails
+          }
+        } else {
+          console.log('[ReviewerApply] Skipping confirmation email for Google OAuth user (email already verified)');
         }
         
         clearFormData(); // Clear saved data on successful submission
@@ -892,12 +958,7 @@ export default function FoundingReviewerApplyPage() {
           <div className="w-full max-w-2xl mx-auto">
             <div className="flex flex-col justify-between h-[calc(100vh-140px)] max-h-[700px] md:max-h-[800px]">
               {/* Top Section - Compact */}
-              <div className="text-center space-y-2.5 md:space-y-4 pt-2 md:pt-4">
-                <Badge className="bg-gradient-to-r from-orange-500/20 to-purple-600/20 border-orange-500/30 text-orange-400 px-3 py-1 md:px-4 md:py-2 text-xs md:text-sm">
-                  <Star className="w-3 h-3 md:w-4 md:h-4 mr-1.5 md:mr-2" />
-                  Exclusive Founding Program
-                </Badge>
-                
+              <div className="text-center space-y-3 md:space-y-4 pt-2 md:pt-4">
                 <h1 className="text-3xl md:text-5xl font-bold leading-tight px-2">
                   <span className="block text-white">Girls rate guys.</span>
                   <span className="block text-white">Guys get advice.</span>
@@ -906,9 +967,8 @@ export default function FoundingReviewerApplyPage() {
                   </span>
                 </h1>
                 
-                <p className="text-xs md:text-base text-gray-300 px-4 leading-relaxed max-w-xl mx-auto">
-                  We're building the platform where your honest feedback helps guys level up—and you earn money doing it. 
-                  <span className="text-orange-400 font-semibold"> Join the first 35 reviewers</span> and lock in exclusive perks forever.
+                <p className="text-sm md:text-base text-gray-300 px-4 leading-relaxed max-w-xl mx-auto">
+                  Earn money giving honest feedback. Join the first 35 reviewers and lock in exclusive perks.
                 </p>
               </div>
 
@@ -951,21 +1011,6 @@ export default function FoundingReviewerApplyPage() {
                     </div>
                   </div>
                 </div>
-                
-                {/* Additional perks */}
-                <div className="bg-gradient-to-r from-blue-500/10 to-indigo-600/10 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-blue-500/20">
-                  <div className="flex items-center justify-center gap-4 md:gap-6 text-xs md:text-sm">
-                    <div className="flex items-center gap-1.5 md:gap-2">
-                      <Shield className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-400" />
-                      <span className="text-white font-medium">Founding badge</span>
-                    </div>
-                    <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
-                    <div className="flex items-center gap-1.5 md:gap-2">
-                      <Users className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-400" />
-                      <span className="text-white font-medium">Priority reviews</span>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               {/* Bottom Section - CTA + Urgency */}
@@ -1001,11 +1046,6 @@ export default function FoundingReviewerApplyPage() {
                   <div className="flex items-center gap-1 md:gap-1.5">
                     <Check className="w-3 h-3 md:w-4 md:h-4 text-green-400" />
                     <span>No commitment</span>
-                  </div>
-                  <div className="w-0.5 h-0.5 bg-gray-600 rounded-full"></div>
-                  <div className="flex items-center gap-1 md:gap-1.5">
-                    <Clock className="w-3 h-3 md:w-4 md:h-4 text-blue-400" />
-                    <span>Launch Jan 15</span>
                   </div>
                   <div className="w-0.5 h-0.5 bg-gray-600 rounded-full"></div>
                   <div className="flex items-center gap-1 md:gap-1.5">
