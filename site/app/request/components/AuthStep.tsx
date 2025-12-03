@@ -284,7 +284,7 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, re
             photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
             message: '',
             consent: {
-              shareOnSocial: false,
+              shareOnSocial: undefined,
               agreedAt: ''
             }
           },

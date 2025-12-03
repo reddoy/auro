@@ -16,6 +16,7 @@ import { createStripeExpressLoginLink, createStripeExpressOnboardingLink } from 
 import { getRequestsByReviewer } from '@/lib/api';
 import { MotionPressable, MotionView, cardEntrance, subtleFadeIn } from '@/components/motion';
 import { SkeletonBlock, SkeletonCircle, SkeletonParagraph } from '@/components/Skeletons';
+import { clearPushTokenFromSupabase } from '@/lib/notifications';
 
 const socialIcons = {
   instagram: require('../../../Instagram_icon-removebg-preview.png'),
@@ -168,6 +169,8 @@ export default function ProfileScreen() {
       if (!confirmed) return;
       (async () => {
         try {
+          // Clear push token before signing out to prevent notifications going to wrong account
+          await clearPushTokenFromSupabase();
           await supabase.auth.signOut();
         } catch (e: any) {
           Alert.alert('Logout failed', e?.message || 'Please try again.');
@@ -185,6 +188,8 @@ export default function ProfileScreen() {
         style: 'destructive',
         onPress: async () => {
           try {
+            // Clear push token before signing out to prevent notifications going to wrong account
+            await clearPushTokenFromSupabase();
             await supabase.auth.signOut();
           } catch (e: any) {
             Alert.alert('Logout failed', e?.message || 'Please try again.');

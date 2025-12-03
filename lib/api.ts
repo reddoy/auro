@@ -463,8 +463,15 @@ export async function submitRequestReview(params: {
     const result = mapRequestRow(data);
     
     // Send notification to reviewer about review submission
-    if (data.influencer_id) {
+    // IMPORTANT: Only send to the reviewer (influencer_id), NOT the reviewee (user_id)
+    if (data.influencer_id && data.influencer_id !== data.user_id) {
       try {
+        console.log('[submitRequestReview] Sending notification to reviewer about submission', {
+          reviewerId: data.influencer_id,
+          revieweeId: data.user_id,
+          requestId: requestId,
+        });
+        
         // Call Next.js API route to send notification
         const baseUrl = 'https://www.appauro.com'; // Use production URL
         fetch(`${baseUrl}/api/notifications/send`, {
@@ -486,6 +493,12 @@ export async function submitRequestReview(params: {
         // Don't fail the review submission if notification fails
         console.error('Error sending review submission notification:', notifError);
       }
+    } else {
+      console.warn('[submitRequestReview] Skipping notification: reviewer ID same as reviewee or missing', {
+        reviewerId: data.influencer_id,
+        revieweeId: data.user_id,
+        requestId: requestId,
+      });
     }
     
     // Trigger payment distribution to reviewer

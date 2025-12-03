@@ -301,6 +301,13 @@ export async function POST(req: Request) {
                 // Double-check: verify this profile is actually the reviewer (not reviewee) and is approved
                 if (reviewerProfile && reviewerProfile.id === reviewerId && reviewerProfile.id !== revieweeId && reviewerProfile.is_reviewer === 'approved') {
                   if (reviewerProfile.push_token) {
+                    console.log('[create-session] Sending notification to reviewer', {
+                      reviewerId,
+                      revieweeId,
+                      requestId: ensuredRequestId,
+                      hasPushToken: !!reviewerProfile.push_token,
+                    });
+                    
                     // Send push notification via Expo API to the REVIEWER only
                     await fetch('https://exp.host/--/api/v2/push/send', {
                       method: 'POST',
@@ -321,6 +328,11 @@ export async function POST(req: Request) {
                         priority: 'high',
                       }),
                     }).catch(err => console.error('Failed to send new request notification:', err));
+                  } else {
+                    console.log('[create-session] Reviewer has no push token, skipping notification', {
+                      reviewerId,
+                      requestId: ensuredRequestId,
+                    });
                   }
                 } else {
                   console.warn('[create-session] Skipping notification: reviewer validation failed', {

@@ -112,7 +112,7 @@ export default function RequestPage() {
       photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
       message: '',
       consent: {
-        shareOnSocial: false,
+        shareOnSocial: undefined,
         agreedAt: ''
       }
     };
@@ -308,7 +308,7 @@ export default function RequestPage() {
                 photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
                 message: '',
                 consent: {
-                  shareOnSocial: false,
+                  shareOnSocial: undefined,
                   agreedAt: ''
                 }
               });
@@ -834,7 +834,7 @@ export default function RequestPage() {
                   photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
                   message: '',
                   consent: {
-                    shareOnSocial: false,
+                    shareOnSocial: undefined,
                     agreedAt: ''
                   },
                   uploadSessionId: requestData.uploadSessionId, // Keep upload session

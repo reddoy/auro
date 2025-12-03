@@ -22,7 +22,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
-import { setupNotificationListeners } from '@/lib/notifications';
+import { setupNotificationListeners, registerPushTokenIfPermitted } from '@/lib/notifications';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -137,7 +137,7 @@ function RootLayoutNav() {
     };
     init();
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       // Check email verification on auth state change
       if (session?.user && !session.user.email_confirmed_at) {
         // Email not verified - sign out
@@ -150,6 +150,17 @@ function RootLayoutNav() {
         }
       } else {
         setIsSignedIn(!!session);
+        
+        // Register push token when user signs in (if permissions already granted)
+        // This ensures the token is updated when switching accounts
+        if (event === 'SIGNED_IN' && session) {
+          // Small delay to ensure user is fully authenticated
+          setTimeout(() => {
+            registerPushTokenIfPermitted().catch(err => {
+              console.log('Could not register push token on sign-in (may not have permissions):', err);
+            });
+          }, 1000);
+        }
       }
     });
     return () => sub.subscription.unsubscribe();
