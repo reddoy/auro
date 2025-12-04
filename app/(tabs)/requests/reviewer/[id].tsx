@@ -4,6 +4,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { VideoView, useVideoPlayer } from 'expo-video';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
@@ -20,6 +21,7 @@ import { signRequestMediaUrls, getSignedRequestMediaUrl } from '@/lib/uploads';
 import RatingBar from '@/components/RatingBar';
 import MediaRecorder from '@/components/MediaRecorder';
 import { uploadRequestMedia } from '@/lib/uploads';
+import { compressVideoIfNeeded, getVideoFileSize } from '@/lib/video-compression';
 import { createStripeExpressLoginLink } from '@/lib/payments';
 import * as Sharing from 'expo-sharing';
 import Spinner from '@/components/Spinner';
@@ -255,6 +257,68 @@ export default function ReviewerRequestScreen() {
       return null;
     }
   }, [request?.notes]);
+
+  // Save review draft state to AsyncStorage
+  const saveReviewDraft = async () => {
+    if (!request?.id) return;
+    try {
+      const draftData = {
+        videoUri,
+        overallRating,
+        overallNote,
+        photoNotes,
+        selectedPros,
+        selectedCons,
+        currentPhotoIndex,
+        hasCompletedRecordingFlow,
+        timestamp: Date.now(),
+      };
+      await AsyncStorage.setItem(`review_draft_${request.id}`, JSON.stringify(draftData));
+      console.log('[ReviewDraft] Saved review draft for request:', request.id);
+    } catch (error) {
+      console.warn('[ReviewDraft] Failed to save review draft:', error);
+    }
+  };
+
+  // Load review draft state from AsyncStorage
+  const loadReviewDraft = async () => {
+    if (!request?.id) return;
+    try {
+      const saved = await AsyncStorage.getItem(`review_draft_${request.id}`);
+      if (saved) {
+        const draftData = JSON.parse(saved);
+        // Only restore if saved within last 7 days
+        const age = Date.now() - (draftData.timestamp || 0);
+        if (age <= 7 * 24 * 60 * 60 * 1000) {
+          if (draftData.videoUri) setVideoUri(draftData.videoUri);
+          if (draftData.overallRating) setOverallRating(draftData.overallRating);
+          if (draftData.overallNote) setOverallNote(draftData.overallNote);
+          if (draftData.photoNotes) setPhotoNotes(draftData.photoNotes);
+          if (draftData.selectedPros) setSelectedPros(draftData.selectedPros);
+          if (draftData.selectedCons) setSelectedCons(draftData.selectedCons);
+          if (draftData.currentPhotoIndex !== undefined) setCurrentPhotoIndex(draftData.currentPhotoIndex);
+          if (draftData.hasCompletedRecordingFlow) setHasCompletedRecordingFlow(draftData.hasCompletedRecordingFlow);
+          console.log('[ReviewDraft] Loaded review draft for request:', request.id);
+        } else {
+          // Clean up expired draft
+          await AsyncStorage.removeItem(`review_draft_${request.id}`);
+        }
+      }
+    } catch (error) {
+      console.warn('[ReviewDraft] Failed to load review draft:', error);
+    }
+  };
+
+  // Clear review draft state
+  const clearReviewDraft = async () => {
+    if (!request?.id) return;
+    try {
+      await AsyncStorage.removeItem(`review_draft_${request.id}`);
+      console.log('[ReviewDraft] Cleared review draft for request:', request.id);
+    } catch (error) {
+      console.warn('[ReviewDraft] Failed to clear review draft:', error);
+    }
+  };
   
   // Create combined slides array: profile + section cards + photos + rating input + pros + cons + overall summary + prosConsSummary + save
   const allSlides = React.useMemo(() => {
@@ -359,6 +423,27 @@ export default function ReviewerRequestScreen() {
       Keyboard.dismiss();
     }
   }, [currentPhotoIndex, recordingModeOpen, allSlides]);
+
+  // Load saved review draft when request is loaded
+  useEffect(() => {
+    if (request?.id && !loading) {
+      loadReviewDraft();
+    }
+  }, [request?.id, loading]);
+
+  // Auto-save review draft when state changes (debounced)
+  useEffect(() => {
+    if (!request?.id || loading) return;
+    
+    // Only auto-save if there's meaningful data to save
+    if (videoUri || overallRating > 0 || overallNote.trim() || Object.keys(photoNotes).length > 0 || selectedPros.length > 0 || selectedCons.length > 0) {
+      const timeoutId = setTimeout(() => {
+        saveReviewDraft();
+      }, 2000); // Debounce: save 2 seconds after last change
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [videoUri, overallRating, overallNote, photoNotes, selectedPros, selectedCons, request?.id, loading]);
 
   // Create sections for VideoReviewSection
   const reviewSections = React.useMemo(() => {
@@ -568,7 +653,15 @@ export default function ReviewerRequestScreen() {
     try {
       let uploadedVideoUrl: string | undefined;
       if (videoUri) {
-        const res = await uploadRequestMedia(videoUri, { category: 'other' });
+        // Compress video if needed before upload
+        const fileSizeMB = await getVideoFileSize(videoUri);
+        console.log('[SubmitReview] Original video size:', fileSizeMB.toFixed(2) + 'MB');
+        
+        const compressedUri = await compressVideoIfNeeded(videoUri);
+        const compressedSizeMB = await getVideoFileSize(compressedUri);
+        console.log('[SubmitReview] Compressed video size:', compressedSizeMB.toFixed(2) + 'MB');
+        
+        const res = await uploadRequestMedia(compressedUri, { category: 'other' });
         uploadedVideoUrl = res.publicUrl;
       }
       const updated = await submitRequestReview({
@@ -586,6 +679,8 @@ export default function ReviewerRequestScreen() {
         imageUrl: null,
       });
       setRequest(updated);
+      // Clear saved draft after successful submission
+      await clearReviewDraft();
       Alert.alert('Success', 'Review submitted successfully.');
       // Navigate to submission success screen with video uri
       router.replace({ pathname: '/(tabs)/requests/reviewer/submitted' as any, params: videoUri ? { uri: videoUri } : {} as any });
@@ -874,9 +969,14 @@ export default function ReviewerRequestScreen() {
               onPress={handleSubmitReview}
               disabled={!canSubmit || submitting}
             >
-              <Text style={styles.videoReviewSubmitButtonText}>
-                {submitting ? 'Submitting...' : 'Submit Review'}
-              </Text>
+              {submitting ? (
+                <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Spinner size={18} color={Colors.brand.textOnGradient} borderColor={'rgba(255,255,255,0.35)'} />
+                  <Text style={styles.videoReviewSubmitButtonText}>Submitting</Text>
+                </RNView>
+              ) : (
+                <Text style={styles.videoReviewSubmitButtonText}>Submit Review</Text>
+              )}
             </TouchableOpacity>
           </RNView>
         )}
@@ -1562,116 +1662,121 @@ export default function ReviewerRequestScreen() {
                 )}
                 
                 {slide.type === 'prosConsSummary' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 0, paddingBottom: 0, flex: 1 }] }>
-                    {/* Auro Logo */}
-                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 72, height: 36, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
-                    <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 6, fontSize: 28, paddingHorizontal: 20 }]}>
-                      Pros & Cons Summary
-                    </Text>
-                    <Text style={[styles.overlayText, { marginBottom: Platform.OS === 'ios' ? 16 : 24, textAlign: 'center', width: '100%', fontSize: 16, paddingHorizontal: 20 }]}>
-                      Your selected pros and cons for {slide.data.name}
-                    </Text>
-                    
-                    {/* Selected Pros */}
-                    {selectedPros.length > 0 ? (
-                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: Platform.OS === 'ios' ? 12 : 16, paddingHorizontal: 20 }}>
-                        <Text style={[styles.overlayText, { marginBottom: Platform.OS === 'ios' ? 8 : 12, fontSize: 16, textAlign: 'center', width: '100%', fontWeight: '700', color: Colors.brand.status.completed }]}>
-                          ✓ Pros ({selectedPros.length})
-                        </Text>
-                        <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', width: '100%' }}>
-                          {selectedPros.map((tag) => (
+                  <ScrollView 
+                    style={{ width: '100%', flex: 1 }}
+                    contentContainerStyle={{ alignItems: 'center', paddingVertical: 8 }}
+                    showsVerticalScrollIndicator={true}
+                  >
+                    <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 0, paddingBottom: 20, minHeight: '100%' }] }>
+                      {/* Auro Logo */}
+                      <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 56, height: 28, marginBottom: 12, alignSelf: 'center' }} contentFit="contain" />
+                      <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 4, fontSize: 24, paddingHorizontal: 20 }]}>
+                        Pros & Cons Summary
+                      </Text>
+                      <Text style={[styles.overlayText, { marginBottom: 12, textAlign: 'center', width: '100%', fontSize: 14, paddingHorizontal: 20 }]}>
+                        Your selected pros and cons for {slide.data.name}
+                      </Text>
+                      
+                      {/* Selected Pros */}
+                      {selectedPros.length > 0 ? (
+                        <RNView style={{ marginTop: 4, width: '100%', alignItems: 'center', marginBottom: 10, paddingHorizontal: 20 }}>
+                          <Text style={[styles.overlayText, { marginBottom: 6, fontSize: 14, textAlign: 'center', width: '100%', fontWeight: '700', color: Colors.brand.status.completed }]}>
+                            ✓ Pros ({selectedPros.length})
+                          </Text>
+                          <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', width: '100%' }}>
+                            {selectedPros.map((tag) => (
+                              <RNView
+                                key={tag}
+                                style={{
+                                  paddingHorizontal: 10,
+                                  paddingVertical: 6,
+                                  borderRadius: 16,
+                                  backgroundColor: Colors.brand.status.completed,
+                                  borderWidth: 1.5,
+                                  borderColor: Colors.brand.status.completed,
+                                }}
+                              >
+                                <Text style={{
+                                  color: '#fff',
+                                  fontSize: 11,
+                                  fontWeight: '600',
+                                }}>
+                                  {tag}
+                                </Text>
+                              </RNView>
+                            ))}
+                          </RNView>
+                        </RNView>
+                      ) : (
+                        <RNView style={{ marginTop: 4, width: '100%', alignItems: 'center', marginBottom: 10, paddingHorizontal: 20 }}>
+                          <Text style={[styles.overlayText, { marginBottom: 6, fontSize: 14, textAlign: 'center', width: '100%', fontWeight: '700', color: Colors.brand.status.completed }]}>
+                            ✓ Pros (0)
+                          </Text>
+                          <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', width: '100%' }}>
                             <RNView
-                              key={tag}
                               style={{
-                                paddingHorizontal: 14,
-                                paddingVertical: 8,
-                                borderRadius: 20,
+                                paddingHorizontal: 10,
+                                paddingVertical: 6,
+                                borderRadius: 16,
                                 backgroundColor: Colors.brand.status.completed,
                                 borderWidth: 1.5,
                                 borderColor: Colors.brand.status.completed,
+                                opacity: 0.5,
                               }}
                             >
                               <Text style={{
                                 color: '#fff',
-                                fontSize: 13,
+                                fontSize: 11,
                                 fontWeight: '600',
                               }}>
-                                {tag}
+                                No pros selected
                               </Text>
                             </RNView>
-                          ))}
-                        </RNView>
-                      </RNView>
-                    ) : (
-                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: Platform.OS === 'ios' ? 12 : 16, paddingHorizontal: 20 }}>
-                        <Text style={[styles.overlayText, { marginBottom: Platform.OS === 'ios' ? 8 : 12, fontSize: 16, textAlign: 'center', width: '100%', fontWeight: '700', color: Colors.brand.status.completed }]}>
-                          ✓ Pros (0)
-                        </Text>
-                        <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', width: '100%' }}>
-                          <RNView
-                            style={{
-                              paddingHorizontal: 14,
-                              paddingVertical: 8,
-                              borderRadius: 20,
-                              backgroundColor: Colors.brand.status.completed,
-                              borderWidth: 1.5,
-                              borderColor: Colors.brand.status.completed,
-                              opacity: 0.5,
-                            }}
-                          >
-                            <Text style={{
-                              color: '#fff',
-                              fontSize: 13,
-                              fontWeight: '600',
-                            }}>
-                              No pros selected
-                            </Text>
                           </RNView>
                         </RNView>
-                      </RNView>
-                    )}
-                    
-                    {/* Selected Cons */}
-                    {selectedCons.length > 0 ? (
-                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: Platform.OS === 'ios' ? 12 : 16, paddingHorizontal: 20 }}>
-                        <Text style={[styles.overlayText, { marginBottom: Platform.OS === 'ios' ? 8 : 12, fontSize: 16, textAlign: 'center', width: '100%', fontWeight: '700', color: Colors.brand.status.rejected }]}>
-                          ✗ Cons ({selectedCons.length})
-                        </Text>
-                        <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', width: '100%' }}>
-                          {selectedCons.map((tag) => (
-                            <RNView
-                              key={tag}
-                              style={{
-                                paddingHorizontal: 14,
-                                paddingVertical: 8,
-                                borderRadius: 20,
-                                backgroundColor: Colors.brand.status.rejected,
-                                borderWidth: 1.5,
-                                borderColor: Colors.brand.status.rejected,
-                              }}
-                            >
-                              <Text style={{
-                                color: '#fff',
-                                fontSize: 13,
-                                fontWeight: '600',
-                              }}>
-                                {tag}
-                              </Text>
-                            </RNView>
-                          ))}
+                      )}
+                      
+                      {/* Selected Cons */}
+                      {selectedCons.length > 0 ? (
+                        <RNView style={{ marginTop: 4, width: '100%', alignItems: 'center', marginBottom: 10, paddingHorizontal: 20 }}>
+                          <Text style={[styles.overlayText, { marginBottom: 6, fontSize: 14, textAlign: 'center', width: '100%', fontWeight: '700', color: Colors.brand.status.rejected }]}>
+                            ✗ Cons ({selectedCons.length})
+                          </Text>
+                          <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', width: '100%' }}>
+                            {selectedCons.map((tag) => (
+                              <RNView
+                                key={tag}
+                                style={{
+                                  paddingHorizontal: 10,
+                                  paddingVertical: 6,
+                                  borderRadius: 16,
+                                  backgroundColor: Colors.brand.status.rejected,
+                                  borderWidth: 1.5,
+                                  borderColor: Colors.brand.status.rejected,
+                                }}
+                              >
+                                <Text style={{
+                                  color: '#fff',
+                                  fontSize: 11,
+                                  fontWeight: '600',
+                                }}>
+                                  {tag}
+                                </Text>
+                              </RNView>
+                            ))}
+                          </RNView>
                         </RNView>
-                      </RNView>
                     ) : (
-                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: Platform.OS === 'ios' ? 12 : 16, paddingHorizontal: 20 }}>
-                        <Text style={[styles.overlayText, { marginBottom: Platform.OS === 'ios' ? 8 : 12, fontSize: 16, textAlign: 'center', width: '100%', fontWeight: '700', color: Colors.brand.status.rejected }]}>
+                      <RNView style={{ marginTop: 4, width: '100%', alignItems: 'center', marginBottom: 10, paddingHorizontal: 20 }}>
+                        <Text style={[styles.overlayText, { marginBottom: 6, fontSize: 14, textAlign: 'center', width: '100%', fontWeight: '700', color: Colors.brand.status.rejected }]}>
                           ✗ Cons (0)
                         </Text>
-                        <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', width: '100%' }}>
+                        <RNView style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', width: '100%' }}>
                           <RNView
                             style={{
-                              paddingHorizontal: 14,
-                              paddingVertical: 8,
-                              borderRadius: 20,
+                              paddingHorizontal: 10,
+                              paddingVertical: 6,
+                              borderRadius: 16,
                               backgroundColor: Colors.brand.status.rejected,
                               borderWidth: 1.5,
                               borderColor: Colors.brand.status.rejected,
@@ -1680,7 +1785,7 @@ export default function ReviewerRequestScreen() {
                           >
                             <Text style={{
                               color: '#fff',
-                              fontSize: 13,
+                              fontSize: 11,
                               fontWeight: '600',
                             }}>
                               No cons selected
@@ -1689,7 +1794,8 @@ export default function ReviewerRequestScreen() {
                         </RNView>
                       </RNView>
                     )}
-                  </RNView>
+                    </RNView>
+                  </ScrollView>
                 )}
                 
                 {slide.type === 'save' && (
@@ -1705,7 +1811,7 @@ export default function ReviewerRequestScreen() {
                     
                     {/* Save Review Button */}
                     <TouchableOpacity
-                      onPress={() => {
+                      onPress={async () => {
                         // Stop recording if still recording
                         if (recordingTimerRef.current) {
                           clearInterval(recordingTimerRef.current);
@@ -1713,9 +1819,12 @@ export default function ReviewerRequestScreen() {
                         }
                         // Mark that they've completed the recording flow
                         setHasCompletedRecordingFlow(true);
+                        // Save review draft state
+                        await saveReviewDraft();
                         // Close the recording modal and return to main review page
                         setRecordingModeOpen(false);
                         setIsVideoReviewMode(false);
+                        Alert.alert('Review Saved', 'Your review has been saved. You can continue editing or submit it from the main review page.');
                       }}
                       style={[
                         styles.actionButton, 
@@ -1843,11 +1952,13 @@ export default function ReviewerRequestScreen() {
           {/* Close button - positioned at top right for better accessibility */}
           <RNView style={{ position: 'absolute', top: insets.top + 12, right: 16, zIndex: 11, elevation: 11 }}>
             <TouchableOpacity 
-              onPress={() => {
-                if (videoUri) {
+              onPress={async () => {
+                if (videoUri || overallRating > 0 || overallNote.trim() || Object.keys(photoNotes).length > 0 || selectedPros.length > 0 || selectedCons.length > 0) {
+                  // Save draft before exiting
+                  await saveReviewDraft();
                   Alert.alert(
                     'Exit Video Review?',
-                    'Your recorded video will be saved. You can continue reviewing later.',
+                    'Your review progress has been saved. You can continue reviewing later.',
                     [
                       { text: 'Cancel', style: 'cancel' },
                       {
