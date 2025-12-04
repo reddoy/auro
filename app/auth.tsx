@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
+import Constants from 'expo-constants';
 import { AntDesign, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -181,46 +182,149 @@ export default function AuthScreen() {
 
   const [isGoogleHovered, setIsGoogleHovered] = useState(false);
 
+  // For native platforms, use web redirect URL that Supabase accepts
+  // The web callback will handle the OAuth and we'll extract the code from the URL
+  const getRedirectUri = () => {
+    if (Platform.OS === 'web') {
+      return typeof window !== 'undefined' && window.location.origin
+        ? `${window.location.origin}/auth/callback`
+        : 'https://app.appauro.com/auth/callback';
+    }
+    
+    // For native, use web redirect URL (Supabase will add the code as a query param)
+    // The app will extract the auth code from the browser URL
+    const webRedirectUri = 'https://app.appauro.com/auth/callback';
+    
+    console.log('[Google Auth] Using web redirect URL:', webRedirectUri);
+    console.log('[Google Auth] After signing in, the browser will show the callback page.');
+    console.log('[Google Auth] The app will extract the auth code from the URL.');
+    console.log('[Google Auth] Make sure this URL is added to:');
+    console.log('  1. Supabase Dashboard → Authentication → URL Configuration → Redirect URLs');
+    console.log('  2. Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client → Authorized redirect URIs');
+    
+    return webRedirectUri;
+  };
+
+  const redirectUri = getRedirectUri();
+
   const handleGoogleSignIn = async () => {
     try {
-      // For web, use the actual web URL; for native, use custom scheme
-      const redirectTo = Platform.OS === 'web'
-        ? typeof window !== 'undefined' && window.location.origin
-          ? `${window.location.origin}/auth/callback`
-          : 'https://app.appauro.com/auth/callback'
-        : makeRedirectUri({
-            scheme: 'auro',
-            path: 'auth/callback',
-          });
+      setLoading(true);
 
+      if (Platform.OS === 'web') {
+        // For web, use standard Supabase OAuth flow
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectUri,
+            skipBrowserRedirect: false,
+          },
+        });
+
+        if (error) throw error;
+        // Web redirects automatically, so we don't need to handle it here
+        return;
+      }
+
+      // For native (iOS/Android), use code flow with Expo proxy
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo,
-          skipBrowserRedirect: Platform.OS !== 'web',
+          redirectTo: redirectUri,
+          skipBrowserRedirect: true,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
       });
 
       if (error) throw error;
 
-      if (Platform.OS !== 'web' && data?.url) {
-        const result = await WebBrowser.openAuthSessionAsync(
-          data.url,
-          redirectTo
-        );
+      if (!data?.url) {
+        throw new Error('No OAuth URL returned');
+      }
 
-        if (result.type === 'success') {
-          const url = result.url;
-          const params = new URL(url).searchParams;
-          const access_token = params.get('access_token');
-          const refresh_token = params.get('refresh_token');
+      // Open the OAuth URL - it will redirect to our web callback page
+      console.log('[Google Auth] Opening OAuth URL:', data.url);
+      console.log('[Google Auth] Expected redirect URI:', redirectUri);
+      console.log('[Google Auth] After signing in, you\'ll see the callback page in the browser.');
+      console.log('[Google Auth] The app will extract the auth code from the URL.');
+      
+      const result = await WebBrowser.openAuthSessionAsync(
+        data.url,
+        redirectUri
+      );
 
-          if (access_token && refresh_token) {
-            await supabase.auth.setSession({
-              access_token,
-              refresh_token,
-            });
-            
+      console.log('[Google Auth] OAuth result type:', result.type);
+      console.log('[Google Auth] OAuth result URL:', result.url);
+      console.log('[Google Auth] Full result object:', JSON.stringify(result, null, 2));
+
+      // Extract code from URL regardless of result type (web redirects might return 'dismiss')
+      const extractCodeFromUrl = (urlString: string | null): string | null => {
+        if (!urlString) return null;
+        
+        try {
+          const url = new URL(urlString);
+          return url.searchParams.get('code') || url.hash.match(/code=([^&]+)/)?.[1] || null;
+        } catch (e) {
+          // Try regex extraction if URL parsing fails
+          const codeMatch = urlString.match(/[?&#]code=([^&?#]+)/);
+          return codeMatch ? decodeURIComponent(codeMatch[1]) : null;
+        }
+      };
+
+      const extractErrorFromUrl = (urlString: string | null): string | null => {
+        if (!urlString) return null;
+        
+        try {
+          const url = new URL(urlString);
+          return url.searchParams.get('error') || url.searchParams.get('error_description') || null;
+        } catch (e) {
+          const errorMatch = urlString.match(/[?&#]error=([^&?#]+)/);
+          const descMatch = urlString.match(/[?&#]error_description=([^&?#]+)/);
+          return descMatch ? decodeURIComponent(descMatch[1]) : (errorMatch ? decodeURIComponent(errorMatch[1]) : null);
+        }
+      };
+
+      // Handle the result - check for success or if we got redirected to a web page with auth code
+      // Note: When redirecting to a web page, result.type might be 'dismiss' but we still need to check the URL
+      if (result.type === 'success' || result.type === 'dismiss' || (result.type === 'locked' && result.url)) {
+        const url = result.url || '';
+        
+        console.log('[Google Auth] Processing URL:', url);
+        console.log('[Google Auth] URL length:', url.length);
+        
+        // Check for errors first
+        const error = extractErrorFromUrl(url);
+        if (error) {
+          console.log('[Google Auth] Error found in URL:', error);
+          try {
+            await WebBrowser.dismissBrowser();
+          } catch (e) {}
+          throw new Error(error);
+        }
+
+        // Try to extract the code from the URL
+        const code = extractCodeFromUrl(url);
+        console.log('[Google Auth] Extracted code:', code ? 'Found' : 'Not found');
+        
+        if (code) {
+          console.log('[Google Auth] Found auth code in URL, exchanging for session...');
+          
+          // Close the browser since we got the code
+          try {
+            await WebBrowser.dismissBrowser();
+          } catch (e) {
+            // Browser might already be closed
+          }
+          
+          // Exchange code for session (PKCE flow)
+          const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (exchangeError) throw exchangeError;
+
+          if (sessionData.session) {
             // Check if email is verified after OAuth login
             const { data: { user } } = await supabase.auth.getUser();
             if (user && !user.email_confirmed_at) {
@@ -231,6 +335,7 @@ export default function AuthScreen() {
                 'Email Verification Required',
                 'Please verify your email address before logging in. We\'ve sent a confirmation email to your inbox.'
               );
+              setLoading(false);
               return;
             }
             
@@ -248,12 +353,295 @@ export default function AuthScreen() {
               console.warn('Failed to load profile for onboarding state', err);
               router.replace('/(tabs)/requests');
             }
+            return;
+          } else {
+            throw new Error('No session returned after code exchange');
+          }
+        } else {
+          // No code found - might be on the web callback page
+          // Check if we have a session anyway (web page might have handled it)
+          console.log('[Google Auth] No code in URL, checking for existing session...');
+          
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            // Session exists, so auth completed on web side
+            try {
+              await WebBrowser.dismissBrowser();
+            } catch (e) {
+              // Browser might already be closed
+            }
+            
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && !user.email_confirmed_at) {
+              await supabase.auth.signOut();
+              router.replace({ pathname: '/auth/confirm', params: { email: user.email || '' } });
+              Alert.alert(
+                'Email Verification Required',
+                'Please verify your email address before logging in. We\'ve sent a confirmation email to your inbox.'
+              );
+              setLoading(false);
+              return;
+            }
+            
+            try { 
+              await ensureProfileForCurrentUser();
+            } catch {}
+            
+            try {
+              const profile = await getCurrentProfile();
+              const destination = resolveOnboardingDestination(profile);
+              router.replace(destination as any);
+            } catch (err) {
+              console.warn('Failed to load profile for onboarding state', err);
+              router.replace('/(tabs)/requests');
+            }
+            return;
+          }
+          
+          // If we're here, we're probably on the web callback page
+          // Try fallback: extract tokens from URL (for backwards compatibility)
+          // This handles the case where tokens are in the URL instead of a code
+          try {
+            const parsedUrl = new URL(url);
+            const access_token = parsedUrl.searchParams.get('access_token');
+            const refresh_token = parsedUrl.searchParams.get('refresh_token');
+
+            if (access_token && refresh_token) {
+              // Close the browser since we got the tokens
+              await WebBrowser.dismissBrowser();
+              
+              await supabase.auth.setSession({
+                access_token,
+                refresh_token,
+              });
+              
+              // Check if email is verified after OAuth login
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user && !user.email_confirmed_at) {
+                // Email not verified - redirect to confirmation screen
+                await supabase.auth.signOut(); // Sign out to prevent partial session
+                router.replace({ pathname: '/auth/confirm', params: { email: user.email || '' } });
+                Alert.alert(
+                  'Email Verification Required',
+                  'Please verify your email address before logging in. We\'ve sent a confirmation email to your inbox.'
+                );
+                setLoading(false);
+                return;
+              }
+              
+              // Ensure profile exists
+              try { 
+                await ensureProfileForCurrentUser();
+              } catch {}
+              
+              // Check onboarding status and route accordingly
+              try {
+                const profile = await getCurrentProfile();
+                const destination = resolveOnboardingDestination(profile);
+                router.replace(destination as any);
+              } catch (err) {
+                console.warn('Failed to load profile for onboarding state', err);
+                router.replace('/(tabs)/requests');
+              }
+              return;
+            }
+            
+            // Try to extract code from hash fragment (some OAuth flows use hash)
+            const hashMatch = url.match(/#code=([^&]+)/);
+            if (hashMatch) {
+              const code = decodeURIComponent(hashMatch[1]);
+              await WebBrowser.dismissBrowser();
+              
+              const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+              if (exchangeError) throw exchangeError;
+              
+              if (sessionData.session) {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user && !user.email_confirmed_at) {
+                  await supabase.auth.signOut();
+                  router.replace({ pathname: '/auth/confirm', params: { email: user.email || '' } });
+                  Alert.alert(
+                    'Email Verification Required',
+                    'Please verify your email address before logging in. We\'ve sent a confirmation email to your inbox.'
+                  );
+                  setLoading(false);
+                  return;
+                }
+                
+                try { 
+                  await ensureProfileForCurrentUser();
+                } catch {}
+                
+                try {
+                  const profile = await getCurrentProfile();
+                  const destination = resolveOnboardingDestination(profile);
+                  router.replace(destination as any);
+                } catch (err) {
+                  console.warn('Failed to load profile for onboarding state', err);
+                  router.replace('/(tabs)/requests');
+                }
+                return;
+              }
+            }
+          } catch (parseError) {
+            // URL parsing failed, continue to error below
+            console.log('[Google Auth] Could not parse URL:', parseError);
+          }
+          
+          // If we get here, we couldn't extract code or tokens from the URL
+          // This might happen if the browser shows the web page but doesn't return the URL
+          // Try waiting a bit and checking for a session (Supabase might process it server-side)
+          console.log('[Google Auth] No code in URL, waiting and checking for session...');
+          
+          // Wait a moment for Supabase to process the callback
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Check again for session
+          const { data: { session: retrySession } } = await supabase.auth.getSession();
+          if (retrySession) {
+            console.log('[Google Auth] Session found after waiting!');
+            try {
+              await WebBrowser.dismissBrowser();
+            } catch (e) {
+              // Browser might already be closed
+            }
+            
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && !user.email_confirmed_at) {
+              await supabase.auth.signOut();
+              router.replace({ pathname: '/auth/confirm', params: { email: user.email || '' } });
+              Alert.alert(
+                'Email Verification Required',
+                'Please verify your email address before logging in. We\'ve sent a confirmation email to your inbox.'
+              );
+              setLoading(false);
+              return;
+            }
+            
+            try { 
+              await ensureProfileForCurrentUser();
+            } catch {}
+            
+            try {
+              const profile = await getCurrentProfile();
+              const destination = resolveOnboardingDestination(profile);
+              router.replace(destination as any);
+            } catch (err) {
+              console.warn('Failed to load profile for onboarding state', err);
+              router.replace('/(tabs)/requests');
+            }
+            return;
+          }
+          
+          // If still no session, show error
+          try {
+            await WebBrowser.dismissBrowser();
+          } catch (e) {
+            // Browser might already be closed
+          }
+          
+          throw new Error('No authorization code or tokens found in callback URL. Make sure https://app.appauro.com/auth/callback is added to Supabase and Google OAuth allowed redirect URLs.');
+        }
+      } else if (result.type === 'cancel') {
+        // User cancelled - just reset loading state
+        setLoading(false);
+        return;
+      } else if (result.type === 'dismiss') {
+        // Browser was dismissed - this might mean:
+        // 1. User cancelled
+        // 2. Web page deep linked back to app (which closes the browser)
+        // Check if we have a session (auth might have completed via deep link)
+        console.log('[Google Auth] Browser dismissed, checking for session...');
+        
+        // Wait a moment for deep link to process if it happened
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          // Session exists, so auth completed (likely via deep link)
+          console.log('[Google Auth] Session found after browser dismiss - auth completed!');
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && !user.email_confirmed_at) {
+              await supabase.auth.signOut();
+              router.replace({ pathname: '/auth/confirm', params: { email: user.email || '' } });
+              Alert.alert(
+                'Email Verification Required',
+                'Please verify your email address before logging in. We\'ve sent a confirmation email to your inbox.'
+              );
+              setLoading(false);
+              return;
+            }
+            
+            try { 
+              await ensureProfileForCurrentUser();
+            } catch {}
+            
+            try {
+              const profile = await getCurrentProfile();
+              const destination = resolveOnboardingDestination(profile);
+              router.replace(destination as any);
+            } catch (err) {
+              console.warn('Failed to load profile for onboarding state', err);
+              router.replace('/(tabs)/requests');
+            }
+            setLoading(false);
+            return;
+          } catch (err) {
+            console.error('Error checking session after dismiss:', err);
           }
         }
+        
+        // No session found - user likely cancelled
+        console.log('[Google Auth] No session found after dismiss - user likely cancelled');
+        setLoading(false);
+        // Don't show alert - the deep link callback will handle success, and if user cancelled, they know
+        return;
+      } else {
+        // For other result types, check if we have a session anyway
+        console.log('[Google Auth] Unexpected result type:', result.type);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          // Session exists, so auth completed
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && !user.email_confirmed_at) {
+              await supabase.auth.signOut();
+              router.replace({ pathname: '/auth/confirm', params: { email: user.email || '' } });
+              Alert.alert(
+                'Email Verification Required',
+                'Please verify your email address before logging in. We\'ve sent a confirmation email to your inbox.'
+              );
+              setLoading(false);
+              return;
+            }
+            
+            try { 
+              await ensureProfileForCurrentUser();
+            } catch {}
+            
+            try {
+              const profile = await getCurrentProfile();
+              const destination = resolveOnboardingDestination(profile);
+              router.replace(destination as any);
+            } catch (err) {
+              console.warn('Failed to load profile for onboarding state', err);
+              router.replace('/(tabs)/requests');
+            }
+            setLoading(false);
+            return;
+          } catch (err) {
+            console.error('Error checking session:', err);
+          }
+        }
+        
+        throw new Error(`Authentication failed. Result type: ${result.type}. Make sure the Expo proxy redirect URI (${redirectUri}) is added to Supabase allowed redirect URLs.`);
       }
-      // For web, the redirect happens automatically via Supabase
     } catch (err: any) {
+      console.error('Google Sign-In Error:', err);
       Alert.alert('Google Sign-In Error', err?.message || 'Failed to sign in with Google');
+    } finally {
+      setLoading(false);
     }
   };
 

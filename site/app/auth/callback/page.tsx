@@ -15,6 +15,86 @@ function AuthCallbackContent() {
       try {
         console.log('[AuthCallback] Starting OAuth callback handling...');
         
+        // Check if we're in a mobile app browser (Expo Go, React Native WebView, etc.)
+        const isMobileAppBrowser = 
+          typeof window !== 'undefined' && (
+            window.navigator.userAgent.includes('Expo') ||
+            window.navigator.userAgent.includes('ReactNative') ||
+            window.navigator.userAgent.includes('wv') || // Android WebView
+            (window as any).ReactNativeWebView !== undefined
+          );
+        
+        console.log('[AuthCallback] Is mobile app browser:', isMobileAppBrowser);
+        console.log('[AuthCallback] User agent:', typeof window !== 'undefined' ? window.navigator.userAgent : 'N/A');
+        
+        // If in mobile app browser, try to extract code and deep link back
+        if (isMobileAppBrowser) {
+          const code = searchParams.get('code');
+          const error = searchParams.get('error');
+          const errorDescription = searchParams.get('error_description');
+          
+          console.log('[AuthCallback] Mobile browser detected, code:', code ? 'Found' : 'Not found');
+          
+          if (error) {
+            console.error('[AuthCallback] OAuth error:', error, errorDescription);
+            setStatus('error');
+            setMessage(errorDescription || error);
+            
+            // Try to deep link back to app with error
+            try {
+              window.location.href = `auro://auth/callback?error=${encodeURIComponent(error)}&error_description=${encodeURIComponent(errorDescription || '')}`;
+            } catch (e) {
+              console.error('[AuthCallback] Failed to deep link:', e);
+            }
+            return;
+          }
+          
+          if (code) {
+            console.log('[AuthCallback] Code found, attempting to deep link back to app...');
+            setStatus('success');
+            setMessage('Sign-in successful! Returning to app...');
+            
+            // Immediately try to deep link back to the app with the code
+            // The app will extract the code and exchange it for a session
+            try {
+              // Use the app's deep link scheme - this should close the browser and open the app
+              const deepLinkUrl = `auro://auth/callback?code=${encodeURIComponent(code)}`;
+              console.log('[AuthCallback] Deep linking to:', deepLinkUrl);
+              
+              // Try multiple methods to ensure the deep link works
+              window.location.href = deepLinkUrl;
+              
+              // Also try using window.open as a fallback
+              setTimeout(() => {
+                try {
+                  window.open(deepLinkUrl, '_self');
+                } catch (e) {
+                  console.error('[AuthCallback] window.open failed:', e);
+                }
+              }, 100);
+              
+              // Try to close the browser if it's a WebView
+              setTimeout(() => {
+                try {
+                  if ((window as any).ReactNativeWebView) {
+                    (window as any).ReactNativeWebView.postMessage(JSON.stringify({ type: 'CLOSE' }));
+                  }
+                } catch (e) {
+                  // Ignore errors
+                }
+              }, 500);
+            } catch (e) {
+              console.error('[AuthCallback] Failed to deep link:', e);
+              setStatus('error');
+              setMessage('Failed to return to app. Please close this browser and return to the app manually.');
+            }
+            return;
+          }
+          
+          // No code yet, wait for Supabase to process it
+          console.log('[AuthCallback] No code in URL yet, waiting for Supabase to process...');
+        }
+        
         if (!supabase?.auth) {
           console.error('[AuthCallback] Supabase client or auth is null');
           setStatus('error');
