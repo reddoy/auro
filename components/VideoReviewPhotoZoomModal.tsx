@@ -17,6 +17,7 @@ type Props = {
   uri: string;
   onClose: () => void;
   reviewerName?: string;
+  revieweeName?: string;
   showVideoRecorder?: boolean;
   recorderTop?: number;
   recorderLeft?: number;
@@ -27,6 +28,8 @@ type Props = {
   onVideoUriChange?: (uri: string | null) => void;
   onRecordingStart?: () => void;
   onRecordingStop?: () => void;
+  showScreenRecordingMode?: boolean;
+  onRecorderPress?: () => void;
 };
 
 export default function VideoReviewPhotoZoomModal({ 
@@ -34,6 +37,7 @@ export default function VideoReviewPhotoZoomModal({
   uri, 
   onClose,
   reviewerName,
+  revieweeName,
   showVideoRecorder = false,
   recorderTop = 16,
   recorderLeft = 16,
@@ -43,6 +47,8 @@ export default function VideoReviewPhotoZoomModal({
   onVideoUriChange,
   onRecordingStart,
   onRecordingStop,
+  showScreenRecordingMode = false,
+  onRecorderPress,
 }: Props) {
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
@@ -219,7 +225,7 @@ export default function VideoReviewPhotoZoomModal({
         
         {/* Close button - top right */}
         <TouchableOpacity 
-          style={[styles.closeButton, { top: insets.top + 16, right: 16, zIndex: 20 }]} 
+          style={[styles.closeButton, { top: insets.top + 16, right: 16, zIndex: 200, elevation: 200 }]} 
           onPress={handleClose}
           activeOpacity={0.7}
           accessibilityLabel="Close photo viewer"
@@ -228,10 +234,10 @@ export default function VideoReviewPhotoZoomModal({
           <Text style={styles.closeButtonText}>✕</Text>
         </TouchableOpacity>
 
-        {/* Video recorder and reviewer name overlay - always visible on top */}
-        {showVideoRecorder && visible && (
-          <View style={[styles.recorderOverlay, { top: insets.top + recorderTop, left: recorderLeft, zIndex: 20, elevation: 20 }]} pointerEvents="box-none">
-            <View style={{ zIndex: 21, elevation: 21, backgroundColor: 'transparent' }}>
+        {/* Video recorder, reviewer name, and reviewee name overlay - always visible on top when zooming */}
+        {visible && onRecorded && (
+          <View style={[styles.recorderOverlay, { top: insets.top + recorderTop, left: recorderLeft, zIndex: 200, elevation: 200 }]} pointerEvents="box-none">
+            <View style={{ zIndex: 201, elevation: 201, backgroundColor: 'transparent' }}>
               <MediaRecorder
                 onRecorded={onRecorded}
                 variant="corner"
@@ -241,13 +247,24 @@ export default function VideoReviewPhotoZoomModal({
                 onVideoUriChange={onVideoUriChange}
                 onRecordingStart={onRecordingStart}
                 onRecordingStop={onRecordingStop}
+                showScreenRecordingMode={showScreenRecordingMode}
+                onPress={onRecorderPress}
               />
             </View>
             {reviewerName && (
-              <View style={[styles.reviewerNamePanel, { zIndex: 21, elevation: 21 }]}>
+              <View style={[styles.reviewerNamePanel, { zIndex: 201, elevation: 201 }]}>
                 <Text style={styles.reviewerNameText}>{reviewerName}</Text>
               </View>
             )}
+          </View>
+        )}
+        
+        {/* Reviewee name overlay - bottom left, always visible on top when zooming */}
+        {visible && revieweeName && (
+          <View style={[styles.revieweeNameOverlay, { bottom: insets.bottom + 20, left: 20, zIndex: 200, elevation: 200 }]} pointerEvents="box-none">
+            <View style={[styles.reviewerNamePanel, { zIndex: 201, elevation: 201 }]}>
+              <Text style={styles.reviewerNameText}>{revieweeName}</Text>
+            </View>
           </View>
         )}
         
@@ -369,5 +386,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.5,
     textAlign: 'center',
+  },
+  revieweeNameOverlay: {
+    position: 'absolute',
+    backgroundColor: 'transparent',
   },
 });

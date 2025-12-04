@@ -4,8 +4,9 @@
 ## Cron Jobs Overview
 | Job | Endpoint | Schedule (UTC) | Purpose | Alert Path |
 | --- | --- | --- | --- | --- |
-| Retry reviewer payouts | `GET /api/payments/retry-failed-distributions` | Hourly (`0 * * * *`) | Replays failed reviewer transfers once Stripe balance is healthy | Slack via `OPERATIONS_WEBHOOK_URL` |
-| Timeout refunds | `GET /api/payments/process-timeout-refunds` | Every 30 min (`*/30 * * * *`) | Automatically refunds review requests stuck in `status=timeout` | Slack via `OPERATIONS_WEBHOOK_URL` |
+| Retry reviewer payouts | `GET /api/payments/retry-failed-distributions` | Daily at 2 AM (`0 2 * * *`) | Replays failed reviewer transfers and distributes held payments once Stripe Connect is set up | Slack via `OPERATIONS_WEBHOOK_URL` |
+| Timeout refunds | `GET /api/payments/process-timeout-refunds` | Daily at 3 AM (`0 3 * * *`) | Automatically refunds review requests stuck in `status=timeout` | Slack via `OPERATIONS_WEBHOOK_URL` |
+| Reviewer deadline warnings | `GET /api/notifications/send-reviewer-deadline-warnings` | Daily at 4 AM (`0 4 * * *`) | Sends notifications to reviewers about upcoming deadlines | N/A |
 
 Both endpoints also accept `POST` for manual runs. Add `?token=<CRON_SECRET>` to bypass the cron header when running from Postman/cURL.
 

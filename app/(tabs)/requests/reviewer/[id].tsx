@@ -1754,10 +1754,42 @@ export default function ReviewerRequestScreen() {
               uri={zoomedPhotoUri} 
               onClose={handleCloseZoom}
               reviewerName={reviewerDisplayName}
+              revieweeName={reviewee?.displayName || 'User'}
               showVideoRecorder={false}
               recorderTop={recorderTop}
               recorderLeft={recorderLeft}
               recorderSize={recorderSize}
+              videoUri={videoUri}
+              onRecorded={(uri) => {
+                setVideoUri(uri);
+                setRecordingModeOpen(false);
+                setIsVideoReviewMode(false);
+                if (recordingTimerRef.current) {
+                  clearInterval(recordingTimerRef.current);
+                  recordingTimerRef.current = null;
+                }
+                setRecordingDuration(0);
+                Alert.alert('Video Attached', 'Once you submit your review, you can easily post straight to TikTok and Instagram Reels.');
+              }}
+              onVideoUriChange={(uri) => {
+                setVideoUri(uri);
+              }}
+              onRecordingStart={() => {
+                setRecordingDuration(0);
+                recordingTimerRef.current = setInterval(() => {
+                  setRecordingDuration(prev => prev + 1);
+                }, 1000);
+              }}
+              onRecordingStop={() => {
+                if (recordingTimerRef.current) {
+                  clearInterval(recordingTimerRef.current);
+                  recordingTimerRef.current = null;
+                }
+              }}
+              showScreenRecordingMode={true}
+              onRecorderPress={() => {
+                setShowScreenRecordingGuide(true);
+              }}
             />
           )}
 
