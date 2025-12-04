@@ -1,6 +1,5 @@
 import * as FileSystem from 'expo-file-system';
 import { getInfoAsync } from 'expo-file-system';
-import { Video } from 'react-native-compressor';
 
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB - compress if larger
 const TARGET_VIDEO_SIZE = 20 * 1024 * 1024; // 20MB target after compression
@@ -34,6 +33,23 @@ export async function compressVideoIfNeeded(videoUri: string): Promise<string> {
     });
 
     try {
+      // Dynamically import react-native-compressor to avoid Metro bundler issues
+      // This will only load the module when compression is actually needed
+      let Video: any;
+      try {
+        const compressorModule = require('react-native-compressor');
+        Video = compressorModule?.Video;
+      } catch (requireError) {
+        console.warn('[VideoCompression] Compression library not available. Returning original video.');
+        console.warn('[VideoCompression] To enable compression, create a development build: npx expo prebuild && npx expo run:ios (or run:android)');
+        return videoUri;
+      }
+
+      if (!Video || typeof Video.compress !== 'function') {
+        console.warn('[VideoCompression] Video.compress not available. Returning original video.');
+        return videoUri;
+      }
+
       // Use react-native-compressor to compress the video
       // It automatically handles HEVC to H.264 conversion and compression
       const compressedUri = await Video.compress(videoUri, {
