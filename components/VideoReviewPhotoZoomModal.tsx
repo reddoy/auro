@@ -259,15 +259,6 @@ export default function VideoReviewPhotoZoomModal({
           </View>
         )}
         
-        {/* Reviewee name overlay - bottom left, always visible on top when zooming */}
-        {visible && revieweeName && (
-          <View style={[styles.revieweeNameOverlay, { bottom: insets.bottom + 20, left: 20, zIndex: 200, elevation: 200 }]} pointerEvents="box-none">
-            <View style={[styles.reviewerNamePanel, { zIndex: 201, elevation: 201 }]}>
-              <Text style={styles.reviewerNameText}>{revieweeName}</Text>
-            </View>
-          </View>
-        )}
-        
         {/* Zoomable image */}
         <View style={styles.imageContainer} pointerEvents="box-none">
           <GestureDetector gesture={combinedGesture}>
@@ -281,13 +272,6 @@ export default function VideoReviewPhotoZoomModal({
             </Animated.View>
           </GestureDetector>
         </View>
-        
-        {/* Hint text when not zoomed */}
-        {!isZoomed && (
-          <View style={[styles.hintContainer, { bottom: insets.bottom + 20 }]}>
-            <Text style={styles.hintText}>Pinch + drag to explore • Double tap to reset</Text>
-          </View>
-        )}
       </View>
   );
 
