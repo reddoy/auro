@@ -14,10 +14,11 @@ export default function ScreenRecordingGuide({ visible, onClose, onContinue }: P
   const insets = useSafeAreaInsets();
 
   const iosSteps = [
-    'Open Control Center by swiping down from the top-right corner (or up from the bottom on older iPhones)',
-    'Tap the Screen Recording button (circle with a dot inside)',
-    'If prompted, tap "Start Recording"',
-    'Return to this app and record your video review',
+    'Swipe down from the top-right corner of your screen to open Control Center',
+    'Tap and hold the Screen Recording button (circle with a dot inside)',
+    'IMPORTANT: Tap the Microphone button to turn it ON (it should be highlighted in red/orange)',
+    'Tap the "Start Recording" button',
+    'Return to this app and you\'ll see the video review interface',
     'When finished, tap the red recording indicator at the top of your screen and select "Stop"',
   ];
 
@@ -67,8 +68,8 @@ export default function ScreenRecordingGuide({ visible, onClose, onContinue }: P
           <View style={styles.noteContainer}>
             <Text style={styles.noteTitle}>💡 Tip</Text>
             <Text style={styles.noteText}>
-              Make sure your face is visible in the circular camera preview while you record. 
-              The screen recording will capture both your face and the app content.
+              Make sure to enable the microphone before starting the screen recording, otherwise your video won't have sound. 
+              Your face will appear in the circular camera preview while you swipe through photos and record your review.
             </Text>
           </View>
         </ScrollView>

@@ -168,6 +168,7 @@ export default function ReviewerRequestScreen() {
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [showScreenRecordingGuide, setShowScreenRecordingGuide] = useState(false);
   const [showUploadSection, setShowUploadSection] = useState(false);
+  const [hasCompletedRecordingFlow, setHasCompletedRecordingFlow] = useState(false);
   const ratingMood = getRatingMoodTheme(overallRating);
   const reviewerDisplayName = reviewer?.displayName || reviewer?.full_name || reviewer?.username || 'Reviewer';
 
@@ -234,6 +235,12 @@ export default function ReviewerRequestScreen() {
     setIsPhotoZoomed(false);
     setZoomedPhotoUri('');
   };
+  // Check if all requirements are met: overall rating, pros/cons selected
+  const hasCompletedAllRequirements = React.useMemo(() => {
+    if (overallRating === 0) return false;
+    if (selectedPros.length === 0 || selectedCons.length === 0) return false;
+    return true;
+  }, [overallRating, selectedPros.length, selectedCons.length]);
   
   // Video review is now the only option - no individual section ratings needed
   const canSubmit = React.useMemo(() => !!videoUri && overallRating > 0, [videoUri, overallRating]);
@@ -248,9 +255,9 @@ export default function ReviewerRequestScreen() {
     }
   }, [request?.notes]);
   
-  // Create combined slides array: profile + section cards + photos + photo notes + rating input + overall note + pros + cons + overall summary + prosConsSummary + save
+  // Create combined slides array: profile + section cards + photos + rating input + pros + cons + overall summary + prosConsSummary + save
   const allSlides = React.useMemo(() => {
-    const slides: Array<{type: 'profile' | 'section' | 'photo' | 'photoNote' | 'rating' | 'overallNote' | 'pros' | 'cons' | 'overall' | 'prosConsSummary' | 'save', data: any, index: number}> = [];
+    const slides: Array<{type: 'profile' | 'section' | 'photo' | 'rating' | 'pros' | 'cons' | 'overall' | 'prosConsSummary' | 'save', data: any, index: number}> = [];
     let slideIndex = 0;
 
     slides.push({
@@ -273,13 +280,6 @@ export default function ReviewerRequestScreen() {
           data: { uri, category: 'Dating Profile', photoIndex: i, totalPhotos: signedProfilePhotos.length },
           index: slideIndex++
         });
-        
-        // Add note slide after each photo
-        slides.push({
-          type: 'photoNote',
-          data: { category: 'Dating Profile', photoIndex: i, totalPhotos: signedProfilePhotos.length, photoUri: uri },
-          index: slideIndex++
-        });
       });
     }
 
@@ -290,35 +290,28 @@ export default function ReviewerRequestScreen() {
       index: slideIndex++
     });
 
-    // Second: Overall Note slide (just note input)
-    slides.push({
-      type: 'overallNote',
-      data: { name: reviewee?.displayName || 'User' },
-      index: slideIndex++
-    });
-
-    // Third: Pros selection slide
+    // Second: Pros selection slide
     slides.push({
       type: 'pros',
       data: { name: reviewee?.displayName || 'User' },
       index: slideIndex++
     });
 
-    // Fourth: Cons selection slide
+    // Third: Cons selection slide
     slides.push({
       type: 'cons',
       data: { name: reviewee?.displayName || 'User' },
       index: slideIndex++
     });
 
-    // Fifth: Overall summary slide (profile photo with rating displayed, no pros/cons)
+    // Fourth: Overall summary slide (profile photo with rating displayed, no pros/cons)
     slides.push({
       type: 'overall',
       data: { name: reviewee?.displayName || 'User', profilePicture: avatarUri, reviewerAvatarUri: reviewerAvatarUri },
       index: slideIndex++
     });
 
-    // Sixth: Pros and Cons summary slide
+    // Fifth: Pros and Cons summary slide
     slides.push({
       type: 'prosConsSummary',
       data: { name: reviewee?.displayName || 'User' },
@@ -362,11 +355,7 @@ export default function ReviewerRequestScreen() {
   // Dismiss keyboard when swiping away from note input slide
   useEffect(() => {
     if (recordingModeOpen && allSlides.length > 0) {
-      const currentSlide = allSlides[currentPhotoIndex];
-      // If we're not on a photoNote slide, dismiss the keyboard
-      if (currentSlide && currentSlide.type !== 'photoNote') {
-        Keyboard.dismiss();
-      }
+      Keyboard.dismiss();
     }
   }, [currentPhotoIndex, recordingModeOpen, allSlides]);
 
@@ -549,14 +538,6 @@ export default function ReviewerRequestScreen() {
         const res = await uploadRequestMedia(videoUri, { category: 'other' });
         uploadedVideoUrl = res.publicUrl;
       }
-      // Convert photoNotes from Record<number, string> to Record<string, string> for API
-      const photoNotesStringKeys: Record<string, string> = {};
-      Object.entries(photoNotes).forEach(([key, value]) => {
-        if (value && value.trim()) {
-          photoNotesStringKeys[String(key)] = value.trim();
-        }
-      });
-      
       const updated = await submitRequestReview({
         requestId: request.id,
         review: {
@@ -564,9 +545,8 @@ export default function ReviewerRequestScreen() {
           feedback: {
             strengths: selectedPros.length > 0 ? selectedPros : undefined,
             improvements: selectedCons.length > 0 ? selectedCons : undefined,
-            generalFeedback: overallNote.trim() || 'Video review completed',
+            generalFeedback: 'Video review completed',
             sectionNotes: {},
-            photoNotes: Object.keys(photoNotesStringKeys).length > 0 ? photoNotesStringKeys : undefined,
           } as any,
         },
         videoUrl: uploadedVideoUrl || null,
@@ -726,11 +706,18 @@ export default function ReviewerRequestScreen() {
                   Record your review while swiping through their photos
                 </Text>
               </RNView>
+              <TouchableOpacity
+                onPress={() => setShowScreenRecordingGuide(true)}
+                style={styles.videoReviewInfoButton}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={styles.videoReviewInfoButtonText}>ℹ️</Text>
+              </TouchableOpacity>
             </RNView>
             
             {!videoUri ? (
               <RNView style={styles.videoReviewContent}>
-                <RNView style={styles.videoReviewFeatureList}>
+                <RNView style={styles.videoReviewFeatureCard}>
                   <RNView style={styles.videoReviewFeature}>
                     <Text style={styles.videoReviewFeatureIcon}>📸</Text>
                     <Text style={styles.videoReviewFeatureText}>Swipe through photos while recording</Text>
@@ -744,16 +731,73 @@ export default function ReviewerRequestScreen() {
                     <Text style={styles.videoReviewFeatureText}>Share directly to TikTok & Instagram</Text>
                   </RNView>
                 </RNView>
+                
                 <TouchableOpacity 
                   style={styles.videoReviewStartButton} 
                   onPress={() => {
-                    setIsVideoReviewMode(true);
-                    setRecordingModeOpen(true);
+                    setShowScreenRecordingGuide(true);
                   }}
                 >
                   <Text style={styles.videoReviewStartButtonIcon}>▶</Text>
                   <Text style={styles.videoReviewStartButtonText}>Start Video Review</Text>
                 </TouchableOpacity>
+                
+                <RNView style={styles.videoReviewCompletionSection}>
+                  {hasCompletedAllRequirements && hasCompletedRecordingFlow ? (
+                    <>
+                      <Text style={styles.videoReviewCompletionText}>
+                        ✅ Done screen recording your review
+                      </Text>
+                      <RNView style={styles.videoReviewUploadCard}>
+                        <Text style={styles.videoReviewUploadTitle}>Upload Your Review Video</Text>
+                        {videoUri ? (
+                          <>
+                            <VideoPlayerPreview 
+                              videoUrl={videoUri}
+                              onPress={() => setVideoModalVisible(true)}
+                            />
+                            <TouchableOpacity 
+                              style={styles.videoReviewViewButton}
+                              onPress={() => setVideoModalVisible(true)}
+                            >
+                              <Text style={styles.videoReviewViewButtonText}>View Review</Text>
+                            </TouchableOpacity>
+                          </>
+                        ) : (
+                          <>
+                            <Text style={styles.videoReviewUploadHint}>
+                              Select your screen recording from your device's gallery to attach it to your review.
+                            </Text>
+                            <VideoUploader
+                              onVideoSelected={(uri) => {
+                                setVideoUri(uri);
+                              }}
+                              existingVideoUri={videoUri}
+                              onRemove={() => {
+                                setVideoUri(null);
+                              }}
+                            />
+                          </>
+                        )}
+                      </RNView>
+                    </>
+                  ) : (
+                    <RNView style={styles.videoReviewUploadCard}>
+                      <Text style={styles.videoReviewUploadTitle}>Upload Your Review Video</Text>
+                      <Text style={styles.videoReviewUploadDisabledHint}>
+                        Finish screen recording your review in the video review feature above to enable upload.
+                      </Text>
+                      <TouchableOpacity 
+                        style={[styles.videoReviewUploadButton, styles.videoReviewUploadButtonDisabled]}
+                        disabled={true}
+                      >
+                        <Text style={styles.videoReviewUploadButtonTextDisabled} numberOfLines={1}>
+                          📁 Upload Your Screen Recording
+                        </Text>
+                      </TouchableOpacity>
+                    </RNView>
+                  )}
+                </RNView>
               </RNView>
             ) : (
               <RNView style={styles.videoReviewContent}>
@@ -769,8 +813,7 @@ export default function ReviewerRequestScreen() {
                 <TouchableOpacity 
                   style={styles.videoReviewStartButton} 
                   onPress={() => {
-                    setIsVideoReviewMode(true);
-                    setRecordingModeOpen(true);
+                    setShowScreenRecordingGuide(true);
                   }}
                 >
                   <Text style={styles.videoReviewStartButtonIcon}>✏️</Text>
@@ -815,6 +858,36 @@ export default function ReviewerRequestScreen() {
               <RNView style={styles.videoModalContent}>
                 <FullscreenVideoPlayer 
                   videoUrl={signedVideoUrl}
+                />
+              </RNView>
+            </SafeAreaView>
+          </View>
+        </Modal>
+      )}
+      
+      {/* Fullscreen Video Modal for Uploaded Video (Before Submission) */}
+      {videoUri && request?.status === 'in_progress' && (
+        <Modal
+          visible={videoModalVisible}
+          animationType="fade"
+          transparent={false}
+          onRequestClose={() => setVideoModalVisible(false)}
+        >
+          <View style={styles.videoModalContainer}>
+            <SafeAreaView style={styles.videoModalSafeArea} edges={['top', 'bottom', 'left', 'right']}>
+              <RNView style={styles.videoModalHeader}>
+                <TouchableOpacity 
+                  onPress={() => setVideoModalVisible(false)}
+                  style={styles.videoModalCloseButton}
+                >
+                  <Text style={styles.videoModalCloseText}>✕</Text>
+                </TouchableOpacity>
+                <Text style={styles.videoModalTitle}>Your Video Review</Text>
+                <RNView style={{ width: 40 }} />
+              </RNView>
+              <RNView style={styles.videoModalContent}>
+                <FullscreenVideoPlayer 
+                  videoUrl={videoUri}
                 />
               </RNView>
             </SafeAreaView>
@@ -1066,79 +1139,6 @@ export default function ReviewerRequestScreen() {
                   </RNView>
                 )}
                 
-                {slide.type === 'photoNote' && (
-                  <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 40, paddingBottom: 40 }] }>
-                    {/* Auro Logo and Title */}
-                    <RNView style={{ alignItems: 'center', marginBottom: 32, width: '100%' }}>
-                      <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                        <Image 
-                          source={require('@/auro_aura_logo_nobg.png')} 
-                          style={{ width: 64, height: 32 }} 
-                          contentFit="contain" 
-                        />
-                        <Text style={{ color: Colors.brand.textPrimary, fontSize: 32, fontWeight: '900', letterSpacing: 0.5 }}>
-                          Auro
-                        </Text>
-                      </RNView>
-                      <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 8, fontSize: 28, paddingHorizontal: 20 }]}>
-                        Add a Note
-                      </Text>
-                      <Text 
-                        style={[styles.overlayText, { marginBottom: 0, textAlign: 'center', width: '100%', fontSize: 16, paddingHorizontal: 20 }]}
-                        numberOfLines={1}
-                        adjustsFontSizeToFit
-                        minimumFontScale={0.75}
-                      >
-                        {slide.data.category} - Photo {slide.data.photoIndex + 1}
-                      </Text>
-                    </RNView>
-                    
-                    {/* Note input field */}
-                    <RNView style={{ marginTop: 16, width: '100%', alignItems: 'center', paddingHorizontal: 20, flex: 1 }}>
-                      <TextInput
-                        style={{
-                          width: '100%',
-                          minHeight: 140,
-                          maxHeight: 200,
-                          backgroundColor: 'rgba(255, 255, 255, 0.12)',
-                          borderRadius: 20,
-                          paddingHorizontal: 20,
-                          paddingVertical: 16,
-                          color: Colors.brand.textPrimary,
-                          fontSize: 16,
-                          textAlign: 'left',
-                          borderWidth: 2,
-                          borderColor: 'rgba(255, 255, 255, 0.25)',
-                          shadowColor: '#000',
-                          shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.1,
-                          shadowRadius: 4,
-                          elevation: 2,
-                        }}
-                        placeholder="Share your thoughts about this photo..."
-                        placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                        multiline
-                        value={photoNotes[slide.data.photoIndex] || ''}
-                        onChangeText={(text) => {
-                          setPhotoNotes(prev => ({ ...prev, [slide.data.photoIndex]: text }));
-                        }}
-                        numberOfLines={6}
-                        textAlignVertical="top"
-                      />
-                      
-                      <Text style={[styles.overlayText, { 
-                        marginTop: 12, 
-                        fontSize: 12, 
-                        textAlign: 'center', 
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        fontWeight: '500',
-                      }]}>
-                        {photoNotes[slide.data.photoIndex]?.length || 0} characters
-                      </Text>
-                    </RNView>
-                  </RNView>
-                )}
-                
                 {slide.type === 'rating' && (
                   <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center', paddingTop: 0, paddingBottom: 0, flex: 1 }] }>
                     {/* Auro Logo and Title */}
@@ -1255,58 +1255,6 @@ export default function ReviewerRequestScreen() {
                   </RNView>
                 )}
 
-                {slide.type === 'overallNote' && (
-                  <ScrollView 
-                    style={{ flex: 1, width: '100%' }}
-                    contentContainerStyle={{ 
-                      flexGrow: 1,
-                      alignItems: 'center',
-                      justifyContent: 'flex-start',
-                      paddingTop: Platform.OS === 'ios' ? 10 : 20,
-                      paddingBottom: Platform.OS === 'ios' ? 80 : 20,
-                      paddingHorizontal: 0,
-                    }}
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
-                  >
-                    <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 0, paddingBottom: 0 }] }>
-                      {/* Auro Logo and Title */}
-                      <RNView style={{ alignItems: 'center', marginBottom: 32, width: '100%' }}>
-                        <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                          <Image 
-                            source={require('@/auro_aura_logo_nobg.png')} 
-                            style={{ width: 64, height: 32 }} 
-                            contentFit="contain" 
-                          />
-                          <Text style={{ color: Colors.brand.textPrimary, fontSize: 32, fontWeight: '900', letterSpacing: 0.5 }}>
-                            Auro
-                          </Text>
-                        </RNView>
-                        <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 6, fontSize: 28, paddingHorizontal: 20 }]}>
-                          Overall Note
-                        </Text>
-                        <Text style={[styles.overlayText, { marginBottom: 0, textAlign: 'center', width: '100%', fontSize: 16, paddingHorizontal: 20 }]}>
-                          Share a summary for {slide.data.name}
-                        </Text>
-                      </RNView>
-                      
-                      {/* Overall Note Input */}
-                      <RNView style={{ marginTop: 20, width: '100%', alignItems: 'center', paddingHorizontal: 20 }}>
-                        <TextInput
-                          style={[styles.overallNoteInput, { width: '100%', minHeight: 150, maxHeight: 200 }]}
-                          placeholder="Share a short summary to pair with your video review"
-                          placeholderTextColor={Colors.brand.textSecondary}
-                          multiline
-                          value={overallNote}
-                          onChangeText={setOverallNote}
-                          numberOfLines={8}
-                          textAlignVertical="top"
-                        />
-                      </RNView>
-                    </RNView>
-                  </ScrollView>
-                )}
-                
                 {slide.type === 'pros' && (
                   <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 20, paddingBottom: 20 }] }>
                     {/* Auro Logo and Title */}
@@ -1563,15 +1511,6 @@ export default function ReviewerRequestScreen() {
                       </RNView>
                     )}
 
-                    {/* Overall Note Display (Read-only) */}
-                    {overallNote.trim() && (
-                      <RNView style={{ marginTop: 8, width: '100%', alignItems: 'center', marginBottom: Platform.OS === 'ios' ? 12 : 0, paddingHorizontal: 20 }}>
-                        <Text style={[styles.overlayText, { marginBottom: 8, fontSize: 15, fontWeight: '600', textAlign: 'center', width: '100%' }]}>Your Note:</Text>
-                        <RNView style={[styles.overallNoteInput, { backgroundColor: Colors.brand.cardBackgroundLight, padding: 12, width: '100%', maxHeight: 100 }]}>
-                          <Text style={[styles.overlayText, { textAlign: 'left', fontSize: 14, lineHeight: 20 }]} numberOfLines={4}>{overallNote}</Text>
-                        </RNView>
-                      </RNView>
-                    )}
                   </RNView>
                 )}
                 
@@ -1711,13 +1650,13 @@ export default function ReviewerRequestScreen() {
                     {/* Auro Logo */}
                     <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 72, height: 36, marginBottom: 24, alignSelf: 'center' }} contentFit="contain" />
                     <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 12, fontSize: 28, paddingHorizontal: 20 }]}>
-                      Save Video Review
+                      Save Review
                     </Text>
                     <Text style={[styles.overlayText, { marginBottom: 40, textAlign: 'center', width: '100%', fontSize: 16, paddingHorizontal: 20 }]}>
-                      Your video review will be saved. You can submit it from the main review page when you're ready.
+                      Your review will be saved. You can submit it from the main review page when you're ready.
                     </Text>
                     
-                    {/* Save Video Review Button */}
+                    {/* Save Review Button */}
                     <TouchableOpacity
                       onPress={() => {
                         // Stop recording if still recording
@@ -1725,6 +1664,8 @@ export default function ReviewerRequestScreen() {
                           clearInterval(recordingTimerRef.current);
                           recordingTimerRef.current = null;
                         }
+                        // Mark that they've completed the recording flow
+                        setHasCompletedRecordingFlow(true);
                         // Close the recording modal and return to main review page
                         setRecordingModeOpen(false);
                         setIsVideoReviewMode(false);
@@ -1736,7 +1677,7 @@ export default function ReviewerRequestScreen() {
                       ]}
                     >
                       <Text style={styles.actionButtonText}>
-                        Save the Video Review
+                        Save Review
                       </Text>
                     </TouchableOpacity>
                   </RNView>
@@ -1952,7 +1893,8 @@ export default function ReviewerRequestScreen() {
         onClose={() => setShowScreenRecordingGuide(false)}
         onContinue={() => {
           setShowScreenRecordingGuide(false);
-          setShowUploadSection(true);
+          setIsVideoReviewMode(true);
+          setRecordingModeOpen(true);
         }}
       />
       
@@ -2137,28 +2079,52 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: 22,
   },
+  videoReviewInfoButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.brand.cardBackground,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 12,
+    borderWidth: 1,
+    borderColor: Colors.brand.divider,
+  },
+  videoReviewInfoButtonText: {
+    fontSize: 18,
+  },
   videoReviewContent: {
     marginTop: 8,
+  },
+  videoReviewFeatureCard: {
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: Colors.brand.divider,
   },
   videoReviewFeatureList: {
     marginBottom: 20,
   },
   videoReviewFeature: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
+    alignItems: 'flex-start',
+    paddingVertical: 6,
     marginBottom: 4,
   },
   videoReviewFeatureIcon: {
-    fontSize: 20,
-    marginRight: 12,
-    width: 28,
+    fontSize: 22,
+    marginRight: 14,
+    width: 30,
+    textAlign: 'center',
   },
   videoReviewFeatureText: {
     fontSize: 15,
     color: Colors.brand.textPrimary,
     fontWeight: '500',
     flex: 1,
+    lineHeight: 22,
   },
   videoReviewStartButton: {
     flexDirection: 'row',
@@ -2186,6 +2152,93 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: Colors.brand.textOnGradient,
     letterSpacing: 0.5,
+  },
+  videoReviewCompletionSection: {
+    marginTop: 24,
+  },
+  videoReviewCompletionText: {
+    fontSize: 16,
+    color: Colors.brand.textPrimary,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  videoReviewUploadCard: {
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: Colors.brand.divider,
+  },
+  videoReviewUploadTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  videoReviewUploadHint: {
+    fontSize: 14,
+    color: Colors.brand.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  videoReviewUploadDisabledHint: {
+    fontSize: 14,
+    color: Colors.brand.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 16,
+    fontStyle: 'italic',
+  },
+  videoReviewUploadButton: {
+    backgroundColor: Colors.brand.status.accepted,
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.brand.status.accepted,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    minWidth: '100%',
+  },
+  videoReviewUploadButtonDisabled: {
+    backgroundColor: Colors.brand.cardBackground,
+    opacity: 0.6,
+    shadowOpacity: 0,
+    elevation: 0,
+    borderWidth: 1,
+    borderColor: Colors.brand.divider,
+  },
+  videoReviewUploadButtonTextDisabled: {
+    color: Colors.brand.textSecondary,
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  videoReviewViewButton: {
+    backgroundColor: Colors.brand.status.accepted,
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+    shadowColor: Colors.brand.status.accepted,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  videoReviewViewButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   videoReviewCompleteContainer: {
     marginTop: 8,

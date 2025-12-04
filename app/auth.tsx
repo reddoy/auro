@@ -5,7 +5,8 @@ import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
-import { makeRedirectUri } from 'expo-auth-session';
+import { makeRedirectUri, useAuthRequest, AuthRequest } from 'expo-auth-session';
+import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import { AntDesign, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -191,16 +192,16 @@ export default function AuthScreen() {
         : 'https://app.appauro.com/auth/callback';
     }
     
-    // For native, use web redirect URL (Supabase will add the code as a query param)
-    // The app will extract the auth code from the browser URL
+    // For native, use web redirect URL - iOS should accept HTTPS URLs
+    // The web callback page will detect mobile and deep link back to the app
     const webRedirectUri = 'https://app.appauro.com/auth/callback';
     
-    console.log('[Google Auth] Using web redirect URL:', webRedirectUri);
-    console.log('[Google Auth] After signing in, the browser will show the callback page.');
-    console.log('[Google Auth] The app will extract the auth code from the URL.');
-    console.log('[Google Auth] Make sure this URL is added to:');
+    console.log('[Google Auth] Using web redirect URI:', webRedirectUri);
+    console.log('[Google Auth] The web page will detect mobile browser and deep link back.');
+    console.log('[Google Auth] CRITICAL: Make sure this EXACT URL is added to:');
     console.log('  1. Supabase Dashboard → Authentication → URL Configuration → Redirect URLs');
     console.log('  2. Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client → Authorized redirect URIs');
+    console.log('[Google Auth] The URL must match EXACTLY (including https:// and no trailing slash)');
     
     return webRedirectUri;
   };
@@ -226,7 +227,8 @@ export default function AuthScreen() {
         return;
       }
 
-      // For native (iOS/Android), use code flow with Expo proxy
+      // For native (iOS/Android), use expo-auth-session's startAsync which handles OAuth better
+      // This works around iOS WebAuthenticationSession restrictions in Expo Go
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -245,20 +247,56 @@ export default function AuthScreen() {
         throw new Error('No OAuth URL returned');
       }
 
-      // Open the OAuth URL - it will redirect to our web callback page
-      console.log('[Google Auth] Opening OAuth URL:', data.url);
-      console.log('[Google Auth] Expected redirect URI:', redirectUri);
-      console.log('[Google Auth] After signing in, you\'ll see the callback page in the browser.');
-      console.log('[Google Auth] The app will extract the auth code from the URL.');
+      console.log('[Google Auth] OAuth URL from Supabase:', data.url);
+      console.log('[Google Auth] Redirect URI:', redirectUri);
       
-      const result = await WebBrowser.openAuthSessionAsync(
-        data.url,
-        redirectUri
+      // iOS WebAuthenticationSession is very strict about redirect URIs
+      // In Expo Go, we can't register custom URL schemes properly
+      // So we'll use openBrowserAsync instead, which is less strict
+      // The web callback page will handle the redirect and deep link back
+      console.log('[Google Auth] Opening browser (iOS WebAuthenticationSession has restrictions in Expo Go)...');
+      
+      // Use openBrowserAsync - the web callback page will deep link back
+      // expo-router will automatically handle the deep link and route to /auth/callback
+      console.log('[Google Auth] Opening browser...');
+      console.log('[Google Auth] After signing in, the web page will try to deep link back.');
+      console.log('[Google Auth] If the deep link doesn\'t work, manually return to the app and check if you\'re logged in.');
+      
+      await WebBrowser.openBrowserAsync(data.url);
+      
+      // Reset loading state - the callback page will handle the rest
+      setLoading(false);
+      
+      // Show instructions to user
+      Alert.alert(
+        'Sign In Started',
+        'Complete the sign-in in the browser. After signing in, return to the app. If the browser doesn\'t close automatically, you may need to manually return to the app.',
+        [{ text: 'OK' }]
       );
-
-      console.log('[Google Auth] OAuth result type:', result.type);
-      console.log('[Google Auth] OAuth result URL:', result.url);
-      console.log('[Google Auth] Full result object:', JSON.stringify(result, null, 2));
+      
+      // Poll for session in case deep link doesn't work
+      // This is a fallback for Expo Go limitations
+      const checkSession = setInterval(async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          clearInterval(checkSession);
+          console.log('[Google Auth] Session found via polling!');
+          try {
+            const profile = await getCurrentProfile();
+            const destination = resolveOnboardingDestination(profile);
+            router.replace(destination as any);
+          } catch (err) {
+            router.replace('/(tabs)/requests');
+          }
+        }
+      }, 2000); // Check every 2 seconds
+      
+      // Stop polling after 60 seconds
+      setTimeout(() => {
+        clearInterval(checkSession);
+      }, 60000);
+      
+      return;
 
       // Extract code from URL regardless of result type (web redirects might return 'dismiss')
       const extractCodeFromUrl = (urlString: string | null): string | null => {

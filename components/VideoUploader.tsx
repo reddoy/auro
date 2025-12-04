@@ -111,13 +111,10 @@ export default function VideoUploader({ onVideoSelected, existingVideoUri, onRem
         style={[styles.uploadButton, uploading && styles.uploadButtonDisabled]}
         disabled={uploading}
       >
-        <Text style={styles.uploadButtonText}>
-          {uploading ? 'Selecting Video...' : 'Upload Screen Recording'}
+        <Text style={styles.uploadButtonText} numberOfLines={1}>
+          {uploading ? 'Selecting Video...' : '📁 Upload Your Screen Recording'}
         </Text>
       </TouchableOpacity>
-      <Text style={styles.hint}>
-        Select the screen recording you just created from your device's gallery
-      </Text>
     </View>
   );
 }
@@ -128,26 +125,25 @@ const styles = StyleSheet.create({
   },
   uploadButton: {
     backgroundColor: Colors.brand.status.accepted,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 16,
     paddingHorizontal: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: Colors.brand.status.accepted,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   uploadButtonDisabled: {
     opacity: 0.6,
   },
   uploadButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
-  },
-  hint: {
-    marginTop: 12,
-    fontSize: 14,
-    color: Colors.brand.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
+    letterSpacing: 0.2,
   },
   videoContainer: {
     width: '100%',
