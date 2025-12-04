@@ -658,7 +658,11 @@ export default function FoundingReviewerApplyPage() {
       return;
     }
     if (step === 4) {
-      // Profile picture step - just move to next step (optional)
+      // Profile picture step - required
+      if (!avatarUrl || !avatarPath) {
+        setError('Please upload a profile picture to continue');
+        return;
+      }
       setStep(5);
       return;
     }
@@ -1369,7 +1373,7 @@ export default function FoundingReviewerApplyPage() {
               </div>
               <CardTitle className="text-xl md:text-2xl font-bold text-white">Add Your Photo</CardTitle>
               <CardDescription className="text-sm md:text-base text-gray-300">
-                Upload a clear profile picture of yourself
+                Upload a clear profile picture of yourself (required)
               </CardDescription>
             </CardHeader>
           
@@ -1392,7 +1396,7 @@ export default function FoundingReviewerApplyPage() {
                   size={140}
                 />
                 <p className="text-sm text-gray-300 text-center max-w-sm">
-                  Optional: Upload a clear photo of yourself. This helps us get to know you better.
+                  Upload a clear photo of yourself. This is required to complete your application.
                 </p>
               </div>
             </div>
@@ -1409,7 +1413,8 @@ export default function FoundingReviewerApplyPage() {
               </Button>
               <Button
                 onClick={handleNext}
-                className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+                disabled={!avatarUrl || !avatarPath}
+                className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue
                 <ArrowRight className="w-4 h-4 ml-2" />
