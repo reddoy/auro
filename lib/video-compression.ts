@@ -1,8 +1,10 @@
 import * as FileSystem from 'expo-file-system';
-import { getInfoAsync } from 'expo-file-system';
+import { getInfoAsync } from 'expo-file-system/legacy';
+import Constants from 'expo-constants';
 
-const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB - compress if larger
-const TARGET_VIDEO_SIZE = 20 * 1024 * 1024; // 20MB target after compression
+const MAX_VIDEO_SIZE = 30 * 1024 * 1024; // 30MB - warn if larger
+const TARGET_VIDEO_SIZE = 15 * 1024 * 1024; // 15MB target after compression
+const MAX_UPLOAD_SIZE = 50 * 1024 * 1024; // 50MB - hard limit for uploads
 
 /**
  * Compresses a video file if it's too large or in HEVC format
@@ -13,7 +15,7 @@ const TARGET_VIDEO_SIZE = 20 * 1024 * 1024; // 20MB target after compression
  */
 export async function compressVideoIfNeeded(videoUri: string): Promise<string> {
   try {
-    // Get file info to check size
+    // Get file info to check size first
     const fileInfo = await getInfoAsync(videoUri);
     
     if (!fileInfo.exists) {
@@ -25,6 +27,24 @@ export async function compressVideoIfNeeded(videoUri: string): Promise<string> {
     const ext = videoUri.toLowerCase().split('.').pop() || '';
     const isHEVC = ['hevc', 'hvc', 'mov'].includes(ext) || videoUri.toLowerCase().includes('hevc');
     
+    // Check if file is too large to upload
+    if (fileSize > MAX_UPLOAD_SIZE) {
+      const sizeMB = (fileSize / 1024 / 1024).toFixed(2);
+      const maxMB = (MAX_UPLOAD_SIZE / 1024 / 1024).toFixed(0);
+      throw new Error(`Video file is too large (${sizeMB}MB). Maximum size is ${maxMB}MB. Please compress the video or use a shorter recording.`);
+    }
+    
+    // Check if we're in Expo Go - compression requires native modules
+    const isExpoGo = Constants.executionEnvironment === 'storeClient';
+    if (isExpoGo) {
+      // In Expo Go, warn if file is large but can't compress
+      const fileSizeMB = fileSize / 1024 / 1024;
+      if (fileSizeMB > 30) {
+        console.warn(`[VideoCompression] Large video (${fileSizeMB.toFixed(2)}MB) in Expo Go - compression not available. Upload may timeout. Consider using a development build for compression.`);
+      }
+      return videoUri;
+    }
+    
     // Always compress videos to reduce file size and convert HEVC to H.264
     console.log('[VideoCompression] Compressing video:', {
       originalSize: (fileSize / 1024 / 1024).toFixed(2) + 'MB',
@@ -33,29 +53,68 @@ export async function compressVideoIfNeeded(videoUri: string): Promise<string> {
     });
 
     try {
-      // Dynamically import react-native-compressor to avoid Metro bundler issues
-      // This will only load the module when compression is actually needed
-      let Video: any;
+      // Try to load the compression module
+      // This will fail silently in Expo Go where native modules aren't available
+      let Video: any = null;
+      
       try {
         const compressorModule = require('react-native-compressor');
-        Video = compressorModule?.Video;
-      } catch (requireError) {
-        console.warn('[VideoCompression] Compression library not available. Returning original video.');
-        console.warn('[VideoCompression] To enable compression, create a development build: npx expo prebuild && npx expo run:ios (or run:android)');
+        if (compressorModule?.Video && typeof compressorModule.Video.compress === 'function') {
+          Video = compressorModule.Video;
+        }
+      } catch (requireError: any) {
+        // Module not available - this is expected in Expo Go
+        // Return original video without logging (error is expected)
         return videoUri;
       }
 
-      if (!Video || typeof Video.compress !== 'function') {
-        console.warn('[VideoCompression] Video.compress not available. Returning original video.');
+      if (!Video) {
         return videoUri;
       }
 
       // Use react-native-compressor to compress the video
-      // It automatically handles HEVC to H.264 conversion and compression
-      const compressedUri = await Video.compress(videoUri, {
-        compressionMethod: 'auto', // Automatically choose best compression method
-        // The library will automatically convert HEVC to H.264 and compress
-      });
+      // Use aggressive compression settings to reduce file size significantly
+      const fileSizeMB = fileSize / 1024 / 1024;
+      
+      // Calculate compression settings based on file size
+      // Target: reduce to under 20MB for upload
+      let compressionOptions: any = {
+        compressionMethod: 'auto',
+      };
+      
+      if (fileSizeMB > 40) {
+        // Very aggressive compression for very large files (>40MB)
+        compressionOptions = {
+          compressionMethod: 'auto',
+          maxSize: 720, // Reduce resolution to 720p
+          bitrate: 1000000, // 1Mbps bitrate for aggressive compression
+        };
+      } else if (fileSizeMB > 30) {
+        // Aggressive compression for large files (30-40MB)
+        compressionOptions = {
+          compressionMethod: 'auto',
+          maxSize: 1080, // Keep at 1080p but reduce bitrate
+          bitrate: 2000000, // 2Mbps bitrate
+        };
+      } else if (fileSizeMB > 20) {
+        // Moderate compression (20-30MB)
+        compressionOptions = {
+          compressionMethod: 'auto',
+          maxSize: 1080,
+          bitrate: 3000000, // 3Mbps bitrate
+        };
+      } else {
+        // Light compression for smaller files (<20MB)
+        compressionOptions = {
+          compressionMethod: 'auto',
+          maxSize: 1080,
+          bitrate: 4000000, // 4Mbps bitrate
+        };
+      }
+      
+      console.log('[VideoCompression] Compression options:', compressionOptions);
+      
+      const compressedUri = await Video.compress(videoUri, compressionOptions);
 
       // Check compressed file size
       const compressedInfo = await getInfoAsync(compressedUri);

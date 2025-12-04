@@ -657,12 +657,25 @@ export default function ReviewerRequestScreen() {
         const fileSizeMB = await getVideoFileSize(videoUri);
         console.log('[SubmitReview] Original video size:', fileSizeMB.toFixed(2) + 'MB');
         
-        const compressedUri = await compressVideoIfNeeded(videoUri);
-        const compressedSizeMB = await getVideoFileSize(compressedUri);
-        console.log('[SubmitReview] Compressed video size:', compressedSizeMB.toFixed(2) + 'MB');
-        
-        const res = await uploadRequestMedia(compressedUri, { category: 'other' });
-        uploadedVideoUrl = res.publicUrl;
+        try {
+          const compressedUri = await compressVideoIfNeeded(videoUri);
+          const compressedSizeMB = await getVideoFileSize(compressedUri);
+          console.log('[SubmitReview] Compressed video size:', compressedSizeMB.toFixed(2) + 'MB');
+          
+          const res = await uploadRequestMedia(compressedUri, { category: 'other' });
+          uploadedVideoUrl = res.publicUrl;
+        } catch (compressionError: any) {
+          // If compression fails or file is too large, show error
+          if (compressionError.message && compressionError.message.includes('too large')) {
+            Alert.alert('Video Too Large', compressionError.message);
+            setSubmitting(false);
+            return;
+          }
+          // For other compression errors, try uploading original
+          console.warn('[SubmitReview] Compression failed, trying original video:', compressionError);
+          const res = await uploadRequestMedia(videoUri, { category: 'other' });
+          uploadedVideoUrl = res.publicUrl;
+        }
       }
       const updated = await submitRequestReview({
         requestId: request.id,
