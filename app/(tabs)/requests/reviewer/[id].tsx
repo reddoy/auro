@@ -31,6 +31,7 @@ import DatingProfilePhotoGallery from '@/components/DatingProfilePhotoGallery';
 import StarRating from '@/components/StarRating';
 import ScreenRecordingGuide from '@/components/ScreenRecordingGuide';
 import VideoUploader from '@/components/VideoUploader';
+import * as ImagePicker from 'expo-image-picker';
 
 // Removed unused URL helper functions since we're not showing social links in this screen
 
@@ -521,6 +522,38 @@ export default function ReviewerRequestScreen() {
     );
   };
 
+  const handleCropTrimVideo = async () => {
+    if (!videoUri) return;
+    
+    try {
+      const hasPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!hasPermission.granted) {
+        Alert.alert(
+          'Permission Required',
+          'Please grant access to your media library to edit your video.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        allowsEditing: true,
+        quality: 1,
+        videoMaxDuration: 180,
+      });
+
+      if (result.canceled || !result.assets?.length) {
+        return;
+      }
+
+      const editedVideoUri = result.assets[0].uri;
+      setVideoUri(editedVideoUri);
+      Alert.alert('Success', 'Video updated successfully.');
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Failed to edit video.');
+    }
+  };
+
   const handleSubmitReview = async () => {
     if (!request?.id) return;
     if (!canSubmit) {
@@ -762,6 +795,13 @@ export default function ReviewerRequestScreen() {
                             >
                               <Text style={styles.videoReviewViewButtonText}>View Review</Text>
                             </TouchableOpacity>
+                            <TouchableOpacity 
+                              style={styles.videoReviewCropTrimButton} 
+                              onPress={handleCropTrimVideo}
+                            >
+                              <Text style={styles.videoReviewCropTrimButtonIcon}>✂️</Text>
+                              <Text style={styles.videoReviewCropTrimButtonText}>Crop or Trim Video</Text>
+                            </TouchableOpacity>
                           </>
                         ) : (
                           <>
@@ -818,6 +858,13 @@ export default function ReviewerRequestScreen() {
                 >
                   <Text style={styles.videoReviewStartButtonIcon}>✏️</Text>
                   <Text style={styles.videoReviewStartButtonText}>Continue Editing Review</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.videoReviewCropTrimButton} 
+                  onPress={handleCropTrimVideo}
+                >
+                  <Text style={styles.videoReviewCropTrimButtonIcon}>✂️</Text>
+                  <Text style={styles.videoReviewCropTrimButtonText}>Crop or Trim Video</Text>
                 </TouchableOpacity>
               </RNView>
             )}
@@ -2183,6 +2230,35 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     color: Colors.brand.textOnGradient,
+    letterSpacing: 0.5,
+  },
+  videoReviewCropTrimButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    marginTop: 12,
+    borderWidth: 2,
+    borderColor: Colors.brand.accentMagenta,
+    shadowColor: Colors.brand.accentMagenta,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  videoReviewCropTrimButtonIcon: {
+    fontSize: 20,
+    color: Colors.brand.accentMagenta,
+    marginRight: 10,
+    fontWeight: '900',
+  },
+  videoReviewCropTrimButtonText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: Colors.brand.accentMagenta,
     letterSpacing: 0.5,
   },
   videoReviewCompletionSection: {
