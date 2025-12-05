@@ -673,12 +673,9 @@ export default function FoundingReviewerApplyPage() {
         return;
       }
       const rateNumber = parseFloat(hourlyRate);
-      if (rateNumber < 10) {
-        setError('Minimum rate is $10 per review');
-        return;
-      }
-      if (rateNumber > 500) {
-        setError('Maximum rate is $500 per review');
+      const MAX_RATE = 30000;
+      if (rateNumber > MAX_RATE) {
+        setError(`Maximum rate is $${MAX_RATE.toLocaleString()} per review`);
         return;
       }
       setStep(6);

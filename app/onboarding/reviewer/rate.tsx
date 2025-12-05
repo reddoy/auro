@@ -38,21 +38,16 @@ export default function RateScreen() {
 
   const handleNext = async () => {
     const rateNumber = rate.trim() ? Number(rate.trim()) : null;
-    const MIN_RATE = 10; // Minimum $10 per review
-    const MAX_RATE = 500; // Maximum $500 per review
+    const MIN_RATE = 0; // No minimum rate
+    const MAX_RATE = 30000; // Maximum $30,000 per review
     
     if (!rateNumber || isNaN(rateNumber) || rateNumber <= 0) {
       Alert.alert('Invalid Rate', 'Please enter a valid positive number.');
       return;
     }
     
-    if (rateNumber < MIN_RATE) {
-      Alert.alert('Rate Too Low', `Minimum rate is $${MIN_RATE} per review.`);
-      return;
-    }
-    
     if (rateNumber > MAX_RATE) {
-      Alert.alert('Rate Too High', `Maximum rate is $${MAX_RATE} per review.`);
+      Alert.alert('Rate Too High', `Maximum rate is $${MAX_RATE.toLocaleString()} per review.`);
       return;
     }
 

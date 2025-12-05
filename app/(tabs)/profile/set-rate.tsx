@@ -37,9 +37,16 @@ export default function SetRateScreen() {
       setSavingRate(true);
       const rate = editingRate.trim();
       const rateNumber = rate ? Number(rate) : null;
+      const MAX_RATE = 30000; // Maximum $30,000 per review
       
       if (rate && (isNaN(rateNumber) || rateNumber <= 0)) {
         Alert.alert('Invalid Rate', 'Please enter a valid positive number.');
+        return;
+      }
+      
+      if (rateNumber !== null && rateNumber > MAX_RATE) {
+        Alert.alert('Rate Too High', `Maximum rate is $${MAX_RATE.toLocaleString()} per review.`);
+        setSavingRate(false);
         return;
       }
 
