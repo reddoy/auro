@@ -122,7 +122,8 @@ export async function GET(req: Request) {
         updated_at,
         profiles!requests_user_id_fkey (
           username,
-          full_name
+          first_name,
+          last_name
         )
       `)
       .order('updated_at', { ascending: false })
@@ -141,7 +142,8 @@ export async function GET(req: Request) {
         payment_distribution_failed_at,
         profiles!requests_influencer_id_fkey (
           username,
-          full_name,
+          first_name,
+          last_name,
           stripe_connect_account_id
         )
       `)
@@ -163,7 +165,8 @@ export async function GET(req: Request) {
         created_at,
         profiles!requests_user_id_fkey (
           username,
-          full_name,
+          first_name,
+          last_name,
           email
         )
       `)
