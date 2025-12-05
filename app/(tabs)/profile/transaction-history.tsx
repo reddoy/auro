@@ -278,15 +278,28 @@ export default function TransactionBreakdownScreen() {
       };
     }
 
-    // FIRST: Check if payment is held due to Stripe not being set up
-    // This check must come before payment_status check to ensure we show the correct message
+    // Check if payment was held due to Stripe not being set up, but Stripe is now set up
+    // This means they resolved the issue and payment is now processing
     if (transaction.payment_distribution_error) {
       const errorLower = transaction.payment_distribution_error.toLowerCase();
-      if (errorLower.includes('payment held') || 
+      const wasHeldForStripe = errorLower.includes('payment held') || 
           errorLower.includes('stripe connect account') || 
           errorLower.includes('not set up') ||
           errorLower.includes('stripe account') ||
-          errorLower.includes('connect account')) {
+          errorLower.includes('connect account');
+      
+      if (wasHeldForStripe && profile?.stripe_connect_account_id && !transaction.payment_distributed) {
+        // Payment was held, but Stripe is now set up - show thank you message
+        return {
+          status: 'processing',
+          message: 'Payment processing (3-5 business days)',
+          color: '#10b981',
+          icon: '✅'
+        };
+      }
+      
+      if (wasHeldForStripe) {
+        // Still waiting for Stripe setup
         return {
           status: 'held',
           message: 'Awaiting Stripe setup',
@@ -487,7 +500,9 @@ export default function TransactionBreakdownScreen() {
             item.payment_distribution_error.toLowerCase().includes('payment held') || 
             item.payment_distribution_error.toLowerCase().includes('stripe connect account') ||
             item.payment_distribution_error.toLowerCase().includes('not set up')
-              ? styles.heldContainer 
+              ? (profile?.stripe_connect_account_id && !item.payment_distributed 
+                  ? styles.resolvedContainer 
+                  : styles.heldContainer)
               : null
           ]}>
             <Text style={[
@@ -495,13 +510,17 @@ export default function TransactionBreakdownScreen() {
               item.payment_distribution_error.toLowerCase().includes('payment held') || 
               item.payment_distribution_error.toLowerCase().includes('stripe connect account') ||
               item.payment_distribution_error.toLowerCase().includes('not set up')
-                ? styles.heldText 
+                ? (profile?.stripe_connect_account_id && !item.payment_distributed 
+                    ? styles.resolvedText 
+                    : styles.heldText)
                 : null
             ]}>
               {item.payment_distribution_error.toLowerCase().includes('payment held') || 
                item.payment_distribution_error.toLowerCase().includes('stripe connect account') ||
                item.payment_distribution_error.toLowerCase().includes('not set up')
-                ? '⚠️ Payment is being held until you set up Stripe Connect. Complete your Stripe setup to receive this payment automatically.'
+                ? (profile?.stripe_connect_account_id && !item.payment_distributed
+                    ? '✅ Thanks for setting up Stripe! Payment processing (3-5 business days).'
+                    : '⚠️ Payment is being held until you set up Stripe Connect. Complete your Stripe setup to receive this payment automatically.')
                 : `Error: ${item.payment_distribution_error}`
               }
             </Text>
@@ -789,6 +808,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(245, 158, 11, 0.3)',
   },
+  resolvedContainer: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
   errorText: {
     fontSize: 12,
     color: '#ef4444',
@@ -796,6 +820,11 @@ const styles = StyleSheet.create({
   heldText: {
     fontSize: 12,
     color: '#f59e0b',
+    lineHeight: 16,
+  },
+  resolvedText: {
+    fontSize: 12,
+    color: '#10b981',
     lineHeight: 16,
   },
   transactionDetails: {
