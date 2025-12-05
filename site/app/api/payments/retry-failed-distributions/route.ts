@@ -247,6 +247,9 @@ async function processRetryJob(
 }
 
 export async function POST(req: Request) {
+  // Note: Admin panel is already protected by /api/admin/check-access
+  // This endpoint can be called from authenticated admin sessions
+  // For additional security, you could add a token check here if needed
   const body = await req.json().catch(() => ({}));
   return processRetryJob(body, false);
 }

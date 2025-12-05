@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
 interface PaymentStats {
   totalRequests: number;
@@ -64,17 +64,20 @@ export default function AdminPaymentsPage() {
   const checkAuth = async () => {
     try {
       // First try email-based auth (if configured)
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
+      if (!supabase) {
+        console.error('Supabase client not available');
+        setShowPasswordPrompt(true);
+        setLoading(false);
+        return;
+      }
 
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
+        const { data: { session } } = await supabase.auth.getSession();
         const authResponse = await fetch('/api/admin/check-access', {
           headers: {
-            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+            'Authorization': `Bearer ${session?.access_token || ''}`
           }
         });
 

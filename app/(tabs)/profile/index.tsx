@@ -653,7 +653,7 @@ export default function ProfileScreen() {
                       style={styles.transactionHistoryButton}
                     >
                       <Text style={styles.transactionHistoryText}>
-                        📊 Stripe Transactions
+                        View Payouts
                       </Text>
                     </MotionPressable>
                   </MotionView>
