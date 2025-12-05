@@ -57,6 +57,7 @@ export default function AdminPaymentsPage() {
     };
   }, []);
 
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
 
@@ -99,23 +100,28 @@ export default function AdminPaymentsPage() {
     e.preventDefault();
     setError(null);
 
+    if (!email || !password) {
+      setError('Email and password are required');
+      return;
+    }
+
     try {
       const response = await fetch('/api/admin/check-access', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
+        body: JSON.stringify({ email, password })
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Invalid password');
+        throw new Error(data.error || 'Invalid credentials');
       }
 
       setIsAuthorized(true);
       setShowPasswordPrompt(false);
       loadData();
     } catch (err: any) {
-      setError(err.message || 'Invalid password');
+      setError(err.message || 'Invalid credentials');
     }
   };
 
@@ -221,9 +227,26 @@ export default function AdminPaymentsPage() {
         border: '1px solid rgba(255, 255, 255, 0.1)'
       }}>
         <h1 style={{ fontSize: '28px', marginBottom: '10px', color: '#FFFFFF' }}>Pingle Pongle</h1>
-        <p style={{ color: '#C7BFD9', marginBottom: '30px' }}>Enter password to continue</p>
+        <p style={{ color: '#C7BFD9', marginBottom: '30px' }}>Enter email and password to continue</p>
         
         <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            className="admin-password-input"
+            style={{
+              padding: '12px 16px',
+              fontSize: '16px',
+              borderRadius: '8px',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              background: '#1F1629',
+              color: '#FFFFFF',
+              width: '100%'
+            }}
+            autoFocus
+          />
           <input
             type="password"
             value={password}
@@ -239,7 +262,6 @@ export default function AdminPaymentsPage() {
               color: '#FFFFFF',
               width: '100%'
             }}
-            autoFocus
           />
           <button
             type="submit"

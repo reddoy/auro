@@ -494,38 +494,35 @@ export default function TransactionBreakdownScreen() {
           </Text>
         </View>
 
-        {item.payment_distribution_error && isReviewer && (
-          <View style={[
-            styles.errorContainer,
-            item.payment_distribution_error.toLowerCase().includes('payment held') || 
-            item.payment_distribution_error.toLowerCase().includes('stripe connect account') ||
-            item.payment_distribution_error.toLowerCase().includes('not set up')
-              ? (profile?.stripe_connect_account_id && !item.payment_distributed 
-                  ? styles.resolvedContainer 
-                  : styles.heldContainer)
-              : null
-          ]}>
-            <Text style={[
-              styles.errorText,
-              item.payment_distribution_error.toLowerCase().includes('payment held') || 
-              item.payment_distribution_error.toLowerCase().includes('stripe connect account') ||
-              item.payment_distribution_error.toLowerCase().includes('not set up')
-                ? (profile?.stripe_connect_account_id && !item.payment_distributed 
-                    ? styles.resolvedText 
-                    : styles.heldText)
-                : null
+        {item.payment_distribution_error && isReviewer && (() => {
+          const errorLower = item.payment_distribution_error.toLowerCase();
+          const wasHeldForStripe = errorLower.includes('payment held') || 
+            errorLower.includes('stripe connect account') ||
+            errorLower.includes('not set up');
+          const stripeNowSetUp = profile?.stripe_connect_account_id && !item.payment_distributed;
+          
+          // Don't show error container if Stripe is now set up (status message above already shows processing)
+          if (wasHeldForStripe && stripeNowSetUp) {
+            return null;
+          }
+          
+          return (
+            <View style={[
+              styles.errorContainer,
+              wasHeldForStripe ? styles.heldContainer : null
             ]}>
-              {item.payment_distribution_error.toLowerCase().includes('payment held') || 
-               item.payment_distribution_error.toLowerCase().includes('stripe connect account') ||
-               item.payment_distribution_error.toLowerCase().includes('not set up')
-                ? (profile?.stripe_connect_account_id && !item.payment_distributed
-                    ? '✅ Thanks for setting up Stripe! Payment processing (3-5 business days).'
-                    : '⚠️ Payment is being held until you set up Stripe Connect. Complete your Stripe setup to receive this payment automatically.')
-                : `Error: ${item.payment_distribution_error}`
-              }
-            </Text>
-          </View>
-        )}
+              <Text style={[
+                styles.errorText,
+                wasHeldForStripe ? styles.heldText : null
+              ]}>
+                {wasHeldForStripe
+                  ? '⚠️ Payment is being held until you set up Stripe Connect. Complete your Stripe setup to receive this payment automatically.'
+                  : `Error: ${item.payment_distribution_error}`
+                }
+              </Text>
+            </View>
+          );
+        })()}
 
         {isReviewer ? (
           <View style={styles.transactionDetails}>
@@ -808,11 +805,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(245, 158, 11, 0.3)',
   },
-  resolvedContainer: {
-    backgroundColor: 'rgba(16, 185, 129, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.3)',
-  },
   errorText: {
     fontSize: 12,
     color: '#ef4444',
@@ -820,11 +812,6 @@ const styles = StyleSheet.create({
   heldText: {
     fontSize: 12,
     color: '#f59e0b',
-    lineHeight: 16,
-  },
-  resolvedText: {
-    fontSize: 12,
-    color: '#10b981',
     lineHeight: 16,
   },
   transactionDetails: {

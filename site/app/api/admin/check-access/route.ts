@@ -62,13 +62,30 @@ export async function GET(req: Request) {
   }
 }
 
-// POST endpoint for password-based access
+// POST endpoint for email and password-based access
 export async function POST(req: Request) {
   try {
-    const { password } = await req.json();
+    const { email, password } = await req.json();
     
-    if (!password) {
-      return new Response(JSON.stringify({ error: 'Password required' }), { status: 400 });
+    if (!email || !password) {
+      return new Response(JSON.stringify({ error: 'Email and password required' }), { status: 400 });
+    }
+
+    // Check email against authorized emails
+    const authorizedEmails = (process.env.MASTER_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+    
+    if (authorizedEmails.length === 0) {
+      return new Response(JSON.stringify({ 
+        error: 'Email authorization not configured',
+        message: 'Please set MASTER_ADMIN_EMAILS in environment variables'
+      }), { status: 500 });
+    }
+
+    if (!authorizedEmails.includes(email.toLowerCase())) {
+      return new Response(JSON.stringify({ 
+        error: 'Invalid email',
+        message: 'Access denied'
+      }), { status: 403 });
     }
 
     // Check password from environment variable
@@ -95,9 +112,9 @@ export async function POST(req: Request) {
     }), { status: 200 });
 
   } catch (error: any) {
-    console.error('Password check error:', error);
+    console.error('Access check error:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to check password'
+      error: error.message || 'Failed to check credentials'
     }), { status: 500 });
   }
 }
