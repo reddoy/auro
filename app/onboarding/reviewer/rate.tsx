@@ -1,19 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert, View as RNView } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
-import { updateProfile, updateProfilePreferences } from '@/lib/profile';
+import { updateProfile, updateProfilePreferences, getCurrentProfile } from '@/lib/profile';
 import { MotionView, MotionPressable, cardEntrance } from '@/components/motion';
 import { MotionDelays } from '@/components/motion/tokens';
 import { FadeInDown } from 'react-native-reanimated';
+import Spinner from '@/components/Spinner';
 
 export default function RateScreen() {
   const insets = useSafeAreaInsets();
   const [rate, setRate] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [hasExistingRate, setHasExistingRate] = useState(false);
+
+  // Load existing rate on mount
+  useEffect(() => {
+    const loadExistingProfile = async () => {
+      try {
+        const profile = await getCurrentProfile();
+        if (profile?.hourly_rate && profile.hourly_rate > 0) {
+          setHasExistingRate(true);
+          setRate(profile.hourly_rate.toString());
+        }
+      } catch (e: any) {
+        console.error('Failed to load profile:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadExistingProfile();
+  }, []);
 
   const handleNext = async () => {
     const rateNumber = rate.trim() ? Number(rate.trim()) : null;
@@ -52,6 +73,31 @@ export default function RateScreen() {
     }
   };
 
+  const handleKeepCurrent = async () => {
+    try {
+      setSaving(true);
+      await updateProfilePreferences({ onboarding_step: 'reviewer_profile_picture' });
+      router.replace('/onboarding/reviewer/profile-picture');
+    } catch (e: any) {
+      const message = e?.message || 'Failed to continue';
+      if (message.toLowerCase().includes('not signed in') || message.toLowerCase().includes('not authenticated')) {
+        router.replace('/auth');
+        return;
+      }
+      Alert.alert('Error', message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Spinner size={40} color={Colors.brand.accentMagenta} />
+      </View>
+    );
+  }
+
   const rateNumber = rate.trim() ? Number(rate.trim()) : null;
   // SIMPLE MODEL: Customer pays X, Reviewer gets 80%, Auro absorbs Stripe fee
   const auroFee = rateNumber && rateNumber > 0 ? rateNumber * 0.2 : 0; // 20% platform fee
@@ -81,11 +127,13 @@ export default function RateScreen() {
       >
         <View style={styles.content} lightColor="transparent" darkColor="transparent">
           <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.quick)}>
-            <Text style={styles.title}>Set Your Rate</Text>
+            <Text style={styles.title}>{hasExistingRate ? 'Your Rate' : 'Set Your Rate'}</Text>
           </MotionView>
           <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)}>
             <Text style={styles.description}>
-              Set your price per review (what customers pay). You'll receive 80% of this amount - Auro covers all processing fees.
+              {hasExistingRate 
+                ? "Here's your current rate. Would you like to change it? You'll receive 80% of the amount customers pay - Auro covers all processing fees."
+                : "Set your price per review (what customers pay). You'll receive 80% of this amount - Auro covers all processing fees."}
             </Text>
           </MotionView>
 
@@ -131,6 +179,20 @@ export default function RateScreen() {
             </MotionView>
           )}
 
+          {hasExistingRate && (
+            <MotionView entering={cardEntrance(3.5)}>
+              <MotionPressable 
+                style={[styles.skipButton, saving && styles.skipButtonDisabled]}
+                onPress={handleKeepCurrent}
+                disabled={saving}
+              >
+                <Text style={styles.skipButtonText}>
+                  Keep Current Rate
+                </Text>
+              </MotionPressable>
+            </MotionView>
+          )}
+
           <MotionView entering={cardEntrance(4)}>
             <MotionPressable 
               style={[styles.nextButton, saving && styles.nextButtonDisabled]}
@@ -142,7 +204,7 @@ export default function RateScreen() {
                 style={styles.buttonGradient}
               >
                 <Text style={styles.nextButtonText}>
-                  {saving ? 'Saving...' : 'Next'}
+                  {saving ? 'Saving...' : hasExistingRate ? 'Save Changes' : 'Next'}
                 </Text>
               </ExpoLinearGradient>
             </MotionPressable>
@@ -297,6 +359,32 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.brand.textOnGradient,
     fontFamily: 'Poppins_700Bold',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.brand.background,
+  },
+  skipButton: {
+    width: '100%',
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: Colors.brand.accentOrange,
+    backgroundColor: 'transparent',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  skipButtonDisabled: {
+    opacity: 0.6,
+  },
+  skipButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.brand.accentOrange,
+    fontFamily: 'Poppins_600SemiBold',
   },
 });
 

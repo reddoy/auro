@@ -742,8 +742,10 @@ export default function ReviewerRequestScreen() {
           statusMessage={
             request.status === 'in_progress' 
               ? 'You have 48 hours to complete this review. After 48 hours, the requester is refunded.'
+              : request.status === 'paid'
+              ? 'You have 2 weeks to accept or deny this request. If no action is taken within 2 weeks, the requester will be automatically refunded.'
               : (request.status === 'pending' || request.status === 'accepted')
-              ? 'Waiting for the requester to finish payment. They have 48 hours to finish payment.'
+              ? 'Waiting for the requester to finish payment.'
               : undefined
           }
         />

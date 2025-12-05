@@ -167,7 +167,7 @@ export default function DiscoverReviewersScreen() {
             </RNView>
           )}
           {item.pricePerReview !== null && item.pricePerReview !== undefined && (
-            <Text style={styles.rowPrice}>${item.pricePerReview}/hr</Text>
+            <Text style={styles.rowPrice}>${item.pricePerReview} / review</Text>
           )}
         </RNView>
       </RNView>
@@ -289,7 +289,7 @@ export default function DiscoverReviewersScreen() {
             data={filteredAndSorted}
             keyExtractor={(it) => it.id}
             renderItem={renderItem}
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80 }}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 + insets.bottom }}
             ListEmptyComponent={
               <View style={styles.empty}>
                 <Text style={styles.emptyText}>{loading ? 'Loading…' : 'No reviewers found'}</Text>
@@ -304,7 +304,7 @@ export default function DiscoverReviewersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
-  header: { padding: 16, paddingTop: 20, backgroundColor: Colors.brand.cardBackground, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, marginBottom: 8 },
+  header: { padding: 16, paddingTop: 20, marginBottom: 8 },
   title: { fontSize: 28, fontWeight: '700', color: Colors.brand.textPrimary },
   searchWrap: { paddingHorizontal: 16, paddingVertical: 8 },
   searchInput: { borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: Colors.brand.textPrimary, backgroundColor: Colors.brand.cardBackground, fontSize: 16 },
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
   skeletonContainer: { 
     ...StyleSheet.absoluteFillObject,
     paddingHorizontal: 16, 
-    paddingBottom: 80,
+    paddingBottom: 100,
     justifyContent: 'flex-start',
   },
   skeletonRow: { 

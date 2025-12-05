@@ -667,7 +667,20 @@ export default function FoundingReviewerApplyPage() {
       return;
     }
     if (step === 5) {
-      // Rate step - just move to next step (optional)
+      // Rate step - required
+      if (!hourlyRate || isNaN(parseFloat(hourlyRate)) || parseFloat(hourlyRate) <= 0) {
+        setError('Please set your rate per review to continue');
+        return;
+      }
+      const rateNumber = parseFloat(hourlyRate);
+      if (rateNumber < 10) {
+        setError('Minimum rate is $10 per review');
+        return;
+      }
+      if (rateNumber > 500) {
+        setError('Maximum rate is $500 per review');
+        return;
+      }
       setStep(6);
       return;
     }
@@ -1464,7 +1477,7 @@ export default function FoundingReviewerApplyPage() {
                   />
                 </div>
                 <p className="text-xs text-gray-400 text-center">
-                  Optional: Set your preferred rate (e.g., $25-50 per review)
+                  Required: Set your rate per review (e.g., $25-50 per review)
                 </p>
               </div>
 

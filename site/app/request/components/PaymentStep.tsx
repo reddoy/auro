@@ -258,8 +258,8 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
               <div className="security-badge">
                 <span className="security-icon">⚡</span>
                 <div>
-                  <strong>Fast Delivery</strong>
-                  <p>48 hour delivery or your money back</p>
+                  <strong>Guaranteed Timelines</strong>
+                  <p>Reviewer has 2 weeks to accept, then 48 hours to complete</p>
                 </div>
               </div>
               

@@ -66,10 +66,10 @@ export default function ReviewDetailScreen() {
       return { labelOverride: undefined, text: 'Please check your email regarding payment. You have 48 hours to complete payment.' };
     }
     if (s === 'paid') {
-      return { labelOverride: 'Pending acceptance', text: 'Awaiting reviewer approval — if declined or no response in 48 hours, you will be refunded.' };
+      return { labelOverride: 'Pending acceptance', text: 'Awaiting reviewer approval — if declined or no response within 2 weeks, you will be automatically refunded.' };
     }
     if (s === 'in_progress') {
-      return { labelOverride: undefined, text: 'Pending review means the reviewer accepted your request and now has 48 hours to submit your review.' };
+      return { labelOverride: undefined, text: 'The reviewer accepted your request and now has 48 hours to submit your review, or you will be refunded.' };
     }
     if (s === 'completed') {
       return { labelOverride: 'Review Submitted', text: 'Review Submitted means the reviewer has completed the review.' };

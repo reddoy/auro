@@ -172,6 +172,10 @@ export default function ReviewerSubmitScreen() {
               <Text style={{ color: Colors.brand.textSecondary, fontSize: 12 }}>
                 Reviewer is working on your review. They have 48 hours to complete it or your money back.
               </Text>
+            ) : request.status === 'paid' ? (
+              <Text style={{ color: Colors.brand.textSecondary, fontSize: 12 }}>
+                Awaiting reviewer approval. If declined or no response within 2 weeks, you will be automatically refunded.
+              </Text>
             ) : null}
           </RNView>
           {canModerate && request.status === 'paid' && (
