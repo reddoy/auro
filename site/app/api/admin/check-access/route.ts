@@ -62,3 +62,43 @@ export async function GET(req: Request) {
   }
 }
 
+// POST endpoint for password-based admin access
+export async function POST(req: Request) {
+  try {
+    const { password } = await req.json();
+    
+    if (!password) {
+      return new Response(JSON.stringify({ error: 'Password required' }), { status: 400 });
+    }
+
+    // Check admin password from environment variable
+    const adminPassword = process.env.CHEESEWAFFLE || '';
+    
+    if (!adminPassword) {
+      return new Response(JSON.stringify({ 
+        error: 'Admin password not configured',
+        message: 'Please set CHEESEWAFFLE in environment variables'
+      }), { status: 500 });
+    }
+
+    // Simple password comparison (for quick launch - not production-grade)
+    if (password !== adminPassword) {
+      return new Response(JSON.stringify({ 
+        error: 'Invalid password',
+        message: 'Access denied'
+      }), { status: 403 });
+    }
+
+    return new Response(JSON.stringify({ 
+      authorized: true,
+      message: 'Access granted'
+    }), { status: 200 });
+
+  } catch (error: any) {
+    console.error('Admin password check error:', error);
+    return new Response(JSON.stringify({ 
+      error: error.message || 'Failed to check admin password'
+    }), { status: 500 });
+  }
+}
+

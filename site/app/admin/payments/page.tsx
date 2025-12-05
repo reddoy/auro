@@ -41,8 +41,12 @@ export default function AdminPaymentsPage() {
     checkAuth();
   }, []);
 
+  const [password, setPassword] = useState('');
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+
   const checkAuth = async () => {
     try {
+      // First try email-based auth (if configured)
       const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -50,30 +54,52 @@ export default function AdminPaymentsPage() {
 
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user) {
-        setIsAuthorized(false);
-        setLoading(false);
-        return;
+      if (user) {
+        const authResponse = await fetch('/api/admin/check-access', {
+          headers: {
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          }
+        });
+
+        if (authResponse.ok) {
+          setIsAuthorized(true);
+          loadData();
+          return;
+        }
       }
 
-      const authResponse = await fetch('/api/admin/check-access', {
-        headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
-        }
+      // If email-based auth fails, show password prompt
+      setShowPasswordPrompt(true);
+      setLoading(false);
+    } catch (err: any) {
+      console.error('Auth check error:', err);
+      // Fall back to password prompt
+      setShowPasswordPrompt(true);
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      const response = await fetch('/api/admin/check-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
       });
 
-      if (!authResponse.ok) {
-        setIsAuthorized(false);
-        setLoading(false);
-        return;
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Invalid password');
       }
 
       setIsAuthorized(true);
+      setShowPasswordPrompt(false);
       loadData();
     } catch (err: any) {
-      console.error('Auth check error:', err);
-      setIsAuthorized(false);
-      setLoading(false);
+      setError(err.message || 'Invalid password');
     }
   };
 
@@ -153,6 +179,69 @@ export default function AdminPaymentsPage() {
     return (
       <div style={{ padding: '40px', textAlign: 'center', maxWidth: '1400px', margin: '0 auto' }}>
         <p>Loading...</p>
+      </div>
+    );
+  }
+
+  // Show password prompt if not authorized yet
+  if (showPasswordPrompt && !isAuthorized) {
+    return (
+      <div style={{ 
+        padding: '40px', 
+        textAlign: 'center', 
+        maxWidth: '500px', 
+        margin: '100px auto',
+        background: '#f5f5f5',
+        borderRadius: '12px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+      }}>
+        <h1 style={{ fontSize: '28px', marginBottom: '10px' }}>Admin Access</h1>
+        <p style={{ color: '#666', marginBottom: '30px' }}>Enter admin password to continue</p>
+        
+        <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Admin Password"
+            style={{
+              padding: '12px 16px',
+              fontSize: '16px',
+              borderRadius: '8px',
+              border: '1px solid #ddd',
+              width: '100%'
+            }}
+            autoFocus
+          />
+          <button
+            type="submit"
+            style={{
+              background: '#4caf50',
+              color: 'white',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+          >
+            Sign In
+          </button>
+        </form>
+
+        {error && (
+          <div style={{
+            marginTop: '20px',
+            padding: '12px',
+            background: '#ffebee',
+            color: '#c62828',
+            borderRadius: '8px',
+            fontSize: '14px'
+          }}>
+            {error}
+          </div>
+        )}
       </div>
     );
   }
