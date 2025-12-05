@@ -30,6 +30,7 @@ interface PendingPayment {
 
 export default function AdminPaymentsPage() {
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [processing, setProcessing] = useState<string | null>(null);
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [stats, setStats] = useState<PaymentStats | null>(null);
@@ -128,7 +129,10 @@ export default function AdminPaymentsPage() {
     }
   };
 
-  const loadData = async () => {
+  const loadData = async (showRefreshing = false) => {
+    if (showRefreshing) {
+      setRefreshing(true);
+    }
     try {
       // Load stats
       const statsResponse = await fetch('/api/admin/payment-dashboard?period=30d');
@@ -147,6 +151,9 @@ export default function AdminPaymentsPage() {
       console.error('Failed to load data:', err);
     } finally {
       setLoading(false);
+      if (showRefreshing) {
+        setRefreshing(false);
+      }
     }
   };
 
@@ -404,28 +411,34 @@ export default function AdminPaymentsPage() {
           {processing === 'retry' ? '⏳ Processing...' : '🔄 Retry Failed Distributions'}
         </button>
 
-        <button
-          onClick={handleProcessTimeoutRefunds}
-          disabled={processing !== null}
-          style={{
-            background: processing === 'timeout' ? '#342346' : '#FF6F00',
-            color: 'white',
-            border: 'none',
-            padding: '16px 24px',
-            borderRadius: '8px',
-            fontSize: '16px',
-            fontWeight: '600',
-            cursor: processing !== null ? 'not-allowed' : 'pointer',
-            boxShadow: processing === 'timeout' ? 'none' : '0 2px 8px rgba(255, 111, 0, 0.3)',
-            opacity: processing === 'timeout' ? 0.6 : 1
-          }}
-        >
-          {processing === 'timeout' ? '⏳ Processing...' : '⏰ Process Timeout Refunds'}
-        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <button
+            onClick={handleProcessTimeoutRefunds}
+            disabled={processing !== null}
+            title="Processes requests that have timed out (reviewer didn't accept within 14 days or complete within 48 hours) and automatically refunds the customer via Stripe"
+            style={{
+              background: processing === 'timeout' ? '#342346' : '#FF6F00',
+              color: 'white',
+              border: 'none',
+              padding: '16px 24px',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: processing !== null ? 'not-allowed' : 'pointer',
+              boxShadow: processing === 'timeout' ? 'none' : '0 2px 8px rgba(255, 111, 0, 0.3)',
+              opacity: processing === 'timeout' ? 0.6 : 1
+            }}
+          >
+            {processing === 'timeout' ? '⏳ Processing...' : '⏰ Process Timeout Refunds'}
+          </button>
+          <span style={{ fontSize: '12px', color: '#C7BFD9', marginTop: '-4px' }}>
+            Refunds customers for timed-out requests
+          </span>
+        </div>
 
         <button
-          onClick={loadData}
-          disabled={loading}
+          onClick={() => loadData(true)}
+          disabled={refreshing}
           style={{
             background: '#2A1B3D',
             color: 'white',
@@ -434,12 +447,27 @@ export default function AdminPaymentsPage() {
             borderRadius: '8px',
             fontSize: '16px',
             fontWeight: '600',
-            cursor: loading ? 'not-allowed' : 'pointer',
+            cursor: refreshing ? 'not-allowed' : 'pointer',
             boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-            opacity: loading ? 0.6 : 1
+            opacity: refreshing ? 0.6 : 1,
+            position: 'relative',
+            transition: 'all 0.2s ease'
           }}
         >
-          {loading ? 'Refreshing...' : '🔄 Refresh Data'}
+          <span style={{
+            display: 'inline-block',
+            animation: refreshing ? 'spin 1s linear infinite' : 'none',
+            marginRight: '8px'
+          }}>
+            🔄
+          </span>
+          {refreshing ? 'Refreshing...' : 'Refresh Data'}
+          <style>{`
+            @keyframes spin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
         </button>
       </div>
 
