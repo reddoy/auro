@@ -55,14 +55,14 @@ export async function GET(req: Request) {
     }), { status: 200 });
 
   } catch (error: any) {
-    console.error('Admin access check error:', error);
+    console.error('Access check error:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to check admin access'
+      error: error.message || 'Failed to check access'
     }), { status: 500 });
   }
 }
 
-// POST endpoint for password-based admin access
+// POST endpoint for password-based access
 export async function POST(req: Request) {
   try {
     const { password } = await req.json();
@@ -71,12 +71,12 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'Password required' }), { status: 400 });
     }
 
-    // Check admin password from environment variable
+    // Check password from environment variable
     const adminPassword = process.env.CHEESEWAFFLE || '';
     
     if (!adminPassword) {
       return new Response(JSON.stringify({ 
-        error: 'Admin password not configured',
+        error: 'Password not configured',
         message: 'Please set CHEESEWAFFLE in environment variables'
       }), { status: 500 });
     }
@@ -95,9 +95,9 @@ export async function POST(req: Request) {
     }), { status: 200 });
 
   } catch (error: any) {
-    console.error('Admin password check error:', error);
+    console.error('Password check error:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to check admin password'
+      error: error.message || 'Failed to check password'
     }), { status: 500 });
   }
 }
