@@ -65,7 +65,8 @@ async function processRetryJob(
           stripe_connect_account_id,
           is_reviewer,
           username,
-          full_name,
+          first_name,
+          last_name,
           email
         )
       `
