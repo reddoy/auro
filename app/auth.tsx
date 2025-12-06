@@ -183,8 +183,8 @@ export default function AuthScreen() {
 
   const [isGoogleHovered, setIsGoogleHovered] = useState(false);
 
-  // For native platforms, use web redirect URL that Supabase accepts
-  // The web callback will handle the OAuth and we'll extract the code from the URL
+  // For native platforms, use proper deep link URL scheme for production builds
+  // In production builds (not Expo Go), we can use custom URL schemes properly
   const getRedirectUri = () => {
     if (Platform.OS === 'web') {
       return typeof window !== 'undefined' && window.location.origin
@@ -192,18 +192,29 @@ export default function AuthScreen() {
         : 'https://app.appauro.com/auth/callback';
     }
     
-    // For native, use web redirect URL - iOS should accept HTTPS URLs
-    // The web callback page will detect mobile and deep link back to the app
+    // For production builds, use the app's deep link scheme
+    // This will work properly with expo-auth-session's startAsync
+    const deepLinkUri = makeRedirectUri({
+      scheme: 'auro',
+      path: 'auth/callback',
+    });
+    
+    // Fallback to web URL if deep link isn't available (Expo Go scenario)
+    // But in production builds, the deep link should work
     const webRedirectUri = 'https://app.appauro.com/auth/callback';
     
-    console.log('[Google Auth] Using web redirect URI:', webRedirectUri);
-    console.log('[Google Auth] The web page will detect mobile browser and deep link back.');
-    console.log('[Google Auth] CRITICAL: Make sure this EXACT URL is added to:');
+    // Use deep link for production, web URL as fallback
+    const redirectUri = deepLinkUri || webRedirectUri;
+    
+    console.log('[Google Auth] Using redirect URI:', redirectUri);
+    console.log('[Google Auth] Deep link URI:', deepLinkUri);
+    console.log('[Google Auth] CRITICAL: Make sure these URLs are added to:');
     console.log('  1. Supabase Dashboard → Authentication → URL Configuration → Redirect URLs');
     console.log('  2. Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client → Authorized redirect URIs');
-    console.log('[Google Auth] The URL must match EXACTLY (including https:// and no trailing slash)');
+    console.log('  - Deep link:', deepLinkUri);
+    console.log('  - Web URL:', webRedirectUri);
     
-    return webRedirectUri;
+    return redirectUri;
   };
 
   const redirectUri = getRedirectUri();
@@ -227,8 +238,8 @@ export default function AuthScreen() {
         return;
       }
 
-      // For native (iOS/Android), use expo-auth-session's startAsync which handles OAuth better
-      // This works around iOS WebAuthenticationSession restrictions in Expo Go
+      // For native (iOS/Android), use expo-auth-session's startAsync which properly handles OAuth
+      // This works correctly in production builds with proper deep linking
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -250,37 +261,60 @@ export default function AuthScreen() {
       console.log('[Google Auth] OAuth URL from Supabase:', data.url);
       console.log('[Google Auth] Redirect URI:', redirectUri);
       
-      // iOS WebAuthenticationSession is very strict about redirect URIs
-      // In Expo Go, we can't register custom URL schemes properly
-      // So we'll use openBrowserAsync instead, which is less strict
-      // The web callback page will handle the redirect and deep link back
-      console.log('[Google Auth] Opening browser (iOS WebAuthenticationSession has restrictions in Expo Go)...');
+      // Use expo-auth-session's startAsync for proper OAuth handling in production builds
+      // This properly handles deep linking and closes the browser automatically
+      console.log('[Google Auth] Starting OAuth flow with expo-auth-session...');
       
-      // Use openBrowserAsync - the web callback page will deep link back
-      // expo-router will automatically handle the deep link and route to /auth/callback
-      console.log('[Google Auth] Opening browser...');
-      console.log('[Google Auth] After signing in, the web page will try to deep link back.');
-      console.log('[Google Auth] If the deep link doesn\'t work, manually return to the app and check if you\'re logged in.');
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
       
-      await WebBrowser.openBrowserAsync(data.url);
+      console.log('[Google Auth] OAuth result:', result.type);
       
-      // Reset loading state - the callback page will handle the rest
+      // Reset loading state
       setLoading(false);
       
-      // Show instructions to user
-      Alert.alert(
-        'Sign In Started',
-        'Complete the sign-in in the browser. After signing in, return to the app. If the browser doesn\'t close automatically, you may need to manually return to the app.',
-        [{ text: 'OK' }]
-      );
-      
-      // Poll for session in case deep link doesn't work
-      // This is a fallback for Expo Go limitations
-      const checkSession = setInterval(async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          clearInterval(checkSession);
-          console.log('[Google Auth] Session found via polling!');
+      // Handle the result
+      if (result.type === 'success' && result.url) {
+        const url = result.url;
+        console.log('[Google Auth] Success! Processing callback URL...');
+        
+        // Extract code from URL
+        const urlObj = new URL(url);
+        const code = urlObj.searchParams.get('code');
+        const errorParam = urlObj.searchParams.get('error');
+        const errorDescription = urlObj.searchParams.get('error_description');
+        
+        if (errorParam) {
+          throw new Error(errorDescription || errorParam);
+        }
+        
+        if (code) {
+          console.log('[Google Auth] Found auth code, exchanging for session...');
+          
+          // Exchange code for session
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (exchangeError) {
+            throw exchangeError;
+          }
+          
+          console.log('[Google Auth] Session established successfully!');
+          
+          // Check if email is verified
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user && !user.email_confirmed_at) {
+            await supabase.auth.signOut();
+            router.replace({ pathname: '/auth/confirm', params: { email: user.email || '' } });
+            return;
+          }
+          
+          // Ensure profile exists
+          try {
+            await ensureProfileForCurrentUser();
+          } catch (err) {
+            console.warn('[Google Auth] Profile creation warning:', err);
+          }
+          
+          // Navigate to appropriate destination
           try {
             const profile = await getCurrentProfile();
             const destination = resolveOnboardingDestination(profile);
@@ -288,76 +322,34 @@ export default function AuthScreen() {
           } catch (err) {
             router.replace('/(tabs)/requests');
           }
+        } else {
+          throw new Error('No authorization code found in callback URL');
         }
-      }, 2000); // Check every 2 seconds
-      
-      // Stop polling after 60 seconds
-      setTimeout(() => {
-        clearInterval(checkSession);
-      }, 60000);
-      
-      return;
-
-      // Extract code from URL regardless of result type (web redirects might return 'dismiss')
-      const extractCodeFromUrl = (urlString: string | null): string | null => {
-        if (!urlString) return null;
-        
-        try {
-          const url = new URL(urlString);
-          return url.searchParams.get('code') || url.hash.match(/code=([^&]+)/)?.[1] || null;
-        } catch (e) {
-          // Try regex extraction if URL parsing fails
-          const codeMatch = urlString.match(/[?&#]code=([^&?#]+)/);
-          return codeMatch ? decodeURIComponent(codeMatch[1]) : null;
-        }
-      };
-
-      const extractErrorFromUrl = (urlString: string | null): string | null => {
-        if (!urlString) return null;
-        
-        try {
-          const url = new URL(urlString);
-          return url.searchParams.get('error') || url.searchParams.get('error_description') || null;
-        } catch (e) {
-          const errorMatch = urlString.match(/[?&#]error=([^&?#]+)/);
-          const descMatch = urlString.match(/[?&#]error_description=([^&?#]+)/);
-          return descMatch ? decodeURIComponent(descMatch[1]) : (errorMatch ? decodeURIComponent(errorMatch[1]) : null);
-        }
-      };
-
-      // Handle the result - check for success or if we got redirected to a web page with auth code
-      // Note: When redirecting to a web page, result.type might be 'dismiss' but we still need to check the URL
-      if (result.type === 'success' || result.type === 'dismiss' || (result.type === 'locked' && result.url)) {
-        const url = result.url || '';
-        
-        console.log('[Google Auth] Processing URL:', url);
-        console.log('[Google Auth] URL length:', url.length);
-        
-        // Check for errors first
-        const error = extractErrorFromUrl(url);
-        if (error) {
-          console.log('[Google Auth] Error found in URL:', error);
+      } else if (result.type === 'cancel') {
+        console.log('[Google Auth] User cancelled');
+        setLoading(false);
+      } else if (result.type === 'dismiss') {
+        // User dismissed the browser - might have completed in browser
+        // Check if session was established
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log('[Google Auth] Session found after dismiss');
           try {
-            await WebBrowser.dismissBrowser();
-          } catch (e) {}
-          throw new Error(error);
-        }
-
-        // Try to extract the code from the URL
-        const code = extractCodeFromUrl(url);
-        console.log('[Google Auth] Extracted code:', code ? 'Found' : 'Not found');
-        
-        if (code) {
-          console.log('[Google Auth] Found auth code in URL, exchanging for session...');
-          
-          // Close the browser since we got the code
-          try {
-            await WebBrowser.dismissBrowser();
-          } catch (e) {
-            // Browser might already be closed
+            const profile = await getCurrentProfile();
+            const destination = resolveOnboardingDestination(profile);
+            router.replace(destination as any);
+          } catch (err) {
+            router.replace('/(tabs)/requests');
           }
-          
-          // Exchange code for session (PKCE flow)
+        } else {
+          setLoading(false);
+          Alert.alert('Sign In', 'Please complete the sign-in process in the browser.');
+        }
+      } else {
+        console.log('[Google Auth] Unexpected result type:', result.type);
+        setLoading(false);
+        throw new Error('Unexpected authentication result');
+      }
           const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           
           if (exchangeError) throw exchangeError;

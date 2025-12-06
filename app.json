@@ -76,7 +76,7 @@
       "eas": {
         "projectId": "e6197faa-5efd-4b7c-a473-a0d9f317c2b7"
       },
-      "stripePublishableKey": "pk_live_YOUR_LIVE_STRIPE_KEY_HERE",
+      "stripePublishableKey": "pk_live_YOUR_LIVE_STRIPE_KEY_HERE", // TODO: Replace with your production Stripe publishable key (starts with pk_live_)
       "apiUrl": "https://zxazjbduiistnfstnwka.supabase.co/functions/v1/stripe_payment",
       "webCheckoutEnabled": true,
       "creatorWebBase": "https://www.appauro.com",
