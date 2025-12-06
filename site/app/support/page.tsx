@@ -1,3 +1,34 @@
+'use client';
+
+import { useState } from 'react';
+
+function EmailLink() {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <a 
+      href="mailto:rj@appauro.com" 
+      style={{ 
+        color: 'white', 
+        fontSize: '18px',
+        fontWeight: '600',
+        textDecoration: 'none',
+        padding: '12px 24px',
+        background: 'linear-gradient(135deg, #ff6b35 0%, #cc3598 100%)',
+        borderRadius: '8px',
+        display: 'inline-block',
+        transition: 'transform 0.2s, box-shadow 0.2s',
+        transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
+        boxShadow: isHovered ? '0 8px 16px rgba(255, 107, 53, 0.3)' : 'none'
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      📧 rj@appauro.com
+    </a>
+  );
+}
+
 export default function SupportPage() {
   return (
     <main className="container" style={{ padding: '40px 0' }}>
@@ -27,30 +58,7 @@ export default function SupportPage() {
               gap: '12px',
               flexWrap: 'wrap'
             }}>
-              <a 
-                href="mailto:rj@appauro.com" 
-                style={{ 
-                  color: 'white', 
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  textDecoration: 'none',
-                  padding: '12px 24px',
-                  background: 'linear-gradient(135deg, #ff6b35 0%, #cc3598 100%)',
-                  borderRadius: '8px',
-                  display: 'inline-block',
-                  transition: 'transform 0.2s, box-shadow 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 8px 16px rgba(255, 107, 53, 0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                📧 rj@appauro.com
-              </a>
+              <EmailLink />
             </div>
           </div>
 
@@ -82,4 +90,5 @@ export default function SupportPage() {
     </main>
   );
 }
+
 
