@@ -44,6 +44,8 @@ export async function GET(req: Request) {
         refunded_amount_cents,
         payment_distributed,
         payment_distribution_attempts,
+        payment_distribution_failed_at,
+        payment_distribution_error,
         created_at
       `)
       .not('amount_cents', 'is', null);
@@ -93,7 +95,13 @@ export async function GET(req: Request) {
       if (request.status === 'completed' && !request.payment_distributed) {
         stats.pendingPayouts += amount - fee;
       }
-      if (request.payment_distribution_attempts && request.payment_distribution_attempts > 0 && !request.payment_distributed) {
+      // Count as "failed" only if it has a failed_at timestamp or a distribution error
+      // This matches the criteria used by the retry endpoint
+      if (request.status === 'completed' && 
+          !request.payment_distributed && 
+          request.payment_distribution_attempts && 
+          request.payment_distribution_attempts > 0 &&
+          (request.payment_distribution_failed_at || request.payment_distribution_error)) {
         stats.failedDistributions++;
       }
       if (request.status === 'timeout') {
