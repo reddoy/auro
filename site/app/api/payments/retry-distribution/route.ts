@@ -126,8 +126,8 @@ export async function POST(req: Request) {
 
     try {
       // Check account balance
-      // Use the Auro account ID to check the correct balance
-      const auroAccountId = 'acct_1S0FmFBCrjcqavov'; // Correct test account ID
+      // Use environment variable with fallback for backwards compatibility
+      const auroAccountId = process.env.STRIPE_PLATFORM_ACCOUNT_ID || 'acct_1S0FmFBCrjcqavov';
       const balance = await stripe.balance.retrieve({}, { stripeAccount: auroAccountId });
       const availableBalance = balance.available[0]?.amount || 0; // In cents
       const pendingBalance = balance.pending[0]?.amount || 0; // In cents
