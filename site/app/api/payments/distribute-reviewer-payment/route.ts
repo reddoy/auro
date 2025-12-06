@@ -285,14 +285,18 @@ export async function POST(req: Request) {
     try {
       // Check account balance before attempting transfer
       // Only use AVAILABLE balance for transfers (not pending)
-      const auroAccountId = process.env.STRIPE_PLATFORM_ACCOUNT_ID || '';
+      // Use fallback account ID if env var not set (matches retry endpoint behavior)
+      const auroAccountId = process.env.STRIPE_PLATFORM_ACCOUNT_ID || "acct_1S0FmFBCrjcqavov";
       if (!auroAccountId) {
         console.error('❌ Missing STRIPE_PLATFORM_ACCOUNT_ID environment variable');
         return new Response(JSON.stringify({ 
-          error: 'Server configuration error: Stripe platform account not configured',
-          errorType: 'MISSING_CONFIG'
+          error: 'Server configuration error: Stripe platform account not configured. Please set STRIPE_PLATFORM_ACCOUNT_ID environment variable in Vercel.',
+          errorType: 'MISSING_CONFIG',
+          note: 'This is your platform\'s Stripe account ID (not the reviewer\'s connect account). Find it in Stripe Dashboard > Settings > Account.'
         }), { status: 500 });
       }
+      
+      console.log('🔍 Using platform account ID:', auroAccountId.substring(0, 10) + '...');
       
       console.log('🔍 Checking balance for account:', auroAccountId);
       
