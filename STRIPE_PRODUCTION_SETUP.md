@@ -97,11 +97,14 @@ supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_ABC123...
    - `charge.refunded`
    - `charge.dispute.created`
 
-### Next.js Webhook (if used)
+### Next.js Webhook (Optional - Only if using web checkout)
+
+**Note**: Only add this if you're using Stripe Checkout sessions on your web site (not PaymentSheet in the mobile app).
 
 1. If you have a webhook at `https://www.appauro.com/api/stripe/webhook`
 2. Add it in Stripe Dashboard → **Developers** → **Webhooks**
 3. Use the same signing secret as configured in Vercel
+4. Most apps only need the Supabase webhook above - skip this if you're only using mobile app payments
 
 ## Step 6: Replace Hardcoded Test Account ID
 
