@@ -436,16 +436,11 @@ export async function getSignedAvatarUrl(pathOrUrl: string, expiresInSeconds: nu
         const json = await res.json();
         const url = (json?.url || json?.signedUrl) as string | undefined;
         if (url) {
-          console.log('[getSignedAvatarUrl] Server-side signed URL generated for:', objectPath.substring(0, 60));
           return url;
         }
       } else {
         const errorText = await res.text().catch(() => 'Unknown error');
         console.warn('[getSignedAvatarUrl] Server-side signing failed:', res.status, errorText);
-        // If server-side fails and path is a directory, try client-side as fallback
-        if (objectPath.endsWith('/')) {
-          console.log('[getSignedAvatarUrl] Server-side failed for directory, trying client-side list:', objectPath);
-        }
       }
     } catch (err) {
       console.warn('[getSignedAvatarUrl] Server-side signing error:', err);
@@ -456,18 +451,14 @@ export async function getSignedAvatarUrl(pathOrUrl: string, expiresInSeconds: nu
   // Only do this if server-side signing failed or isn't available
   if (objectPath.endsWith('/')) {
     try {
-      console.log('[getSignedAvatarUrl] Path is a directory, listing files:', objectPath);
       const { data: files, error } = await supabase.storage.from(bucket).list(objectPath, { limit: 1, sortBy: { column: 'created_at', order: 'desc' } });
       if (!error && files && files.length > 0) {
         // Use the first file found in the directory
         objectPath = objectPath + files[0].name;
-        console.log('[getSignedAvatarUrl] Resolved directory path to file:', objectPath);
       } else {
-        console.warn('[getSignedAvatarUrl] Directory path has no files:', objectPath, 'error:', error);
         // If client-side list fails, try server-side again with the directory path
         // (server-side should handle directory resolution)
         if (base && error) {
-          console.log('[getSignedAvatarUrl] Client-side list failed, retrying server-side with directory path');
           try {
             const params = new URLSearchParams({ path: objectPath, bucket, expiresIn: String(expiresInSeconds) });
             const res = await fetch(`${base}/api/storage/signed-view?${params.toString()}`, { method: 'GET' });
@@ -487,17 +478,14 @@ export async function getSignedAvatarUrl(pathOrUrl: string, expiresInSeconds: nu
   }
 
   try {
-    console.log('[getSignedAvatarUrl] Attempting client-side signing for:', objectPath.substring(0, 60));
     const { data, error } = await supabase.storage.from(bucket).createSignedUrl(objectPath, expiresInSeconds);
     if (error) {
-      console.error('[getSignedAvatarUrl] Client-side signing error:', error, 'path:', objectPath);
+      console.error('[getSignedAvatarUrl] Client-side signing error:', error);
       throw error;
     }
     if (data?.signedUrl) {
-      console.log('[getSignedAvatarUrl] Client-side signed URL generated:', data.signedUrl.substring(0, 80));
       return data.signedUrl;
     }
-    console.warn('[getSignedAvatarUrl] No signed URL returned from client-side signing');
     return null;
   } catch (err) {
     console.error('[getSignedAvatarUrl] Client-side signing exception:', err);

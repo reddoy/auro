@@ -23,18 +23,15 @@ export default function Avatar({ uri, name, size = 48, accessibilityLabel }: Ava
   // Auto-sign storage paths that aren't already full HTTP URLs
   React.useEffect(() => {
     if (!uri || !uri.trim()) {
-      console.log('[Avatar] No URI provided for', name);
       setSignedUri(null);
       setIsSigning(false);
       return;
     }
     
     const trimmed = uri.trim();
-    console.log('[Avatar] Processing URI for', name, 'URI:', trimmed.substring(0, 80));
     
     // If it's already a full HTTP URL, use it directly
     if (/^https?:\/\//i.test(trimmed)) {
-      console.log('[Avatar] URI is already HTTP URL, using directly');
       setSignedUri(trimmed);
       setIsSigning(false);
       return;
@@ -44,17 +41,14 @@ export default function Avatar({ uri, name, size = 48, accessibilityLabel }: Ava
     setIsSigning(true);
     (async () => {
       try {
-        console.log('[Avatar] Attempting to sign storage path for', name);
         const signed = await getSignedAvatarUrl(trimmed, 3600);
         if (signed) {
-          console.log('[Avatar] Successfully signed URL for', name, 'signed:', signed.substring(0, 80));
           setSignedUri(signed);
         } else {
-          console.log('[Avatar] Signing returned null for', name, 'using raw path');
           setSignedUri(trimmed);
         }
       } catch (err) {
-        console.error('[Avatar] Error signing URL for', name, 'error:', err);
+        console.error('[Avatar] Error signing URL:', err);
         // If signing fails, try using the raw path anyway (might be public)
         setSignedUri(trimmed);
       } finally {
@@ -115,17 +109,7 @@ export default function Avatar({ uri, name, size = 48, accessibilityLabel }: Ava
           transition={200}
           cachePolicy="memory-disk"
           onError={(error) => {
-            console.error('[Avatar] Image load error for', name, 'URI:', displayUri?.substring(0, 100), 'error:', error);
-            // Try to fetch the URL directly to see what the actual error is
-            if (displayUri && displayUri.startsWith('http')) {
-              fetch(displayUri, { method: 'HEAD' })
-                .then(res => {
-                  console.error('[Avatar] Direct fetch test - Status:', res.status, 'URL:', displayUri.substring(0, 100));
-                })
-                .catch(fetchErr => {
-                  console.error('[Avatar] Direct fetch test - Error:', fetchErr);
-                });
-            }
+            console.error('[Avatar] Image load error:', error);
             setImageError(true);
             setShowSpinner(false);
           }}

@@ -173,7 +173,6 @@ export default function RequestsScreen() {
           reviewers.forEach(rev => { 
             if (rev) {
               map[rev.id] = rev;
-              console.log('[avatar] Reviewer from DB (non-reviewer mode):', rev.id, 'avatarUrl:', rev.avatarUrl ? rev.avatarUrl.substring(0, 50) : 'null');
             }
           });
           setRevMap(map);
@@ -485,19 +484,9 @@ export default function RequestsScreen() {
     if (userIsReviewer) {
       if (item.userId) {
         avatarUri = userAvatarMap[item.userId]?.trim() || reviewee?.avatarUrl?.trim() || undefined;
-        if (!avatarUri && reviewee?.avatarUrl) {
-          console.log('[avatar] Using reviewee raw URL for item', item.id, 'userId', item.userId, 'raw:', reviewee.avatarUrl.substring(0, 50));
-        }
       }
     } else {
       avatarUri = avatarMap[item.influencerId]?.trim() || reviewer?.avatarUrl?.trim() || undefined;
-      if (!avatarUri && reviewer?.avatarUrl) {
-        console.log('[avatar] Using reviewer raw URL for item', item.id, 'reviewerId', item.influencerId, 'raw:', reviewer.avatarUrl.substring(0, 50));
-      }
-    }
-    
-    if (!avatarUri) {
-      console.log('[avatar] No avatar URI found for item', item.id, 'userIsReviewer:', userIsReviewer, 'userId:', item.userId, 'influencerId:', item.influencerId);
     }
     const displayName = userIsReviewer
       ? (reviewee?.displayName || 'User')

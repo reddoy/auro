@@ -49,7 +49,6 @@ export async function GET(req: NextRequest) {
         
         // Use the first file found
         path = path + files[0].name;
-        console.log('Resolved directory to file:', path);
       } catch (err) {
         console.error('Error resolving directory path:', err);
         return new Response(JSON.stringify({ error: 'Failed to resolve directory path' }), { 

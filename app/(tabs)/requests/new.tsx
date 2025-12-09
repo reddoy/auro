@@ -34,23 +34,19 @@ export default function DiscoverReviewersScreen() {
             list.map(async (r) => {
               const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
               if (!raw) {
-                console.log('[avatar] Reviewer', r.id, 'has no avatarUrl in discover page');
                 return [r.id, undefined] as const;
               }
-              console.log('[avatar] Reviewer', r.id, 'raw avatarUrl (discover):', raw);
               let uri: string | undefined = raw;
               try {
                 const signed = await getSignedAvatarUrl(raw, 3600);
                 if (signed) {
-                  console.log('[avatar] Reviewer', r.id, 'signed URL (discover):', signed);
                   uri = signed;
                 } else {
-                  console.log('[avatar] Reviewer', r.id, 'signing returned null (discover), will try raw in Avatar component');
                   // Don't use raw if it's a directory - let Avatar component handle it
                   uri = raw.endsWith('/') ? undefined : raw;
                 }
               } catch (err) {
-                console.error('[avatar] Reviewer', r.id, 'signing error (discover):', err);
+                console.error('[avatar] Signing error:', err);
                 // Don't use raw if it's a directory - let Avatar component handle it
                 uri = raw.endsWith('/') ? undefined : raw;
               }
