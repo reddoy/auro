@@ -115,7 +115,17 @@ export default function Avatar({ uri, name, size = 48, accessibilityLabel }: Ava
           transition={200}
           cachePolicy="memory-disk"
           onError={(error) => {
-            console.error('[Avatar] Image load error for', name, 'URI:', displayUri?.substring(0, 80), 'error:', error);
+            console.error('[Avatar] Image load error for', name, 'URI:', displayUri?.substring(0, 100), 'error:', error);
+            // Try to fetch the URL directly to see what the actual error is
+            if (displayUri && displayUri.startsWith('http')) {
+              fetch(displayUri, { method: 'HEAD' })
+                .then(res => {
+                  console.error('[Avatar] Direct fetch test - Status:', res.status, 'URL:', displayUri.substring(0, 100));
+                })
+                .catch(fetchErr => {
+                  console.error('[Avatar] Direct fetch test - Error:', fetchErr);
+                });
+            }
             setImageError(true);
             setShowSpinner(false);
           }}

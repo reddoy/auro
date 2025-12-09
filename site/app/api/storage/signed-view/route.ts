@@ -8,10 +8,14 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     let path = searchParams.get('path');
     const bucketParam = searchParams.get('bucket');
+    const expiresInParam = searchParams.get('expiresIn');
     
     if (!path) {
       return new Response('Missing path parameter', { status: 400 });
     }
+    
+    // Use requested expiration time, default to 24 hours
+    const expiresIn = expiresInParam ? Math.min(Number(expiresInParam), 60 * 60 * 24 * 7) : 60 * 60 * 24;
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -55,12 +59,30 @@ export async function GET(req: NextRequest) {
       }
     }
     
-    // Create signed URL that expires in 24 hours
-    // Note: Supabase will create a signed URL even if the file doesn't exist
-    // The URL will return 404/400 when accessed if the file is missing
+    // Verify file exists by listing parent directory
+    const pathParts = path.split('/');
+    const fileName = pathParts.pop();
+    const parentDir = pathParts.join('/');
+    
+    const { data: files, error: listError } = await supabase.storage
+      .from(bucket)
+      .list(parentDir || '', { limit: 1000 });
+    
+    if (!listError && files) {
+      const fileExists = files.some(f => f.name === fileName);
+      if (!fileExists) {
+        console.error('File not found in directory:', path, 'bucket:', bucket);
+        return new Response(JSON.stringify({ error: 'File not found' }), { 
+          status: 404, 
+          headers: { 'Content-Type': 'application/json' } 
+        });
+      }
+    }
+    
+    // Create signed URL with requested expiration time
     const { data, error } = await supabase.storage
       .from(bucket)
-      .createSignedUrl(path, 60 * 60 * 24);
+      .createSignedUrl(path, expiresIn);
     
     if (error) {
       console.error('Error creating signed URL:', error, 'path:', path, 'bucket:', bucket);

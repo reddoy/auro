@@ -1,140 +1,162 @@
+#!/usr/bin/env node
+
+/**
+ * Debug script to check if avatar files exist at the paths in the database
+ * This will help us understand why signed URLs return 400 errors
+ */
+
 const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs');
+const path = require('path');
 
-const supabaseUrl = 'https://zxazjbduiistnfstnwka.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4YXpqYmR1aWlzdG5mc3Rud2thIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3NTY0NDYsImV4cCI6MjA3MTMzMjQ0Nn0.apdP9iKtqvt8os_pdq8dgojMHSPUk5HsIVLjzw1gevA';
+// Read config from app.json
+const appJsonPath = path.join(__dirname, '..', 'app.json');
+const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'));
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseUrl = appJson.expo.extra.supabaseUrl;
+const supabaseAnonKey = appJson.expo.extra.supabaseAnonKey;
 
-async function debugAvatarPaths() {
-  console.log('🔍 Debugging avatar paths...\n');
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('❌ Missing Supabase config in app.json');
+  process.exit(1);
+}
+
+// Use service role for full access
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!serviceRoleKey) {
+  console.error('❌ Missing SUPABASE_SERVICE_ROLE_KEY environment variable');
+  console.error('   Get it from: Supabase Dashboard → Settings → API → service_role key');
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+async function checkFile(avatarPath, bucket = 'avatars') {
+  console.log(`\n🔍 Checking: ${avatarPath}`);
   
-  // Get reviewers with avatar_url
+  // First, try to list the parent directory
+  const pathParts = avatarPath.split('/');
+  const fileName = pathParts.pop();
+  const parentDir = pathParts.join('/');
+  
+  console.log(`   Parent dir: ${parentDir || '(root)'}`);
+  console.log(`   File name: ${fileName}`);
+  
+  try {
+    // List files in parent directory
+    const { data: files, error: listError } = await supabase.storage
+      .from(bucket)
+      .list(parentDir || '', { limit: 100 });
+    
+    if (listError) {
+      console.log(`   ❌ Error listing directory: ${listError.message}`);
+      return false;
+    }
+    
+    if (!files || files.length === 0) {
+      console.log(`   ❌ Directory is empty or doesn't exist`);
+      return false;
+    }
+    
+    console.log(`   📁 Found ${files.length} files in directory`);
+    
+    // Check if our file exists
+    const found = files.find(f => f.name === fileName);
+    if (found) {
+      console.log(`   ✅ File EXISTS!`);
+      console.log(`      Size: ${found.metadata?.size || 'unknown'} bytes`);
+      console.log(`      Created: ${found.created_at || 'unknown'}`);
+      
+      // Try to create signed URL
+      const { data: signed, error: signError } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(avatarPath, 3600);
+      
+      if (signError) {
+        console.log(`   ⚠️  Can create signed URL but error: ${signError.message}`);
+        return false;
+      }
+      
+      console.log(`   ✅ Can create signed URL`);
+      console.log(`      URL: ${signed.signedUrl.substring(0, 80)}...`);
+      
+      // Try to actually fetch it
+      try {
+        const response = await fetch(signed.signedUrl, { method: 'HEAD' });
+        if (response.ok) {
+          console.log(`   ✅ File is accessible via signed URL (status: ${response.status})`);
+          return true;
+        } else {
+          console.log(`   ❌ Signed URL returns error: ${response.status} ${response.statusText}`);
+          return false;
+        }
+      } catch (fetchError) {
+        console.log(`   ❌ Error fetching signed URL: ${fetchError.message}`);
+        return false;
+      }
+    } else {
+      console.log(`   ❌ File NOT FOUND in directory`);
+      console.log(`   📋 Files in directory:`);
+      files.slice(0, 10).forEach(f => {
+        console.log(`      - ${f.name} (${f.metadata?.size || '?'} bytes)`);
+      });
+      if (files.length > 10) {
+        console.log(`      ... and ${files.length - 10} more`);
+      }
+      return false;
+    }
+  } catch (err) {
+    console.log(`   ❌ Error: ${err.message}`);
+    return false;
+  }
+}
+
+async function main() {
+  console.log('🔍 Debugging avatar file paths...\n');
+  
+  // Fetch reviewers with avatar_url
   const { data: reviewers, error } = await supabase
     .from('profiles')
-    .select('id, username, first_name, last_name, avatar_url, is_reviewer')
-    .eq('is_reviewer', 'approved')
+    .select('id, username, avatar_url')
     .not('avatar_url', 'is', null)
-    .limit(10);
+    .limit(5); // Check first 5
   
   if (error) {
     console.error('❌ Error fetching reviewers:', error);
-    return;
+    process.exit(1);
   }
   
   console.log(`Found ${reviewers.length} reviewers with avatar_url\n`);
   
+  let foundCount = 0;
+  let missingCount = 0;
+  
   for (const reviewer of reviewers) {
     const avatarPath = reviewer.avatar_url;
-    const name = `${reviewer.first_name || ''} ${reviewer.last_name || ''}`.trim() || reviewer.username;
+    if (!avatarPath) continue;
     
-    console.log(`\n👤 ${name} (${reviewer.username})`);
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`👤 ${reviewer.username || reviewer.id}`);
     console.log(`   Database path: ${avatarPath}`);
     
-    // Try to list the directory if it's a directory path
-    if (avatarPath.endsWith('/')) {
-      console.log(`   ⚠️  Path ends with / (directory)`);
-      try {
-        const { data: files, error: listError } = await supabase.storage
-          .from('avatars')
-          .list(avatarPath, { limit: 5 });
-        
-        if (listError) {
-          console.log(`   ❌ Cannot list directory: ${listError.message}`);
-        } else if (files && files.length > 0) {
-          console.log(`   ✅ Directory exists with ${files.length} file(s):`);
-          files.forEach(f => {
-            console.log(`      - ${f.name} (${f.id ? 'file' : 'folder'})`);
-          });
-        } else {
-          console.log(`   ⚠️  Directory is empty or doesn't exist`);
-        }
-      } catch (err) {
-        console.log(`   ❌ Exception listing: ${err.message}`);
-      }
+    const exists = await checkFile(avatarPath, 'avatars');
+    
+    if (exists) {
+      foundCount++;
     } else {
-      // Try to sign the exact path
-      try {
-        const { data: signed, error: signError } = await supabase.storage
-          .from('avatars')
-          .createSignedUrl(avatarPath, 60);
-        
-        if (signError) {
-          console.log(`   ❌ Cannot sign URL: ${signError.message}`);
-          
-          // Try checking if it's actually a directory
-          const dirPath = avatarPath + '/';
-          const { data: dirFiles } = await supabase.storage
-            .from('avatars')
-            .list(dirPath, { limit: 1 });
-          
-          if (dirFiles && dirFiles.length > 0) {
-            console.log(`   ⚠️  Path might be a directory - found files in ${dirPath}`);
-          }
-        } else {
-          console.log(`   ✅ Can sign URL successfully`);
-          console.log(`   📎 Signed URL: ${signed.signedUrl.substring(0, 100)}...`);
-          
-          // Try to fetch the signed URL to see if it actually works
-          try {
-            const response = await fetch(signed.signedUrl, { method: 'HEAD' });
-            if (response.ok) {
-              console.log(`   ✅ Signed URL is accessible (${response.status})`);
-            } else {
-              console.log(`   ❌ Signed URL returns ${response.status} ${response.statusText}`);
-            }
-          } catch (fetchErr) {
-            console.log(`   ❌ Cannot fetch signed URL: ${fetchErr.message}`);
-          }
-        }
-      } catch (err) {
-        console.log(`   ❌ Exception signing: ${err.message}`);
-      }
+      missingCount++;
     }
   }
   
-  // Also check what files actually exist in storage
-  console.log(`\n\n📦 Checking what files actually exist in storage...`);
-  console.log(`   Checking temp-uploads/...`);
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`\n📊 Summary:`);
+  console.log(`   ✅ Files found: ${foundCount}`);
+  console.log(`   ❌ Files missing: ${missingCount}`);
   
-  try {
-    const { data: tempUploads, error: tempError } = await supabase.storage
-      .from('avatars')
-      .list('temp-uploads', { limit: 20 });
-    
-    if (tempError) {
-      console.log(`   ❌ Cannot list temp-uploads: ${tempError.message}`);
-    } else if (tempUploads && tempUploads.length > 0) {
-      console.log(`   ✅ Found ${tempUploads.length} item(s) in temp-uploads:`);
-      tempUploads.slice(0, 10).forEach(item => {
-        console.log(`      - ${item.name}${item.id ? ' (file)' : ' (folder)'}`);
-      });
-    } else {
-      console.log(`   ⚠️  temp-uploads is empty`);
-    }
-  } catch (err) {
-    console.log(`   ❌ Exception: ${err.message}`);
-  }
-  
-  console.log(`\n   Checking users/...`);
-  try {
-    const { data: users, error: usersError } = await supabase.storage
-      .from('avatars')
-      .list('users', { limit: 20 });
-    
-    if (usersError) {
-      console.log(`   ❌ Cannot list users: ${usersError.message}`);
-    } else if (users && users.length > 0) {
-      console.log(`   ✅ Found ${users.length} user directory(ies):`);
-      users.slice(0, 10).forEach(user => {
-        console.log(`      - ${user.name}/`);
-      });
-    } else {
-      console.log(`   ⚠️  users/ is empty`);
-    }
-  } catch (err) {
-    console.log(`   ❌ Exception: ${err.message}`);
+  if (missingCount > 0) {
+    console.log(`\n💡 If files are missing, they may have been deleted or moved.`);
+    console.log(`   Check Supabase Storage dashboard to see actual file structure.`);
   }
 }
 
-debugAvatarPaths().catch(console.error);
-
+main().catch(console.error);
