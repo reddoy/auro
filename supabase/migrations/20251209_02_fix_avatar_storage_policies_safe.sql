@@ -1,8 +1,10 @@
 -- Safe, non-destructive fix for avatar storage policies
 -- This migration ADDS policies without dropping existing ones
--- Focuses on temp-uploads/ since that's where the files actually are
+-- Files are in: avatars/temp-uploads/... OR avatars/{user_id}/...
 
--- Allow authenticated users to SELECT (read) avatars from temp-uploads/
+-- Allow authenticated users to SELECT (read) avatars from:
+-- 1. temp-uploads/ (reviewer signups)
+-- 2. {user_id}/ (reviewee avatars - UUID pattern)
 -- This is the key fix - allows reading the existing avatar files
 DO $$
 BEGIN
@@ -10,36 +12,43 @@ BEGIN
     SELECT 1 FROM pg_policies 
     WHERE schemaname = 'storage' 
     AND tablename = 'objects' 
-    AND policyname = 'avatars_select_temp_uploads'
+    AND policyname = 'avatars_select_authenticated'
   ) THEN
-    CREATE POLICY "avatars_select_temp_uploads"
+    CREATE POLICY "avatars_select_authenticated"
     ON storage.objects
     FOR SELECT
     TO authenticated
     USING (
       bucket_id = 'avatars' 
-      AND name LIKE 'temp-uploads/%'
+      AND (
+        name LIKE 'temp-uploads/%'
+        OR name ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/'  -- UUID pattern for user_id/
+      )
     );
   END IF;
 END $$;
 
--- Allow authenticated users to INSERT (upload) avatars to temp-uploads/
--- For new reviewer signups
+-- Allow authenticated users to INSERT (upload) avatars to:
+-- 1. temp-uploads/ (for reviewer signups)
+-- 2. Their own folder {user_id}/ (for reviewees)
 DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies 
     WHERE schemaname = 'storage' 
     AND tablename = 'objects' 
-    AND policyname = 'avatars_insert_temp_uploads'
+    AND policyname = 'avatars_insert_authenticated'
   ) THEN
-    CREATE POLICY "avatars_insert_temp_uploads"
+    CREATE POLICY "avatars_insert_authenticated"
     ON storage.objects
     FOR INSERT
     TO authenticated
     WITH CHECK (
       bucket_id = 'avatars' 
-      AND name LIKE 'temp-uploads/%'
+      AND (
+        name LIKE 'temp-uploads/%'
+        OR name LIKE auth.uid()::text || '/%'
+      )
     );
   END IF;
 END $$;

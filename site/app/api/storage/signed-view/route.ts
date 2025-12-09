@@ -56,6 +56,8 @@ export async function GET(req: NextRequest) {
     }
     
     // Create signed URL that expires in 24 hours
+    // Note: Supabase will create a signed URL even if the file doesn't exist
+    // The URL will return 404/400 when accessed if the file is missing
     const { data, error } = await supabase.storage
       .from(bucket)
       .createSignedUrl(path, 60 * 60 * 24);
