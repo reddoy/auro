@@ -121,9 +121,13 @@ export default function RequestsScreen() {
                 users.filter(Boolean).map(async (u) => {
                   const usr = u as { id: string; displayName: string; avatarUrl?: string | null };
                   const raw = (usr.avatarUrl || '').trim().replace(/^@+/, '');
-                  let uri = raw;
-                  if (raw) {
-                    try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
+                  if (!raw) return [usr.id, undefined] as const;
+                  let uri: string | undefined = raw;
+                  try { 
+                    const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
+                    uri = signed || raw; 
+                  } catch {
+                    uri = raw; // Fallback to raw URL if signing fails
                   }
                   return [usr.id, uri] as const;
                 })
@@ -132,9 +136,13 @@ export default function RequestsScreen() {
                 reviewers.filter(Boolean).map(async (rev) => {
                   const r = rev as DbReviewerSummary;
                   const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
-                  let uri = raw;
-                  if (raw) {
-                    try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
+                  if (!raw) return [r.id, undefined] as const;
+                  let uri: string | undefined = raw;
+                  try { 
+                    const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
+                    uri = signed || raw; 
+                  } catch {
+                    uri = raw; // Fallback to raw URL if signing fails
                   }
                   return [r.id, uri] as const;
                 })
@@ -170,9 +178,13 @@ export default function RequestsScreen() {
               reviewers.filter(Boolean).map(async (rev) => {
                 const r = rev as DbReviewerSummary;
                 const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
-                let uri = raw;
-                if (raw) {
-                  try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
+                if (!raw) return [r.id, undefined] as const;
+                let uri: string | undefined = raw;
+                try { 
+                  const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
+                  uri = signed || raw; 
+                } catch {
+                  uri = raw; // Fallback to raw URL if signing fails
                 }
                 return [r.id, uri] as const;
               })
@@ -276,9 +288,13 @@ export default function RequestsScreen() {
                 users.filter(Boolean).map(async (u) => {
                   const usr = u as { id: string; displayName: string; avatarUrl?: string | null };
                   const raw = (usr.avatarUrl || '').trim().replace(/^@+/, '');
-                  let uri = raw;
-                  if (raw) {
-                    try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
+                  if (!raw) return [usr.id, undefined] as const;
+                  let uri: string | undefined = raw;
+                  try { 
+                    const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
+                    uri = signed || raw; 
+                  } catch {
+                    uri = raw; // Fallback to raw URL if signing fails
                   }
                   return [usr.id, uri] as const;
                 })
@@ -287,9 +303,13 @@ export default function RequestsScreen() {
                 reviewers.filter(Boolean).map(async (rev) => {
                   const r = rev as DbReviewerSummary;
                   const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
-                  let uri = raw;
-                  if (raw) {
-                    try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
+                  if (!raw) return [r.id, undefined] as const;
+                  let uri: string | undefined = raw;
+                  try { 
+                    const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
+                    uri = signed || raw; 
+                  } catch {
+                    uri = raw; // Fallback to raw URL if signing fails
                   }
                   return [r.id, uri] as const;
                 })
@@ -323,9 +343,13 @@ export default function RequestsScreen() {
               reviewers.filter(Boolean).map(async (rev) => {
                 const r = rev as DbReviewerSummary;
                 const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
-                let uri = raw;
-                if (raw) {
-                  try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
+                if (!raw) return [r.id, undefined] as const;
+                let uri: string | undefined = raw;
+                try { 
+                  const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
+                  uri = signed || raw; 
+                } catch {
+                  uri = raw; // Fallback to raw URL if signing fails
                 }
                 return [r.id, uri] as const;
               })
@@ -413,9 +437,14 @@ export default function RequestsScreen() {
     const reviewee = item.userId ? userMap[item.userId] : undefined;
     
     // Show reviewee info if user is reviewer, show reviewer info if user is reviewee
+    // Try signed URL first, then raw URL, ensuring we don't use empty strings
     const avatarUri = userIsReviewer
-      ? (item.userId ? userAvatarMap[item.userId] || reviewee?.avatarUrl || undefined : undefined)
-      : (avatarMap[item.influencerId] || reviewer?.avatarUrl) || undefined;
+      ? (item.userId 
+          ? (userAvatarMap[item.userId] && userAvatarMap[item.userId].trim() ? userAvatarMap[item.userId] : (reviewee?.avatarUrl && reviewee.avatarUrl.trim() ? reviewee.avatarUrl : undefined))
+          : undefined)
+      : ((avatarMap[item.influencerId] && avatarMap[item.influencerId].trim()) 
+          ? avatarMap[item.influencerId] 
+          : (reviewer?.avatarUrl && reviewer.avatarUrl.trim() ? reviewer.avatarUrl : undefined));
     const displayName = userIsReviewer
       ? (reviewee?.displayName || 'User')
       : (reviewer?.displayName || 'Reviewer');

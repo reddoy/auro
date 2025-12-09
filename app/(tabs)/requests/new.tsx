@@ -32,12 +32,14 @@ export default function DiscoverReviewersScreen() {
         try {
           const pairs = await Promise.all(
             list.map(async (r) => {
-              let uri = r.avatarUrl || '';
-              if (uri) {
-                try {
-                  const signed = await getSignedAvatarUrl(uri, 3600);
-                  if (signed) uri = signed;
-                } catch {}
+              const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
+              if (!raw) return [r.id, undefined] as const;
+              let uri: string | undefined = raw;
+              try {
+                const signed = await getSignedAvatarUrl(raw, 3600);
+                uri = signed || raw; // Use signed URL if available, otherwise fallback to raw
+              } catch {
+                uri = raw; // Fallback to raw URL if signing fails
               }
               return [r.id, uri] as const;
             })
@@ -135,7 +137,13 @@ export default function DiscoverReviewersScreen() {
   const renderItem = ({ item }: { item: DbReviewerSummary }) => (
     <TouchableOpacity style={styles.row} onPress={() => openReviewerProfile(item)} activeOpacity={0.7}>
       <RNView style={styles.avatarWrap}>
-        <Avatar uri={avatarMap[item.id] || item.avatarUrl || undefined} name={item.displayName} size={56} />
+        <Avatar 
+          uri={(avatarMap[item.id] && avatarMap[item.id].trim()) 
+            ? avatarMap[item.id] 
+            : (item.avatarUrl && item.avatarUrl.trim() ? item.avatarUrl : undefined)} 
+          name={item.displayName} 
+          size={56} 
+        />
       </RNView>
       <RNView style={styles.rowInfo}>
         <Text style={styles.rowName}>{item.displayName || item.username || 'Reviewer'}</Text>
