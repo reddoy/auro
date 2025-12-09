@@ -33,19 +33,34 @@ export default function DiscoverReviewersScreen() {
           const pairs = await Promise.all(
             list.map(async (r) => {
               const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
-              if (!raw) return [r.id, undefined] as const;
+              if (!raw) {
+                console.log('[avatar] Reviewer', r.id, 'has no avatarUrl in discover page');
+                return [r.id, undefined] as const;
+              }
+              console.log('[avatar] Reviewer', r.id, 'raw avatarUrl (discover):', raw);
               let uri: string | undefined = raw;
               try {
                 const signed = await getSignedAvatarUrl(raw, 3600);
-                uri = signed || raw; // Use signed URL if available, otherwise fallback to raw
-              } catch {
-                uri = raw; // Fallback to raw URL if signing fails
+                if (signed) {
+                  console.log('[avatar] Reviewer', r.id, 'signed URL (discover):', signed);
+                  uri = signed;
+                } else {
+                  console.log('[avatar] Reviewer', r.id, 'signing returned null (discover), will try raw in Avatar component');
+                  // Don't use raw if it's a directory - let Avatar component handle it
+                  uri = raw.endsWith('/') ? undefined : raw;
+                }
+              } catch (err) {
+                console.error('[avatar] Reviewer', r.id, 'signing error (discover):', err);
+                // Don't use raw if it's a directory - let Avatar component handle it
+                uri = raw.endsWith('/') ? undefined : raw;
               }
               return [r.id, uri] as const;
             })
           );
           setAvatarMap(Object.fromEntries(pairs));
-        } catch {}
+        } catch (err) {
+          console.error('[avatar] Error setting avatar map in discover page:', err);
+        }
       } finally {
         setLoading(false);
       }

@@ -170,7 +170,12 @@ export default function RequestsScreen() {
           const uniqueIds = Array.from(new Set(reqs.map(r => r.influencerId).filter(Boolean)));
           const reviewers = await Promise.all(uniqueIds.map(id => getReviewerById(String(id))));
           const map: Record<string, DbReviewerSummary> = {};
-          reviewers.forEach(rev => { if (rev) map[rev.id] = rev; });
+          reviewers.forEach(rev => { 
+            if (rev) {
+              map[rev.id] = rev;
+              console.log('[avatar] Reviewer from DB (non-reviewer mode):', rev.id, 'avatarUrl:', rev.avatarUrl ? rev.avatarUrl.substring(0, 50) : 'null');
+            }
+          });
           setRevMap(map);
           // Prefetch signed avatar URLs if needed
           try {
@@ -288,12 +293,23 @@ export default function RequestsScreen() {
                 users.filter(Boolean).map(async (u) => {
                   const usr = u as { id: string; displayName: string; avatarUrl?: string | null };
                   const raw = (usr.avatarUrl || '').trim().replace(/^@+/, '');
-                  if (!raw) return [usr.id, undefined] as const;
+                  if (!raw) {
+                    console.log('[avatar-refresh] User', usr.id, 'has no avatarUrl');
+                    return [usr.id, undefined] as const;
+                  }
+                  console.log('[avatar-refresh] User', usr.id, 'raw avatarUrl:', raw.substring(0, 50));
                   let uri: string | undefined = raw;
                   try { 
                     const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
-                    uri = signed || raw; 
-                  } catch {
+                    if (signed) {
+                      console.log('[avatar-refresh] User', usr.id, 'signed URL:', signed.substring(0, 50));
+                      uri = signed;
+                    } else {
+                      console.log('[avatar-refresh] User', usr.id, 'signing returned null, using raw');
+                      uri = raw;
+                    }
+                  } catch (err) {
+                    console.error('[avatar-refresh] User', usr.id, 'signing error:', err);
                     uri = raw; // Fallback to raw URL if signing fails
                   }
                   return [usr.id, uri] as const;
@@ -303,12 +319,23 @@ export default function RequestsScreen() {
                 reviewers.filter(Boolean).map(async (rev) => {
                   const r = rev as DbReviewerSummary;
                   const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
-                  if (!raw) return [r.id, undefined] as const;
+                  if (!raw) {
+                    console.log('[avatar-refresh] Reviewer', r.id, 'has no avatarUrl');
+                    return [r.id, undefined] as const;
+                  }
+                  console.log('[avatar-refresh] Reviewer', r.id, 'raw avatarUrl:', raw.substring(0, 50));
                   let uri: string | undefined = raw;
                   try { 
                     const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
-                    uri = signed || raw; 
-                  } catch {
+                    if (signed) {
+                      console.log('[avatar-refresh] Reviewer', r.id, 'signed URL:', signed.substring(0, 50));
+                      uri = signed;
+                    } else {
+                      console.log('[avatar-refresh] Reviewer', r.id, 'signing returned null, using raw');
+                      uri = raw;
+                    }
+                  } catch (err) {
+                    console.error('[avatar-refresh] Reviewer', r.id, 'signing error:', err);
                     uri = raw; // Fallback to raw URL if signing fails
                   }
                   return [r.id, uri] as const;
@@ -331,7 +358,9 @@ export default function RequestsScreen() {
               }
               return merged;
             });
-          } catch {}
+          } catch (err) {
+            console.error('[avatar-refresh] Error in reviewer mode avatar signing:', err);
+          }
         } else {
           const uniqueIds = Array.from(new Set(reqs.map(r => r.influencerId).filter(Boolean)));
           const reviewers = await Promise.all(uniqueIds.map(id => getReviewerById(String(id))));
@@ -343,12 +372,23 @@ export default function RequestsScreen() {
               reviewers.filter(Boolean).map(async (rev) => {
                 const r = rev as DbReviewerSummary;
                 const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
-                if (!raw) return [r.id, undefined] as const;
+                if (!raw) {
+                  console.log('[avatar-refresh] Reviewer', r.id, 'has no avatarUrl (non-reviewer mode)');
+                  return [r.id, undefined] as const;
+                }
+                console.log('[avatar-refresh] Reviewer', r.id, 'raw avatarUrl (non-reviewer mode):', raw.substring(0, 50));
                 let uri: string | undefined = raw;
                 try { 
                   const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
-                  uri = signed || raw; 
-                } catch {
+                  if (signed) {
+                    console.log('[avatar-refresh] Reviewer', r.id, 'signed URL (non-reviewer mode):', signed.substring(0, 50));
+                    uri = signed;
+                  } else {
+                    console.log('[avatar-refresh] Reviewer', r.id, 'signing returned null (non-reviewer mode), using raw');
+                    uri = raw;
+                  }
+                } catch (err) {
+                  console.error('[avatar-refresh] Reviewer', r.id, 'signing error (non-reviewer mode):', err);
                   uri = raw; // Fallback to raw URL if signing fails
                 }
                 return [r.id, uri] as const;
@@ -361,7 +401,9 @@ export default function RequestsScreen() {
               }
               return merged;
             });
-          } catch {}
+          } catch (err) {
+            console.error('[avatar-refresh] Error in non-reviewer mode avatar signing:', err);
+          }
         }
       } catch {}
       finally {
@@ -437,14 +479,26 @@ export default function RequestsScreen() {
     const reviewee = item.userId ? userMap[item.userId] : undefined;
     
     // Show reviewee info if user is reviewer, show reviewer info if user is reviewee
-    // Try signed URL first, then raw URL, ensuring we don't use empty strings
-    const avatarUri = userIsReviewer
-      ? (item.userId 
-          ? (userAvatarMap[item.userId] && userAvatarMap[item.userId].trim() ? userAvatarMap[item.userId] : (reviewee?.avatarUrl && reviewee.avatarUrl.trim() ? reviewee.avatarUrl : undefined))
-          : undefined)
-      : ((avatarMap[item.influencerId] && avatarMap[item.influencerId].trim()) 
-          ? avatarMap[item.influencerId] 
-          : (reviewer?.avatarUrl && reviewer.avatarUrl.trim() ? reviewer.avatarUrl : undefined));
+    // Try signed URL first, then raw URL - Avatar component will auto-sign storage paths
+    let avatarUri: string | undefined = undefined;
+    
+    if (userIsReviewer) {
+      if (item.userId) {
+        avatarUri = userAvatarMap[item.userId]?.trim() || reviewee?.avatarUrl?.trim() || undefined;
+        if (!avatarUri && reviewee?.avatarUrl) {
+          console.log('[avatar] Using reviewee raw URL for item', item.id, 'userId', item.userId, 'raw:', reviewee.avatarUrl.substring(0, 50));
+        }
+      }
+    } else {
+      avatarUri = avatarMap[item.influencerId]?.trim() || reviewer?.avatarUrl?.trim() || undefined;
+      if (!avatarUri && reviewer?.avatarUrl) {
+        console.log('[avatar] Using reviewer raw URL for item', item.id, 'reviewerId', item.influencerId, 'raw:', reviewer.avatarUrl.substring(0, 50));
+      }
+    }
+    
+    if (!avatarUri) {
+      console.log('[avatar] No avatar URI found for item', item.id, 'userIsReviewer:', userIsReviewer, 'userId:', item.userId, 'influencerId:', item.influencerId);
+    }
     const displayName = userIsReviewer
       ? (reviewee?.displayName || 'User')
       : (reviewer?.displayName || 'Reviewer');

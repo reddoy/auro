@@ -105,13 +105,62 @@ export async function POST(req: Request) {
       reviewerUpdates.hourly_rate = Number(hourlyRate);
     }
     
-    // CRITICAL: Only update avatar if they actually uploaded a new one in this session
-    // If avatarPath is set, they uploaded a new file - update it
-    // If not set, preserve their existing avatar (don't overwrite)
+    // CRITICAL: Move avatar from temp-uploads to permanent storage if it exists
+    let finalAvatarPath: string | undefined = undefined;
     if (avatarPath) {
-      reviewerUpdates.avatar_url = avatarPath;
+      // If avatarPath is in temp-uploads, move it to permanent storage
+      if (avatarPath.startsWith('temp-uploads/')) {
+        try {
+          const avatarsBucket = process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET || 'avatars';
+          
+          // Extract the filename from the path
+          const pathParts = avatarPath.split('/');
+          const filename = pathParts[pathParts.length - 1];
+          const directoryPath = avatarPath.substring(0, avatarPath.lastIndexOf('/') + 1);
+          
+          // List files in the temp directory to find the actual file
+          const { data: files, error: listError } = await (admin.storage as any)
+            .from(avatarsBucket)
+            .list(directoryPath, { limit: 1 });
+          
+          if (!listError && files && files.length > 0) {
+            const actualFile = files[0];
+            const fromPath = directoryPath + actualFile.name;
+            const toPath = `users/${userId}/avatar/${actualFile.name}`;
+            
+            // Move the file to permanent storage
+            const { error: moveError } = await (admin.storage as any)
+              .from(avatarsBucket)
+              .move(fromPath, toPath);
+            
+            if (!moveError) {
+              finalAvatarPath = toPath;
+              console.log(`[Apply] Moved avatar from ${fromPath} to ${toPath}`);
+            } else {
+              console.error('[Apply] Error moving avatar:', moveError);
+              // Fallback to temp path if move fails
+              finalAvatarPath = avatarPath;
+            }
+          } else {
+            console.warn('[Apply] No files found in temp directory:', directoryPath);
+            // File might already be moved or deleted, use the path as-is
+            finalAvatarPath = avatarPath;
+          }
+        } catch (err) {
+          console.error('[Apply] Exception moving avatar:', err);
+          // Fallback to temp path if move fails
+          finalAvatarPath = avatarPath;
+        }
+      } else {
+        // Already a permanent path
+        finalAvatarPath = avatarPath;
+      }
     } else if (avatarUrl) {
-      reviewerUpdates.avatar_url = avatarUrl;
+      finalAvatarPath = avatarUrl;
+    }
+    
+    if (finalAvatarPath) {
+      reviewerUpdates.avatar_url = finalAvatarPath;
     }
     // If neither avatarPath nor avatarUrl, don't include avatar_url in update
     

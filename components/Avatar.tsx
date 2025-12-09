@@ -5,6 +5,7 @@ import { Image } from 'expo-image';
 import Colors from '@/constants/Colors';
 import Spinner from '@/components/Spinner';
 import { BorderRadius } from '@/constants/DesignSystem';
+import { getSignedAvatarUrl } from '@/lib/profile';
 
 export type AvatarProps = { 
   uri?: string | null; 
@@ -16,9 +17,57 @@ export type AvatarProps = {
 export default function Avatar({ uri, name, size = 48, accessibilityLabel }: AvatarProps) {
   const [showSpinner, setShowSpinner] = React.useState(!!uri);
   const [imageError, setImageError] = React.useState(false);
+  const [signedUri, setSignedUri] = React.useState<string | null>(null);
+  const [isSigning, setIsSigning] = React.useState(false);
+  
+  // Auto-sign storage paths that aren't already full HTTP URLs
+  React.useEffect(() => {
+    if (!uri || !uri.trim()) {
+      console.log('[Avatar] No URI provided for', name);
+      setSignedUri(null);
+      setIsSigning(false);
+      return;
+    }
+    
+    const trimmed = uri.trim();
+    console.log('[Avatar] Processing URI for', name, 'URI:', trimmed.substring(0, 80));
+    
+    // If it's already a full HTTP URL, use it directly
+    if (/^https?:\/\//i.test(trimmed)) {
+      console.log('[Avatar] URI is already HTTP URL, using directly');
+      setSignedUri(trimmed);
+      setIsSigning(false);
+      return;
+    }
+    
+    // If it's a storage path, try to sign it
+    setIsSigning(true);
+    (async () => {
+      try {
+        console.log('[Avatar] Attempting to sign storage path for', name);
+        const signed = await getSignedAvatarUrl(trimmed, 3600);
+        if (signed) {
+          console.log('[Avatar] Successfully signed URL for', name, 'signed:', signed.substring(0, 80));
+          setSignedUri(signed);
+        } else {
+          console.log('[Avatar] Signing returned null for', name, 'using raw path');
+          setSignedUri(trimmed);
+        }
+      } catch (err) {
+        console.error('[Avatar] Error signing URL for', name, 'error:', err);
+        // If signing fails, try using the raw path anyway (might be public)
+        setSignedUri(trimmed);
+      } finally {
+        setIsSigning(false);
+      }
+    })();
+  }, [uri, name]);
+  
+  // Use signed URI if available, otherwise fall back to original URI (which might be a full URL)
+  const displayUri = signedUri || (uri && uri.trim() ? uri.trim() : null);
   
   React.useEffect(() => {
-    if (uri) {
+    if (displayUri) {
       setShowSpinner(true);
       setImageError(false);
       // Hide spinner after a short delay to let image load
@@ -28,7 +77,7 @@ export default function Avatar({ uri, name, size = 48, accessibilityLabel }: Ava
       setShowSpinner(false);
       setImageError(false);
     }
-  }, [uri]);
+  }, [displayUri]);
   
   const initials = React.useMemo(() => {
     const safe = (name || '').trim();
@@ -57,15 +106,16 @@ export default function Avatar({ uri, name, size = 48, accessibilityLabel }: Ava
       accessibilityRole="image"
       accessibilityLabel={defaultAccessibilityLabel}
     >
-      {uri && !imageError ? (
+      {displayUri && !imageError ? (
         <Image
-          key={uri}
-          source={{ uri }}
+          key={displayUri}
+          source={{ uri: displayUri }}
           style={{ width: '100%', height: '100%' }}
           contentFit="cover"
           transition={200}
           cachePolicy="memory-disk"
-          onError={() => {
+          onError={(error) => {
+            console.error('[Avatar] Image load error for', name, 'URI:', displayUri?.substring(0, 80), 'error:', error);
             setImageError(true);
             setShowSpinner(false);
           }}
