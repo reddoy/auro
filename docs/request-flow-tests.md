@@ -41,3 +41,6 @@
 - Playwright runs via `npx playwright test --config site/playwright.config.ts` (add if missing).
 - Mock Supabase with `@supabase/supabase-js` spies; isolate storage interactions.
 
+
+
+
