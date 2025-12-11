@@ -27,14 +27,19 @@ export default function TabLayout() {
   // Hide tab bar for hinge-clone screen
   const shouldHideTabBar = pathname?.includes('hinge-clone');
 
-  // Handle tab press for web navigation
+  // Handle tab press to navigate back to root when on sub-pages
   const handleTabPress = (tabName: string) => {
-    if (Platform.OS === 'web') {
-      if (tabName === 'requests' && pathname?.startsWith('/requests') && pathname !== '/requests') {
-        // If we're on a sub-page of requests, navigate back to the main requests page
-        router.push('/requests');
+    if (tabName === 'requests') {
+      // Normalize pathname by removing query params if present
+      const normalizedPath = pathname?.split('?')[0] || pathname;
+      // Always navigate to /requests when the tab is pressed, unless already on /requests
+      if (normalizedPath !== '/requests') {
+        // Use replace to avoid adding to navigation stack and prevent back-and-forth
+        router.replace('/requests');
         return false; // Prevent default tab behavior
       }
+      // If already on /requests, allow default behavior (which does nothing)
+      return true;
     }
     return true; // Allow default tab behavior
   };

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, TouchableOpacity, ScrollView, View as RNView, Linking, Image, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 
 import { Text } from '@/components/Themed';
@@ -9,7 +9,6 @@ import Colors from '@/constants/Colors';
 import Avatar from '@/components/Avatar';
 import { getReviewerById, getRequestsByReviewer, getReviewerReviewsByReviewerId } from '@/lib/api';
 import { getSignedAvatarUrl } from '@/lib/profile';
-import { getReviewsReceived } from '@/lib/profile';
 import type { DbReviewerSummary } from '@/types';
 import { supabase } from '@/lib/supabase';
 
@@ -26,7 +25,6 @@ export default function ReviewerProfileScreen() {
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [completedCount, setCompletedCount] = useState<number>(0);
-  const [reviews, setReviews] = useState<any[]>([]);
   const [reviewerReviews, setReviewerReviews] = useState<any[]>([]);
   const [avgRating, setAvgRating] = useState<number | null>(null);
 
@@ -48,11 +46,15 @@ export default function ReviewerProfileScreen() {
         setAvatarUri(uri || undefined);
         // Load stats in parallel
         try {
-          const [reqs, recvd, reviewerRevws] = await Promise.all([
+          const [reqs, reviewerRevws] = await Promise.all([
             getRequestsByReviewer(String(id)),
-            getReviewsReceived(String(id)),
             getReviewerReviewsByReviewerId(String(id)),
           ]);
+          console.log('[reviewer-profile] Loaded data:', {
+            reviewerId: String(id),
+            reviewerReviewsCount: reviewerRevws?.length || 0,
+            reviewerReviews: reviewerRevws,
+          });
           const requestCompleted = (reqs || []).filter((rq: any) => rq.status === 'completed').length;
           const reviewerReviewsCompleted = (reviewerRevws || []).length;
           const fallbackCount =
@@ -65,24 +67,25 @@ export default function ReviewerProfileScreen() {
           setCompletedCount(
             bestCount
           );
-          setReviews(recvd.items || []);
           setReviewerReviews(reviewerRevws || []);
           
-          // Calculate average rating from reviewer reviews (preferred) or general reviews
-          const reviewerRatings = (reviewerRevws || []).map((r: any) => r.rating).filter((n: number) => !isNaN(n) && n > 0);
-          if (reviewerRatings.length > 0) {
-            const avg = reviewerRatings.reduce((a: number, b: number) => a + b, 0) / reviewerRatings.length;
-            setAvgRating(Number(avg.toFixed(2)));
-          } else if (recvd.items && recvd.items.length) {
-            const nums = recvd.items
-              .map((it: any) => Number(it.rating) || 0)
-              .filter((n: number) => !isNaN(n) && n > 0);
-            if (nums.length) setAvgRating(Number((nums.reduce((a: number, b: number) => a + b, 0) / nums.length).toFixed(2)));
-            else setAvgRating(r?.rating ?? null);
+          // Use rating_average from profile (same as discover page) as primary source
+          // This ensures consistency between discover page and profile page
+          if (r?.rating != null && !isNaN(Number(r.rating))) {
+            setAvgRating(Number(r.rating));
           } else {
-            setAvgRating(r?.rating ?? null);
+            // Fallback: Calculate average rating from reviewer reviews if rating_average is not set
+            const reviewerRatings = (reviewerRevws || []).map((r: any) => r.rating).filter((n: number) => !isNaN(n) && n > 0);
+            if (reviewerRatings.length > 0) {
+              const avg = reviewerRatings.reduce((a: number, b: number) => a + b, 0) / reviewerRatings.length;
+              setAvgRating(Number(avg.toFixed(2)));
+            } else {
+              setAvgRating(null);
+            }
           }
-        } catch {}
+        } catch (error) {
+          console.error('[reviewer-profile] Error loading stats:', error);
+        }
       } finally {
         setLoading(false);
       }
@@ -145,6 +148,11 @@ export default function ReviewerProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+      <RNView style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Text style={styles.backButtonText}>‹</Text>
+        </TouchableOpacity>
+      </RNView>
       <ScrollView
         contentContainerStyle={{ paddingTop: 12, paddingBottom: bottomPadding, paddingHorizontal: 16 }}
         showsVerticalScrollIndicator={false}
@@ -238,16 +246,6 @@ export default function ReviewerProfileScreen() {
                 </RNView>
               ))}
             </RNView>
-          ) : reviews.length > 0 ? (
-            <RNView>
-              {reviews.slice(0, 5).map((rv: any) => (
-                <RNView key={rv.id} style={styles.reviewItem}>
-                  <Text style={styles.reviewRating}>{typeof rv.rating === 'number' ? `${rv.rating.toFixed(1)}★` : '—'}</Text>
-                  {!!rv.comment && <Text style={styles.reviewComment}>{rv.comment}</Text>}
-                  <Text style={styles.reviewMeta}>{new Date(rv.created_at || Date.now()).toLocaleDateString()}</Text>
-                </RNView>
-              ))}
-            </RNView>
           ) : (
             <Text style={styles.emptyText}>No reviews yet.</Text>
           )}
@@ -259,6 +257,26 @@ export default function ReviewerProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
+  header: {
+    paddingTop: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+    backgroundColor: Colors.brand.cardBackground,
+  },
+  backButtonText: {
+    fontSize: 24,
+    color: Colors.brand.textPrimary,
+    fontWeight: '300',
+  },
   card: { backgroundColor: Colors.brand.cardBackground, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: Colors.brand.border },
   name: { marginTop: 12, fontSize: 24, fontWeight: '800', color: Colors.brand.textPrimary, textAlign: 'center' },
   bio: { marginTop: 8, fontSize: 15, color: Colors.brand.textPrimary, textAlign: 'center', lineHeight: 21 },

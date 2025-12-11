@@ -115,10 +115,10 @@ export default function TermsPage() {
             <h3 style={{ color: 'white', marginBottom: 12, fontSize: '20px' }}>6.3 Refund Policy</h3>
             <p>Refunds are handled on a case-by-case basis. Generally:</p>
             <ul style={{ marginLeft: 20, marginBottom: 16 }}>
-              <li>Refunds may be issued if a review is not completed within the promised timeframe</li>
+              <li><strong>Automatic refunds:</strong> If a review is not completed within 48 hours of payment, you will automatically receive a full refund</li>
               <li>Refunds may be issued for technical issues preventing service delivery</li>
               <li>No refunds for completed reviews or user dissatisfaction with review content</li>
-              <li>Refund requests must be submitted within 30 days of purchase</li>
+              <li>Manual refund requests must be submitted within 30 days of purchase</li>
             </ul>
 
             <h3 style={{ color: 'white', marginBottom: 12, fontSize: '20px' }}>6.4 Chargebacks</h3>

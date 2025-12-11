@@ -32,18 +32,31 @@ export default function DiscoverReviewersScreen() {
         try {
           const pairs = await Promise.all(
             list.map(async (r) => {
-              let uri = r.avatarUrl || '';
-              if (uri) {
-                try {
-                  const signed = await getSignedAvatarUrl(uri, 3600);
-                  if (signed) uri = signed;
-                } catch {}
+              const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
+              if (!raw) {
+                return [r.id, undefined] as const;
+              }
+              let uri: string | undefined = raw;
+              try {
+                const signed = await getSignedAvatarUrl(raw, 3600);
+                if (signed) {
+                  uri = signed;
+                } else {
+                  // Don't use raw if it's a directory - let Avatar component handle it
+                  uri = raw.endsWith('/') ? undefined : raw;
+                }
+              } catch (err) {
+                console.error('[avatar] Signing error:', err);
+                // Don't use raw if it's a directory - let Avatar component handle it
+                uri = raw.endsWith('/') ? undefined : raw;
               }
               return [r.id, uri] as const;
             })
           );
           setAvatarMap(Object.fromEntries(pairs));
-        } catch {}
+        } catch (err) {
+          console.error('[avatar] Error setting avatar map in discover page:', err);
+        }
       } finally {
         setLoading(false);
       }
@@ -135,7 +148,13 @@ export default function DiscoverReviewersScreen() {
   const renderItem = ({ item }: { item: DbReviewerSummary }) => (
     <TouchableOpacity style={styles.row} onPress={() => openReviewerProfile(item)} activeOpacity={0.7}>
       <RNView style={styles.avatarWrap}>
-        <Avatar uri={avatarMap[item.id] || item.avatarUrl || undefined} name={item.displayName} size={56} />
+        <Avatar 
+          uri={(avatarMap[item.id] && avatarMap[item.id].trim()) 
+            ? avatarMap[item.id] 
+            : (item.avatarUrl && item.avatarUrl.trim() ? item.avatarUrl : undefined)} 
+          name={item.displayName} 
+          size={56} 
+        />
       </RNView>
       <RNView style={styles.rowInfo}>
         <Text style={styles.rowName}>{item.displayName || item.username || 'Reviewer'}</Text>
@@ -167,7 +186,7 @@ export default function DiscoverReviewersScreen() {
             </RNView>
           )}
           {item.pricePerReview !== null && item.pricePerReview !== undefined && (
-            <Text style={styles.rowPrice}>${item.pricePerReview}/hr</Text>
+            <Text style={styles.rowPrice}>${item.pricePerReview} / review</Text>
           )}
         </RNView>
       </RNView>
@@ -289,7 +308,7 @@ export default function DiscoverReviewersScreen() {
             data={filteredAndSorted}
             keyExtractor={(it) => it.id}
             renderItem={renderItem}
-            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 80 }}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 + insets.bottom }}
             ListEmptyComponent={
               <View style={styles.empty}>
                 <Text style={styles.emptyText}>{loading ? 'Loading…' : 'No reviewers found'}</Text>
@@ -304,7 +323,7 @@ export default function DiscoverReviewersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.brand.background },
-  header: { padding: 16, paddingTop: 20, backgroundColor: Colors.brand.cardBackground, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, marginBottom: 8 },
+  header: { padding: 16, paddingTop: 20, marginBottom: 8 },
   title: { fontSize: 28, fontWeight: '700', color: Colors.brand.textPrimary },
   searchWrap: { paddingHorizontal: 16, paddingVertical: 8 },
   searchInput: { borderWidth: 1, borderColor: Colors.brand.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: Colors.brand.textPrimary, backgroundColor: Colors.brand.cardBackground, fontSize: 16 },
@@ -431,7 +450,7 @@ const styles = StyleSheet.create({
   skeletonContainer: { 
     ...StyleSheet.absoluteFillObject,
     paddingHorizontal: 16, 
-    paddingBottom: 80,
+    paddingBottom: 100,
     justifyContent: 'flex-start',
   },
   skeletonRow: { 

@@ -16,9 +16,11 @@ type Props = {
   onRecordingStop?: () => void;
   hideButtons?: boolean;
   onVideoUriChange?: (uri: string | null) => void;
+  onPress?: () => void; // Callback when camera preview is tapped
+  showScreenRecordingMode?: boolean; // If true, show only camera preview without any buttons
 };
 
-export default function MediaRecorder({ photos = [], onRecorded, variant = 'inline', circleSize = 140, value = null, onRecordingStart, onRecordingStop, hideButtons = false, onVideoUriChange }: Props) {
+export default function MediaRecorder({ photos = [], onRecorded, variant = 'inline', circleSize = 140, value = null, onRecordingStart, onRecordingStop, hideButtons = false, onVideoUriChange, onPress, showScreenRecordingMode = false }: Props) {
   const cameraRef = useRef<CameraView | null>(null);
   const [type, setType] = useState<CameraType>('front');
   const [recording, setRecording] = useState(false);
@@ -30,16 +32,26 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  // Track if we're updating from internal state to prevent infinite loops
+  const isInternalUpdate = React.useRef(false);
+  const previousValue = React.useRef(value);
+
   // Sync internal videoUri with external value prop
   React.useEffect(() => {
-    if (value !== videoUri) {
+    // Only update if value changed externally (not from our internal state)
+    if (value !== previousValue.current && !isInternalUpdate.current) {
       setVideoUri(value);
+      previousValue.current = value;
     }
   }, [value]);
 
-  // Update parent when videoUri changes
+  // Update parent when videoUri changes (but only if it's an internal change)
   React.useEffect(() => {
-    onVideoUriChange?.(videoUri);
+    // Only notify parent if this is an internal change (user action)
+    if (isInternalUpdate.current) {
+      onVideoUriChange?.(videoUri);
+      isInternalUpdate.current = false; // Reset flag after notifying
+    }
   }, [videoUri, onVideoUriChange]);
 
   const startRecording = async () => {
@@ -73,6 +85,7 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
     onRecordingStart?.();
     try {
       const v: any = await cameraRef.current.recordAsync({ maxDuration: 180 } as any);
+      isInternalUpdate.current = true;
       setVideoUri(v?.uri || null);
     } catch (e: any) {
       Alert.alert('Recording error', e?.message || 'Unable to start recording.');
@@ -94,6 +107,49 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
   // }
 
   if (variant === 'corner') {
+    // Screen recording mode: just show camera preview, no buttons
+    if (showScreenRecordingMode) {
+      return (
+        <View style={{ alignItems: 'flex-start', position: 'relative' }}>
+          <Pressable
+            onPress={onPress}
+            style={{ 
+              width: circleSize, 
+              height: circleSize, 
+              borderRadius: circleSize / 2, 
+              overflow: 'hidden', 
+              backgroundColor: 'rgba(0,0,0,0.4)',
+              borderWidth: 3,
+              borderColor: 'rgba(255,255,255,0.4)',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.4,
+              shadowRadius: 10,
+              elevation: 10,
+            }}
+          >
+            {!permission?.granted ? (
+              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.brand.cardBackground }}>
+                <Pressable onPress={requestPermission} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, backgroundColor: Colors.brand.status.accepted }}>
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>Enable</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <CameraView
+                ref={r => (cameraRef.current = r)}
+                style={{ width: '100%', height: '100%' }}
+                facing="front"
+                mode={"video" as any}
+                onCameraReady={() => setIsCameraReady(true)}
+                onError={() => setIsCameraReady(false)}
+              />
+            )}
+          </Pressable>
+        </View>
+      );
+    }
+
+    // Original mode with all buttons
     return (
       <View style={{ alignItems: 'flex-start', position: 'relative' }}>
         {/* Circular camera surface with subtle border for TikTok-style */}
@@ -289,8 +345,8 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
             </Pressable>
             <Pressable 
               onPress={() => {
+                isInternalUpdate.current = true;
                 setVideoUri(null);
-                onVideoUriChange?.(null);
               }} 
               accessibilityLabel="Re-record" 
               style={{ 
@@ -386,7 +442,10 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
                 <Pressable onPress={() => { onRecorded(videoUri); }} accessibilityLabel="Use this video" style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: Colors.brand.status.completed }}>
                   <Text style={{ color: '#fff', fontWeight: '700' }}>Use</Text>
                 </Pressable>
-                <Pressable onPress={() => setVideoUri(null)} accessibilityLabel="Re-record" style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: Colors.brand.cardBackground }}>
+                <Pressable onPress={() => {
+                  isInternalUpdate.current = true;
+                  setVideoUri(null);
+                }} accessibilityLabel="Re-record" style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: Colors.brand.cardBackground }}>
                   <Text style={{ color: Colors.brand.textPrimary, fontWeight: '700' }}>Re-record</Text>
                 </Pressable>
               </View>
@@ -533,7 +592,10 @@ export default function MediaRecorder({ photos = [], onRecorded, variant = 'inli
         {!recording && !videoUri && <Pressable disabled={!isCameraReady || starting} onPress={startRecording}><Text>Record</Text></Pressable>}
         {recording && <Pressable onPress={async () => { if (!cameraRef.current) return; try { await cameraRef.current.stopRecording(); } catch {} }}><Text>Stop</Text></Pressable>}
         {videoUri && <Pressable onPress={() => { onRecorded(videoUri); }}><Text>Use Video</Text></Pressable>}
-        {videoUri && <Pressable onPress={() => setVideoUri(null)}><Text>Re-record</Text></Pressable>}
+        {videoUri && <Pressable onPress={() => {
+          isInternalUpdate.current = true;
+          setVideoUri(null);
+        }}><Text>Re-record</Text></Pressable>}
       </View>
     </View>
   );

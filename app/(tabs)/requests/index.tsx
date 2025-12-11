@@ -15,6 +15,8 @@ import { useToast } from '@/components/Toast';
 import Avatar from '@/components/Avatar';
 import { MotionPressable, MotionView, cardEntrance, cardExit, subtleFadeIn } from '@/components/motion';
 import EmptyState from '@/components/EmptyState';
+import { copyToClipboard } from '@/lib/clipboard';
+import { SkeletonBlock, SkeletonCircle } from '@/components/Skeletons';
 
 export default function RequestsScreen() {
   const insets = useSafeAreaInsets();
@@ -26,63 +28,138 @@ export default function RequestsScreen() {
   const [userMap, setUserMap] = useState<Record<string, { id: string; displayName: string; avatarUrl?: string | null }>>({});
   const [userAvatarMap, setUserAvatarMap] = useState<Record<string, string | undefined>>({});
   const [isReviewer, setIsReviewer] = useState(false);
+  const [reviewerStatus, setReviewerStatus] = useState<'pending' | 'approved' | 'rejected' | null>(null);
+  const [userProfile, setUserProfile] = useState<{ id: string; username?: string | null } | null>(null);
   const receivedCount = requests.length;
   const [filter, setFilter] = useState<'active' | 'completed' | 'archived'>('active');
   const [refreshing, setRefreshing] = useState(false);
   const skipNextFocusRefresh = useRef(true);
   const loadingRef = useRef(loading);
-  const [hasShownSkeleton, setHasShownSkeleton] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
+  const initialLoadCompleteRef = useRef(false);
+  const hasAnimatedListRef = useRef(false);
 
   useEffect(() => {
     loadingRef.current = loading;
   }, [loading]);
 
   useEffect(() => {
-    if (!loading && !hasShownSkeleton) {
-      setHasShownSkeleton(true);
+    if (!initialLoad && !hasAnimatedListRef.current) {
+      hasAnimatedListRef.current = true;
     }
-  }, [loading, hasShownSkeleton]);
+  }, [initialLoad]);
 
   useEffect(() => {
     const run = async () => {
+      if (initialLoadCompleteRef.current) return;
       console.log('[my-reviews] initial load started');
       try {
         const profile = await getUserProfile();
         if (!profile?.id) {
           setRequests([]);
+          setInitialLoad(false);
+          initialLoadCompleteRef.current = true;
           console.log('[my-reviews] no profile found during initial load');
           return;
         }
         const reviewerMode = !!(profile as any)?.is_reviewer;
+        const reviewerStatusValue = (profile as any)?.is_reviewer;
         setIsReviewer(reviewerMode);
-        const reqs = reviewerMode ? await getRequestsByReviewer(profile.id) : await getRequestsByUser(profile.id);
+        setReviewerStatus(reviewerStatusValue === 'approved' || reviewerStatusValue === 'pending' || reviewerStatusValue === 'rejected' ? reviewerStatusValue : null);
+        setUserProfile({ id: profile.id, username: (profile as any)?.username });
+        
+        // If user is a reviewer, fetch BOTH requests where they are reviewer AND where they are reviewee
+        let reqs: DbRequestSummary[] = [];
+        if (reviewerMode) {
+          const [reviewerReqs, revieweeReqs] = await Promise.all([
+            getRequestsByReviewer(profile.id),
+            getRequestsByUser(profile.id)
+          ]);
+          // Merge both sets, removing duplicates by ID
+          const reqMap = new Map<string, DbRequestSummary>();
+          [...reviewerReqs, ...revieweeReqs].forEach(req => {
+            reqMap.set(req.id, req);
+          });
+          reqs = Array.from(reqMap.values()).sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        } else {
+          reqs = await getRequestsByUser(profile.id);
+        }
+        
         setRequests(reqs);
         console.log('[my-reviews] initial load fetched requests', {
           count: reqs.length,
           reviewerMode,
         });
+        
         if (reviewerMode) {
-          // Build reviewee map for reviewer inbox
-          const userIds = Array.from(new Set(reqs.map(r => r.userId).filter(Boolean))) as string[];
-          const users = await Promise.all(userIds.map(uid => getProfileById(uid)));
+          // Build reviewee map for requests where user is reviewer
+          const reviewerReqUserIds = Array.from(new Set(reqs.filter(r => r.influencerId === profile.id).map(r => r.userId).filter(Boolean))) as string[];
+          // Build reviewer map for requests where user is reviewee
+          const revieweeReqReviewerIds = Array.from(new Set(reqs.filter(r => r.userId === profile.id).map(r => r.influencerId).filter(Boolean)));
+          
+          const [users, reviewers] = await Promise.all([
+            Promise.all(reviewerReqUserIds.map(uid => getProfileById(uid))),
+            Promise.all(revieweeReqReviewerIds.map(id => getReviewerById(String(id))))
+          ]);
+          
+          // Build user map for reviewees
           const uMap: Record<string, { id: string; displayName: string; avatarUrl?: string | null }> = {};
           users.forEach(u => { if (u) uMap[u.id] = u; });
           setUserMap(uMap);
+          
+          // Build reviewer map for reviewers
+          const rMap: Record<string, DbReviewerSummary> = {};
+          reviewers.forEach(rev => { if (rev) rMap[rev.id] = rev; });
+          setRevMap(rMap);
+          
+          // Prefetch signed avatar URLs for both users and reviewers
           try {
-            const entries = await Promise.all(
-              users.filter(Boolean).map(async (u) => {
-                const usr = u as { id: string; displayName: string; avatarUrl?: string | null };
-                const raw = (usr.avatarUrl || '').trim().replace(/^@+/, '');
-                let uri = raw;
-                if (raw) {
-                  try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
-                }
-                return [usr.id, uri] as const;
-              })
-            );
+            const [userEntries, reviewerEntries] = await Promise.all([
+              Promise.all(
+                users.filter(Boolean).map(async (u) => {
+                  const usr = u as { id: string; displayName: string; avatarUrl?: string | null };
+                  const raw = (usr.avatarUrl || '').trim().replace(/^@+/, '');
+                  if (!raw) return [usr.id, undefined] as const;
+                  let uri: string | undefined = raw;
+                  try { 
+                    const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
+                    uri = signed || raw; 
+                  } catch {
+                    uri = raw; // Fallback to raw URL if signing fails
+                  }
+                  return [usr.id, uri] as const;
+                })
+              ),
+              Promise.all(
+                reviewers.filter(Boolean).map(async (rev) => {
+                  const r = rev as DbReviewerSummary;
+                  const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
+                  if (!raw) return [r.id, undefined] as const;
+                  let uri: string | undefined = raw;
+                  try { 
+                    const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
+                    uri = signed || raw; 
+                  } catch {
+                    uri = raw; // Fallback to raw URL if signing fails
+                  }
+                  return [r.id, uri] as const;
+                })
+              )
+            ]);
+            
             setUserAvatarMap((prev) => {
               const merged: Record<string, string | undefined> = { ...prev };
-              for (const [id, uri] of entries) {
+              for (const [id, uri] of userEntries) {
+                merged[id] = uri || prev[id];
+              }
+              return merged;
+            });
+            
+            setAvatarMap((prev) => {
+              const merged: Record<string, string | undefined> = { ...prev };
+              for (const [id, uri] of reviewerEntries) {
                 merged[id] = uri || prev[id];
               }
               return merged;
@@ -93,7 +170,11 @@ export default function RequestsScreen() {
           const uniqueIds = Array.from(new Set(reqs.map(r => r.influencerId).filter(Boolean)));
           const reviewers = await Promise.all(uniqueIds.map(id => getReviewerById(String(id))));
           const map: Record<string, DbReviewerSummary> = {};
-          reviewers.forEach(rev => { if (rev) map[rev.id] = rev; });
+          reviewers.forEach(rev => { 
+            if (rev) {
+              map[rev.id] = rev;
+            }
+          });
           setRevMap(map);
           // Prefetch signed avatar URLs if needed
           try {
@@ -101,9 +182,13 @@ export default function RequestsScreen() {
               reviewers.filter(Boolean).map(async (rev) => {
                 const r = rev as DbReviewerSummary;
                 const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
-                let uri = raw;
-                if (raw) {
-                  try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
+                if (!raw) return [r.id, undefined] as const;
+                let uri: string | undefined = raw;
+                try { 
+                  const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
+                  uri = signed || raw; 
+                } catch {
+                  uri = raw; // Fallback to raw URL if signing fails
                 }
                 return [r.id, uri] as const;
               })
@@ -120,6 +205,11 @@ export default function RequestsScreen() {
 
       } finally {
         setLoading(false);
+        // Set initialLoad to false after a microtask to ensure all state updates are batched
+        Promise.resolve().then(() => {
+          setInitialLoad(false);
+          initialLoadCompleteRef.current = true;
+        });
         console.log('[my-reviews] initial load finished');
       }
     };
@@ -144,8 +234,30 @@ export default function RequestsScreen() {
           return;
         }
         const reviewerMode = !!(profile as any)?.is_reviewer;
+        const reviewerStatusValue = (profile as any)?.is_reviewer;
         setIsReviewer(reviewerMode);
-        const reqs = reviewerMode ? await getRequestsByReviewer(profile.id) : await getRequestsByUser(profile.id);
+        setReviewerStatus(reviewerStatusValue === 'approved' || reviewerStatusValue === 'pending' || reviewerStatusValue === 'rejected' ? reviewerStatusValue : null);
+        setUserProfile({ id: profile.id, username: (profile as any)?.username });
+        
+        // If user is a reviewer, fetch BOTH requests where they are reviewer AND where they are reviewee
+        let reqs: DbRequestSummary[] = [];
+        if (reviewerMode) {
+          const [reviewerReqs, revieweeReqs] = await Promise.all([
+            getRequestsByReviewer(profile.id),
+            getRequestsByUser(profile.id)
+          ]);
+          // Merge both sets, removing duplicates by ID
+          const reqMap = new Map<string, DbRequestSummary>();
+          [...reviewerReqs, ...revieweeReqs].forEach(req => {
+            reqMap.set(req.id, req);
+          });
+          reqs = Array.from(reqMap.values()).sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        } else {
+          reqs = await getRequestsByUser(profile.id);
+        }
+        
         setRequests(reqs);
         console.log('[my-reviews] refresh fetched requests', {
           count: reqs.length,
@@ -153,31 +265,101 @@ export default function RequestsScreen() {
         });
 
         if (reviewerMode) {
-          const userIds = Array.from(new Set(reqs.map(r => r.userId).filter(Boolean))) as string[];
-          const users = await Promise.all(userIds.map(uid => getProfileById(uid)));
+          // Build reviewee map for requests where user is reviewer
+          const reviewerReqUserIds = Array.from(new Set(reqs.filter(r => r.influencerId === profile.id).map(r => r.userId).filter(Boolean))) as string[];
+          // Build reviewer map for requests where user is reviewee
+          const revieweeReqReviewerIds = Array.from(new Set(reqs.filter(r => r.userId === profile.id).map(r => r.influencerId).filter(Boolean)));
+          
+          const [users, reviewers] = await Promise.all([
+            Promise.all(reviewerReqUserIds.map(uid => getProfileById(uid))),
+            Promise.all(revieweeReqReviewerIds.map(id => getReviewerById(String(id))))
+          ]);
+          
+          // Build user map for reviewees
           const uMap: Record<string, { id: string; displayName: string; avatarUrl?: string | null }> = {};
           users.forEach(u => { if (u) uMap[u.id] = u; });
           setUserMap(uMap);
+          
+          // Build reviewer map for reviewers
+          const rMap: Record<string, DbReviewerSummary> = {};
+          reviewers.forEach(rev => { if (rev) rMap[rev.id] = rev; });
+          setRevMap(rMap);
+          
+          // Prefetch signed avatar URLs for both users and reviewers
           try {
-            const entries = await Promise.all(
-              users.filter(Boolean).map(async (u) => {
-                const usr = u as { id: string; displayName: string; avatarUrl?: string | null };
-                const raw = (usr.avatarUrl || '').trim().replace(/^@+/, '');
-                let uri = raw;
-                if (raw) {
-                  try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
-                }
-                return [usr.id, uri] as const;
-              })
-            );
+            const [userEntries, reviewerEntries] = await Promise.all([
+              Promise.all(
+                users.filter(Boolean).map(async (u) => {
+                  const usr = u as { id: string; displayName: string; avatarUrl?: string | null };
+                  const raw = (usr.avatarUrl || '').trim().replace(/^@+/, '');
+                  if (!raw) {
+                    console.log('[avatar-refresh] User', usr.id, 'has no avatarUrl');
+                    return [usr.id, undefined] as const;
+                  }
+                  console.log('[avatar-refresh] User', usr.id, 'raw avatarUrl:', raw.substring(0, 50));
+                  let uri: string | undefined = raw;
+                  try { 
+                    const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
+                    if (signed) {
+                      console.log('[avatar-refresh] User', usr.id, 'signed URL:', signed.substring(0, 50));
+                      uri = signed;
+                    } else {
+                      console.log('[avatar-refresh] User', usr.id, 'signing returned null, using raw');
+                      uri = raw;
+                    }
+                  } catch (err) {
+                    console.error('[avatar-refresh] User', usr.id, 'signing error:', err);
+                    uri = raw; // Fallback to raw URL if signing fails
+                  }
+                  return [usr.id, uri] as const;
+                })
+              ),
+              Promise.all(
+                reviewers.filter(Boolean).map(async (rev) => {
+                  const r = rev as DbReviewerSummary;
+                  const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
+                  if (!raw) {
+                    console.log('[avatar-refresh] Reviewer', r.id, 'has no avatarUrl');
+                    return [r.id, undefined] as const;
+                  }
+                  console.log('[avatar-refresh] Reviewer', r.id, 'raw avatarUrl:', raw.substring(0, 50));
+                  let uri: string | undefined = raw;
+                  try { 
+                    const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
+                    if (signed) {
+                      console.log('[avatar-refresh] Reviewer', r.id, 'signed URL:', signed.substring(0, 50));
+                      uri = signed;
+                    } else {
+                      console.log('[avatar-refresh] Reviewer', r.id, 'signing returned null, using raw');
+                      uri = raw;
+                    }
+                  } catch (err) {
+                    console.error('[avatar-refresh] Reviewer', r.id, 'signing error:', err);
+                    uri = raw; // Fallback to raw URL if signing fails
+                  }
+                  return [r.id, uri] as const;
+                })
+              )
+            ]);
+            
             setUserAvatarMap((prev) => {
               const merged: Record<string, string | undefined> = { ...prev };
-              for (const [id, uri] of entries) {
+              for (const [id, uri] of userEntries) {
                 merged[id] = uri || prev[id];
               }
               return merged;
             });
-          } catch {}
+            
+            setAvatarMap((prev) => {
+              const merged: Record<string, string | undefined> = { ...prev };
+              for (const [id, uri] of reviewerEntries) {
+                merged[id] = uri || prev[id];
+              }
+              return merged;
+            });
+          } catch (err) {
+            console.error('[avatar-refresh] Error in reviewer mode avatar signing:', err);
+          }
         } else {
           const uniqueIds = Array.from(new Set(reqs.map(r => r.influencerId).filter(Boolean)));
           const reviewers = await Promise.all(uniqueIds.map(id => getReviewerById(String(id))));
@@ -189,9 +371,24 @@ export default function RequestsScreen() {
               reviewers.filter(Boolean).map(async (rev) => {
                 const r = rev as DbReviewerSummary;
                 const raw = (r.avatarUrl || '').trim().replace(/^@+/, '');
-                let uri = raw;
-                if (raw) {
-                  try { uri = (await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30)) || raw; } catch {}
+                if (!raw) {
+                  console.log('[avatar-refresh] Reviewer', r.id, 'has no avatarUrl (non-reviewer mode)');
+                  return [r.id, undefined] as const;
+                }
+                console.log('[avatar-refresh] Reviewer', r.id, 'raw avatarUrl (non-reviewer mode):', raw.substring(0, 50));
+                let uri: string | undefined = raw;
+                try { 
+                  const signed = await getSignedAvatarUrl(raw, 60 * 60 * 24 * 30);
+                  if (signed) {
+                    console.log('[avatar-refresh] Reviewer', r.id, 'signed URL (non-reviewer mode):', signed.substring(0, 50));
+                    uri = signed;
+                  } else {
+                    console.log('[avatar-refresh] Reviewer', r.id, 'signing returned null (non-reviewer mode), using raw');
+                    uri = raw;
+                  }
+                } catch (err) {
+                  console.error('[avatar-refresh] Reviewer', r.id, 'signing error (non-reviewer mode):', err);
+                  uri = raw; // Fallback to raw URL if signing fails
                 }
                 return [r.id, uri] as const;
               })
@@ -203,7 +400,9 @@ export default function RequestsScreen() {
               }
               return merged;
             });
-          } catch {}
+          } catch (err) {
+            console.error('[avatar-refresh] Error in non-reviewer mode avatar signing:', err);
+          }
         }
       } catch {}
       finally {
@@ -235,9 +434,10 @@ export default function RequestsScreen() {
 
   const handleRequestPress = (requestId: string) => {
     const request = requests.find(r => r.id === requestId);
-    if (!request) return;
-    // Route based on role: reviewers go to reviewer detail; reviewees go to review detail
-    if (isReviewer) {
+    if (!request || !userProfile?.id) return;
+    // Route based on role for this specific request: if user is reviewer, go to reviewer detail; if reviewee, go to review detail
+    const userIsReviewer = request.influencerId === userProfile.id;
+    if (userIsReviewer) {
       router.push(`/requests/reviewer/${requestId}` as any);
     } else {
       router.push(`/review/${requestId}`);
@@ -248,30 +448,63 @@ export default function RequestsScreen() {
     router.push('/(tabs)/requests/new');
   };
 
+  const handleCopyProfileLink = useCallback(async () => {
+    if (!userProfile?.id) {
+      Alert.alert('Error', 'Profile not loaded');
+      return;
+    }
+
+    try {
+      const slug = userProfile.username || userProfile.id;
+      const profileUrl = `https://www.appauro.com/${slug}`;
+      
+      await copyToClipboard(profileUrl);
+      Alert.alert('Copied!', 'Your profile link has been copied to clipboard. You can now paste it in your social media bios!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to copy link to clipboard');
+    }
+  }, [userProfile]);
+
   // Payment is handled on web only. In-app pay is disabled.
 
   const renderReceivedItem = ({ item, index }: { item: DbRequestSummary; index: number }) => {
+    const cardEntering = hasAnimatedListRef.current ? undefined : cardEntrance(index);
+    
+    // Determine if current user is the reviewer or reviewee for this specific request
+    const userIsReviewer = userProfile?.id && item.influencerId === userProfile.id;
+    const userIsReviewee = userProfile?.id && item.userId === userProfile.id;
+    
     const reviewer = revMap[item.influencerId];
     const reviewee = item.userId ? userMap[item.userId] : undefined;
-    const avatarUri = isReviewer
-      ? (item.userId ? userAvatarMap[item.userId] || reviewee?.avatarUrl || undefined : undefined)
-      : (avatarMap[item.influencerId] || reviewer?.avatarUrl) || undefined;
-    const displayName = isReviewer
+    
+    // Show reviewee info if user is reviewer, show reviewer info if user is reviewee
+    // Try signed URL first, then raw URL - Avatar component will auto-sign storage paths
+    let avatarUri: string | undefined = undefined;
+    
+    if (userIsReviewer) {
+      if (item.userId) {
+        avatarUri = userAvatarMap[item.userId]?.trim() || reviewee?.avatarUrl?.trim() || undefined;
+      }
+    } else {
+      avatarUri = avatarMap[item.influencerId]?.trim() || reviewer?.avatarUrl?.trim() || undefined;
+    }
+    const displayName = userIsReviewer
       ? (reviewee?.displayName || 'User')
       : (reviewer?.displayName || 'Reviewer');
+    
     return (
       <MotionPressable
         key={item.id}
         style={styles.requestCard}
         onPress={() => handleRequestPress(item.id)}
-        entering={cardEntrance(index)}
+        entering={cardEntering}
         exiting={cardExit()}
         accessibilityRole="button"
         accessibilityLabel={`Open request with ${displayName}`}
       >
         <View style={styles.requestHeader}>
           <RNView style={styles.influencerImageWrapper}>
-            {/* For reviewers, show the reviewee avatar/name; for reviewees, show reviewer */}
+            {/* Show reviewee avatar/name if user is reviewer, show reviewer if user is reviewee */}
             <Avatar uri={avatarUri} name={displayName} size={60} />
           </RNView>
           <View style={styles.requestInfo}>
@@ -282,11 +515,8 @@ export default function RequestsScreen() {
             <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.brand.cardBackground }}>
               <StatusBadge
                 status={item.status as any}
-                label={isReviewer && item.status === 'paid' ? 'Pending acceptance' : undefined}
+                label={userIsReviewer && item.status === 'paid' ? 'Pending acceptance' : undefined}
               />
-              {item.status === 'paid' && (item as any).review ? (
-                <StatusBadge status={'completed'} label="Review Submitted" />
-              ) : null}
             </RNView>
           </View>
         </View>
@@ -306,7 +536,7 @@ export default function RequestsScreen() {
           <RNView style={{ marginTop: 12, backgroundColor: Colors.brand.cardBackgroundLight, borderRadius: 12, padding: 12, borderWidth: 1, borderColor: Colors.brand.border }}>
             <Text style={{ color: Colors.brand.textSecondary, fontWeight: '700' }}>Payment pending</Text>
             <Text style={{ color: Colors.brand.textSecondary, marginTop: 4 }}>
-              {isReviewer ? 'Waiting for the requester to finish payment. They have 30 days to finish payment.' : 'Please check your email regarding payment. You have 30 days to complete payment.'}
+              {userIsReviewer ? 'Waiting for the requester to finish payment. They have 48 hours to finish payment.' : 'Please check your email regarding payment. You have 48 hours to complete payment.'}
             </Text>
           </RNView>
         ) : null}
@@ -333,19 +563,20 @@ export default function RequestsScreen() {
   };
 
   const SkeletonCard = ({ index }: { index: number }) => (
-    <MotionView
-      entering={cardEntrance(index)}
+    <RNView
       style={[styles.requestCard, { backgroundColor: Colors.brand.cardBackground }]}
-    > 
+    >
       <RNView style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent' }}>
-        <RNView style={[styles.influencerImage, { backgroundColor: 'rgba(255,255,255,0.1)' }]} />
+        <RNView style={{ marginRight: 16, backgroundColor: 'transparent' }}>
+          <SkeletonCircle size={60} delay={index * 100} />
+        </RNView>
         <RNView style={{ flex: 1, backgroundColor: 'transparent' }}>
-          <RNView style={{ height: 12, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 6, marginBottom: 10, width: '60%' }} />
-          <RNView style={{ height: 10, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 6, marginBottom: 6, width: '40%' }} />
+          <SkeletonBlock width="60%" height={12} radius={6} delay={index * 100 + 50} style={{ marginBottom: 10 }} />
+          <SkeletonBlock width="40%" height={10} radius={6} delay={index * 100 + 100} style={{ marginBottom: 6 }} />
         </RNView>
       </RNView>
-      <RNView style={{ height: 10, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 6, marginTop: 16, width: '80%' }} />
-    </MotionView>
+      <SkeletonBlock width="80%" height={10} radius={6} delay={index * 100 + 150} style={{ marginTop: 16 }} />
+    </RNView>
   );
 
   const data = requests.filter(r => {
@@ -356,11 +587,26 @@ export default function RequestsScreen() {
   });
   const renderItem = renderReceivedItem;
 
+  // Calculate counts for filter pills (use 0 during initial load to prevent flashing)
+  const activeCount = initialLoad ? 0 : requests.filter(r => (r.status === 'pending' || r.status === 'accepted' || r.status === 'paid' || r.status === 'in_progress') && !r.archived_at).length;
+  const completedCount = initialLoad ? 0 : requests.filter(r => r.status === 'completed' && !r.archived_at).length;
+  const archivedCount = initialLoad ? 0 : requests.filter(r => !!r.archived_at).length;
+
+  // Header component - always visible, never part of skeleton
   const headerComponent = (
-    <MotionView entering={subtleFadeIn()} style={styles.headerPlain}>
-      <MotionView entering={subtleFadeIn()} style={styles.headerContentPlain}>
+    <RNView style={styles.headerPlain}>
+      <RNView style={styles.headerContentPlain}>
         <Text style={styles.titlePlain}>My Reviews</Text>
         <Text style={styles.subtitlePlain} numberOfLines={1}>Track your review requests and feedback</Text>
+
+        <MotionPressable
+          onPress={handleNewRequest}
+          style={styles.discoverButton}
+          scaleEffect={false}
+          accessibilityRole="button"
+        >
+          <Text style={styles.discoverButtonText}>Discover Reviewers</Text>
+        </MotionPressable>
 
         <RNView style={[styles.countersRowPlain, { justifyContent: 'center' }]}>
           <MotionPressable
@@ -369,7 +615,7 @@ export default function RequestsScreen() {
             scaleEffect={false}
             accessibilityRole="button"
           >
-            <Text style={styles.counterTextPlain}>Active {requests.filter(r => (r.status === 'pending' || r.status === 'accepted' || r.status === 'paid' || r.status === 'in_progress') && !r.archived_at).length}</Text>
+            <Text style={styles.counterTextPlain}>Active {activeCount}</Text>
           </MotionPressable>
           <MotionPressable
             onPress={() => setFilter('completed')}
@@ -377,7 +623,7 @@ export default function RequestsScreen() {
             scaleEffect={false}
             accessibilityRole="button"
           >
-            <Text style={styles.counterTextPlain}>Completed {requests.filter(r => r.status === 'completed' && !r.archived_at).length}</Text>
+            <Text style={styles.counterTextPlain}>Completed {completedCount}</Text>
           </MotionPressable>
           <MotionPressable
             onPress={() => setFilter('archived')}
@@ -385,17 +631,17 @@ export default function RequestsScreen() {
             scaleEffect={false}
             accessibilityRole="button"
           >
-            <Text style={styles.counterTextPlain}>Archived {requests.filter(r => !!r.archived_at).length}</Text>
+            <Text style={styles.counterTextPlain}>Archived {archivedCount}</Text>
           </MotionPressable>
         </RNView>
-      </MotionView>
-    </MotionView>
+      </RNView>
+    </RNView>
   );
 
   return (
     <View style={[styles.container, { paddingTop: 0 }]}>
       {headerComponent}
-      {!hasShownSkeleton && loading ? (
+      {initialLoad ? (
         <RNView style={{ flex: 1, paddingHorizontal: 16, paddingTop: 24, backgroundColor: 'transparent' }}>
           {[...Array(4)].map((_, i) => (
             <SkeletonCard key={`s-${i}`} index={i} />
@@ -403,7 +649,7 @@ export default function RequestsScreen() {
         </RNView>
       ) : (
         <MotionView 
-          entering={hasShownSkeleton && !loading ? subtleFadeIn() : undefined}
+          entering={subtleFadeIn()}
           style={{ flex: 1 }}
         >
           <FlatList
@@ -420,19 +666,31 @@ export default function RequestsScreen() {
               />
             }
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 24, paddingHorizontal: 16, paddingTop: 0 }}
+            contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 16, paddingTop: 0 }}
             ListHeaderComponent={null}
             ListEmptyComponent={(
-              <View style={{ paddingHorizontal: 16, paddingTop: 24 }}>
+              <View style={{ paddingHorizontal: 16, paddingTop: 24, alignItems: 'center' }}>
                 <EmptyState
                   title="No reviews yet"
-                  message={isReviewer 
-                    ? "You haven't received any review requests yet. Share your profile link to start getting requests!"
-                    : "Start your journey by requesting your first review from an influencer!"}
+                  message={isReviewer && reviewerStatus === 'approved'
+                    ? "You haven't received any review requests yet."
+                    : isReviewer && reviewerStatus === 'pending'
+                    ? "Your reviewer application is pending approval. Once approved, you'll be able to receive review requests."
+                    : "Start your journey by requesting your first review from one of our Reviewers!"}
                   icon="⭐"
-                  actionLabel="Discover Reviewers"
-                  onAction={handleNewRequest}
                 />
+                {isReviewer && reviewerStatus === 'approved' && (
+                  <RNView style={styles.shareProfileSection}>
+                    <MotionPressable
+                      onPress={handleCopyProfileLink}
+                      style={styles.shareProfileButton}
+                      scaleEffect={false}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.shareProfileButtonText}>Share your profile link</Text>
+                    </MotionPressable>
+                  </RNView>
+                )}
               </View>
             )}
           />
@@ -511,7 +769,7 @@ const styles = StyleSheet.create({
   subtitlePlain: {
     fontSize: 16,
     color: Colors.brand.textSecondary,
-    marginBottom: 28,
+    marginBottom: 12,
     textAlign: 'center',
     opacity: 0.9,
     fontWeight: '500',
@@ -821,7 +1079,49 @@ const styles = StyleSheet.create({
     color: Colors.brand.textSecondary,
     fontWeight: '600',
   },
-  
+  discoverButton: {
+    backgroundColor: Colors.brand.accentOrange,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    marginTop: 0,
+    marginBottom: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  discoverButtonText: {
+    color: Colors.brand.textOnGradient,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  shareProfileSection: {
+    alignItems: 'center',
+    marginTop: -20,
+    backgroundColor: 'transparent',
+  },
+  shareProfileButton: {
+    backgroundColor: Colors.brand.accentOrange,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.brand.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  shareProfileButtonText: {
+    color: Colors.brand.textOnGradient,
+    fontSize: 16,
+    fontWeight: '700',
+  },
 });
 
 

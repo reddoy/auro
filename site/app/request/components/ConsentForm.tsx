@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 
 type Consent = {
-  shareOnSocial: boolean;
+  shareOnSocial: boolean | undefined;
   agreedAt: string;
 };
 
@@ -194,9 +194,6 @@ export default function ConsentForm({ consent, onConsentChange, onNext, onBack }
       </div>
 
       <div className="step-actions">
-        <button type="button" onClick={onBack} className="btn-secondary">
-          Back
-        </button>
         <button 
           type="button" 
           onClick={handleContinue} 
@@ -204,6 +201,9 @@ export default function ConsentForm({ consent, onConsentChange, onNext, onBack }
           disabled={!canProceed}
         >
           Continue
+        </button>
+        <button type="button" onClick={onBack} className="btn-secondary">
+          Back
         </button>
       </div>
 

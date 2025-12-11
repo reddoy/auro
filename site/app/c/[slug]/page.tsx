@@ -22,7 +22,7 @@ async function getCreator(slug: string) {
   // Try by username first
   let { data, error } = await supabase
     .from('profiles')
-    .select('id, username, full_name, avatar_url, hourly_rate, rating_average, is_reviewer, skills')
+    .select('id, username, first_name, last_name, avatar_url, hourly_rate, rating_average, is_reviewer, skills')
     .eq('username', slug)
     .maybeSingle();
   if (error) {
@@ -33,17 +33,19 @@ async function getCreator(slug: string) {
     if (isUuidLike(slug) || !error) {
       const byId = await supabase
         .from('profiles')
-        .select('id, username, full_name, avatar_url, hourly_rate, rating_average, is_reviewer, skills')
+        .select('id, username, first_name, last_name, avatar_url, hourly_rate, rating_average, is_reviewer, skills')
         .eq('id', slug)
         .maybeSingle();
       data = byId.data as any;
     }
   }
   if (!data || !data.is_reviewer) return null;
+  // Concatenate first_name and last_name to create display name
+  const fullName = [data.first_name, data.last_name].filter(Boolean).join(' ') || null;
   return {
     id: data.id,
     slug: data.username || slug,
-    displayName: data.full_name || data.username || 'Reviewer',
+    displayName: fullName || data.username || 'Reviewer',
     avatarUrl: data.avatar_url || null,
     pricePerReview: data.hourly_rate ?? null,
     rating: data.rating_average ?? null,

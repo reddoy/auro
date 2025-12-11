@@ -49,11 +49,33 @@ export function resolveOnboardingDestination(profile: Profile | null | undefined
   }
   
   const preferences = profile?.preferences || {};
+  // If user has completed initial onboarding, always go to main app
+  // (This prevents redirecting users who manually toggle to reviewer from being
+  //  sent back to onboarding on app restart)
   if (preferences?.onboarding_completed) {
     return '/(tabs)/requests';
   }
 
   const step = preferences?.onboarding_step || null;
+  
+  // Only redirect to reviewer onboarding if the user is actually a reviewer
+  // and hasn't completed initial onboarding. This prevents redirecting users
+  // who manually navigated to onboarding and then dismissed it.
+  const isReviewerOnboardingStep = step && (
+    step === 'reviewer_bio' ||
+    step === 'reviewer_rate' ||
+    step === 'reviewer_profile_picture' ||
+    step === 'reviewer_stripe' ||
+    step === 'reviewer_share_link' ||
+    step === 'reviewer_review_pending'
+  );
+  
+  // If it's a reviewer onboarding step but the user is not currently a reviewer,
+  // don't redirect them (they may have dismissed the onboarding)
+  if (isReviewerOnboardingStep && !profile.is_reviewer) {
+    return '/(tabs)/requests';
+  }
+  
   switch (step) {
     case 'reviewer_bio':
       return '/onboarding/reviewer/bio';
@@ -186,6 +208,16 @@ export async function updateProfile(partial: Partial<Profile>): Promise<Profile>
     if (incoming && typeof incoming === 'object') {
       const existingPrefs = (existing?.preferences || {}) as Record<string, any>;
       mergedPartial.preferences = { ...existingPrefs, ...incoming } as any;
+    }
+  }
+
+  // Validate hourly_rate if being updated
+  if (mergedPartial.hourly_rate !== undefined) {
+    const MIN_RATE = 0; // No minimum rate
+    const MAX_RATE = 30000; // Maximum $30,000 per review
+    const rate = mergedPartial.hourly_rate;
+    if (rate !== null && (typeof rate !== 'number' || isNaN(rate) || rate <= 0 || rate > MAX_RATE)) {
+      throw new Error(`Hourly rate must be a positive number up to $${MAX_RATE.toLocaleString()}`);
     }
   }
 
@@ -386,30 +418,77 @@ export async function getSignedAvatarUrl(pathOrUrl: string, expiresInSeconds: nu
       bucket = 'avatars';
     }
   } catch {}
-
+  
   // Prefer server-side signing when creator web base is configured
-  try {
-    const base =
-      process.env.EXPO_PUBLIC_CREATOR_WEB_BASE ||
-      (Constants.expoConfig?.extra as any)?.creatorWebBase ||
-      (Constants.manifest2 as any)?.extra?.creatorWebBase ||
-      '';
-    if (base) {
+  // This is especially important for temp-uploads paths which may not be accessible with user's auth token
+  const base =
+    process.env.EXPO_PUBLIC_CREATOR_WEB_BASE ||
+    (Constants.expoConfig?.extra as any)?.creatorWebBase ||
+    (Constants.manifest2 as any)?.extra?.creatorWebBase ||
+    '';
+  
+  if (base) {
+    try {
+      // Server-side endpoint handles directory resolution and signing with service role
       const params = new URLSearchParams({ path: objectPath, bucket, expiresIn: String(expiresInSeconds) });
       const res = await fetch(`${base}/api/storage/signed-view?${params.toString()}`, { method: 'GET' });
       if (res.ok) {
         const json = await res.json();
         const url = (json?.url || json?.signedUrl) as string | undefined;
-        if (url) return url;
+        if (url) {
+          return url;
+        }
+      } else {
+        const errorText = await res.text().catch(() => 'Unknown error');
+        console.warn('[getSignedAvatarUrl] Server-side signing failed:', res.status, errorText);
       }
+    } catch (err) {
+      console.warn('[getSignedAvatarUrl] Server-side signing error:', err);
     }
-  } catch {}
+  }
+
+  // If the path ends with a slash, it's a directory - we need to find the actual file
+  // Only do this if server-side signing failed or isn't available
+  if (objectPath.endsWith('/')) {
+    try {
+      const { data: files, error } = await supabase.storage.from(bucket).list(objectPath, { limit: 1, sortBy: { column: 'created_at', order: 'desc' } });
+      if (!error && files && files.length > 0) {
+        // Use the first file found in the directory
+        objectPath = objectPath + files[0].name;
+      } else {
+        // If client-side list fails, try server-side again with the directory path
+        // (server-side should handle directory resolution)
+        if (base && error) {
+          try {
+            const params = new URLSearchParams({ path: objectPath, bucket, expiresIn: String(expiresInSeconds) });
+            const res = await fetch(`${base}/api/storage/signed-view?${params.toString()}`, { method: 'GET' });
+            if (res.ok) {
+              const json = await res.json();
+              const url = (json?.url || json?.signedUrl) as string | undefined;
+              if (url) return url;
+            }
+          } catch {}
+        }
+        return null;
+      }
+    } catch (err) {
+      console.error('[getSignedAvatarUrl] Error listing directory:', err);
+      return null;
+    }
+  }
 
   try {
     const { data, error } = await supabase.storage.from(bucket).createSignedUrl(objectPath, expiresInSeconds);
-    if (error) throw error;
-    return data?.signedUrl || null;
-  } catch {
+    if (error) {
+      console.error('[getSignedAvatarUrl] Client-side signing error:', error);
+      throw error;
+    }
+    if (data?.signedUrl) {
+      return data.signedUrl;
+    }
+    return null;
+  } catch (err) {
+    console.error('[getSignedAvatarUrl] Client-side signing exception:', err);
     return null;
   }
 }

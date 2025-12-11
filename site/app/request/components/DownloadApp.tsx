@@ -80,13 +80,20 @@ The Auro Team`);
             <div className="timeline-item">
               <div className="timeline-step">2</div>
               <div className="timeline-content">
+                <strong>Review Acceptance</strong>
+                <p>Your reviewer has 2 weeks to accept or deny your request. If no action is taken within 2 weeks, you will be automatically refunded.</p>
+              </div>
+            </div>
+            <div className="timeline-item">
+              <div className="timeline-step">3</div>
+              <div className="timeline-content">
                 <strong>Review Process</strong>
-                <p>Your reviewer will provide detailed feedback within 48 hours</p>
+                <p>Once accepted, your reviewer will provide detailed feedback within 48 hours. If not completed within 48 hours, you will be automatically refunded.</p>
               </div>
             </div>
             
             <div className="timeline-item">
-              <div className="timeline-step">3</div>
+              <div className="timeline-step">4</div>
               <div className="timeline-content">
                 <strong>Notification</strong>
                 <p>You'll be notified via email and app when your review is ready</p>

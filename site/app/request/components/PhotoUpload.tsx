@@ -109,12 +109,32 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
   const uploadToSupabase = async (file: File, category: string): Promise<string> => {
     setUploadProgress(prev => ({ ...prev, [category]: 0 }));
 
-    // Ask server for a signed upload URL
+    // Client-side file validation
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+    
+    // Check file size
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error(`File size exceeds maximum of ${MAX_FILE_SIZE / 1024 / 1024}MB. Please choose a smaller file.`);
+    }
+    
+    // Check file type
+    const fileExt = '.' + (file.name.split('.').pop() || '').toLowerCase();
+    if (!allowedExtensions.includes(fileExt)) {
+      throw new Error(`Invalid file type. Allowed types: ${allowedExtensions.join(', ')}`);
+    }
+    
     const contentType = file.type || 'application/octet-stream';
+    if (!allowedTypes.includes(contentType.toLowerCase())) {
+      throw new Error(`Invalid content type. Allowed types: ${allowedTypes.join(', ')}`);
+    }
+
+    // Ask server for a signed upload URL
     const res = await fetch('/api/storage/signed-upload', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ fileName: file.name, contentType, category, uploadSessionId })
+      body: JSON.stringify({ fileName: file.name, contentType, category, uploadSessionId, fileSize: file.size })
     });
     if (!res.ok) {
       const msg = await res.text();
@@ -316,9 +336,6 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
       </div>
 
       <div className="step-actions">
-        <button type="button" onClick={onBack} className="btn-secondary">
-          Back
-        </button>
         <button 
           type="button" 
           onClick={onNext} 
@@ -326,6 +343,9 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
           disabled={!canProceed}
         >
           Continue
+        </button>
+        <button type="button" onClick={onBack} className="btn-secondary">
+          Back
         </button>
       </div>
     </div>

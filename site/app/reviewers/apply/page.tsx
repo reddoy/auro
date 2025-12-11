@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import ReviewerCounter from '../../../components/ReviewerCounter';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
-import { Badge } from '../../../components/ui/badge';
-import { ArrowLeft, ArrowRight, Check, Star, DollarSign, Users, Clock, Shield, Mail, Lock, User, FileText, Target, Phone, Instagram, Music } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Star, DollarSign, Clock, Shield, Mail, Lock, User, FileText, Target, Phone, Instagram, Music } from 'lucide-react';
+import WebAvatarUploader from '../../../components/WebAvatarUploader';
 
 
 export default function FoundingReviewerApplyPage() {
@@ -21,8 +21,7 @@ export default function FoundingReviewerApplyPage() {
   const [marketingConsent, setMarketingConsent] = useState<boolean>(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
-  const [instagramHandle, setInstagramHandle] = useState('');
-  const [tiktokHandle, setTiktokHandle] = useState('');
+  const [hourlyRate, setHourlyRate] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
@@ -71,15 +70,14 @@ export default function FoundingReviewerApplyPage() {
         marketingConsent,
         avatarUrl,
         avatarPath,
-        instagramHandle,
-        tiktokHandle,
+        hourlyRate,
         timestamp: Date.now()
       };
       localStorage.setItem('auro_reviewer_form_data', JSON.stringify(formData));
     } catch (error) {
       console.warn('[ReviewerApply] Failed to save form data:', error);
     }
-  }, [step, firstName, lastName, email, phone, marketingConsent, avatarUrl, avatarPath, instagramHandle, tiktokHandle]);
+  }, [step, firstName, lastName, email, phone, marketingConsent, avatarUrl, avatarPath, hourlyRate]);
 
   const loadFormData = useCallback(() => {
     try {
@@ -94,10 +92,9 @@ export default function FoundingReviewerApplyPage() {
           setEmail(formData.email || '');
           setPhone(formData.phone || '');
           setMarketingConsent(formData.marketingConsent || false);
-          setAvatarUrl(formData.avatarUrl || null);
-          setAvatarPath(formData.avatarPath || null);
-          setInstagramHandle(formData.instagramHandle || '');
-          setTiktokHandle(formData.tiktokHandle || '');
+        setAvatarUrl(formData.avatarUrl || null);
+        setAvatarPath(formData.avatarPath || null);
+        setHourlyRate(formData.hourlyRate || '');
           console.log('[ReviewerApply] Restored form data from localStorage');
           return true;
         } else {
@@ -126,7 +123,7 @@ export default function FoundingReviewerApplyPage() {
     if (step > 1) {
       saveFormData();
     }
-  }, [step, firstName, lastName, email, phone, marketingConsent, avatarUrl, avatarPath, instagramHandle, tiktokHandle, saveFormData]);
+  }, [step, firstName, lastName, email, phone, marketingConsent, avatarUrl, avatarPath, hourlyRate, saveFormData]);
 
   // Check if resuming from OAuth - improved with retry logic
   useEffect(() => {
@@ -199,7 +196,29 @@ export default function FoundingReviewerApplyPage() {
               const { given_name, family_name, email } = user.user_metadata;
               if (given_name) setFirstName(given_name);
               if (family_name) setLastName(family_name);
-              if (email) setEmail(email);
+              if (email) {
+                setEmail(email);
+                // Store email in localStorage for step 6 submission
+                try {
+                  localStorage.setItem('auro_signup_email', email);
+                  localStorage.setItem('auro_signup_user_id', user.id);
+                  if (given_name && family_name) {
+                    localStorage.setItem('auro_signup_full_name', `${given_name} ${family_name}`);
+                  }
+                } catch (storageError) {
+                  console.warn('[ReviewerApply] Failed to store OAuth data in localStorage:', storageError);
+                }
+              }
+            }
+            // Also check user.email directly if metadata doesn't have it
+            if (user.email && !email) {
+              setEmail(user.email);
+              try {
+                localStorage.setItem('auro_signup_email', user.email);
+                localStorage.setItem('auro_signup_user_id', user.id);
+              } catch (storageError) {
+                console.warn('[ReviewerApply] Failed to store OAuth data in localStorage:', storageError);
+              }
             }
           } catch (metadataError) {
             console.warn('[ReviewerApply] Failed to extract OAuth metadata:', metadataError);
@@ -355,7 +374,21 @@ export default function FoundingReviewerApplyPage() {
             if (session.user.app_metadata?.provider === 'google') {
               setIsGoogleAuthed(true);
             }
-            if (session.user.email) setEmail(session.user.email);
+            if (session.user.email) {
+              setEmail(session.user.email);
+              // Store email in localStorage for Google OAuth users
+              if (session.user.app_metadata?.provider === 'google') {
+                try {
+                  localStorage.setItem('auro_signup_email', session.user.email);
+                  localStorage.setItem('auro_signup_user_id', session.user.id);
+                  if (session.user.user_metadata?.given_name && session.user.user_metadata?.family_name) {
+                    localStorage.setItem('auro_signup_full_name', `${session.user.user_metadata.given_name} ${session.user.user_metadata.family_name}`);
+                  }
+                } catch (storageError) {
+                  console.warn('[ReviewerApply] Failed to store OAuth data in localStorage:', storageError);
+                }
+              }
+            }
             if (session.user.user_metadata?.given_name) setFirstName(session.user.user_metadata.given_name);
             if (session.user.user_metadata?.family_name) setLastName(session.user.user_metadata.family_name);
             
@@ -413,7 +446,7 @@ export default function FoundingReviewerApplyPage() {
     }
   }, [step, isGoogleAuthed]);
 
-  // Fetch reviewer count - only count completed reviewers
+  // Fetch reviewer count - only count approved reviewers
   useEffect(() => {
     const fetchReviewerCount = async () => {
       try {
@@ -421,15 +454,14 @@ export default function FoundingReviewerApplyPage() {
           console.error('[ReviewerApply] Supabase client is not available');
           return;
         }
-        // Count only completed reviewers from profiles table
-        const { data: profileData, error: profileError } = await supabase
+        // Count only approved reviewers from profiles table
+        const { count, error: profileError } = await supabase
           .from('profiles')
-          .select('id', { count: 'exact' })
-          .eq('is_reviewer', 'approved')
-          .eq('reviewer_signup_status', 'completed');
+          .select('*', { count: 'exact', head: true })
+          .eq('is_reviewer', 'approved');
         
-        if (!profileError && profileData) {
-          setReviewerCount(profileData.length || 0);
+        if (!profileError) {
+          setReviewerCount(count || 0);
           return;
         }
 
@@ -519,7 +551,7 @@ export default function FoundingReviewerApplyPage() {
     }
     if (step === 2) {
       // Account basics step
-      if (!firstName || !lastName || !email) { setError('Please enter your first name, last name, and email'); return; }
+      if (!email) { setError('Please enter your email'); return; }
       
       // Set status to pending when they start filling out the form
       if (signupStatus === 'not_started') {
@@ -626,7 +658,39 @@ export default function FoundingReviewerApplyPage() {
       return;
     }
     if (step === 4) {
-      // Phone number step - submit application (profile picture step removed)
+      // Profile picture step - required
+      if (!avatarUrl || !avatarPath) {
+        setError('Please upload a profile picture to continue');
+        return;
+      }
+      setStep(5);
+      return;
+    }
+    if (step === 5) {
+      // Rate step - required
+      if (!hourlyRate || isNaN(parseFloat(hourlyRate)) || parseFloat(hourlyRate) <= 0) {
+        setError('Please set your rate per review to continue');
+        return;
+      }
+      const rateNumber = parseFloat(hourlyRate);
+      const MAX_RATE = 30000;
+      if (rateNumber > MAX_RATE) {
+        setError(`Maximum rate is $${MAX_RATE.toLocaleString()} per review`);
+        return;
+      }
+      setStep(6);
+      return;
+    }
+    if (step === 6) {
+      // Phone number step - submit application
+      if (!firstName || firstName.trim().length === 0) {
+        setError('Please enter your first name');
+        return;
+      }
+      if (!lastName || lastName.trim().length === 0) {
+        setError('Please enter your last name');
+        return;
+      }
       if (!phone || phone.trim().length === 0) { 
         setError('Please enter your phone number'); 
         return; 
@@ -646,9 +710,36 @@ export default function FoundingReviewerApplyPage() {
         console.log('[ReviewerApply] Submitting application at step 4');
         
         // Always use the signup endpoint for simplicity - it handles both authenticated and unauthenticated cases
-        const signupUserId = localStorage.getItem('auro_signup_user_id');
-        const signupEmail = localStorage.getItem('auro_signup_email');
-        const signupFullName = localStorage.getItem('auro_signup_full_name') || '';
+        let signupUserId = localStorage.getItem('auro_signup_user_id');
+        let signupEmail = localStorage.getItem('auro_signup_email');
+        let signupFullName = localStorage.getItem('auro_signup_full_name') || '';
+        
+        // For Google OAuth users, also check current session if localStorage doesn't have email
+        if (!signupEmail && isGoogleAuthed) {
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user?.email) {
+              signupEmail = session.user.email;
+              signupUserId = session.user.id || null;
+              // Store for consistency
+              try {
+                if (signupEmail) {
+                  localStorage.setItem('auro_signup_email', signupEmail);
+                }
+                if (signupUserId) {
+                  localStorage.setItem('auro_signup_user_id', signupUserId);
+                }
+              } catch {}
+            }
+          } catch (sessionError) {
+            console.warn('[ReviewerApply] Failed to get session for Google OAuth user:', sessionError);
+          }
+        }
+        
+        // Also check email state variable as fallback
+        if (!signupEmail && email) {
+          signupEmail = email;
+        }
         
         if (!signupEmail) {
           setError('Please complete the signup process first. Go back to step 2 and create your account.');
@@ -669,12 +760,12 @@ export default function FoundingReviewerApplyPage() {
         const requestData = {
           bio: '',
           focusAreas: '',
-          hourlyRate: null,
+          hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
           avatarUrl: avatarUrl,
           avatarPath: avatarPath,
           socials: [],
-          instagramHandle: instagramHandle || null,
-          tiktokHandle: tiktokHandle || null,
+          instagramHandle: null,
+          tiktokHandle: null,
           phone: phone || null,
           marketingConsent,
           userId: signupUserId, // May be null, that's OK
@@ -709,21 +800,26 @@ export default function FoundingReviewerApplyPage() {
         
         console.log('[ReviewerApply] Application submitted successfully');
         
-        // Send confirmation email
-        try {
-          console.log('[ReviewerApply] Sending confirmation email...');
-          await fetch('/api/auth/resend-verification', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ email: signupEmail })
-          });
-          console.log('[ReviewerApply] Confirmation email sent successfully');
-        } catch (emailError) {
-          console.warn('[ReviewerApply] Failed to send confirmation email:', emailError);
+        // Send confirmation email only for regular email signups (not Google OAuth)
+        if (!isGoogleAuthed) {
+          try {
+            console.log('[ReviewerApply] Sending confirmation email...');
+            await fetch('/api/auth/resend-verification', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ email: signupEmail })
+            });
+            console.log('[ReviewerApply] Confirmation email sent successfully');
+          } catch (emailError) {
+            console.warn('[ReviewerApply] Failed to send confirmation email:', emailError);
+            // Don't fail the entire flow if email sending fails
+          }
+        } else {
+          console.log('[ReviewerApply] Skipping confirmation email for Google OAuth user (email already verified)');
         }
         
         clearFormData(); // Clear saved data on successful submission
-        setStep(6);
+        setStep(7);
         setLoading(false);
         return;
         
@@ -752,8 +848,10 @@ export default function FoundingReviewerApplyPage() {
       { id: 1, label: 'Intro', shortLabel: 'Intro', icon: Star },
       { id: 2, label: 'Account', shortLabel: 'Account', icon: User },
       { id: 3, label: 'Password', shortLabel: 'Pass', icon: Lock },
-      { id: 4, label: 'Phone', shortLabel: 'Phone', icon: Phone },
-      { id: 6, label: 'Done', shortLabel: 'Done', icon: Check }
+      { id: 4, label: 'Photo', shortLabel: 'Photo', icon: User },
+      { id: 5, label: 'Rate', shortLabel: 'Rate', icon: DollarSign },
+      { id: 6, label: 'Phone', shortLabel: 'Phone', icon: Phone },
+      { id: 7, label: 'Done', shortLabel: 'Done', icon: Check }
     ];
 
     // Calculate progress percentage, capping at 100%
@@ -874,12 +972,7 @@ export default function FoundingReviewerApplyPage() {
           <div className="w-full max-w-2xl mx-auto">
             <div className="flex flex-col justify-between h-[calc(100vh-140px)] max-h-[700px] md:max-h-[800px]">
               {/* Top Section - Compact */}
-              <div className="text-center space-y-2.5 md:space-y-4 pt-2 md:pt-4">
-                <Badge className="bg-gradient-to-r from-orange-500/20 to-purple-600/20 border-orange-500/30 text-orange-400 px-3 py-1 md:px-4 md:py-2 text-xs md:text-sm">
-                  <Star className="w-3 h-3 md:w-4 md:h-4 mr-1.5 md:mr-2" />
-                  Exclusive Founding Program
-                </Badge>
-                
+              <div className="text-center space-y-3 md:space-y-4 pt-2 md:pt-4">
                 <h1 className="text-3xl md:text-5xl font-bold leading-tight px-2">
                   <span className="block text-white">Girls rate guys.</span>
                   <span className="block text-white">Guys get advice.</span>
@@ -888,9 +981,8 @@ export default function FoundingReviewerApplyPage() {
                   </span>
                 </h1>
                 
-                <p className="text-xs md:text-base text-gray-300 px-4 leading-relaxed max-w-xl mx-auto">
-                  We're building the platform where your honest feedback helps guys level up—and you earn money doing it. 
-                  <span className="text-orange-400 font-semibold"> Join the first 35 reviewers</span> and lock in exclusive perks forever.
+                <p className="text-sm md:text-base text-gray-300 px-4 leading-relaxed max-w-xl mx-auto">
+                  Earn money giving honest feedback. Join the first 35 reviewers and lock in exclusive perks.
                 </p>
               </div>
 
@@ -933,21 +1025,6 @@ export default function FoundingReviewerApplyPage() {
                     </div>
                   </div>
                 </div>
-                
-                {/* Additional perks */}
-                <div className="bg-gradient-to-r from-blue-500/10 to-indigo-600/10 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-blue-500/20">
-                  <div className="flex items-center justify-center gap-4 md:gap-6 text-xs md:text-sm">
-                    <div className="flex items-center gap-1.5 md:gap-2">
-                      <Shield className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-400" />
-                      <span className="text-white font-medium">Founding badge</span>
-                    </div>
-                    <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
-                    <div className="flex items-center gap-1.5 md:gap-2">
-                      <Users className="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-400" />
-                      <span className="text-white font-medium">Priority reviews</span>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               {/* Bottom Section - CTA + Urgency */}
@@ -983,11 +1060,6 @@ export default function FoundingReviewerApplyPage() {
                   <div className="flex items-center gap-1 md:gap-1.5">
                     <Check className="w-3 h-3 md:w-4 md:h-4 text-green-400" />
                     <span>No commitment</span>
-                  </div>
-                  <div className="w-0.5 h-0.5 bg-gray-600 rounded-full"></div>
-                  <div className="flex items-center gap-1 md:gap-1.5">
-                    <Clock className="w-3 h-3 md:w-4 md:h-4 text-blue-400" />
-                    <span>Launch Jan 15</span>
                   </div>
                   <div className="w-0.5 h-0.5 bg-gray-600 rounded-full"></div>
                   <div className="flex items-center gap-1 md:gap-1.5">
@@ -1052,7 +1124,7 @@ export default function FoundingReviewerApplyPage() {
                 </div>
                 <CardTitle className="text-xl md:text-2xl font-bold text-white">Create Your Account</CardTitle>
                 <CardDescription className="text-sm md:text-base text-gray-300">
-                  Tell us who you are and how to reach you
+                  Enter your email to get started
                 </CardDescription>
               </CardHeader>
             
@@ -1091,31 +1163,6 @@ export default function FoundingReviewerApplyPage() {
 
               {/* Form Fields */}
               <div className="space-y-4">
-                {/* Name Fields - Side by Side */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-300">First Name</label>
-                    <input
-                      type="text"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Jane"
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-300">Last Name</label>
-                    <input
-                      type="text"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Doe"
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">Email Address</label>
                   <input
@@ -1156,7 +1203,7 @@ export default function FoundingReviewerApplyPage() {
                 </Button>
                 <Button
                   onClick={handleNext}
-                  disabled={loading || !firstName || !lastName || !email}
+                  disabled={loading || !email}
                   className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
                 >
                   {loading ? 'Please wait...' : 'Continue'}
@@ -1328,6 +1375,203 @@ export default function FoundingReviewerApplyPage() {
       )}
 
       {step === 4 && (
+        <div className="flex-1 flex items-start md:items-center justify-center px-4 py-2 md:py-8 min-h-[calc(100vh-120px)] overflow-y-auto">
+          <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
+            <CardHeader className="text-center space-y-1 md:space-y-2 py-3 md:py-6">
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-full flex items-center justify-center mx-auto">
+                <User className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
+              </div>
+              <CardTitle className="text-xl md:text-2xl font-bold text-white">Add Your Photo</CardTitle>
+              <CardDescription className="text-sm md:text-base text-gray-300">
+                Upload a clear profile picture of yourself (required)
+              </CardDescription>
+            </CardHeader>
+          
+          <CardContent className="space-y-4 md:space-y-6 py-2 md:py-6">
+            {error && (
+              <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-3 py-2 md:px-4 md:py-3 rounded-lg text-xs md:text-sm">
+                {error}
+              </div>
+            )}
+            
+            <div className="space-y-4 md:space-y-6">
+              {/* Profile Picture Upload */}
+              <div className="space-y-3 flex flex-col items-center">
+                <WebAvatarUploader
+                  currentAvatarUrl={avatarUrl}
+                  onAvatarChange={(url, path) => {
+                    setAvatarUrl(url);
+                    setAvatarPath(path);
+                  }}
+                  size={140}
+                />
+                <p className="text-sm text-gray-300 text-center max-w-sm">
+                  Upload a clear photo of yourself. This is required to complete your application.
+                </p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setStep(isGoogleAuthed ? 2 : 3)}
+                className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+              <Button
+                onClick={handleNext}
+                disabled={!avatarUrl || !avatarPath}
+                className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Continue
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        </div>
+      )}
+
+      {step === 5 && (
+        <div className="flex-1 flex items-start md:items-center justify-center px-4 py-2 md:py-8 min-h-[calc(100vh-120px)] overflow-y-auto">
+          <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
+            <CardHeader className="text-center space-y-1 md:space-y-2 py-3 md:py-6">
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-green-500/20 to-green-600/20 rounded-full flex items-center justify-center mx-auto">
+                <DollarSign className="w-6 h-6 md:w-8 md:h-8 text-green-400" />
+              </div>
+              <CardTitle className="text-xl md:text-2xl font-bold text-white">Set Your Rate</CardTitle>
+              <CardDescription className="text-sm md:text-base text-gray-300">
+                Choose how much you'd like to earn per review
+              </CardDescription>
+            </CardHeader>
+          
+          <CardContent className="space-y-4 md:space-y-6 py-2 md:py-6">
+            {error && (
+              <div className="bg-red-500/20 border border-red-500/30 text-red-200 px-3 py-2 md:px-4 md:py-3 rounded-lg text-xs md:text-sm">
+                {error}
+              </div>
+            )}
+            
+            <div className="space-y-6">
+              {/* Rate Input */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-gray-300 text-center block">
+                  Your Rate Per Review
+                </label>
+                <div className="relative">
+                  <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-bold text-gray-400">$</span>
+                  <input
+                    type="number"
+                    value={hourlyRate}
+                    onChange={(e) => setHourlyRate(e.target.value)}
+                    placeholder="25"
+                    min="0"
+                    step="1"
+                    className="w-full pl-12 pr-6 py-4 text-2xl font-semibold bg-white/10 border-2 border-white/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500/50 text-center"
+                  />
+                </div>
+                <p className="text-xs text-gray-400 text-center">
+                  Required: Set your rate per review (e.g., $25-50 per review)
+                </p>
+              </div>
+
+              {/* Earnings Calculator */}
+              {hourlyRate && !isNaN(parseFloat(hourlyRate)) && parseFloat(hourlyRate) > 0 && (() => {
+                const rate = parseFloat(hourlyRate);
+                const takeHomeRate = rate * 0.8; // 80% take home
+                const platformFee = rate * 0.2; // 20% platform fee
+                
+                return (
+                  <div className="space-y-4">
+                    {/* Breakdown Section */}
+                    <div className="bg-gradient-to-br from-green-500/20 via-emerald-500/20 to-teal-500/20 border border-green-500/30 rounded-xl p-5">
+                      <h3 className="text-sm font-semibold text-white mb-4 text-center">Your Take-Home Breakdown</h3>
+                      <div className="bg-black/30 rounded-lg p-4 space-y-3">
+                        <div className="flex items-center justify-between whitespace-nowrap">
+                          <span className="text-sm text-gray-300">Rate:</span>
+                          <span className="text-lg font-semibold text-white">${rate.toFixed(0)}</span>
+                        </div>
+                        <div className="flex items-center justify-between whitespace-nowrap text-xs text-gray-400">
+                          <span>Platform fee:</span>
+                          <span>-${platformFee.toFixed(2)}</span>
+                        </div>
+                        <div className="pt-3 border-t border-green-500/30 flex items-center justify-between whitespace-nowrap">
+                          <span className="text-sm font-semibold text-green-300">You take home:</span>
+                          <span className="text-2xl font-bold text-green-400">${takeHomeRate.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Projected Earnings Section */}
+                    <div className="bg-gradient-to-br from-blue-500/20 via-indigo-500/20 to-purple-600/20 border border-blue-500/30 rounded-xl p-5">
+                      <h3 className="text-sm font-semibold text-white mb-4 text-center">Projected Earnings</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between whitespace-nowrap">
+                          <span className="text-sm text-gray-300">Per review:</span>
+                          <span className="text-xl font-bold text-blue-400">${takeHomeRate.toFixed(2)}</span>
+                        </div>
+                        <div className="flex items-center justify-between whitespace-nowrap">
+                          <span className="text-sm text-gray-300">5/week:</span>
+                          <span className="text-lg font-semibold text-blue-300">${(takeHomeRate * 5).toFixed(2)}</span>
+                        </div>
+                        <div className="flex items-center justify-between whitespace-nowrap">
+                          <span className="text-sm text-gray-300">20/month:</span>
+                          <span className="text-lg font-semibold text-blue-300">${(takeHomeRate * 20).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Note */}
+                    <div className="text-center">
+                      <p className="text-xs text-green-300/70 whitespace-nowrap">
+                        💰 80% take-home rate for founding reviewers
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Default Earnings Info */}
+              {(!hourlyRate || isNaN(parseFloat(hourlyRate)) || parseFloat(hourlyRate) <= 0) && (
+                <div className="bg-gradient-to-br from-orange-500/20 via-pink-500/20 to-purple-600/20 border border-orange-500/30 rounded-xl p-5">
+                  <div className="text-center space-y-2">
+                    <p className="text-sm font-semibold text-white">Typical Rate</p>
+                    <p className="text-sm text-gray-300 whitespace-nowrap">
+                      Most reviewers: <span className="text-orange-400 font-semibold">$25-50</span> per review
+                    </p>
+                    <p className="text-xs text-gray-400">Set your rate above or we'll suggest one</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setStep(4)}
+                className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+              <Button
+                onClick={handleNext}
+                className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+              >
+                Continue
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        </div>
+      )}
+
+      {step === 6 && (
         <div className="flex-1 flex items-center justify-center px-4 py-4 md:py-8 min-h-[calc(100vh-120px)]">
           <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
             <CardHeader className="text-center space-y-1 md:space-y-2 py-4 md:py-6">
@@ -1347,7 +1591,33 @@ export default function FoundingReviewerApplyPage() {
               </div>
             )}
             
-            <div className="space-y-3 md:space-y-4">
+            <div className="space-y-4 md:space-y-5">
+              {/* Name Fields */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">First Name</label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Jane"
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300">Last Name</label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Doe"
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Phone Number */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">Phone Number</label>
                 <input
@@ -1361,62 +1631,34 @@ export default function FoundingReviewerApplyPage() {
                   We'll use this to notify you about new review requests and payment updates.
                 </p>
               </div>
-
-              {/* Social Media Handles */}
-              <div className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                    <Instagram className="w-4 h-4 text-pink-400" />
-                    Instagram Handle
-                  </label>
-                  <input
-                    type="text"
-                    value={instagramHandle}
-                    onChange={(e) => setInstagramHandle(e.target.value)}
-                    placeholder="@yourusername"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-400">
-                    Optional: Your Instagram handle (without the @ symbol)
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                    <Music className="w-4 h-4 text-gray-400" />
-                    TikTok Handle
-                  </label>
-                  <input
-                    type="text"
-                    value={tiktokHandle}
-                    onChange={(e) => setTiktokHandle(e.target.value)}
-                    placeholder="@yourusername"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-400">
-                    Optional: Your TikTok handle (without the @ symbol)
-                  </p>
-                </div>
-              </div>
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 pt-2">
               <Button
                 variant="outline"
-                onClick={() => setStep(isGoogleAuthed ? 2 : 3)}
-                className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+                onClick={() => setStep(5)}
+                className="w-full bg-transparent border-white/20 text-white hover:bg-white/10"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
               <Button
                 onClick={handleNext}
-                disabled={loading || !phone}
-                className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+                disabled={loading || !phone || !firstName || !lastName}
+                className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white py-6 text-base font-semibold rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
               >
-                {loading ? 'Submitting...' : 'Complete Application'}
-                <ArrowRight className="w-4 h-4 ml-2" />
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                    Submitting...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    Complete Application
+                    <ArrowRight className="w-5 h-5" />
+                  </span>
+                )}
               </Button>
             </div>
           </CardContent>
@@ -1424,58 +1666,82 @@ export default function FoundingReviewerApplyPage() {
         </div>
       )}
 
-      {step === 6 && (
+      {step === 7 && (
         <div className="flex-1 flex items-center justify-center px-4 py-8 min-h-[calc(100vh-120px)]">
-          <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20 text-center">
-            <CardContent className="p-8 space-y-6">
-              <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto">
-                <Check className="w-10 h-10 text-white" />
+          <Card className="w-full max-w-lg bg-white/10 backdrop-blur-sm border-white/20">
+            <CardContent className="p-8 md:p-10 space-y-8">
+              {/* Success Icon */}
+              <div className="flex justify-center">
+                <div className="w-24 h-24 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-500/30">
+                  <Check className="w-12 h-12 text-white" />
+                </div>
               </div>
               
-              <div className="space-y-3">
-                <h3 className="text-2xl font-bold text-white">Application Submitted! 🎉</h3>
-                <p className="text-gray-300 leading-relaxed">
-                  Thank you for applying to become a reviewer! We've received your application and will review it personally.
+              {/* Success Message */}
+              <div className="text-center space-y-3">
+                <h3 className="text-3xl md:text-4xl font-bold text-white">Application Submitted! 🎉</h3>
+                <p className="text-base text-gray-300 leading-relaxed max-w-md mx-auto">
+                  Thank you for applying to become a reviewer! We've received your application.
                 </p>
               </div>
 
-              <div className="bg-gradient-to-r from-orange-500/20 to-purple-600/20 border border-orange-500/30 rounded-lg p-4 space-y-3">
-                <h4 className="text-lg font-semibold text-white">What happens next?</h4>
-                <div className="space-y-2 text-sm text-gray-300">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span>Check your email and verify your account</span>
+              {/* Rohan's Message */}
+              <div className="bg-gradient-to-br from-orange-500/20 via-pink-500/20 to-purple-600/20 border border-orange-500/30 rounded-xl p-6 space-y-4 backdrop-blur-sm">
+                <div className="flex items-center gap-4">
+                  <div className="relative w-20 h-20 rounded-full overflow-hidden flex-shrink-0 border-2 border-orange-500/50 shadow-lg">
+                    <img
+                      src="/rohan-headshot-backyard-min.jpg"
+                      alt="Rohan"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/rohan-headshot.jpg';
+                      }}
+                    />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span>We'll personally review your application to ensure you align with our platform</span>
+                  <div className="flex-1">
+                    <p className="text-base text-white font-semibold">Rohan O'Malley</p>
+                    <p className="text-sm text-gray-300">Founder</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span>You'll receive an email notification once your application is approved</span>
-                  </div>
-                  
-                  {/* Approval Notice */}
-                  <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                    <p className="text-xs text-blue-300 text-center">
-                      ⏳ <strong>Review Process:</strong> We personally review each application to ensure quality. You'll be notified via email once your application has been reviewed.
-                    </p>
-                  </div>
-            </div>
-          </div>
+                </div>
+                <div className="text-sm text-gray-200 leading-relaxed">
+                  <p>
+                    Hey! I go over every single application personally to make sure that your request aligns with our platform. We're going to be launching soon, and we'll let you know if you're accepted.
+                  </p>
+                </div>
+              </div>
 
-              <div className="space-y-4">
+              {/* Next Steps */}
+              <div className="bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-600/10 border border-blue-500/20 rounded-xl p-6 space-y-4">
+                <h4 className="text-base font-semibold text-white text-center">What happens next?</h4>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full flex-shrink-0 mt-1.5"></div>
+                    <span className="text-sm text-gray-300 flex-1">Check your email and verify your account</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full flex-shrink-0 mt-1.5"></div>
+                    <span className="text-sm text-gray-300 flex-1">We'll personally review your application</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full flex-shrink-0 mt-1.5"></div>
+                    <span className="text-sm text-gray-300 flex-1">You'll receive an email notification once your application is reviewed</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-4 pt-2">
                 <Button 
                   asChild
-                  className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+                  className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white py-6 text-base font-semibold rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
                 >
                   <a href="/">
                     Back to Home
                   </a>
                 </Button>
                 
-                <p className="text-xs text-gray-400">
-                  Questions? Reach out to us at support@appauro.com
+                <p className="text-xs text-gray-400 text-center">
+                  Questions? Reach out to us at <span className="text-orange-400">support@appauro.com</span>
                 </p>
               </div>
             </CardContent>

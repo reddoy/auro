@@ -30,7 +30,23 @@ export default function WebAvatarUploader({
     if (currentAvatarUrl) {
       // Only set preview URL if it's not a blob URL (blob URLs don't persist across refreshes)
       if (!currentAvatarUrl.startsWith('blob:')) {
-        setPreviewUrl(currentAvatarUrl);
+        // If it's an API endpoint, fetch the signed URL
+        if (currentAvatarUrl.startsWith('/api/storage/signed-view')) {
+          fetch(currentAvatarUrl)
+            .then(res => res.json())
+            .then(data => {
+              if (data?.url) {
+                setPreviewUrl(data.url);
+              }
+            })
+            .catch(err => {
+              console.error('Failed to fetch signed URL:', err);
+              setPreviewUrl(null);
+            });
+        } else {
+          // It's already a direct URL (signed URL or http/https)
+          setPreviewUrl(currentAvatarUrl);
+        }
       }
     } else {
       setPreviewUrl(null);
@@ -112,16 +128,26 @@ export default function WebAvatarUploader({
         throw new Error(`Upload failed with status: ${uploadResponse.status}`);
       }
 
-      // Generate display URL that will persist across page refreshes
-      const displayUrl = `/api/storage/signed-view?path=${encodeURIComponent(path)}&bucket=avatars`;
+      // Get signed view URL for display
+      const viewResponse = await fetch(`/api/storage/signed-view?path=${encodeURIComponent(path)}&bucket=avatars`);
+      if (!viewResponse.ok) {
+        throw new Error('Failed to get display URL');
+      }
+      const viewData = await viewResponse.json();
+      const signedViewUrl = viewData?.url;
       
-      // Update preview to use the persistent URL
-      setPreviewUrl(displayUrl);
+      if (!signedViewUrl) {
+        throw new Error('No signed URL returned');
+      }
+      
+      // Update preview to use the signed URL
+      setPreviewUrl(signedViewUrl);
       
       // Clean up the temporary blob URL
       URL.revokeObjectURL(tempPreview);
       
-      onAvatarChange(displayUrl, path);
+      // Store the API endpoint path for later retrieval, but use signed URL for display
+      onAvatarChange(signedViewUrl, path);
     } catch (error) {
       console.error('Avatar upload error:', error);
       alert(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -160,14 +186,14 @@ export default function WebAvatarUploader({
       <div className={`flex flex-col items-center space-y-4 ${className}`}>
         <div className="relative">
           <Card 
-            className={`cursor-pointer transition-all duration-200 hover:scale-105 ${
+            className={`cursor-pointer transition-all duration-200 hover:scale-105 border-0 ${
               uploading ? 'opacity-50 pointer-events-none' : ''
             }`}
             onClick={handleClick}
           >
             <CardContent className="p-0">
               <div 
-                className="relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-dashed border-gray-600 hover:border-orange-500 transition-colors"
+                className="relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-orange-500 transition-colors"
                 style={{ 
                   width: size, 
                   height: size,
@@ -181,7 +207,7 @@ export default function WebAvatarUploader({
                 {previewUrl ? (
                   <img
                     src={previewUrl}
-                    alt="Profile preview"
+                    alt="Profile"
                     loading="lazy"
                     decoding="async"
                     className="w-full h-full object-cover"
@@ -192,6 +218,16 @@ export default function WebAvatarUploader({
                       WebkitTransform: 'translateZ(0)',
                       transform: 'translateZ(0)',
                       willChange: 'transform'
+                    }}
+                    onError={(e) => {
+                      console.error('Failed to load avatar image:', previewUrl);
+                      // Hide broken image and show placeholder
+                      (e.target as HTMLImageElement).style.display = 'none';
+                      setPreviewUrl(null);
+                    }}
+                    onLoad={() => {
+                      // Image loaded successfully
+                      console.log('Avatar image loaded successfully');
                     }}
                   />
                 ) : (
@@ -215,13 +251,13 @@ export default function WebAvatarUploader({
               type="button"
               variant="destructive"
               size="sm"
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0"
+              className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0 bg-red-500 hover:bg-red-600 border-0 shadow-lg"
               onClick={(e) => {
                 e.stopPropagation();
                 handleRemoveAvatar();
               }}
             >
-              <X className="w-3 h-3" />
+              <X className="w-4 h-4 text-white stroke-2" />
             </Button>
           )}
         </div>

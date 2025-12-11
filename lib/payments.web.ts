@@ -109,11 +109,15 @@ export async function createStripeExpressOnboardingLink(reviewerId: string): Pro
     // 2b) Hardcoded project fallback
     attemptUrls.push('https://zxazjbduiistnfstnwka.supabase.co/functions/v1/connect-express-onboarding');
 
+    // Get site URL for success page redirect
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
+    const successUrl = siteUrl ? `${siteUrl}/auth/stripe-connect-success` : undefined;
+
     // Try all candidates with logging
     for (const url of attemptUrls) {
       try {
         console.log('[stripe-onboarding] trying', url);
-        const resp = await fetch(url, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
+        const resp = await fetch(url, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId, returnUrl: successUrl }) });
         if (!resp.ok) {
           let errorBody: any = null;
           try {
@@ -133,12 +137,11 @@ export async function createStripeExpressOnboardingLink(reviewerId: string): Pro
     }
 
     // 3) Fallback to site API route (only when explicitly set)
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
     if (!siteUrl) return null;
     const resp = await fetch(`${siteUrl}/api/stripe/express-onboarding`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reviewerId, returnUrl: siteUrl }),
+      body: JSON.stringify({ reviewerId, returnUrl: successUrl }),
     });
     if (!resp.ok) return null;
     const json = await resp.json();

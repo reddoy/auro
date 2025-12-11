@@ -116,12 +116,29 @@ export async function POST(req: Request) {
       
       if (!existingProfile) {
         // Profile doesn't exist - create it with basic info
-        const { error: createErr } = await admin.from('profiles').insert({
+        // Use first_name and last_name instead of full_name
+        const profileData: any = {
           id: userId,
           email: email || '',
-          full_name: fullName || '',
           username: email?.split('@')[0] || `user_${userId.slice(0, 8)}`,
-        });
+        };
+        
+        // Add first_name and last_name if provided
+        if (firstName) profileData.first_name = firstName;
+        if (lastName) profileData.last_name = lastName;
+        
+        // If fullName is provided but no firstName/lastName, try to split it
+        if (!firstName && !lastName && fullName) {
+          const nameParts = fullName.trim().split(/\s+/);
+          if (nameParts.length > 0) {
+            profileData.first_name = nameParts[0];
+            if (nameParts.length > 1) {
+              profileData.last_name = nameParts.slice(1).join(' ');
+            }
+          }
+        }
+        
+        const { error: createErr } = await admin.from('profiles').insert(profileData);
         if (createErr) {
           console.error('Failed to create profile:', createErr);
           return new Response(JSON.stringify({ error: 'Failed to create profile: ' + createErr.message }), { status: 400 });
@@ -134,26 +151,29 @@ export async function POST(req: Request) {
     // Check if user can complete reviewer signup (prevent duplicates)
     const { data: existingProfile } = await admin
       .from('profiles')
-      .select('reviewer_signup_status, is_reviewer')
+      .select('is_reviewer')
       .eq('id', userId)
       .single();
     
-    if (existingProfile?.reviewer_signup_status === 'completed') {
+    // Check if they already have a reviewer status (pending, approved, or rejected)
+    if (existingProfile?.is_reviewer === 'pending' || existingProfile?.is_reviewer === 'approved') {
       return new Response(JSON.stringify({ 
         error: 'You have already completed the reviewer application. An account with this email is already associated with our platform.' 
       }), { status: 400 });
     }
 
     // Now update ONLY reviewer-specific fields - don't touch core profile data
-    // IMPORTANT: Set reviewer_approved='pending' instead of is_reviewer=true
-    // is_reviewer will be set to true only after manual approval
+    // IMPORTANT: Set is_reviewer='pending' to await manual approval
+    // is_reviewer will be set to 'approved' only after manual approval
     const reviewerUpdates: any = {
-      reviewer_approved: 'pending', // Awaiting manual approval
-      reviewer_signup_status: 'completed', // Mark as completed when they submit
-      // DO NOT set is_reviewer=true here - only set it after manual approval
+      is_reviewer: 'pending', // Awaiting manual approval
     };
     
-    console.log(`[ApplySignup] Setting reviewer_approved='pending' for user ${userId} (awaiting manual approval)`);
+    // Update first_name and last_name if provided
+    if (firstName) reviewerUpdates.first_name = firstName;
+    if (lastName) reviewerUpdates.last_name = lastName;
+    
+    console.log(`[ApplySignup] Setting is_reviewer='pending' for user ${userId} (awaiting manual approval)`);
     
     // Only update bio if provided (empty string counts as intentional)
     if (typeof bio === 'string') reviewerUpdates.bio = bio;
@@ -168,11 +188,62 @@ export async function POST(req: Request) {
       reviewerUpdates.hourly_rate = Number(hourlyRate);
     }
     
-    // CRITICAL: Only update avatar if they actually uploaded a new one in this session
+    // CRITICAL: Move avatar from temp-uploads to permanent storage if it exists
+    let finalAvatarPath: string | undefined = undefined;
     if (avatarPath) {
-      reviewerUpdates.avatar_url = avatarPath;
+      // If avatarPath is in temp-uploads, move it to permanent storage
+      if (avatarPath.startsWith('temp-uploads/')) {
+        try {
+          const avatarsBucket = process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET || 'avatars';
+          
+          // Extract the filename from the path
+          const pathParts = avatarPath.split('/');
+          const filename = pathParts[pathParts.length - 1];
+          const directoryPath = avatarPath.substring(0, avatarPath.lastIndexOf('/') + 1);
+          
+          // List files in the temp directory to find the actual file
+          const { data: files, error: listError } = await (admin.storage as any)
+            .from(avatarsBucket)
+            .list(directoryPath, { limit: 1 });
+          
+          if (!listError && files && files.length > 0) {
+            const actualFile = files[0];
+            const fromPath = directoryPath + actualFile.name;
+            const toPath = `users/${userId}/avatar/${actualFile.name}`;
+            
+            // Move the file to permanent storage
+            const { error: moveError } = await (admin.storage as any)
+              .from(avatarsBucket)
+              .move(fromPath, toPath);
+            
+            if (!moveError) {
+              finalAvatarPath = toPath;
+              console.log(`[ApplySignup] Moved avatar from ${fromPath} to ${toPath}`);
+            } else {
+              console.error('[ApplySignup] Error moving avatar:', moveError);
+              // Fallback to temp path if move fails
+              finalAvatarPath = avatarPath;
+            }
+          } else {
+            console.warn('[ApplySignup] No files found in temp directory:', directoryPath);
+            // File might already be moved or deleted, use the path as-is
+            finalAvatarPath = avatarPath;
+          }
+        } catch (err) {
+          console.error('[ApplySignup] Exception moving avatar:', err);
+          // Fallback to temp path if move fails
+          finalAvatarPath = avatarPath;
+        }
+      } else {
+        // Already a permanent path
+        finalAvatarPath = avatarPath;
+      }
     } else if (avatarUrl) {
-      reviewerUpdates.avatar_url = avatarUrl;
+      finalAvatarPath = avatarUrl;
+    }
+    
+    if (finalAvatarPath) {
+      reviewerUpdates.avatar_url = finalAvatarPath;
     }
     
     // Store contact/marketing consent in preferences JSON
@@ -187,7 +258,7 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: upErr.message }), { status: 400 });
     }
     
-    console.log(`[ApplySignup] Successfully updated profile for user ${userId} with reviewer_approved='pending' (awaiting manual approval)`);
+    console.log(`[ApplySignup] Successfully updated profile for user ${userId} with is_reviewer='pending' (awaiting manual approval)`);
 
     // Store socials if provided
     if (Array.isArray(socials) && socials.length) {

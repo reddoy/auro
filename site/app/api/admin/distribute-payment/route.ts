@@ -73,21 +73,86 @@ export async function POST(req: Request) {
       }), { status: 400 });
     }
 
-    const reviewer = (request as any).profiles;
+    // Get reviewer profile - handle both array and object formats from Supabase join
+    let reviewer = (request as any).profiles;
+    
+    // If profile is an array (shouldn't happen but handle it), take first item
+    if (Array.isArray(reviewer)) {
+      reviewer = reviewer[0];
+    }
+    
+    // If profile join failed or reviewer is missing, fetch directly
+    if (!reviewer || !reviewer.id) {
+      console.log('⚠️ Profile join failed, fetching reviewer directly:', request.influencer_id);
+      const { data: directProfile, error: profileError } = await admin
+        .from('profiles')
+        .select('id, stripe_connect_account_id, is_reviewer, username, first_name, last_name, full_name')
+        .eq('id', request.influencer_id)
+        .maybeSingle();
+      
+      if (profileError) {
+        console.error('❌ Failed to fetch reviewer profile:', profileError);
+        return new Response(JSON.stringify({ 
+          error: 'Failed to fetch reviewer profile',
+          details: profileError.message
+        }), { status: 500 });
+      }
+      
+      if (!directProfile) {
+        return new Response(JSON.stringify({ error: 'Reviewer profile not found' }), { status: 404 });
+      }
+      
+      reviewer = directProfile;
+    }
+    
+    // Log the reviewer data for debugging
+    console.log('👤 Reviewer profile data:', {
+      id: reviewer.id,
+      username: reviewer.username,
+      is_reviewer: reviewer.is_reviewer,
+      stripe_connect_account_id: reviewer.stripe_connect_account_id ? `${reviewer.stripe_connect_account_id.substring(0, 10)}...` : 'NULL/EMPTY',
+      has_stripe_id: !!reviewer.stripe_connect_account_id,
+      stripe_id_type: typeof reviewer.stripe_connect_account_id,
+      stripe_id_length: reviewer.stripe_connect_account_id?.length || 0
+    });
+    
     if (!reviewer?.is_reviewer) {
       return new Response(JSON.stringify({ error: 'Invalid reviewer' }), { status: 400 });
     }
 
-    const connectAccountId = reviewer.stripe_connect_account_id;
-    if (!connectAccountId) {
+    // Check if reviewer has Stripe Connect account
+    // Handle both null and empty string cases
+    const connectAccountId = reviewer.stripe_connect_account_id?.trim() || null;
+    
+    if (!connectAccountId || connectAccountId === '') {
+      console.log('❌ No Stripe Connect account found for reviewer:', {
+        reviewerId: request.influencer_id,
+        reviewerName: reviewer.full_name || reviewer.username,
+        stripeConnectAccountId: reviewer.stripe_connect_account_id,
+        isNull: reviewer.stripe_connect_account_id === null,
+        isEmpty: reviewer.stripe_connect_account_id === '',
+        isUndefined: reviewer.stripe_connect_account_id === undefined
+      });
+      
       return new Response(JSON.stringify({ 
         error: 'Payment is being held: Reviewer has not set up their Stripe Connect account yet. Payment will be distributed automatically once Stripe is connected.',
         held: true,
         reviewerId: request.influencer_id,
         reviewerName: reviewer.full_name || reviewer.username,
+        debug: {
+          stripeConnectAccountId: reviewer.stripe_connect_account_id,
+          isNull: reviewer.stripe_connect_account_id === null,
+          isEmpty: reviewer.stripe_connect_account_id === '',
+          isUndefined: reviewer.stripe_connect_account_id === undefined
+        },
         note: 'Reviewer can still complete reviews. Please ask them to complete their Stripe Connect setup to receive payments.'
       }), { status: 400 });
     }
+    
+    console.log('✅ Stripe Connect account found:', {
+      accountId: connectAccountId.substring(0, 10) + '...',
+      reviewerId: request.influencer_id
+    });
 
     // Calculate the amount to transfer to reviewer
     // SIMPLE MODEL: Customer pays X, Reviewer gets 80%, Auro absorbs Stripe fee
@@ -107,7 +172,8 @@ export async function POST(req: Request) {
     }
 
     // Check account balance before attempting transfer
-    const auroAccountId = 'acct_1S0FmFBCrjcqavov'; // Correct test account ID
+    // Use environment variable with fallback for backwards compatibility
+    const auroAccountId = process.env.STRIPE_PLATFORM_ACCOUNT_ID || 'acct_1S0FmFBCrjcqavov';
     const balance = await stripe.balance.retrieve({}, { stripeAccount: auroAccountId });
     const availableBalance = balance.available[0]?.amount || 0; // In cents
     const pendingBalance = balance.pending[0]?.amount || 0; // In cents

@@ -15,6 +15,35 @@ export default function BioScreen() {
   const [bio, setBio] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const handleClose = async () => {
+    Alert.alert(
+      'Are you sure you want to quit?',
+      'You\'re not going to get submitted to be a reviewer.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Quit',
+          style: 'destructive',
+          onPress: async () => {
+            // Clear the onboarding_step preference so the app doesn't redirect back here on restart
+            try {
+              await updateProfilePreferences({ onboarding_step: null });
+            } catch (e) {
+              console.warn('Failed to clear onboarding_step:', e);
+            }
+            // Navigate directly to profile tab instead of going back
+            // This ensures we can exit even if there's no back stack
+            router.replace('/(tabs)/profile');
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   const handleNext = async () => {
     if (!bio.trim()) {
       Alert.alert('Bio Required', 'Please tell reviewees about your review style.');
@@ -48,6 +77,14 @@ export default function BioScreen() {
         colors={[Colors.brand.background, Colors.brand.cardBackground]}
         style={styles.backgroundGradient}
       />
+      <TouchableOpacity 
+        style={[styles.closeButton, { top: insets.top + 16 }]}
+        onPress={handleClose}
+        accessibilityLabel="Close"
+        accessibilityRole="button"
+      >
+        <Text style={styles.closeButtonText}>✕</Text>
+      </TouchableOpacity>
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={[
@@ -189,6 +226,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.brand.textOnGradient,
     fontFamily: 'Poppins_700Bold',
+  },
+  closeButton: {
+    position: 'absolute',
+    left: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '600',
+    lineHeight: 24,
   },
 });
 

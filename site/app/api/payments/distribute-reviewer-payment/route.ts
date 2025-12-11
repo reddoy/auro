@@ -44,7 +44,8 @@ export async function POST(req: Request) {
           stripe_connect_account_id,
           is_reviewer,
           username,
-          full_name,
+          first_name,
+          last_name,
           email
         )
       `)
@@ -111,14 +112,72 @@ export async function POST(req: Request) {
       }), { status: 200 });
     }
 
-    const reviewer = (request as any).profiles;
+    // Get reviewer profile - handle both array and object formats from Supabase join
+    let reviewer = (request as any).profiles;
+    
+    // If profile is an array (shouldn't happen but handle it), take first item
+    if (Array.isArray(reviewer)) {
+      reviewer = reviewer[0];
+    }
+    
+    // If profile join failed or reviewer is missing, fetch directly
+    if (!reviewer || !reviewer.id) {
+      console.log('⚠️ Profile join failed, fetching reviewer directly:', request.influencer_id);
+      const { data: directProfile, error: profileError } = await admin
+        .from('profiles')
+        .select('id, stripe_connect_account_id, is_reviewer, username, first_name, last_name, email')
+        .eq('id', request.influencer_id)
+        .maybeSingle();
+      
+      if (profileError) {
+        console.error('❌ Failed to fetch reviewer profile:', profileError);
+        return new Response(JSON.stringify({ 
+          error: 'Failed to fetch reviewer profile',
+          details: profileError.message
+        }), { status: 500 });
+      }
+      
+      if (!directProfile) {
+        return new Response(JSON.stringify({ error: 'Reviewer profile not found' }), { status: 404 });
+      }
+      
+      reviewer = directProfile;
+    }
+    
+    // Log the reviewer data for debugging
+    console.log('👤 Reviewer profile data:', {
+      id: reviewer.id,
+      username: reviewer.username,
+      is_reviewer: reviewer.is_reviewer,
+      stripe_connect_account_id: reviewer.stripe_connect_account_id ? `${reviewer.stripe_connect_account_id.substring(0, 10)}...` : 'NULL/EMPTY',
+      has_stripe_id: !!reviewer.stripe_connect_account_id,
+      stripe_id_type: typeof reviewer.stripe_connect_account_id,
+      stripe_id_length: reviewer.stripe_connect_account_id?.length || 0
+    });
+    
     if (!reviewer?.is_reviewer) {
       return new Response(JSON.stringify({ error: 'Invalid reviewer' }), { status: 400 });
     }
 
+    // Compute full_name from first_name and last_name
+    const reviewerFullName = reviewer.first_name || reviewer.last_name
+      ? [reviewer.first_name, reviewer.last_name].filter(Boolean).join(' ') || null
+      : null;
+
     // Check if reviewer has Stripe Connect account
-    const connectAccountId = reviewer.stripe_connect_account_id;
-    if (!connectAccountId) {
+    // Handle both null and empty string cases
+    const connectAccountId = reviewer.stripe_connect_account_id?.trim() || null;
+    
+    if (!connectAccountId || connectAccountId === '') {
+      console.log('❌ No Stripe Connect account found for reviewer:', {
+        reviewerId: request.influencer_id,
+        reviewerName: reviewerFullName || reviewer.username,
+        stripeConnectAccountId: reviewer.stripe_connect_account_id,
+        isNull: reviewer.stripe_connect_account_id === null,
+        isEmpty: reviewer.stripe_connect_account_id === '',
+        isUndefined: reviewer.stripe_connect_account_id === undefined
+      });
+      
       // Hold payment until Stripe is set up - don't mark as failed, just pending
       await admin
         .from('requests')
@@ -135,11 +194,22 @@ export async function POST(req: Request) {
         message: 'Payment is being held until reviewer sets up Stripe Connect account.',
         errorType: 'NO_CONNECT_ACCOUNT',
         reviewerId: request.influencer_id,
-        reviewerName: reviewer.full_name || reviewer.username,
+        reviewerName: reviewerFullName || reviewer.username,
         reviewerEmail: reviewer.email,
+        debug: {
+          stripeConnectAccountId: reviewer.stripe_connect_account_id,
+          isNull: reviewer.stripe_connect_account_id === null,
+          isEmpty: reviewer.stripe_connect_account_id === '',
+          isUndefined: reviewer.stripe_connect_account_id === undefined
+        },
         note: 'Reviewer can still complete reviews. Payment will be distributed automatically once Stripe is connected.'
       }), { status: 200 });
     }
+    
+    console.log('✅ Stripe Connect account found:', {
+      accountId: connectAccountId.substring(0, 10) + '...',
+      reviewerId: request.influencer_id
+    });
 
     // Pre-flight check: Verify account status before attempting transfer
     try {
@@ -170,7 +240,7 @@ export async function POST(req: Request) {
           error: 'Reviewer\'s account cannot receive payouts yet.',
           errorType: 'PAYOUTS_DISABLED',
           reviewerId: request.influencer_id,
-          reviewerName: reviewer.full_name || reviewer.username,
+          reviewerName: reviewerFullName || reviewer.username,
           accountRequirements: account.requirements,
           message: 'The reviewer needs to complete their account setup to enable payouts.'
         }), { status: 400 });
@@ -215,7 +285,18 @@ export async function POST(req: Request) {
     try {
       // Check account balance before attempting transfer
       // Only use AVAILABLE balance for transfers (not pending)
-      const auroAccountId = 'acct_1S0FmFBCrjcqavov'; // Correct test account ID
+      // Use fallback account ID if env var not set (matches retry endpoint behavior)
+      const auroAccountId = process.env.STRIPE_PLATFORM_ACCOUNT_ID || "acct_1S0FmFBCrjcqavov";
+      if (!auroAccountId) {
+        console.error('❌ Missing STRIPE_PLATFORM_ACCOUNT_ID environment variable');
+        return new Response(JSON.stringify({ 
+          error: 'Server configuration error: Stripe platform account not configured. Please set STRIPE_PLATFORM_ACCOUNT_ID environment variable in Vercel.',
+          errorType: 'MISSING_CONFIG',
+          note: 'This is your platform\'s Stripe account ID (not the reviewer\'s connect account). Find it in Stripe Dashboard > Settings > Account.'
+        }), { status: 500 });
+      }
+      
+      console.log('🔍 Using platform account ID:', auroAccountId.substring(0, 10) + '...');
       
       console.log('🔍 Checking balance for account:', auroAccountId);
       
@@ -393,7 +474,7 @@ export async function POST(req: Request) {
         reviewerAmount: reviewerAmount,
         auroFee: auroFee,
         totalAmount: totalAmount,
-        reviewerName: reviewer.full_name || reviewer.username,
+        reviewerName: reviewerFullName || reviewer.username,
         calculation: `reviewerAmount = totalAmount (${totalAmount}) - auroFee (${auroFee}) = ${reviewerAmount} (Auro absorbs Stripe fee)`,
         message: 'Payment successfully distributed to reviewer'
       }), { status: 200 });
@@ -455,7 +536,7 @@ export async function POST(req: Request) {
           errorType: errorType,
           stripeErrorCode: stripeError.code,
           reviewerId: request.influencer_id,
-          reviewerName: reviewer.full_name || reviewer.username,
+          reviewerName: reviewerFullName || reviewer.username,
           message: `Payment distribution failed. Will retry automatically (attempt ${attempts}/${maxRetries}).`,
           willRetry: true,
           retryAttempt: attempts
@@ -467,7 +548,7 @@ export async function POST(req: Request) {
         errorType: errorType,
         stripeErrorCode: stripeError.code,
         reviewerId: request.influencer_id,
-        reviewerName: reviewer.full_name || reviewer.username,
+        reviewerName: reviewerFullName || reviewer.username,
         message: 'Payment distribution failed. This can be retried manually.'
       }), { status: 500 });
     }

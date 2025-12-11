@@ -21,7 +21,7 @@ export type RequestData = {
   photos: { outfits: string[]; roomTourPhotos: string[]; datingProfileScreenshots: string[] };
   message: string;
   consent: {
-    shareOnSocial: boolean;
+    shareOnSocial: boolean | undefined;
     agreedAt: string;
   };
   userId?: string;
@@ -76,7 +76,7 @@ export default function RequestPage() {
         photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
         message: '',
         consent: {
-          shareOnSocial: false,
+          shareOnSocial: undefined,
           agreedAt: ''
         }
       };
@@ -94,7 +94,7 @@ export default function RequestPage() {
             photos: saved.photos || { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
             message: saved.message || '',
             consent: saved.consent || {
-              shareOnSocial: false,
+              shareOnSocial: undefined,
               agreedAt: ''
             },
             creatorId: saved.creatorId,
@@ -112,7 +112,7 @@ export default function RequestPage() {
       photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
       message: '',
       consent: {
-        shareOnSocial: false,
+        shareOnSocial: undefined,
         agreedAt: ''
       }
     };
@@ -190,6 +190,28 @@ export default function RequestPage() {
         return false;
       }
       
+      // Check if URL has creator params that differ from saved state
+      // If so, don't restore - let the URL params processing handle it
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlCreatorSlug = urlParams.get('creatorSlug');
+      const urlCreatorId = urlParams.get('creatorId');
+      const savedCreatorSlug = flowState.requestData?.creatorSlug;
+      const savedCreatorId = flowState.requestData?.creatorId;
+      
+      if (urlCreatorSlug || urlCreatorId) {
+        // URL has creator params - verify they match saved state
+        const creatorsMatch = 
+          (urlCreatorSlug && savedCreatorSlug && urlCreatorSlug === savedCreatorSlug) ||
+          (urlCreatorId && savedCreatorId && urlCreatorId === savedCreatorId) ||
+          (!urlCreatorSlug && !urlCreatorId && !savedCreatorSlug && !savedCreatorId);
+        
+        if (!creatorsMatch) {
+          console.log('[RequestPage] Not restoring state - URL creator differs from saved creator. URL:', { urlCreatorSlug, urlCreatorId }, 'Saved:', { savedCreatorSlug, savedCreatorId });
+          clearFlowState();
+          return false;
+        }
+      }
+      
       // Support both 'step' (old format) and 'currentStep' (new format) for backward compatibility
       const stepToRestore = flowState.currentStep || flowState.step;
       
@@ -262,7 +284,44 @@ export default function RequestPage() {
       // Process URL params if we have creator params (coming from app)
       // Don't require currentStep === 'intro' - we want to process these even if step changed
       if (creatorSlug || creatorId) {
-        // Try to restore flow state first (for OAuth return)
+        // Check if there's saved state with a different creator
+        // If so, clear it to start fresh with the new creator
+        try {
+          const saved = localStorage.getItem('auro_request_flow_state');
+          if (saved) {
+            const flowState = JSON.parse(saved);
+            const savedCreatorSlug = flowState.requestData?.creatorSlug;
+            const savedCreatorId = flowState.requestData?.creatorId;
+            
+            // Check if the URL creator is different from saved creator
+            const isDifferentCreator = 
+              (creatorSlug && savedCreatorSlug && creatorSlug !== savedCreatorSlug) ||
+              (creatorId && savedCreatorId && creatorId !== savedCreatorId) ||
+              (creatorSlug && savedCreatorId && !savedCreatorSlug) ||
+              (creatorId && savedCreatorSlug && !savedCreatorId);
+            
+            if (isDifferentCreator) {
+              console.log('[RequestPage] New creator detected in URL, clearing old state. Old:', { savedCreatorSlug, savedCreatorId }, 'New:', { creatorSlug, creatorId });
+              clearFlowState();
+              // Reset requestData to start fresh
+              setRequestData({
+                photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
+                message: '',
+                consent: {
+                  shareOnSocial: undefined,
+                  agreedAt: ''
+                }
+              });
+              // Reset to intro step to start fresh
+              setCurrentStep('intro');
+            }
+          }
+        } catch (e) {
+          console.warn('[RequestPage] Failed to check saved state for creator mismatch:', e);
+        }
+        
+        // Try to restore flow state (for OAuth return) - but only if creators match
+        // This will now only restore if we didn't clear it above (i.e., creators match)
         const restored = restoreFlowState();
         
         if (!restored) {
@@ -305,7 +364,7 @@ export default function RequestPage() {
         urlParamsProcessed.current = true;
       }
     }
-  }, [authChecked, currentStep, requestData.creatorSlug, requestData.creatorId]);
+  }, [authChecked, currentStep, requestData.creatorSlug, requestData.creatorId, clearFlowState, restoreFlowState]);
 
   // Scroll to top on step change for better UX
   useEffect(() => {
@@ -738,6 +797,13 @@ export default function RequestPage() {
       );
     }
 
+    // Guard: Prevent rendering payment step without authentication
+    // This avoids state mutation during render issues
+    if (currentStep === 'payment' && !isAuthenticated) {
+      // Return null - useEffect will handle redirect to auth
+      return null;
+    }
+
     switch (currentStep) {
       case 'intro':
         return (
@@ -750,7 +816,33 @@ export default function RequestPage() {
           <CreatorSelection
             selectedCreator={requestData.creatorId || requestData.creatorSlug}
             onSelect={(creatorId, creatorSlug) => {
-              updateRequestData({ creatorId, creatorSlug });
+              // Check if this is a different creator from what's currently saved
+              const isDifferentCreator = 
+                (creatorId && requestData.creatorId && creatorId !== requestData.creatorId) ||
+                (creatorSlug && requestData.creatorSlug && creatorSlug !== requestData.creatorSlug) ||
+                (creatorId && !requestData.creatorId && requestData.creatorSlug) ||
+                (creatorSlug && !requestData.creatorSlug && requestData.creatorId);
+              
+              if (isDifferentCreator) {
+                console.log('[RequestPage] Different creator selected, clearing old form data. Old:', { creatorId: requestData.creatorId, creatorSlug: requestData.creatorSlug }, 'New:', { creatorId, creatorSlug });
+                // Clear old state and reset form data
+                clearFlowState();
+                // Update with new creator and reset form fields
+                setRequestData({
+                  creatorId,
+                  creatorSlug,
+                  photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
+                  message: '',
+                  consent: {
+                    shareOnSocial: undefined,
+                    agreedAt: ''
+                  },
+                  uploadSessionId: requestData.uploadSessionId, // Keep upload session
+                });
+              } else {
+                // Same creator, just update the creator info
+                updateRequestData({ creatorId, creatorSlug });
+              }
               nextStep();
             }}
             supabase={supabase}

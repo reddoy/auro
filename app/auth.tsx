@@ -5,7 +5,9 @@ import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
-import { makeRedirectUri } from 'expo-auth-session';
+import { makeRedirectUri, useAuthRequest, AuthRequest } from 'expo-auth-session';
+import * as Linking from 'expo-linking';
+import Constants from 'expo-constants';
 import { AntDesign, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -181,79 +183,178 @@ export default function AuthScreen() {
 
   const [isGoogleHovered, setIsGoogleHovered] = useState(false);
 
+  // For native platforms, use proper deep link URL scheme for production builds
+  // In production builds (not Expo Go), we can use custom URL schemes properly
+  const getRedirectUri = () => {
+    if (Platform.OS === 'web') {
+      return typeof window !== 'undefined' && window.location.origin
+        ? `${window.location.origin}/auth/callback`
+        : 'https://app.appauro.com/auth/callback';
+    }
+    
+    // For production builds, use the app's deep link scheme
+    // This will work properly with expo-auth-session's startAsync
+    const deepLinkUri = makeRedirectUri({
+      scheme: 'auro',
+      path: 'auth/callback',
+    });
+    
+    // Fallback to web URL if deep link isn't available (Expo Go scenario)
+    // But in production builds, the deep link should work
+    const webRedirectUri = 'https://app.appauro.com/auth/callback';
+    
+    // Use deep link for production, web URL as fallback
+    const redirectUri = deepLinkUri || webRedirectUri;
+    
+    console.log('[Google Auth] Using redirect URI:', redirectUri);
+    console.log('[Google Auth] Deep link URI:', deepLinkUri);
+    console.log('[Google Auth] CRITICAL: Make sure these URLs are added to:');
+    console.log('  1. Supabase Dashboard → Authentication → URL Configuration → Redirect URLs');
+    console.log('  2. Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client → Authorized redirect URIs');
+    console.log('  - Deep link:', deepLinkUri);
+    console.log('  - Web URL:', webRedirectUri);
+    
+    return redirectUri;
+  };
+
+  const redirectUri = getRedirectUri();
+
   const handleGoogleSignIn = async () => {
     try {
-      // For web, use the actual web URL; for native, use custom scheme
-      const redirectTo = Platform.OS === 'web'
-        ? typeof window !== 'undefined' && window.location.origin
-          ? `${window.location.origin}/auth/callback`
-          : 'https://app.appauro.com/auth/callback'
-        : makeRedirectUri({
-            scheme: 'auro',
-            path: 'auth/callback',
-          });
+      setLoading(true);
 
+      if (Platform.OS === 'web') {
+        // For web, use standard Supabase OAuth flow
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectUri,
+            skipBrowserRedirect: false,
+          },
+        });
+
+        if (error) throw error;
+        // Web redirects automatically, so we don't need to handle it here
+        return;
+      }
+
+      // For native (iOS/Android), use expo-auth-session's startAsync which properly handles OAuth
+      // This works correctly in production builds with proper deep linking
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo,
-          skipBrowserRedirect: Platform.OS !== 'web',
+          redirectTo: redirectUri,
+          skipBrowserRedirect: true,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
       });
 
       if (error) throw error;
 
-      if (Platform.OS !== 'web' && data?.url) {
-        const result = await WebBrowser.openAuthSessionAsync(
-          data.url,
-          redirectTo
-        );
-
-        if (result.type === 'success') {
-          const url = result.url;
-          const params = new URL(url).searchParams;
-          const access_token = params.get('access_token');
-          const refresh_token = params.get('refresh_token');
-
-          if (access_token && refresh_token) {
-            await supabase.auth.setSession({
-              access_token,
-              refresh_token,
-            });
-            
-            // Check if email is verified after OAuth login
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user && !user.email_confirmed_at) {
-              // Email not verified - redirect to confirmation screen
-              await supabase.auth.signOut(); // Sign out to prevent partial session
-              router.replace({ pathname: '/auth/confirm', params: { email: user.email || '' } });
-              Alert.alert(
-                'Email Verification Required',
-                'Please verify your email address before logging in. We\'ve sent a confirmation email to your inbox.'
-              );
-              return;
-            }
-            
-            // Ensure profile exists
-            try { 
-              await ensureProfileForCurrentUser();
-            } catch {}
-            
-            // Check onboarding status and route accordingly
-            try {
-              const profile = await getCurrentProfile();
-              const destination = resolveOnboardingDestination(profile);
-              router.replace(destination as any);
-            } catch (err) {
-              console.warn('Failed to load profile for onboarding state', err);
-              router.replace('/(tabs)/requests');
-            }
-          }
-        }
+      if (!data?.url) {
+        throw new Error('No OAuth URL returned');
       }
-      // For web, the redirect happens automatically via Supabase
+
+      console.log('[Google Auth] OAuth URL from Supabase:', data.url);
+      console.log('[Google Auth] Redirect URI:', redirectUri);
+      
+      // Use expo-auth-session's startAsync for proper OAuth handling in production builds
+      // This properly handles deep linking and closes the browser automatically
+      console.log('[Google Auth] Starting OAuth flow with expo-auth-session...');
+      
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+      
+      console.log('[Google Auth] OAuth result:', result.type);
+      
+      // Reset loading state
+      setLoading(false);
+      
+      // Handle the result
+      if (result.type === 'success' && result.url) {
+        const url = result.url;
+        console.log('[Google Auth] Success! Processing callback URL...');
+        
+        // Extract code from URL
+        const urlObj = new URL(url);
+        const code = urlObj.searchParams.get('code');
+        const errorParam = urlObj.searchParams.get('error');
+        const errorDescription = urlObj.searchParams.get('error_description');
+        
+        if (errorParam) {
+          throw new Error(errorDescription || errorParam);
+        }
+        
+        if (code) {
+          console.log('[Google Auth] Found auth code, exchanging for session...');
+          
+          // Exchange code for session
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (exchangeError) {
+            throw exchangeError;
+          }
+          
+          console.log('[Google Auth] Session established successfully!');
+          
+          // Check if email is verified
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user && !user.email_confirmed_at) {
+            await supabase.auth.signOut();
+            router.replace({ pathname: '/auth/confirm', params: { email: user.email || '' } });
+            return;
+          }
+          
+          // Ensure profile exists
+          try {
+            await ensureProfileForCurrentUser();
+          } catch (err) {
+            console.warn('[Google Auth] Profile creation warning:', err);
+          }
+          
+          // Navigate to appropriate destination
+          try {
+            const profile = await getCurrentProfile();
+            const destination = resolveOnboardingDestination(profile);
+            router.replace(destination as any);
+          } catch (err) {
+            router.replace('/(tabs)/requests');
+          }
+        } else {
+          throw new Error('No authorization code found in callback URL');
+        }
+      } else if (result.type === 'cancel') {
+        console.log('[Google Auth] User cancelled');
+        setLoading(false);
+      } else if (result.type === 'dismiss') {
+        // User dismissed the browser - might have completed in browser
+        // Check if session was established
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log('[Google Auth] Session found after dismiss');
+          try {
+            const profile = await getCurrentProfile();
+            const destination = resolveOnboardingDestination(profile);
+            router.replace(destination as any);
+          } catch (err) {
+            router.replace('/(tabs)/requests');
+          }
+        } else {
+          setLoading(false);
+          Alert.alert('Sign In', 'Please complete the sign-in process in the browser.');
+        }
+      } else {
+        console.log('[Google Auth] Unexpected result type:', result.type);
+        setLoading(false);
+        throw new Error('Unexpected authentication result');
+      }
     } catch (err: any) {
+      console.error('Google Sign-In Error:', err);
       Alert.alert('Google Sign-In Error', err?.message || 'Failed to sign in with Google');
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -4405,8 +4405,8 @@ footer {
 /* Step Actions */
 .step-actions {
   display: flex;
-  justify-content: space-between;
-  gap: 16px;
+  flex-direction: column;
+  gap: 12px;
   margin-top: 16px;
   padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -5660,9 +5660,9 @@ footer {
   gap: 12px;
   margin-bottom: 20px;
   padding: 16px;
-  background: white;
+  background: rgba(255, 255, 255, 0.02);
   border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -5686,16 +5686,21 @@ footer {
 }
 
 .reviewer-info h4 {
-  color: #1a1a1a;
+  color: white;
   margin: 0 0 4px 0;
   font-weight: 600;
   font-size: 16px;
 }
 
 .reviewer-info p {
-  color: #666666;
+  color: rgba(255, 255, 255, 0.7);
   margin: 0;
   font-size: 14px;
+}
+
+.order-summary .payment-button {
+  margin-top: 24px;
+  margin-bottom: 24px;
 }
 
 .order-details {
@@ -5836,6 +5841,10 @@ footer {
   gap: 20px;
 }
 
+.payment-info .payment-back-button {
+  margin-top: auto;
+}
+
 .security-badges {
   display: flex;
   flex-direction: column;
@@ -5912,6 +5921,7 @@ footer {
   font-size: 13px;
   line-height: 1.6;
   margin-top: 16px;
+  margin-bottom: 20px;
 }
 
 .payment-note p {
@@ -5929,7 +5939,7 @@ footer {
 
 .payment-back-button {
   width: 100%;
-  margin-top: auto;
+  margin-top: 0;
   padding: 12px 24px;
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.95);

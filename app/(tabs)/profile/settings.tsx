@@ -81,7 +81,14 @@ export default function ProfileSettingsScreen() {
           // Resolve avatar to a displayable URL if it's a storage path
           let initialAvatar: string | null = p.avatar_url || null;
           if (initialAvatar && !/^https?:\/\//i.test(initialAvatar)) {
-            try { initialAvatar = (await getSignedAvatarUrl(initialAvatar, 60 * 60 * 24 * 30)) || initialAvatar; } catch {}
+            try { 
+              const signedUrl = await getSignedAvatarUrl(initialAvatar, 60 * 60 * 24 * 30);
+              initialAvatar = signedUrl || null;
+            } catch (e) {
+              // If signing fails, set to null so "Add Photo" shows
+              console.warn('Failed to get signed avatar URL:', e);
+              initialAvatar = null;
+            }
           }
           setAvatarUrl(initialAvatar);
 

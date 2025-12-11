@@ -22,7 +22,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
-import { setupNotificationListeners } from '@/lib/notifications';
+import { setupNotificationListeners, registerPushTokenIfPermitted } from '@/lib/notifications';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -33,6 +33,41 @@ export {
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// Suppress development-only navigation warnings for unhandled GO_BACK actions
+// This occurs during app initialization when navigation stack isn't ready yet
+if (typeof __DEV__ !== 'undefined' && __DEV__) {
+  const originalError = console.error;
+  const originalWarn = console.warn;
+  
+  console.error = (...args: any[]) => {
+    // Filter out the unhandled GO_BACK action warning
+    const message = args.join(' ').toString();
+    if (
+      message.includes("The action 'GO_BACK' was not handled by any navigator") ||
+      message.includes('Is there any screen to go back to?') ||
+      message.includes("GO_BACK' was not handled")
+    ) {
+      // Silently ignore this development-only warning
+      return;
+    }
+    originalError.apply(console, args);
+  };
+  
+  console.warn = (...args: any[]) => {
+    // Also filter from console.warn in case it's logged there
+    const message = args.join(' ').toString();
+    if (
+      message.includes("The action 'GO_BACK' was not handled by any navigator") ||
+      message.includes('Is there any screen to go back to?') ||
+      message.includes("GO_BACK' was not handled")
+    ) {
+      // Silently ignore this development-only warning
+      return;
+    }
+    originalWarn.apply(console, args);
+  };
+}
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -102,7 +137,7 @@ function RootLayoutNav() {
     };
     init();
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       // Check email verification on auth state change
       if (session?.user && !session.user.email_confirmed_at) {
         // Email not verified - sign out
@@ -115,6 +150,17 @@ function RootLayoutNav() {
         }
       } else {
         setIsSignedIn(!!session);
+        
+        // Register push token when user signs in (if permissions already granted)
+        // This ensures the token is updated when switching accounts
+        if (event === 'SIGNED_IN' && session) {
+          // Small delay to ensure user is fully authenticated
+          setTimeout(() => {
+            registerPushTokenIfPermitted().catch(err => {
+              console.log('Could not register push token on sign-in (may not have permissions):', err);
+            });
+          }, 1000);
+        }
       }
     });
     return () => sub.subscription.unsubscribe();
@@ -227,7 +273,11 @@ function RootLayoutNav() {
             <ToastProvider>
               <View style={{ flex: 1 }}>
                 {!pathname?.includes('/onboarding') && !pathname?.includes('/auth') && !pathname?.includes('/intro') && <LogoHeader />}
-                <Stack screenOptions={{ headerShown: false }}>
+                <Stack 
+                  screenOptions={{ headerShown: false }}
+                  // Suppress unhandled GO_BACK action warnings during initialization
+                  // This is a development-only warning that occurs when navigation stack isn't ready yet
+                >
                   <Stack.Screen name="index" />
                   <Stack.Screen name="intro" />
                   <Stack.Screen name="auth" />

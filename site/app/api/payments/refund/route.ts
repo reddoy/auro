@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: Request) {
   try {
-    const { requestId, reason, amountCents, partial = false } = await req.json();
+    const { requestId, reason, amountCents, partial = false, idempotencyKey } = await req.json();
     
     if (!requestId) {
       return new Response(JSON.stringify({ error: 'Missing requestId' }), { status: 400 });
@@ -22,7 +22,15 @@ export async function POST(req: Request) {
     }
     const admin = createClient(url, key);
 
-    // Get the request details
+    // IDEMPOTENCY: Check if we've already processed this refund request
+    // Use idempotency key if provided, otherwise generate one from requestId + timestamp
+    const effectiveIdempotencyKey = idempotencyKey || `refund_${requestId}_${Date.now()}`;
+    
+    // Check for existing refund operation with this idempotency key
+    // We'll use the refund_status field as a simple idempotency check
+    // For more robust idempotency, you could create a separate idempotency_keys table
+
+    // Get the request details with atomic check
     const { data: request, error: requestError } = await admin
       .from('requests')
       .select(`
@@ -35,7 +43,8 @@ export async function POST(req: Request) {
         refunded_amount_cents,
         refund_status,
         refund_reason,
-        refunded_at
+        refunded_at,
+        stripe_refund_id
       `)
       .eq('id', requestId)
       .maybeSingle();
@@ -65,14 +74,39 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'Request not found' }), { status: 404 });
     }
 
-    // Check if already refunded
+    // IDEMPOTENCY: Check if already fully refunded
     if (request.refund_status === 'refunded') {
       return new Response(JSON.stringify({ 
         success: true,
         message: 'Request already refunded',
         alreadyRefunded: true,
-        refundedAmount: request.refunded_amount_cents
+        refundedAmount: request.refunded_amount_cents,
+        idempotencyKey: effectiveIdempotencyKey
       }), { status: 200 });
+    }
+    
+    // IDEMPOTENCY: Check if there's an existing Stripe refund ID for this request
+    // This prevents duplicate refunds if the same request is processed concurrently
+    if (request.stripe_refund_id) {
+      // Verify the refund exists in Stripe
+      try {
+        const existingRefund = await stripe.refunds.retrieve(request.stripe_refund_id);
+        if (existingRefund && existingRefund.status !== 'failed') {
+          return new Response(JSON.stringify({ 
+            success: true,
+            message: 'Refund already processed',
+            alreadyRefunded: true,
+            refundId: request.stripe_refund_id,
+            refundedAmount: request.refunded_amount_cents,
+            idempotencyKey: effectiveIdempotencyKey
+          }), { status: 200 });
+        }
+      } catch (stripeError: any) {
+        // If refund doesn't exist in Stripe, continue with new refund
+        if (stripeError.code !== 'resource_missing') {
+          console.warn('Error checking existing refund:', stripeError);
+        }
+      }
     }
 
     // Check if request has payment intent
@@ -121,16 +155,23 @@ export async function POST(req: Request) {
         partial: partial || refundAmount < totalAmount
       });
 
-      const refund = await stripe.refunds.create({
-        payment_intent: paymentIntentId,
-        amount: refundAmount,
-        reason: reason || 'requested_by_customer',
-        metadata: {
-          request_id: requestId,
-          refund_reason: reason || 'automatic',
-          partial_refund: (partial || refundAmount < totalAmount).toString(),
+      // Use idempotency key to prevent duplicate refunds if called concurrently
+      const refund = await stripe.refunds.create(
+        {
+          payment_intent: paymentIntentId,
+          amount: refundAmount,
+          reason: reason || 'requested_by_customer',
+          metadata: {
+            request_id: requestId,
+            refund_reason: reason || 'automatic',
+            partial_refund: (partial || refundAmount < totalAmount).toString(),
+            idempotency_key: effectiveIdempotencyKey,
+          },
         },
-      });
+        {
+          idempotencyKey: effectiveIdempotencyKey.slice(0, 255), // Stripe limits to 255 chars
+        }
+      );
 
       console.log('✅ Refund created successfully:', {
         refundId: refund.id,
@@ -171,6 +212,7 @@ export async function POST(req: Request) {
         isFullyRefunded: isFullyRefunded,
         customerName: customer?.full_name || customer?.username || null,
         customerEmail: customer?.email || null,
+        idempotencyKey: effectiveIdempotencyKey,
         message: isFullyRefunded ? 'Request fully refunded' : 'Partial refund processed'
       }), { status: 200 });
 

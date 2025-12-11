@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
@@ -42,6 +44,8 @@ export async function GET(req: Request) {
         refunded_amount_cents,
         payment_distributed,
         payment_distribution_attempts,
+        payment_distribution_failed_at,
+        payment_distribution_error,
         created_at
       `)
       .not('amount_cents', 'is', null);
@@ -91,7 +95,13 @@ export async function GET(req: Request) {
       if (request.status === 'completed' && !request.payment_distributed) {
         stats.pendingPayouts += amount - fee;
       }
-      if (request.payment_distribution_attempts && request.payment_distribution_attempts > 0 && !request.payment_distributed) {
+      // Count as "failed" only if it has a failed_at timestamp or a distribution error
+      // This matches the criteria used by the retry endpoint
+      if (request.status === 'completed' && 
+          !request.payment_distributed && 
+          request.payment_distribution_attempts && 
+          request.payment_distribution_attempts > 0 &&
+          (request.payment_distribution_failed_at || request.payment_distribution_error)) {
         stats.failedDistributions++;
       }
       if (request.status === 'timeout') {
@@ -122,7 +132,8 @@ export async function GET(req: Request) {
         updated_at,
         profiles!requests_user_id_fkey (
           username,
-          full_name
+          first_name,
+          last_name
         )
       `)
       .order('updated_at', { ascending: false })
@@ -141,7 +152,8 @@ export async function GET(req: Request) {
         payment_distribution_failed_at,
         profiles!requests_influencer_id_fkey (
           username,
-          full_name,
+          first_name,
+          last_name,
           stripe_connect_account_id
         )
       `)
@@ -163,7 +175,8 @@ export async function GET(req: Request) {
         created_at,
         profiles!requests_user_id_fkey (
           username,
-          full_name,
+          first_name,
+          last_name,
           email
         )
       `)

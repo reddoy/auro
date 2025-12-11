@@ -174,10 +174,14 @@ export async function createStripeExpressOnboardingLink(reviewerId: string): Pro
     if (supabaseAnonKey) fnHeaders['apikey'] = supabaseAnonKey;
     if (accessToken || supabaseAnonKey) fnHeaders['Authorization'] = `Bearer ${accessToken || supabaseAnonKey}`;
 
+    // Get site URL for success page redirect
+    const siteUrl = process.env.EXPO_PUBLIC_SITE_URL || (Constants.expoConfig?.extra as any)?.siteUrl || (Constants.manifest2 as any)?.extra?.siteUrl || '';
+    const successUrl = siteUrl ? `${siteUrl}/auth/stripe-connect-success` : undefined;
+
     // 1) Explicit function URL override
     const explicit = process.env.EXPO_PUBLIC_SUPABASE_FN_ONBOARDING_URL;
     if (explicit) {
-      const resp = await fetch(explicit, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
+      const resp = await fetch(explicit, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId, returnUrl: successUrl }) });
       if (resp.ok) { const json = await resp.json(); return json?.url || null; }
     }
 
@@ -188,7 +192,7 @@ export async function createStripeExpressOnboardingLink(reviewerId: string): Pro
       if (projectRef) {
         const base = `https://${projectRef}.functions.supabase.co`;
         const endpoint = `${base}/connect-express-onboarding`;
-        const resp = await fetch(endpoint, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
+        const resp = await fetch(endpoint, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId, returnUrl: successUrl }) });
         if (resp.ok) { const json = await resp.json(); return json?.url || null; }
       }
     }
@@ -196,14 +200,13 @@ export async function createStripeExpressOnboardingLink(reviewerId: string): Pro
     // 2b) Hardcoded project fallback (user provided fixed URLs)
     try {
       const hardcoded = 'https://zxazjbduiistnfstnwka.supabase.co/functions/v1/connect-express-onboarding';
-      const resp = await fetch(hardcoded, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId }) });
+      const resp = await fetch(hardcoded, { method: 'POST', headers: fnHeaders, body: JSON.stringify({ reviewerId, returnUrl: successUrl }) });
       if (resp.ok) { const json = await resp.json(); return json?.url || null; }
     } catch {}
 
     // 3) Fallback to site API route if configured
-    const siteUrl = process.env.EXPO_PUBLIC_SITE_URL || (Constants.expoConfig?.extra as any)?.siteUrl || (Constants.manifest2 as any)?.extra?.siteUrl || '';
     if (!siteUrl) return null;
-    const resp = await fetch(`${siteUrl}/api/stripe/express-onboarding`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reviewerId, returnUrl: siteUrl }) });
+    const resp = await fetch(`${siteUrl}/api/stripe/express-onboarding`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reviewerId, returnUrl: successUrl }) });
     if (!resp.ok) return null;
     const json = await resp.json();
     return json?.url || null;

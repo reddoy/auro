@@ -220,3 +220,58 @@ export async function setBadgeCount(count: number): Promise<void> {
   await Notifications.setBadgeCountAsync(count);
 }
 
+/**
+ * Clear push notification token from Supabase
+ * Should be called when user logs out to prevent notifications going to wrong account
+ */
+export async function clearPushTokenFromSupabase(): Promise<void> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      // No user logged in, nothing to clear
+      return;
+    }
+
+    // Clear token in profiles table
+    const { error } = await supabase
+      .from('profiles')
+      .update({ push_token: null })
+      .eq('id', user.id);
+
+    if (error) {
+      console.error('Error clearing push token from Supabase:', error);
+    } else {
+      console.log('Push token cleared successfully');
+    }
+  } catch (error) {
+    console.error('Error clearing push token:', error);
+  }
+}
+
+/**
+ * Register push token if permissions are already granted
+ * Useful for when user signs in and already has permissions from previous session
+ */
+export async function registerPushTokenIfPermitted(): Promise<boolean> {
+  try {
+    // Check if permissions are already granted
+    const hasPermission = await arePushNotificationsEnabled();
+    if (!hasPermission) {
+      return false;
+    }
+
+    // Get token
+    const token = await getPushNotificationToken();
+    if (!token) {
+      return false;
+    }
+
+    // Register with Supabase
+    await registerPushTokenWithSupabase(token);
+    return true;
+  } catch (error) {
+    console.error('Error registering push token if permitted:', error);
+    return false;
+  }
+}
+

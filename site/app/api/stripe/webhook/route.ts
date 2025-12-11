@@ -155,6 +155,8 @@ export async function POST(req: Request) {
                 stripe_fee_cents: typeof stripeFeeCents === 'number' ? stripeFeeCents : null,
                 net_amount_cents: typeof netAmountCents === 'number' ? netAmountCents : null,
                 amount_cents: typeof amountCents === 'number' ? amountCents : undefined,
+                // Set 14-day deadline for reviewer to accept/deny
+                accept_by: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
               };
               
               // Only update application_fee_cents if we have a valid value
@@ -303,7 +305,154 @@ export async function POST(req: Request) {
         break;
       case 'charge.refunded':
       case 'charge.refund.updated':
-        // TODO: mark review request as refunded
+        console.log('[stripe-webhook] ===== PROCESSING CHARGE.REFUNDED =====');
+        try {
+          const charge = event.data.object as Stripe.Charge;
+          const metadata = (charge.metadata || {}) as Record<string, string>;
+          const requestId = metadata.request_id || metadata.requestId;
+          
+          if (!requestId) {
+            // Try to get request ID from payment intent metadata
+            const paymentIntentId = typeof charge.payment_intent === 'string' ? charge.payment_intent : (charge.payment_intent as any)?.id;
+            if (paymentIntentId) {
+              try {
+                const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+                const piMetadata = (pi.metadata || {}) as Record<string, string>;
+                const piRequestId = piMetadata.request_id || piMetadata.requestId;
+                if (piRequestId) {
+                  // Use request ID from payment intent
+                  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+                  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+                  if (url && key) {
+                    const admin = createClient(url, key);
+                    const amountRefunded = typeof charge.amount_refunded === 'number' ? charge.amount_refunded : 0;
+                    const totalAmount = typeof charge.amount === 'number' ? charge.amount : 0;
+                    const fullyRefunded = totalAmount > 0 && amountRefunded >= totalAmount;
+                    
+                    // Get current refund status to calculate new total
+                    const { data: existingRequest } = await admin
+                      .from('requests')
+                      .select('refunded_amount_cents, amount_cents')
+                      .eq('id', piRequestId)
+                      .maybeSingle();
+                    
+                    const currentRefunded = existingRequest?.refunded_amount_cents || 0;
+                    const requestTotal = existingRequest?.amount_cents || totalAmount;
+                    const newRefundedTotal = Math.max(currentRefunded, amountRefunded);
+                    const isFullyRefunded = newRefundedTotal >= requestTotal;
+                    
+                    const updateData: any = {
+                      refunded_amount_cents: newRefundedTotal,
+                      refund_status: isFullyRefunded ? 'refunded' : 'partially_refunded',
+                      payment_status: isFullyRefunded ? 'refunded' : 'partial_refund',
+                      refunded_at: new Date().toISOString(),
+                    };
+                    
+                    if (isFullyRefunded) {
+                      updateData.status = 'refunded';
+                    }
+                    
+                    const { error: updateError } = await admin
+                      .from('requests')
+                      .update(updateData)
+                      .eq('id', piRequestId);
+                    
+                    if (updateError) {
+                      console.error('[stripe-webhook] Failed to update refund status:', updateError);
+                    } else {
+                      console.log('[stripe-webhook] Refund status updated successfully:', {
+                        requestId: piRequestId,
+                        amountRefunded: newRefundedTotal,
+                        isFullyRefunded
+                      });
+                    }
+                  }
+                }
+              } catch (piError) {
+                console.error('[stripe-webhook] Failed to retrieve payment intent for refund:', piError);
+              }
+            }
+            break;
+          }
+          
+          // Process refund with request ID from charge metadata
+          const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+          const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+          if (url && key) {
+            const admin = createClient(url, key);
+            const amountRefunded = typeof charge.amount_refunded === 'number' ? charge.amount_refunded : 0;
+            const totalAmount = typeof charge.amount === 'number' ? charge.amount : 0;
+            
+            // Get current refund status to calculate new total
+            const { data: existingRequest } = await admin
+              .from('requests')
+              .select('refunded_amount_cents, amount_cents')
+              .eq('id', requestId)
+              .maybeSingle();
+            
+            const currentRefunded = existingRequest?.refunded_amount_cents || 0;
+            const requestTotal = existingRequest?.amount_cents || totalAmount;
+            const newRefundedTotal = Math.max(currentRefunded, amountRefunded);
+            const isFullyRefunded = newRefundedTotal >= requestTotal;
+            
+            const updateData: any = {
+              refunded_amount_cents: newRefundedTotal,
+              refund_status: isFullyRefunded ? 'refunded' : 'partially_refunded',
+              payment_status: isFullyRefunded ? 'refunded' : 'partial_refund',
+              refunded_at: new Date().toISOString(),
+            };
+            
+            if (isFullyRefunded) {
+              updateData.status = 'refunded';
+            }
+            
+            const { error: updateError } = await admin
+              .from('requests')
+              .update(updateData)
+              .eq('id', requestId);
+            
+            if (updateError) {
+              console.error('[stripe-webhook] Failed to update refund status:', updateError);
+            } else {
+              console.log('[stripe-webhook] Refund status updated successfully:', {
+                requestId,
+                amountRefunded: newRefundedTotal,
+                isFullyRefunded
+              });
+            }
+            
+            // Mark webhook event as completed
+            try {
+              await admin
+                .from('webhook_events')
+                .update({ status: 'completed' })
+                .eq('stripe_event_id', event.id);
+            } catch (updateError) {
+              console.error('[stripe-webhook] Failed to mark event as completed:', updateError);
+            }
+          }
+        } catch (e) {
+          console.error('[stripe-webhook] ===== REFUND WEBHOOK ERROR =====');
+          console.error('[stripe-webhook] Error details:', e);
+          
+          // Mark webhook event as failed
+          try {
+            const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+            const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+            if (url && key) {
+              const admin = createClient(url, key);
+              await admin
+                .from('webhook_events')
+                .update({ 
+                  status: 'failed',
+                  error_message: (e as any)?.message || 'Unknown error'
+                })
+                .eq('stripe_event_id', event.id);
+            }
+          } catch (updateError) {
+            console.error('[stripe-webhook] Failed to mark event as failed:', updateError);
+          }
+        }
         break;
       default:
         break;

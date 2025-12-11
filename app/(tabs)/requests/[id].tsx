@@ -84,7 +84,7 @@ export default function ReviewerSubmitScreen() {
     try {
       const updated = await acceptRequest(String(id));
       setRequest(updated);
-      show('Accepted. You can start the review.');
+      show('Accepted! You can start the review. ✅');
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to accept request');
     }
@@ -99,7 +99,7 @@ export default function ReviewerSubmitScreen() {
     try {
       const updated = await denyRequest(String(id));
       setRequest(updated);
-      show('Declined the request.');
+      show('Declined the request. ❌');
       router.back();
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to decline request');
@@ -109,26 +109,26 @@ export default function ReviewerSubmitScreen() {
   const onSubmit = async () => {
     if (!id) return;
     try {
-      // Validate ratings are between 1 and 5
+      // Validate ratings are between 1 and 10 (consistent with main reviewer screen)
       const overallNum = Number(overall);
       const attractivenessNum = Number(attractiveness);
       const wardrobeNum = Number(wardrobe);
       const roomNum = Number(room);
       
-      if (!overallNum || overallNum < 1 || overallNum > 5) {
-        Alert.alert('Invalid Rating', 'Overall rating must be between 1 and 5');
+      if (!overallNum || overallNum < 1 || overallNum > 10) {
+        Alert.alert('Invalid Rating', 'Overall rating must be between 1 and 10');
         return;
       }
-      if (attractiveness && (attractivenessNum < 1 || attractivenessNum > 5)) {
-        Alert.alert('Invalid Rating', 'Attractiveness rating must be between 1 and 5');
+      if (attractiveness && (attractivenessNum < 1 || attractivenessNum > 10)) {
+        Alert.alert('Invalid Rating', 'Attractiveness rating must be between 1 and 10');
         return;
       }
-      if (wardrobe && (wardrobeNum < 1 || wardrobeNum > 5)) {
-        Alert.alert('Invalid Rating', 'Wardrobe rating must be between 1 and 5');
+      if (wardrobe && (wardrobeNum < 1 || wardrobeNum > 10)) {
+        Alert.alert('Invalid Rating', 'Wardrobe rating must be between 1 and 10');
         return;
       }
-      if (room && (roomNum < 1 || roomNum > 5)) {
-        Alert.alert('Invalid Rating', 'Room rating must be between 1 and 5');
+      if (room && (roomNum < 1 || roomNum > 10)) {
+        Alert.alert('Invalid Rating', 'Room rating must be between 1 and 10');
         return;
       }
       
@@ -149,7 +149,7 @@ export default function ReviewerSubmitScreen() {
           },
         },
       });
-      show('Review submitted.');
+      show('Review submitted! ✨');
       router.back();
     } catch (e: any) {
       Alert.alert('Failed to submit', e?.message || 'Please try again');
@@ -170,7 +170,11 @@ export default function ReviewerSubmitScreen() {
             <StatusBadge status={request.status as any} />
             {request.status === 'in_progress' ? (
               <Text style={{ color: Colors.brand.textSecondary, fontSize: 12 }}>
-                Reviewer is working on your review. They have 30 days to complete it or your money back.
+                Reviewer is working on your review. They have 48 hours to complete it or your money back.
+              </Text>
+            ) : request.status === 'paid' ? (
+              <Text style={{ color: Colors.brand.textSecondary, fontSize: 12 }}>
+                Awaiting reviewer approval. If declined or no response within 2 weeks, you will be automatically refunded.
               </Text>
             ) : null}
           </RNView>
