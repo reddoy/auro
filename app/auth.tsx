@@ -219,6 +219,138 @@ export default function AuthScreen() {
 
   const redirectUri = getRedirectUri();
 
+  const handleAppleSignIn = async () => {
+    try {
+      setLoading(true);
+
+      if (Platform.OS === 'web') {
+        // For web, use standard Supabase OAuth flow
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'apple',
+          options: {
+            redirectTo: redirectUri,
+            skipBrowserRedirect: false,
+          },
+        });
+
+        if (error) throw error;
+        // Web redirects automatically, so we don't need to handle it here
+        return;
+      }
+
+      // For native (iOS/Android), use expo-auth-session's startAsync which properly handles OAuth
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: {
+          redirectTo: redirectUri,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) throw error;
+
+      if (!data?.url) {
+        throw new Error('No OAuth URL returned');
+      }
+
+      console.log('[Apple Auth] OAuth URL from Supabase:', data.url);
+      console.log('[Apple Auth] Redirect URI:', redirectUri);
+      
+      console.log('[Apple Auth] Starting OAuth flow with expo-auth-session...');
+      
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+      
+      console.log('[Apple Auth] OAuth result:', result.type);
+      
+      // Reset loading state
+      setLoading(false);
+      
+      // Handle the result
+      if (result.type === 'success' && result.url) {
+        const url = result.url;
+        console.log('[Apple Auth] Success! Processing callback URL...');
+        
+        // Extract code from URL
+        const urlObj = new URL(url);
+        const code = urlObj.searchParams.get('code');
+        const errorParam = urlObj.searchParams.get('error');
+        const errorDescription = urlObj.searchParams.get('error_description');
+        
+        if (errorParam) {
+          throw new Error(errorDescription || errorParam);
+        }
+        
+        if (code) {
+          console.log('[Apple Auth] Found auth code, exchanging for session...');
+          
+          // Exchange code for session
+          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (exchangeError) {
+            throw exchangeError;
+          }
+          
+          console.log('[Apple Auth] Session established successfully!');
+          
+          // Check if email is verified
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user && !user.email_confirmed_at) {
+            await supabase.auth.signOut();
+            router.replace({ pathname: '/auth/confirm', params: { email: user.email || '' } });
+            return;
+          }
+          
+          // Ensure profile exists
+          try {
+            await ensureProfileForCurrentUser();
+          } catch (err) {
+            console.warn('[Apple Auth] Profile creation warning:', err);
+          }
+          
+          // Navigate to appropriate destination
+          try {
+            const profile = await getCurrentProfile();
+            const destination = resolveOnboardingDestination(profile);
+            router.replace(destination as any);
+          } catch (err) {
+            router.replace('/(tabs)/requests');
+          }
+        } else {
+          throw new Error('No authorization code found in callback URL');
+        }
+      } else if (result.type === 'cancel') {
+        console.log('[Apple Auth] User cancelled');
+        setLoading(false);
+      } else if (result.type === 'dismiss') {
+        // User dismissed the browser - might have completed in browser
+        // Check if session was established
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log('[Apple Auth] Session found after dismiss');
+          try {
+            const profile = await getCurrentProfile();
+            const destination = resolveOnboardingDestination(profile);
+            router.replace(destination as any);
+          } catch (err) {
+            router.replace('/(tabs)/requests');
+          }
+        } else {
+          setLoading(false);
+          Alert.alert('Sign In', 'Please complete the sign-in process in the browser.');
+        }
+      } else {
+        console.log('[Apple Auth] Unexpected result type:', result.type);
+        setLoading(false);
+        throw new Error('Unexpected authentication result');
+      }
+    } catch (err: any) {
+      console.error('Apple Sign-In Error:', err);
+      Alert.alert('Sign in with Apple Error', err?.message || 'Failed to sign in with Apple');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
@@ -1376,7 +1508,7 @@ export default function AuthScreen() {
           </MotionView>
         )}
 
-        {/* Only show Google sign-in on login or first signup step */}
+        {/* Only show social sign-in on login or first signup step */}
         {!forgotPasswordMode && (isLogin || signupStep === 0) && (
           <>
             {/* Divider */}
@@ -1388,13 +1520,30 @@ export default function AuthScreen() {
               </View>
             </MotionView>
 
+            {/* Apple Sign In Button - Show first on iOS, or on all platforms */}
+            {Platform.OS === 'ios' && (
+              <MotionView entering={cardEntrance(shouldShowEmailPassword ? 6 : 3)}>
+                <MotionPressable
+                  style={[
+                    styles.appleButton, 
+                    isCompact && styles.appleButtonCompact,
+                  ]}
+                  onPress={handleAppleSignIn}
+                  disabled={loading}
+                >
+                  <Text style={styles.appleButtonText}>Continue with Apple</Text>
+                </MotionPressable>
+              </MotionView>
+            )}
+
             {/* Google Sign In Button */}
-            <MotionView entering={cardEntrance(shouldShowEmailPassword ? 6 : 3)}>
+            <MotionView entering={cardEntrance(shouldShowEmailPassword ? (Platform.OS === 'ios' ? 7 : 6) : (Platform.OS === 'ios' ? 4 : 3))}>
               <MotionPressable
                 style={[
                   styles.googleButton, 
                   isCompact && styles.googleButtonCompact,
-                  isGoogleHovered && Platform.OS === 'web' && styles.googleButtonHover
+                  isGoogleHovered && Platform.OS === 'web' && styles.googleButtonHover,
+                  Platform.OS === 'ios' && styles.googleButtonWithApple
                 ]}
                 onPress={handleGoogleSignIn}
                 {...(Platform.OS === 'web' && {
@@ -1882,6 +2031,33 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginHorizontal: 16,
   },
+  appleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000000',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+    cursor: 'pointer' as any,
+    transition: 'all 0.2s ease' as any,
+  },
+  appleButtonCompact: {
+    paddingVertical: 12,
+    marginBottom: 10,
+  },
+  appleButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: Platform.select({ ios: '-apple-system', default: 'System' }),
+  },
   googleButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1910,6 +2086,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 5,
     borderColor: '#C6C9CC',
+  },
+  googleButtonWithApple: {
+    marginBottom: 12,
   },
   googleIconContainer: {
     marginRight: 12,

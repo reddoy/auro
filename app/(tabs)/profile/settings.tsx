@@ -297,6 +297,97 @@ export default function ProfileSettingsScreen() {
         </TouchableOpacity>
       </View>
 
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Account</Text>
+        <TouchableOpacity 
+          style={styles.deleteAccountButton}
+          onPress={async () => {
+            Alert.alert(
+              'Delete Account',
+              'Are you sure you want to delete your account? This action cannot be undone. All your data, including reviews, requests, and profile information, will be permanently deleted.',
+              [
+                {
+                  text: 'Cancel',
+                  style: 'cancel',
+                },
+                {
+                  text: 'Delete',
+                  style: 'destructive',
+                  onPress: async () => {
+                    // Second confirmation
+                    Alert.alert(
+                      'Final Confirmation',
+                      'This will permanently delete your account and all associated data. This cannot be undone.',
+                      [
+                        {
+                          text: 'Cancel',
+                          style: 'cancel',
+                        },
+                        {
+                          text: 'Delete My Account',
+                          style: 'destructive',
+                          onPress: async () => {
+                            try {
+                              setLoading(true);
+                              const { data: { session } } = await supabase.auth.getSession();
+                              if (!session?.access_token) {
+                                Alert.alert('Error', 'You must be signed in to delete your account.');
+                                setLoading(false);
+                                return;
+                              }
+
+                              const response = await fetch('https://www.appauro.com/api/account/delete', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': `Bearer ${session.access_token}`,
+                                },
+                              });
+
+                              const result = await response.json();
+
+                              if (!response.ok) {
+                                throw new Error(result.error || 'Failed to delete account');
+                              }
+
+                              // Sign out and redirect to intro
+                              await supabase.auth.signOut();
+                              Alert.alert(
+                                'Account Deleted',
+                                'Your account has been successfully deleted.',
+                                [
+                                  {
+                                    text: 'OK',
+                                    onPress: () => {
+                                      router.replace('/intro');
+                                    },
+                                  },
+                                ]
+                              );
+                            } catch (error: any) {
+                              console.error('Account deletion error:', error);
+                              Alert.alert('Error', error?.message || 'Failed to delete account. Please try again or contact support.');
+                            } finally {
+                              setLoading(false);
+                            }
+                          },
+                        },
+                      ]
+                    );
+                  },
+                },
+              ]
+            );
+          }}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.deleteAccountButtonText}>Delete Account</Text>
+        </TouchableOpacity>
+        <Text style={styles.deleteAccountHint}>
+          Permanently delete your account and all associated data. This action cannot be undone.
+        </Text>
+      </View>
+
       <View style={styles.saveBar}>
         <TouchableOpacity style={[styles.saveButton, saving && styles.saveButtonDisabled]} disabled={saving} onPress={handleSave} accessibilityLabel="Save profile settings">
           <Text style={styles.saveButtonText}>{saving ? 'Saving...' : 'Save'}</Text>
@@ -541,6 +632,28 @@ const styles = StyleSheet.create({
   testButtonArrow: {
     fontSize: 20,
     color: Colors.brand.textSecondary,
+  },
+  deleteAccountButton: {
+    marginTop: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255, 68, 85, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 68, 85, 0.3)',
+    alignItems: 'center',
+  },
+  deleteAccountButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FF4455',
+  },
+  deleteAccountHint: {
+    marginTop: 8,
+    fontSize: 12,
+    color: Colors.brand.textSecondary,
+    textAlign: 'center',
+    lineHeight: 16,
   },
 });
 

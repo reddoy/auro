@@ -253,6 +253,47 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, re
     }
   };
 
+  const saveOAuthState = async () => {
+    // Save the full flow state to localStorage so we can restore it after OAuth
+    // This includes all the requestData (photos, message, consent, etc.)
+    try {
+      // First, call the parent's save function if provided to ensure state is saved with latest values
+      // This uses refs to get the absolute latest state
+      if (onSaveState) {
+        onSaveState();
+      }
+      
+      // Wait a moment to ensure parent's save completed, then save again with explicit requestData
+      // This ensures we have the latest state even if parent's save hasn't completed yet
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Also explicitly save the state here with the full requestData as a backup
+      // Use the requestData prop which should have the latest values
+      const savedState = {
+        currentStep: 'auth', // We're on the auth step
+        requestData: requestData || {
+          photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
+          message: '',
+          consent: {
+            shareOnSocial: undefined,
+            agreedAt: ''
+          }
+        },
+        timestamp: Date.now(),
+      };
+      localStorage.setItem('auro_request_flow_state', JSON.stringify(savedState));
+      console.log('[AuthStep] Saved full flow state before OAuth redirect:', {
+        step: savedState.currentStep,
+        hasPhotos: !!(savedState.requestData.photos.datingProfileScreenshots?.length || savedState.requestData.photos.outfits?.length || savedState.requestData.photos.roomTourPhotos?.length),
+        hasMessage: !!savedState.requestData.message,
+        hasCreator: !!(savedState.requestData.creatorId || savedState.requestData.creatorSlug),
+        timestamp: savedState.timestamp
+      });
+    } catch (e) {
+      console.warn('[AuthStep] Failed to save flow state:', e);
+    }
+  };
+
   const handleGoogleAuth = async () => {
     if (!supabase?.auth) {
       setError('Authentication service is not available. Please refresh the page.');
@@ -263,44 +304,7 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, re
     setError('');
 
     try {
-      // Save the full flow state to localStorage so we can restore it after OAuth
-      // This includes all the requestData (photos, message, consent, etc.)
-      try {
-        // First, call the parent's save function if provided to ensure state is saved with latest values
-        // This uses refs to get the absolute latest state
-        if (onSaveState) {
-          onSaveState();
-        }
-        
-        // Wait a moment to ensure parent's save completed, then save again with explicit requestData
-        // This ensures we have the latest state even if parent's save hasn't completed yet
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Also explicitly save the state here with the full requestData as a backup
-        // Use the requestData prop which should have the latest values
-        const savedState = {
-          currentStep: 'auth', // We're on the auth step
-          requestData: requestData || {
-            photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
-            message: '',
-            consent: {
-              shareOnSocial: undefined,
-              agreedAt: ''
-            }
-          },
-          timestamp: Date.now(),
-        };
-        localStorage.setItem('auro_request_flow_state', JSON.stringify(savedState));
-        console.log('[AuthStep] Saved full flow state before OAuth redirect:', {
-          step: savedState.currentStep,
-          hasPhotos: !!(savedState.requestData.photos.datingProfileScreenshots?.length || savedState.requestData.photos.outfits?.length || savedState.requestData.photos.roomTourPhotos?.length),
-          hasMessage: !!savedState.requestData.message,
-          hasCreator: !!(savedState.requestData.creatorId || savedState.requestData.creatorSlug),
-          timestamp: savedState.timestamp
-        });
-      } catch (e) {
-        console.warn('[AuthStep] Failed to save flow state:', e);
-      }
+      await saveOAuthState();
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -316,6 +320,32 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, re
       if (error) throw error;
     } catch (error: any) {
       setError(error.message || 'Google sign in failed');
+      setLoading(false);
+    }
+  };
+
+  const handleAppleAuth = async () => {
+    if (!supabase?.auth) {
+      setError('Authentication service is not available. Please refresh the page.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      await saveOAuthState();
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?redirect_to=${encodeURIComponent(window.location.pathname + window.location.search)}`,
+        }
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      setError(error.message || 'Sign in with Apple failed');
       setLoading(false);
     }
   };
@@ -430,6 +460,35 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, re
           )}
 
           <div className="social-auth">
+              <button 
+                type="button"
+                onClick={handleAppleAuth}
+                disabled={loading}
+                className="btn-apple"
+                style={{
+                  backgroundColor: '#000',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  width: '100%',
+                  marginBottom: '12px',
+                  opacity: loading ? 0.6 : 1,
+                  transition: 'opacity 0.2s'
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                </svg>
+                Continue with Apple
+              </button>
               <button 
                 type="button"
                 onClick={handleGoogleAuth}
