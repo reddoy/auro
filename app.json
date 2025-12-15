@@ -20,14 +20,14 @@
       "associatedDomains": [
         "applinks:app.appauro.com"
       ],
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "NSCameraUsageDescription": "This app needs access to camera to take photos for your review requests.",
         "NSPhotoLibraryUsageDescription": "This app needs access to photo library to select photos for your review requests.",
         "NSMicrophoneUsageDescription": "This app may need access to microphone for video content in review requests.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "usesAppleSignIn": false
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.auro.app",
