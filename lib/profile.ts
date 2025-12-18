@@ -130,6 +130,12 @@ function buildContentTypeFromExt(ext: string | null): string | undefined {
 }
 
 export async function getCurrentProfile(): Promise<Profile | null> {
+  // Check for demo mode first
+  const { isDemoMode, getDemoProfile } = await import('./demo-mode');
+  if (await isDemoMode()) {
+    return getDemoProfile();
+  }
+
   const { data: userResult } = await supabase.auth.getUser();
   const user = userResult.user;
   if (!user) return null;

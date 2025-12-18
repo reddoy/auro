@@ -139,6 +139,29 @@ export default function ReviewDetailScreen() {
       if (!id) return;
       try {
         const req = await getRequestById(String(id));
+        
+        // Block access to completed paid reviews on iOS - redirect to web
+        // This is required per Apple Guideline 3.1.1 - paid content must be available via IAP
+        // Since we don't support IAP, we block access to paid content in the iOS app
+        // Only block if review is both paid AND completed (when actual review content is available)
+        if (Platform.OS === 'ios' && req) {
+          const isPaidReview = (req as any).amount_cents && (req as any).amount_cents > 0;
+          const isCompleted = req.status === 'completed';
+          
+          if (isPaidReview && isCompleted) {
+            const webUrl = `https://www.appauro.com/review/${id}`;
+            try {
+              await Linking.openURL(webUrl);
+              // Navigate back since we're redirecting to web
+              router.back();
+              return;
+            } catch (error) {
+              console.error('Failed to open web URL:', error);
+              // If opening URL fails, still show error message below
+            }
+          }
+        }
+        
         setRequest(req);
         setHasViewedReview(!!req?.review_viewed_at);
         if (req?.influencerId) {

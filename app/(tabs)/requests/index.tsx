@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { StyleSheet, Alert, View as RNView, FlatList, Platform, RefreshControl } from 'react-native';
+import { StyleSheet, Alert, View as RNView, FlatList, Platform, RefreshControl, Linking } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -432,11 +432,38 @@ export default function RequestsScreen() {
 
   
 
-  const handleRequestPress = (requestId: string) => {
+  const handleRequestPress = async (requestId: string) => {
     const request = requests.find(r => r.id === requestId);
     if (!request || !userProfile?.id) return;
+    
     // Route based on role for this specific request: if user is reviewer, go to reviewer detail; if reviewee, go to review detail
     const userIsReviewer = request.influencerId === userProfile.id;
+    
+    // Block access to paid review CONTENT for reviewees on iOS - redirect to web
+    // This is required per Apple Guideline 3.1.1 - paid content must be available via IAP
+    // Since we don't support IAP, we block access to paid content in the iOS app
+    // NOTE: Reviewers can still work on paid reviews (accept/deny/submit) - only blocking reviewees from viewing completed paid reviews
+    if (!userIsReviewer && Platform.OS === 'ios') {
+      const isPaidReview = (request as any).amount_cents && (request as any).amount_cents > 0;
+      const isCompletedReview = request.status === 'completed';
+      
+      // Only block if it's a paid AND completed review (reviewee viewing final review content)
+      if (isPaidReview && isCompletedReview) {
+        const webUrl = `https://www.appauro.com/review/${requestId}`;
+        try {
+          await Linking.openURL(webUrl);
+          return;
+        } catch (error) {
+          console.error('Failed to open web URL:', error);
+          Alert.alert(
+            'View on Web',
+            'Paid reviews must be viewed on our website. Please visit www.appauro.com to view this review.',
+          );
+          return;
+        }
+      }
+    }
+    
     if (userIsReviewer) {
       router.push(`/requests/reviewer/${requestId}` as any);
     } else {

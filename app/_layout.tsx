@@ -6,22 +6,22 @@ import { Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold } from '@expo-
 import { Stack, useRootNavigationState, useRouter, usePathname } from 'expo-router';
 import { View } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 import 'react-native-url-polyfill/auto';
 import 'react-native-get-random-values';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StripeProvider } from '@/components/StripeProvider';
 import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
 import { ToastProvider } from '@/components/Toast';
 import LogoHeader from '@/components/LogoHeader';
+import { DemoModeIndicator } from '@/components/DemoModeIndicator';
+import { isDemoMode } from '@/lib/demo-mode';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { supabase } from '@/lib/supabase';
-import { useState } from 'react';
 import { setupNotificationListeners, registerPushTokenIfPermitted } from '@/lib/notifications';
 
 export {
@@ -102,8 +102,17 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const [sessionChecked, setSessionChecked] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
+  const [demoMode, setDemoMode] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    const checkDemoMode = async () => {
+      const isDemo = await isDemoMode();
+      setDemoMode(isDemo);
+    };
+    checkDemoMode();
+  }, []);
 
   useEffect(() => {
     const init = async () => {
@@ -262,32 +271,25 @@ function RootLayoutNav() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StripeProvider
-          publishableKey={
-            (Constants.expoConfig?.extra as any)?.stripePublishableKey ||
-            (Constants.manifest2 as any)?.extra?.stripePublishableKey ||
-            ''
-          }
-        >
-          <ThemeProvider value={customTheme}>
-            <ToastProvider>
-              <View style={{ flex: 1 }}>
-                {!pathname?.includes('/onboarding') && !pathname?.includes('/auth') && !pathname?.includes('/intro') && <LogoHeader />}
-                <Stack 
-                  screenOptions={{ headerShown: false }}
-                  // Suppress unhandled GO_BACK action warnings during initialization
-                  // This is a development-only warning that occurs when navigation stack isn't ready yet
-                >
-                  <Stack.Screen name="index" />
-                  <Stack.Screen name="intro" />
-                  <Stack.Screen name="auth" />
-                  <Stack.Screen name="(tabs)" />
-                  <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-                </Stack>
-              </View>
-            </ToastProvider>
-          </ThemeProvider>
-        </StripeProvider>
+        <ThemeProvider value={customTheme}>
+          <ToastProvider>
+            <View style={{ flex: 1 }}>
+              {demoMode && !pathname?.includes('/onboarding') && !pathname?.includes('/auth') && !pathname?.includes('/intro') && <DemoModeIndicator />}
+              {!pathname?.includes('/onboarding') && !pathname?.includes('/auth') && !pathname?.includes('/intro') && <LogoHeader />}
+              <Stack 
+                screenOptions={{ headerShown: false }}
+                // Suppress unhandled GO_BACK action warnings during initialization
+                // This is a development-only warning that occurs when navigation stack isn't ready yet
+              >
+                <Stack.Screen name="index" />
+                <Stack.Screen name="intro" />
+                <Stack.Screen name="auth" />
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+              </Stack>
+            </View>
+          </ToastProvider>
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

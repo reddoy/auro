@@ -20,7 +20,7 @@
       "associatedDomains": [
         "applinks:app.appauro.com"
       ],
-      "buildNumber": "2",
+      "buildNumber": "3",
       "infoPlist": {
         "NSCameraUsageDescription": "This app needs access to camera to take photos for your review requests.",
         "NSPhotoLibraryUsageDescription": "This app needs access to photo library to select photos for your review requests.",
@@ -52,14 +52,7 @@
     },
     "plugins": [
       "expo-router",
-      [
-        "@stripe/stripe-react-native",
-        {
-          "merchantIdentifier": "merchant.com.auro",
-          "enableGooglePay": true,
-          "androidPayMode": "production"
-        }
-      ],
+      "expo-apple-authentication",
       "expo-video",
       [
         "expo-notifications",
@@ -68,7 +61,8 @@
           "color": "#FF6F00",
           "sounds": []
         }
-      ]
+      ],
+      "./plugins/withNoPassKit.js"
     ],
     "extra": {
       "supabaseUrl": "https://zxazjbduiistnfstnwka.supabase.co",

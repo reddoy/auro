@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import Colors from '@/constants/Colors';
 import Spinner from '@/components/Spinner';
 import { getCurrentProfile, resolveOnboardingDestination } from '@/lib/profile';
+import { isDemoMode } from '@/lib/demo-mode';
 
 export default function IndexGate() {
   const [checking, setChecking] = useState(true);
@@ -13,6 +14,21 @@ export default function IndexGate() {
   useEffect(() => {
     const run = async () => {
       try {
+        // Check for demo mode first
+        if (await isDemoMode()) {
+          // Demo mode is active - proceed directly to app
+          try {
+            const profile = await getCurrentProfile();
+            const destination = resolveOnboardingDestination(profile);
+            router.replace(destination as any);
+          } catch (err) {
+            console.warn('Failed to load demo profile:', err);
+            router.replace('/(tabs)/requests');
+          }
+          setChecking(false);
+          return;
+        }
+
         const { data, error } = await supabase.auth.getSession();
         if (error) {
           console.warn('Auth session error:', error.message);

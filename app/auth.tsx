@@ -8,6 +8,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri, useAuthRequest, AuthRequest } from 'expo-auth-session';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { AntDesign, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -19,6 +20,7 @@ import { getCurrentProfile, resolveOnboardingDestination } from '@/lib/profile';
 import { MotionView, MotionPressable, cardEntrance, subtleFadeIn } from '@/components/motion';
 import { MotionDelays } from '@/components/motion/tokens';
 import { FadeInDown, ZoomIn } from 'react-native-reanimated';
+import { createDemoSession } from '@/lib/demo-mode';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -238,7 +240,114 @@ export default function AuthScreen() {
         return;
       }
 
-      // For native (iOS/Android), use expo-auth-session's startAsync which properly handles OAuth
+      // For iOS, use native Apple Sign In API (more reliable, especially on iPad)
+      if (Platform.OS === 'ios') {
+        try {
+          // Check if Apple Authentication is available
+          const isAvailable = await AppleAuthentication.isAvailableAsync();
+          
+          if (!isAvailable) {
+            console.warn('[Apple Auth] Native API not available, falling back to OAuth');
+            throw new Error('FALLBACK_TO_OAUTH');
+          }
+
+          console.log('[Apple Auth] Starting native Apple Sign In...');
+          
+          // Request Apple authentication
+          const credential = await AppleAuthentication.signInAsync({
+            requestedScopes: [
+              AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+              AppleAuthentication.AppleAuthenticationScope.EMAIL,
+            ],
+          });
+
+          console.log('[Apple Auth] Apple credential received:', {
+            user: credential.user,
+            email: credential.email,
+            hasIdentityToken: !!credential.identityToken,
+          });
+
+          if (!credential.identityToken) {
+            console.error('[Apple Auth] No identity token received, falling back to OAuth');
+            throw new Error('FALLBACK_TO_OAUTH');
+          }
+
+          // Sign in to Supabase using the identity token
+          const { data: authData, error: authError } = await supabase.auth.signInWithIdToken({
+            provider: 'apple',
+            token: credential.identityToken,
+            nonce: credential.nonce || undefined,
+          });
+
+          if (authError) {
+            console.error('[Apple Auth] Supabase sign-in error:', authError);
+            // If there's an error with the token, try OAuth fallback
+            if (authError.message?.includes('invalid') || authError.message?.includes('token')) {
+              console.warn('[Apple Auth] Token error, falling back to OAuth');
+              throw new Error('FALLBACK_TO_OAUTH');
+            }
+            throw authError;
+          }
+
+          console.log('[Apple Auth] Supabase session established successfully!');
+
+          // Check if email is verified
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user && !user.email_confirmed_at) {
+            await supabase.auth.signOut();
+            router.replace({ pathname: '/auth/confirm', params: { email: user.email || '' } });
+            setLoading(false);
+            return;
+          }
+
+          // Ensure profile exists
+          try {
+            await ensureProfileForCurrentUser();
+          } catch (err) {
+            console.warn('[Apple Auth] Profile creation warning:', err);
+          }
+
+          // Navigate to appropriate destination
+          try {
+            const profile = await getCurrentProfile();
+            const destination = resolveOnboardingDestination(profile);
+            router.replace(destination as any);
+          } catch (err) {
+            router.replace('/(tabs)/requests');
+          }
+          setLoading(false);
+          return;
+        } catch (err: any) {
+          // Handle user cancellation gracefully
+          if (err.code === 'ERR_CANCELED' || err.code === 'ERR_REQUEST_CANCELED' || err.message === 'The operation couldn\'t be completed. (com.apple.AuthenticationServices.AuthorizationError error 1001.)') {
+            console.log('[Apple Auth] User cancelled');
+            setLoading(false);
+            return;
+          }
+          
+          // Fallback to OAuth if native sign-in fails
+          if (err.message === 'FALLBACK_TO_OAUTH') {
+            console.log('[Apple Auth] Falling back to OAuth flow...');
+            // Continue to OAuth flow below (don't return here)
+          } else {
+            // For other errors, show alert and try OAuth fallback
+            console.error('[Apple Auth] Native sign-in error, falling back to OAuth:', err);
+            Alert.alert(
+              'Sign in with Apple',
+              'Native sign-in encountered an issue. Trying alternative method...',
+              [{ text: 'OK' }]
+            );
+            // Continue to OAuth flow below
+          }
+        }
+        
+        // If we reach here, fall back to OAuth flow for iOS (for iPad compatibility)
+        // Don't return - let it fall through to OAuth flow
+        console.log('[Apple Auth] Using OAuth flow as fallback for iOS');
+      }
+
+      // For Android, fall back to OAuth flow
+      // For native (Android), use expo-auth-session's startAsync which properly handles OAuth
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
         options: {
@@ -1557,6 +1666,32 @@ export default function AuthScreen() {
                 <Text style={styles.googleButtonText}>Continue with Google</Text>
               </MotionPressable>
             </MotionView>
+
+            {/* Demo Mode Button - For App Store Reviewers */}
+            <MotionView entering={cardEntrance(shouldShowEmailPassword ? (Platform.OS === 'ios' ? 8 : 7) : (Platform.OS === 'ios' ? 5 : 4))}>
+              <MotionPressable
+                style={[
+                  styles.demoButton,
+                  isCompact && styles.demoButtonCompact,
+                ]}
+                onPress={async () => {
+                  try {
+                    setLoading(true);
+                    await createDemoSession();
+                    // Navigate to main app
+                    router.replace('/(tabs)/requests');
+                  } catch (err: any) {
+                    console.error('Demo mode error:', err);
+                    Alert.alert('Demo Mode Error', err?.message || 'Failed to enable demo mode');
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+              >
+                <Ionicons name="play-circle-outline" size={20} color={Colors.brand.textPrimary} style={{ marginRight: 8 }} />
+                <Text style={styles.demoButtonText}>Try Demo Mode</Text>
+              </MotionPressable>
+            </MotionView>
           </>
         )}
 
@@ -2108,5 +2243,29 @@ const styles = StyleSheet.create({
       default: 'Inter_600SemiBold',
     }),
     letterSpacing: 0.25,
+  },
+  demoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.brand.background,
+    borderWidth: 1.5,
+    borderColor: Colors.brand.accentMagenta,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  demoButtonCompact: {
+    paddingVertical: 12,
+    marginTop: 6,
+    marginBottom: 12,
+  },
+  demoButtonText: {
+    color: Colors.brand.accentMagenta,
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Poppins_600SemiBold',
   },
 });
