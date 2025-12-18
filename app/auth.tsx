@@ -20,7 +20,6 @@ import { getCurrentProfile, resolveOnboardingDestination } from '@/lib/profile';
 import { MotionView, MotionPressable, cardEntrance, subtleFadeIn } from '@/components/motion';
 import { MotionDelays } from '@/components/motion/tokens';
 import { FadeInDown, ZoomIn } from 'react-native-reanimated';
-import { createDemoSession } from '@/lib/demo-mode';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -1667,31 +1666,6 @@ export default function AuthScreen() {
               </MotionPressable>
             </MotionView>
 
-            {/* Demo Mode Button - For App Store Reviewers */}
-            <MotionView entering={cardEntrance(shouldShowEmailPassword ? (Platform.OS === 'ios' ? 8 : 7) : (Platform.OS === 'ios' ? 5 : 4))}>
-              <MotionPressable
-                style={[
-                  styles.demoButton,
-                  isCompact && styles.demoButtonCompact,
-                ]}
-                onPress={async () => {
-                  try {
-                    setLoading(true);
-                    await createDemoSession();
-                    // Navigate to main app
-                    router.replace('/(tabs)/requests');
-                  } catch (err: any) {
-                    console.error('Demo mode error:', err);
-                    Alert.alert('Demo Mode Error', err?.message || 'Failed to enable demo mode');
-                    setLoading(false);
-                  }
-                }}
-                disabled={loading}
-              >
-                <Ionicons name="play-circle-outline" size={20} color={Colors.brand.textPrimary} style={{ marginRight: 8 }} />
-                <Text style={styles.demoButtonText}>Try Demo Mode</Text>
-              </MotionPressable>
-            </MotionView>
           </>
         )}
 

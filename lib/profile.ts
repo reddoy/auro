@@ -130,12 +130,6 @@ function buildContentTypeFromExt(ext: string | null): string | undefined {
 }
 
 export async function getCurrentProfile(): Promise<Profile | null> {
-  // Check for demo mode first
-  const { isDemoMode, getDemoProfile } = await import('./demo-mode');
-  if (await isDemoMode()) {
-    return getDemoProfile();
-  }
-
   const { data: userResult } = await supabase.auth.getUser();
   const user = userResult.user;
   if (!user) return null;
@@ -437,19 +431,26 @@ export async function getSignedAvatarUrl(pathOrUrl: string, expiresInSeconds: nu
     try {
       // Server-side endpoint handles directory resolution and signing with service role
       const params = new URLSearchParams({ path: objectPath, bucket, expiresIn: String(expiresInSeconds) });
-      const res = await fetch(`${base}/api/storage/signed-view?${params.toString()}`, { method: 'GET' });
+      const endpoint = `${base}/api/storage/signed-view?${params.toString()}`;
+      const res = await fetch(endpoint, { method: 'GET' });
       if (res.ok) {
         const json = await res.json();
         const url = (json?.url || json?.signedUrl) as string | undefined;
         if (url) {
           return url;
+        } else {
+          console.warn('[getSignedAvatarUrl] Server returned OK but no URL in response:', json);
         }
       } else {
         const errorText = await res.text().catch(() => 'Unknown error');
-        console.warn('[getSignedAvatarUrl] Server-side signing failed:', res.status, errorText);
+        console.error('[getSignedAvatarUrl] Server-side signing failed:', res.status, errorText);
+        // If server returns 500, it likely means SUPABASE_SERVICE_ROLE_KEY is missing or invalid
+        if (res.status === 500) {
+          console.error('[getSignedAvatarUrl] ⚠️ Server error likely indicates missing/invalid SUPABASE_SERVICE_ROLE_KEY environment variable');
+        }
       }
     } catch (err) {
-      console.warn('[getSignedAvatarUrl] Server-side signing error:', err);
+      console.error('[getSignedAvatarUrl] Server-side signing error:', err);
     }
   }
 

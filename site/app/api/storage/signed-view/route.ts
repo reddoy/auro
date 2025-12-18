@@ -21,7 +21,14 @@ export async function GET(req: NextRequest) {
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
     
     if (!url || !key) {
-      return new Response('Server not configured', { status: 500 });
+      console.error('[signed-view] Missing configuration:', { hasUrl: !!url, hasKey: !!key });
+      return new Response(JSON.stringify({ 
+        error: 'Server not configured',
+        details: 'Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables'
+      }), { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
     const supabase = createClient(url, key);

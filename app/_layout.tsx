@@ -16,8 +16,6 @@ import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
 import { ToastProvider } from '@/components/Toast';
 import LogoHeader from '@/components/LogoHeader';
-import { DemoModeIndicator } from '@/components/DemoModeIndicator';
-import { isDemoMode } from '@/lib/demo-mode';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
@@ -102,17 +100,8 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const [sessionChecked, setSessionChecked] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
-  const [demoMode, setDemoMode] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
-
-  useEffect(() => {
-    const checkDemoMode = async () => {
-      const isDemo = await isDemoMode();
-      setDemoMode(isDemo);
-    };
-    checkDemoMode();
-  }, []);
 
   useEffect(() => {
     const init = async () => {
@@ -274,8 +263,7 @@ function RootLayoutNav() {
         <ThemeProvider value={customTheme}>
           <ToastProvider>
             <View style={{ flex: 1 }}>
-              {demoMode && !pathname?.includes('/onboarding') && !pathname?.includes('/auth') && !pathname?.includes('/intro') && <DemoModeIndicator />}
-              {!pathname?.includes('/onboarding') && !pathname?.includes('/auth') && !pathname?.includes('/intro') && <LogoHeader />}
+              {pathname && !pathname.includes('/onboarding') && !pathname.includes('/auth') && !pathname.includes('/intro') && <LogoHeader />}
               <Stack 
                 screenOptions={{ headerShown: false }}
                 // Suppress unhandled GO_BACK action warnings during initialization

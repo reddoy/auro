@@ -110,6 +110,11 @@ export default function Avatar({ uri, name, size = 48, accessibilityLabel }: Ava
           cachePolicy="memory-disk"
           onError={(error) => {
             console.error('[Avatar] Image load error:', error);
+            console.error('[Avatar] Failed URL:', displayUri);
+            // Log if it's a signed URL that failed (indicates signature issue)
+            if (displayUri?.includes('?token=') || displayUri?.includes('&token=')) {
+              console.error('[Avatar] ⚠️ Signed URL failed to load - this may indicate a SUPABASE_SERVICE_ROLE_KEY configuration issue');
+            }
             setImageError(true);
             setShowSpinner(false);
           }}
