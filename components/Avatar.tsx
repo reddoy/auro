@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, Platform } from 'react-native';
 import { Text } from '@/components/Themed';
 import { Image } from 'expo-image';
 import Colors from '@/constants/Colors';
@@ -110,7 +110,7 @@ export default function Avatar({ uri, name, size = 48, accessibilityLabel }: Ava
           style={{ width: '100%', height: '100%' }}
           contentFit="cover"
           transition={200}
-          cachePolicy="memory"
+          cachePolicy={Platform.OS === 'web' ? 'none' : 'memory'}
           onError={(error) => {
             // Only log detailed errors in development
             if (__DEV__) {

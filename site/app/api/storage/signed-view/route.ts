@@ -129,11 +129,10 @@ export async function GET(req: NextRequest) {
       .createSignedUrl(path, expiresIn);
     
     if (error) {
-      console.error('[signed-view] Error creating signed URL:', error, 'path:', path, 'bucket:', bucket, 'errorCode:', error.statusCode);
+      console.error('[signed-view] Error creating signed URL:', error, 'path:', path, 'bucket:', bucket);
       return new Response(JSON.stringify({ 
         error: error.message || 'Failed to create signed URL',
-        details: `Bucket: ${bucket}, Path: ${path}`,
-        errorCode: error.statusCode
+        details: `Bucket: ${bucket}, Path: ${path}`
       }), { 
         status: 500, 
         headers: { 
