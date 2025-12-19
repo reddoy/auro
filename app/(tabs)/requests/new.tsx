@@ -41,12 +41,14 @@ export default function DiscoverReviewersScreen() {
                 const signed = await getSignedAvatarUrl(raw, 3600);
                 if (signed) {
                   uri = signed;
+                  console.log(`[discover-reviewers] Successfully signed URL for reviewer ${r.id}: ${signed.substring(0, 80)}...`);
                 } else {
+                  console.warn(`[discover-reviewers] Signing returned null for reviewer ${r.id}, raw path: ${raw}`);
                   // Don't use raw if it's a directory - let Avatar component handle it
                   uri = raw.endsWith('/') ? undefined : raw;
                 }
               } catch (err) {
-                console.error('[avatar] Signing error:', err);
+                console.error(`[discover-reviewers] Signing error for reviewer ${r.id}:`, err);
                 // Don't use raw if it's a directory - let Avatar component handle it
                 uri = raw.endsWith('/') ? undefined : raw;
               }

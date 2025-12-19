@@ -3,6 +3,21 @@ import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
+function corsHeaders(req: NextRequest): HeadersInit {
+  const origin = req.headers.get('origin') || '*';
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Vary': 'Origin',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'content-type',
+    'Access-Control-Max-Age': '86400',
+  };
+}
+
+export async function OPTIONS(req: NextRequest) {
+  return new Response(null, { status: 204, headers: corsHeaders(req) });
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -11,7 +26,13 @@ export async function GET(req: NextRequest) {
     const expiresInParam = searchParams.get('expiresIn');
     
     if (!path) {
-      return new Response('Missing path parameter', { status: 400 });
+      return new Response(JSON.stringify({ error: 'Missing path parameter' }), { 
+        status: 400,
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders(req)
+        }
+      });
     }
     
     // Use requested expiration time, default to 24 hours
@@ -27,7 +48,10 @@ export async function GET(req: NextRequest) {
         details: 'Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables'
       }), { 
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders(req)
+        }
       });
     }
 
@@ -50,7 +74,10 @@ export async function GET(req: NextRequest) {
           console.error('Error listing directory or no files found:', listError, 'path:', path);
           return new Response(JSON.stringify({ error: 'No files found in directory' }), { 
             status: 404, 
-            headers: { 'Content-Type': 'application/json' } 
+            headers: { 
+              'Content-Type': 'application/json',
+              ...corsHeaders(req)
+            } 
           });
         }
         
@@ -60,29 +87,40 @@ export async function GET(req: NextRequest) {
         console.error('Error resolving directory path:', err);
         return new Response(JSON.stringify({ error: 'Failed to resolve directory path' }), { 
           status: 500, 
-          headers: { 'Content-Type': 'application/json' } 
+          headers: { 
+            'Content-Type': 'application/json',
+            ...corsHeaders(req)
+          } 
         });
       }
     }
     
     // Verify file exists by listing parent directory
-    const pathParts = path.split('/');
-    const fileName = pathParts.pop();
-    const parentDir = pathParts.join('/');
-    
-    const { data: files, error: listError } = await supabase.storage
-      .from(bucket)
-      .list(parentDir || '', { limit: 1000 });
-    
-    if (!listError && files) {
-      const fileExists = files.some(f => f.name === fileName);
-      if (!fileExists) {
-        console.error('File not found in directory:', path, 'bucket:', bucket);
-        return new Response(JSON.stringify({ error: 'File not found' }), { 
-          status: 404, 
-          headers: { 'Content-Type': 'application/json' } 
-        });
+    // Note: We skip this check if it fails, as some buckets may not allow listing
+    // but still allow signed URL access to specific files
+    try {
+      const pathParts = path.split('/');
+      const fileName = pathParts.pop();
+      const parentDir = pathParts.join('/');
+      
+      const { data: files, error: listError } = await supabase.storage
+        .from(bucket)
+        .list(parentDir || '', { limit: 1000 });
+      
+      if (!listError && files) {
+        const fileExists = files.some(f => f.name === fileName);
+        if (!fileExists) {
+          console.error('[signed-view] File not found in directory:', path, 'bucket:', bucket, 'parentDir:', parentDir);
+          // Don't return 404 here - still try to create signed URL as file might exist
+          // The signed URL will fail to load if file doesn't exist, which is acceptable
+        }
+      } else if (listError) {
+        // Log but don't fail - listing might not be allowed but file access might work
+        console.warn('[signed-view] Could not list directory (may not have permission):', listError.message, 'path:', path);
       }
+    } catch (listCheckError) {
+      // Ignore list check errors - proceed to create signed URL anyway
+      console.warn('[signed-view] Error checking file existence:', listCheckError);
     }
     
     // Create signed URL with requested expiration time
@@ -91,31 +129,51 @@ export async function GET(req: NextRequest) {
       .createSignedUrl(path, expiresIn);
     
     if (error) {
-      console.error('Error creating signed URL:', error, 'path:', path, 'bucket:', bucket);
-      return new Response(JSON.stringify({ error: error.message || 'Failed to create signed URL' }), { 
+      console.error('[signed-view] Error creating signed URL:', error, 'path:', path, 'bucket:', bucket, 'errorCode:', error.statusCode);
+      return new Response(JSON.stringify({ 
+        error: error.message || 'Failed to create signed URL',
+        details: `Bucket: ${bucket}, Path: ${path}`,
+        errorCode: error.statusCode
+      }), { 
         status: 500, 
-        headers: { 'Content-Type': 'application/json' } 
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders(req)
+        } 
       });
     }
     
     if (!data?.signedUrl) {
+      console.error('[signed-view] No signed URL in response data:', data, 'path:', path, 'bucket:', bucket);
       return new Response(JSON.stringify({ error: 'No signed URL generated' }), { 
         status: 500, 
-        headers: { 'Content-Type': 'application/json' } 
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders(req)
+        } 
       });
     }
+    
+    // Log successful signing (can be removed in production if too verbose)
+    console.log('[signed-view] Successfully created signed URL for:', path, 'bucket:', bucket);
     
     // Return JSON response with the signed URL
     return new Response(JSON.stringify({ url: data.signedUrl }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        ...corsHeaders(req)
+      }
     });
     
   } catch (error) {
     console.error('Signed view error:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), { 
       status: 500, 
-      headers: { 'Content-Type': 'application/json' } 
+      headers: { 
+        'Content-Type': 'application/json',
+        ...corsHeaders(req)
+      } 
     });
   }
 }

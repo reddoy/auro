@@ -32,6 +32,9 @@ export default function Avatar({ uri, name, size = 48, accessibilityLabel }: Ava
     
     // If it's already a full HTTP URL, use it directly
     if (/^https?:\/\//i.test(trimmed)) {
+      if (__DEV__) {
+        console.log('[Avatar] Using pre-signed URL directly:', trimmed.substring(0, 100) + '...');
+      }
       setSignedUri(trimmed);
       setIsSigning(false);
       return;
@@ -107,18 +110,23 @@ export default function Avatar({ uri, name, size = 48, accessibilityLabel }: Ava
           style={{ width: '100%', height: '100%' }}
           contentFit="cover"
           transition={200}
-          cachePolicy="memory-disk"
+          cachePolicy="memory"
           onError={(error) => {
-            console.error('[Avatar] Image load error:', error);
-            console.error('[Avatar] Failed URL:', displayUri);
-            // Log if it's a signed URL that failed (indicates signature issue)
-            if (displayUri?.includes('?token=') || displayUri?.includes('&token=')) {
-              console.error('[Avatar] ⚠️ Signed URL failed to load - this may indicate a SUPABASE_SERVICE_ROLE_KEY configuration issue');
+            // Only log detailed errors in development
+            if (__DEV__) {
+              console.warn('[Avatar] Image failed to load, showing initials fallback:', displayUri?.substring(0, 100));
+              // Log if it's a signed URL that failed - likely file doesn't exist
+              if (displayUri?.includes('?token=') || displayUri?.includes('&token=')) {
+                console.warn('[Avatar] Signed URL failed - file may not exist at this path, or SUPABASE_SERVICE_ROLE_KEY may be incorrect');
+              }
             }
             setImageError(true);
             setShowSpinner(false);
           }}
           onLoad={() => {
+            if (__DEV__) {
+              console.log('[Avatar] Image loaded successfully:', displayUri?.substring(0, 100) + '...');
+            }
             setShowSpinner(false);
           }}
         />

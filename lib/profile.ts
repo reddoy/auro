@@ -442,11 +442,23 @@ export async function getSignedAvatarUrl(pathOrUrl: string, expiresInSeconds: nu
           console.warn('[getSignedAvatarUrl] Server returned OK but no URL in response:', json);
         }
       } else {
-        const errorText = await res.text().catch(() => 'Unknown error');
-        console.error('[getSignedAvatarUrl] Server-side signing failed:', res.status, errorText);
+        let errorText: string;
+        try {
+          errorText = await res.text();
+        } catch {
+          errorText = 'Unknown error';
+        }
+        console.error('[getSignedAvatarUrl] Server-side signing failed:', res.status, errorText, 'path:', objectPath, 'bucket:', bucket);
         // If server returns 500, it likely means SUPABASE_SERVICE_ROLE_KEY is missing or invalid
         if (res.status === 500) {
           console.error('[getSignedAvatarUrl] ⚠️ Server error likely indicates missing/invalid SUPABASE_SERVICE_ROLE_KEY environment variable');
+        }
+        // Log the full error response for debugging
+        try {
+          const errorJson = JSON.parse(errorText);
+          console.error('[getSignedAvatarUrl] Error details:', errorJson);
+        } catch {
+          // Error text is not JSON, that's fine
         }
       }
     } catch (err) {
