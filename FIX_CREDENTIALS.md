@@ -45,3 +45,4 @@ eas build --platform ios --profile production
 - Need to regenerate the profile with the capability enabled
 
 
+
