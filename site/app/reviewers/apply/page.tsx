@@ -8,6 +8,7 @@ import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
 import { ArrowLeft, ArrowRight, Check, Star, DollarSign, Clock, Shield, Mail, Lock, User, FileText, Target, Phone, Instagram, Music } from 'lucide-react';
 import WebAvatarUploader from '../../../components/WebAvatarUploader';
+import PriceTierSelector from '../../../components/PriceTierSelector';
 
 
 export default function FoundingReviewerApplyPage() {
@@ -667,15 +668,14 @@ export default function FoundingReviewerApplyPage() {
       return;
     }
     if (step === 5) {
-      // Rate step - required
-      if (!hourlyRate || isNaN(parseFloat(hourlyRate)) || parseFloat(hourlyRate) <= 0) {
-        setError('Please set your rate per review to continue');
+      // Rate step - required (must be a valid tier)
+      if (!hourlyRate || hourlyRate.trim() === '') {
+        setError('Please select a price tier to continue');
         return;
       }
       const rateNumber = parseFloat(hourlyRate);
-      const MAX_RATE = 30000;
-      if (rateNumber > MAX_RATE) {
-        setError(`Maximum rate is $${MAX_RATE.toLocaleString()} per review`);
+      if (isNaN(rateNumber) || rateNumber <= 0) {
+        setError('Please select a valid price tier');
         return;
       }
       setStep(6);
@@ -1461,20 +1461,12 @@ export default function FoundingReviewerApplyPage() {
                 <label className="text-sm font-medium text-gray-300 text-center block">
                   Your Rate Per Review
                 </label>
-                <div className="relative">
-                  <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-bold text-gray-400">$</span>
-                  <input
-                    type="number"
-                    value={hourlyRate}
-                    onChange={(e) => setHourlyRate(e.target.value)}
-                    placeholder="25"
-                    min="0"
-                    step="1"
-                    className="w-full pl-12 pr-6 py-4 text-2xl font-semibold bg-white/10 border-2 border-white/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500/50 text-center"
-                  />
-                </div>
+                <PriceTierSelector
+                  value={hourlyRate}
+                  onChange={setHourlyRate}
+                />
                 <p className="text-xs text-gray-400 text-center">
-                  Required: Set your rate per review (e.g., $25-50 per review)
+                  Select a price tier from the dropdown (e.g., $25, $50, $75, etc.)
                 </p>
               </div>
 

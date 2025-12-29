@@ -272,6 +272,7 @@ function RootLayoutNav() {
                 <Stack.Screen name="index" />
                 <Stack.Screen name="intro" />
                 <Stack.Screen name="auth" />
+                <Stack.Screen name="request" options={{ headerShown: false }} />
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
               </Stack>

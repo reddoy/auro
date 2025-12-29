@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert, View as RNView } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, View as RNView } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,10 +10,13 @@ import { MotionView, MotionPressable, cardEntrance } from '@/components/motion';
 import { MotionDelays } from '@/components/motion/tokens';
 import { FadeInDown } from 'react-native-reanimated';
 import Spinner from '@/components/Spinner';
+import PriceTierPicker from '@/components/PriceTierPicker';
+import { findNearestTier } from '@/lib/iapPriceTiers';
 
 export default function RateScreen() {
   const insets = useSafeAreaInsets();
-  const [rate, setRate] = useState('');
+  const [selectedRate, setSelectedRate] = useState<number | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasExistingRate, setHasExistingRate] = useState(false);
@@ -25,7 +28,8 @@ export default function RateScreen() {
         const profile = await getCurrentProfile();
         if (profile?.hourly_rate && profile.hourly_rate > 0) {
           setHasExistingRate(true);
-          setRate(profile.hourly_rate.toString());
+          const tier = findNearestTier(profile.hourly_rate);
+          setSelectedRate(tier);
         }
       } catch (e: any) {
         console.error('Failed to load profile:', e);
@@ -37,23 +41,14 @@ export default function RateScreen() {
   }, []);
 
   const handleNext = async () => {
-    const rateNumber = rate.trim() ? Number(rate.trim()) : null;
-    const MIN_RATE = 0; // No minimum rate
-    const MAX_RATE = 30000; // Maximum $30,000 per review
-    
-    if (!rateNumber || isNaN(rateNumber) || rateNumber <= 0) {
-      Alert.alert('Invalid Rate', 'Please enter a valid positive number.');
-      return;
-    }
-    
-    if (rateNumber > MAX_RATE) {
-      Alert.alert('Rate Too High', `Maximum rate is $${MAX_RATE.toLocaleString()} per review.`);
+    if (!selectedRate) {
+      Alert.alert('Invalid Rate', 'Please select a price tier.');
       return;
     }
 
     try {
       setSaving(true);
-      await updateProfile({ hourly_rate: rateNumber });
+      await updateProfile({ hourly_rate: selectedRate });
       await updateProfilePreferences({ onboarding_step: 'reviewer_profile_picture' });
       router.replace('/onboarding/reviewer/profile-picture');
     } catch (e: any) {
@@ -93,10 +88,9 @@ export default function RateScreen() {
     );
   }
 
-  const rateNumber = rate.trim() ? Number(rate.trim()) : null;
   // SIMPLE MODEL: Customer pays X, Reviewer gets 80%, Auro absorbs Stripe fee
-  const auroFee = rateNumber && rateNumber > 0 ? rateNumber * 0.2 : 0; // 20% platform fee
-  const takeHome = rateNumber && rateNumber > 0 ? rateNumber - auroFee : 0; // Reviewer gets 80%
+  const auroFee = selectedRate && selectedRate > 0 ? selectedRate * 0.2 : 0; // 20% platform fee
+  const takeHome = selectedRate && selectedRate > 0 ? selectedRate - auroFee : 0; // Reviewer gets 80%
 
   return (
     <KeyboardAvoidingView 
@@ -134,26 +128,24 @@ export default function RateScreen() {
 
           <MotionView entering={cardEntrance(2)} style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Price per Review (USD)</Text>
-            <View style={styles.inputWrapper}>
+            <TouchableOpacity
+              style={styles.inputWrapper}
+              onPress={() => setShowPicker(true)}
+            >
               <Text style={styles.currencyPrefix}>$</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="65"
-                placeholderTextColor={Colors.brand.textSecondary}
-                value={rate}
-                onChangeText={setRate}
-                keyboardType="numeric"
-              />
-            </View>
+              <Text style={[styles.input, !selectedRate && styles.inputPlaceholder]}>
+                {selectedRate ? selectedRate.toLocaleString() : 'Tap to select price'}
+              </Text>
+            </TouchableOpacity>
           </MotionView>
 
-          {rateNumber && rateNumber > 0 && (
+          {selectedRate && selectedRate > 0 && (
             <MotionView entering={cardEntrance(3)} style={styles.breakdownContainer}>
               <Text style={styles.breakdownTitle}>Rate Breakdown</Text>
               <RNView style={styles.breakdownCard}>
                 <RNView style={styles.breakdownRow}>
                   <Text style={styles.breakdownLabel}>Customer pays</Text>
-                  <Text style={styles.breakdownValue}>${rateNumber.toFixed(2)}</Text>
+                  <Text style={styles.breakdownValue}>${selectedRate.toFixed(2)}</Text>
                 </RNView>
                 <RNView style={styles.breakdownDivider} />
                 <RNView style={styles.breakdownRow}>
@@ -206,6 +198,14 @@ export default function RateScreen() {
           </MotionView>
         </View>
       </ScrollView>
+
+      <PriceTierPicker
+        visible={showPicker}
+        value={selectedRate}
+        onValueChange={(value) => setSelectedRate(value)}
+        onClose={() => setShowPicker(false)}
+        title="Select Your Rate"
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -268,6 +268,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.brand.accentOrange,
     paddingHorizontal: 16,
+    minHeight: 56,
   },
   currencyPrefix: {
     fontSize: 20,
@@ -281,6 +282,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: Colors.brand.textPrimary,
+  },
+  inputPlaceholder: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: Colors.brand.textSecondary,
   },
   breakdownContainer: {
     marginBottom: 16,

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, Alert, View, TextInput, KeyboardAvoidingView, Platform, ScrollView, View as RNView } from 'react-native';
+import { StyleSheet, TouchableOpacity, Alert, View, KeyboardAvoidingView, Platform, ScrollView, View as RNView } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -9,11 +9,14 @@ import { getCurrentProfile, updateProfile } from '@/lib/profile';
 import type { Profile } from '@/types';
 import { MotionView, cardEntrance } from '@/components/motion';
 import { SkeletonBlock, SkeletonCircle, SkeletonParagraph } from '@/components/Skeletons';
+import PriceTierPicker from '@/components/PriceTierPicker';
+import { findNearestTier } from '@/lib/iapPriceTiers';
 
 export default function SetRateScreen() {
   const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [editingRate, setEditingRate] = useState('');
+  const [selectedRate, setSelectedRate] = useState<number | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
   const [savingRate, setSavingRate] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -22,7 +25,12 @@ export default function SetRateScreen() {
       try {
         const p = await getCurrentProfile();
         setProfile(p);
-        setEditingRate(p?.hourly_rate != null ? String(p.hourly_rate) : '');
+        if (p?.hourly_rate != null) {
+          const tier = findNearestTier(p.hourly_rate);
+          setSelectedRate(tier);
+        } else {
+          setSelectedRate(null);
+        }
       } catch (e: any) {
         Alert.alert('Error', 'Failed to load profile');
       } finally {
@@ -35,44 +43,31 @@ export default function SetRateScreen() {
   const handleSaveRate = useCallback(async () => {
     try {
       setSavingRate(true);
-      const rate = editingRate.trim();
-      const rateNumber = rate ? Number(rate) : null;
-      const MAX_RATE = 30000; // Maximum $30,000 per review
-      
-      if (rate && (isNaN(rateNumber) || rateNumber <= 0)) {
-        Alert.alert('Invalid Rate', 'Please enter a valid positive number.');
-        return;
-      }
-      
-      if (rateNumber !== null && rateNumber > MAX_RATE) {
-        Alert.alert('Rate Too High', `Maximum rate is $${MAX_RATE.toLocaleString()} per review.`);
-        setSavingRate(false);
+
+      if (!selectedRate) {
+        Alert.alert('Invalid Rate', 'Please select a price tier.');
         return;
       }
 
-      const updated = await updateProfile({ hourly_rate: rateNumber });
+      const updated = await updateProfile({ hourly_rate: selectedRate });
       setProfile(updated);
       
-              // Show confirmation with simple calculation
-      if (rateNumber !== null && rateNumber > 0) {
-        // SIMPLE MODEL: Customer pays X, Reviewer gets 80%, Auro absorbs Stripe fee
-        const auroFee = rateNumber * 0.2; // 20% platform fee
-        const reviewerTakeHome = rateNumber - auroFee; // Reviewer gets 80%
-        
-        Alert.alert(
-          'Rate Updated!', 
-          `Your price per review: $${rateNumber.toFixed(2)}\n\nAuro fee (20%): -$${auroFee.toFixed(2)}\n\nYour take-home: $${reviewerTakeHome.toFixed(2)} (80%)\n\n* Processing fees are covered by Auro`,
-          [{ text: 'OK', onPress: () => router.back() }]
-        );
-      } else {
-        Alert.alert('Rate Updated!', 'Your rate has been cleared.', [{ text: 'OK', onPress: () => router.back() }]);
-      }
+      // Show confirmation with simple calculation
+      // SIMPLE MODEL: Customer pays X, Reviewer gets 80%, Auro absorbs Stripe fee
+      const auroFee = selectedRate * 0.2; // 20% platform fee
+      const reviewerTakeHome = selectedRate - auroFee; // Reviewer gets 80%
+      
+      Alert.alert(
+        'Rate Updated!', 
+        `Your price per review: $${selectedRate.toFixed(2)}\n\nAuro fee (20%): -$${auroFee.toFixed(2)}\n\nYour take-home: $${reviewerTakeHome.toFixed(2)} (80%)\n\n* Processing fees are covered by Auro`,
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to update rate');
     } finally {
       setSavingRate(false);
     }
-  }, [editingRate]);
+  }, [selectedRate]);
 
   if (loading) {
     return (
@@ -146,20 +141,20 @@ export default function SetRateScreen() {
 
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Price per Review (What Customer Pays)</Text>
-            <TextInput
+            <TouchableOpacity
               style={styles.rateInput}
-              value={editingRate}
-              onChangeText={setEditingRate}
-              placeholder="e.g. 65"
-              keyboardType="numeric"
-              placeholderTextColor={Colors.brand.textSecondary}
-            />
+              onPress={() => setShowPicker(true)}
+            >
+              <Text style={[styles.rateInputText, !selectedRate && styles.rateInputPlaceholder]}>
+                {selectedRate ? `$${selectedRate.toLocaleString()}` : 'Tap to select price'}
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          {!!editingRate && !isNaN(Number(editingRate)) && Number(editingRate) > 0 && (
+          {selectedRate && selectedRate > 0 && (
             <View style={styles.breakdownContainer}>
               {(() => {
-                const customerPrice = Number(editingRate);
+                const customerPrice = selectedRate;
                 const auroFee = customerPrice * 0.2; // 20% platform fee
                 const reviewerTakeHome = customerPrice - auroFee; // Reviewer gets 80%
                 return (
@@ -203,6 +198,14 @@ export default function SetRateScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <PriceTierPicker
+        visible={showPicker}
+        value={selectedRate}
+        onValueChange={(value) => setSelectedRate(value)}
+        onClose={() => setShowPicker(false)}
+        title="Select Your Rate"
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -272,11 +275,20 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingHorizontal: 20,
     paddingVertical: 16,
+    backgroundColor: Colors.brand.cardBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 60,
+  },
+  rateInputText: {
     fontSize: 32,
     fontWeight: '700',
     color: Colors.brand.textPrimary,
-    backgroundColor: Colors.brand.cardBackground,
-    textAlign: 'center',
+  },
+  rateInputPlaceholder: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: Colors.brand.textSecondary,
   },
   breakdownContainer: {
     marginBottom: 24

@@ -3,6 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import type { RequestData } from '../page';
 import AsyncAvatar from './AsyncAvatar';
+// Note: This import will need to be adjusted based on your project structure
+// If the lib folder is shared, you may need to create a shared utilities file
+// For now, we'll calculate tiers inline
 
 type Props = {
   requestData: RequestData;
@@ -11,11 +14,57 @@ type Props = {
   supabase: any;
 };
 
+// Price tier system - rounds to nearest tier for IAP products
+// Tiers range from $5 to $10,000
+function findNearestTier(rate: number): number {
+  const tiers = [
+    // $5-$50: $5 increments
+    5, 10, 15, 20, 25, 30, 35, 40, 45, 50,
+    // $50-$100: $5 increments
+    55, 60, 65, 70, 75, 80, 85, 90, 95, 100,
+    // $100-$200: $10 increments
+    110, 120, 130, 140, 150, 160, 170, 180, 190, 200,
+    // $200-$500: $25 increments
+    225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500,
+    // $500-$1000: $50 increments
+    550, 600, 650, 700, 750, 800, 850, 900, 950, 1000,
+    // $1000-$2000: $100 increments
+    1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000,
+    // $2000-$5000: $250 increments
+    2250, 2500, 2750, 3000, 3250, 3500, 3750, 4000, 4250, 4500, 4750, 5000,
+    // $5000-$10000: $500 increments
+    5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000,
+  ];
+  if (rate <= tiers[0]) return tiers[0];
+  if (rate >= tiers[tiers.length - 1]) return tiers[tiers.length - 1];
+  
+  let nearestTier = tiers[0];
+  let minDiff = Math.abs(rate - nearestTier);
+  
+  for (const tier of tiers) {
+    const diff = Math.abs(rate - tier);
+    if (diff < minDiff) {
+      minDiff = diff;
+      nearestTier = tier;
+    }
+  }
+  
+  return nearestTier;
+}
+
+// Calculate in-app purchase price to account for Apple's 30% cut while preserving 20% margin
+// Formula: IAP_price = web_price * 1.43 (rounded up)
+function calculateIAPPrice(webPrice: number): number {
+  return Math.ceil(webPrice * 1.43);
+}
+
 export default function PaymentStep({ requestData, onSuccess, onBack, supabase }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [creatorInfo, setCreatorInfo] = useState<any>(null);
   const [price, setPrice] = useState(75); // Default price
+  const [showPriceExplanation, setShowPriceExplanation] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'web' | 'inapp'>('web');
 
   useEffect(() => {
     const fetchCreatorInfo = async () => {
@@ -91,6 +140,23 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
     setError('');
 
     try {
+      if (paymentMethod === 'inapp') {
+        // For in-app purchases, redirect to mobile app or show instructions
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobile) {
+          // Try to open the app with deep link
+          const appUrl = `auro://request?creatorId=${requestData.creatorId || ''}&creatorSlug=${requestData.creatorSlug || ''}`;
+          window.location.href = appUrl;
+          // Fallback message after a delay
+          setTimeout(() => {
+            setError('Please open this page in the Auro mobile app to complete your in-app purchase.');
+          }, 1000);
+          return;
+        } else {
+          throw new Error('In-app purchases are only available in the Auro mobile app. Please download the app or use the web checkout option.');
+        }
+      }
+
       console.log('🚀 Starting payment process...');
       
       const fallbackUserId = await getFallbackUserId();
@@ -166,6 +232,10 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
     }
   };
 
+  // Get tier info for the reviewer's rate
+  const tierWebPrice = findNearestTier(price); // The actual price used (may differ from reviewer's rate)
+  const iapPrice = calculateIAPPrice(tierWebPrice);
+
   // Avatar URLs are resolved by AsyncAvatar
 
   return (
@@ -216,6 +286,65 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
               </div>
             </div>
 
+            {/* Dual Pricing Options */}
+            <div className="payment-options">
+              <div className="payment-option-header">
+                <h4>Choose Payment Method</h4>
+                <button
+                  type="button"
+                  className="price-explanation-link"
+                  onClick={() => setShowPriceExplanation(true)}
+                >
+                  Why are these prices different?
+                </button>
+              </div>
+
+              <div className="payment-option-cards">
+                {/* Web Payment Option */}
+                <div
+                  className={`payment-option-card ${paymentMethod === 'web' ? 'selected' : ''}`}
+                  onClick={() => setPaymentMethod('web')}
+                >
+                  <div className="payment-option-header-card">
+                    <div>
+                      <h5>Continue on the Web</h5>
+                      <p className="payment-option-subtitle">Lower price</p>
+                    </div>
+                    <div className="payment-option-price">
+                      <span className="price-amount">${tierWebPrice}</span>
+                      {tierWebPrice !== price && (
+                        <span className="price-note" style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', display: 'block', marginTop: '4px' }}>
+                          (rounded from ${price})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <p className="payment-option-description">
+                    Complete your purchase on our website
+                  </p>
+                </div>
+
+                {/* In-App Purchase Option */}
+                <div
+                  className={`payment-option-card ${paymentMethod === 'inapp' ? 'selected' : ''}`}
+                  onClick={() => setPaymentMethod('inapp')}
+                >
+                  <div className="payment-option-header-card">
+                    <div>
+                      <h5>Continue in App</h5>
+                      <p className="payment-option-subtitle">Higher price</p>
+                    </div>
+                    <div className="payment-option-price">
+                      <span className="price-amount">${iapPrice}</span>
+                    </div>
+                  </div>
+                  <p className="payment-option-description">
+                    Purchase directly in the mobile app
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={handlePayment}
@@ -227,8 +356,10 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
                   <span className="spinner"></span>
                   Processing...
                 </span>
+              ) : paymentMethod === 'web' ? (
+                `Continue on the Web - $${price}`
               ) : (
-                `Pay $${price} with Stripe`
+                `Continue in App - $${iapPrice}`
               )}
             </button>
 
@@ -295,6 +426,39 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
           </div>
         </div>
       </div>
+
+      {/* Price Explanation Modal */}
+      {showPriceExplanation && (
+        <div className="modal-overlay" onClick={() => setShowPriceExplanation(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Why are these prices different?</h3>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setShowPriceExplanation(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>
+                The fee for in-app purchases does not apply to purchases made directly through Auro. 
+                This is why the price is lower when you continue on the web.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => setShowPriceExplanation(false)}
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
