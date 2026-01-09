@@ -77,7 +77,7 @@ export default function SuccessStep({ requestId, onBack }: Props) {
             style={styles.buttonGradient}
           >
             <Text style={styles.buttonText}>View My Requests</Text>
-          </LinearGradient>
+          </ExpoLinearGradient>
         </TouchableOpacity>
       </View>
     </View>

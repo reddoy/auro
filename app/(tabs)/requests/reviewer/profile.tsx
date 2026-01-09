@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, View as RNView, Linking, Image, Platform } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, View as RNView, Linking, Image, Platform, Modal, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -11,6 +11,16 @@ import { getReviewerById, getRequestsByReviewer, getReviewerReviewsByReviewerId 
 import { getSignedAvatarUrl } from '@/lib/profile';
 import type { DbReviewerSummary } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { getTierInfo } from '@/lib/iapPriceTiers';
+
+// Lazy load IAP functions to avoid errors in Expo Go
+let purchaseReviewRequest: any;
+try {
+  const iapModule = require('@/lib/inAppPurchases');
+  purchaseReviewRequest = iapModule.purchaseReviewRequest;
+} catch (error) {
+  purchaseReviewRequest = null;
+}
 
 const socialIcons = {
   instagram: require('../../../../Instagram_icon-removebg-preview.png'),
@@ -27,6 +37,8 @@ export default function ReviewerProfileScreen() {
   const [completedCount, setCompletedCount] = useState<number>(0);
   const [reviewerReviews, setReviewerReviews] = useState<any[]>([]);
   const [avgRating, setAvgRating] = useState<number | null>(null);
+  const [showPriceExplanation, setShowPriceExplanation] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'web' | 'inapp'>('web');
 
   useEffect(() => {
     const run = async () => {
@@ -100,7 +112,7 @@ export default function ReviewerProfileScreen() {
     try { Linking.openURL(finalUrl); } catch {}
   };
 
-  const handleRequestReview = async () => {
+  const handleWebPayment = async () => {
     if (!reviewer) return;
     
     // Build URL with creatorSlug (username) if available, otherwise use creatorId
@@ -144,6 +156,50 @@ export default function ReviewerProfileScreen() {
     }
   };
 
+  const handleIAPPayment = async () => {
+    if (!reviewer) return;
+    
+    if (Platform.OS !== 'ios') {
+      Alert.alert('Not Available', 'In-app purchases are only available on iOS.');
+      return;
+    }
+
+    if (!purchaseReviewRequest) {
+      Alert.alert(
+        'Not Available',
+        'In-app purchases require a development build. Please use EAS Build or a development build instead of Expo Go.'
+      );
+      return;
+    }
+
+    // Navigate to mobile request flow with preselected reviewer
+    const params: any = {};
+    if (reviewer.username) {
+      params.creatorSlug = reviewer.username;
+    } else {
+      params.creatorId = reviewer.id;
+    }
+    
+    router.push({
+      pathname: '/request',
+      params,
+    });
+  };
+
+  const handlePayment = () => {
+    if (paymentMethod === 'web') {
+      handleWebPayment();
+    } else {
+      handleIAPPayment();
+    }
+  };
+
+  // Calculate prices
+  const reviewerRate = reviewer?.pricePerReview || 75;
+  const tierInfo = getTierInfo(reviewerRate);
+  const webPrice = tierInfo.webPrice;
+  const iapPrice = tierInfo.iapPrice;
+
   const bottomPadding = Platform.OS === 'web' ? 24 : insets.bottom + 120;
 
   return (
@@ -166,22 +222,116 @@ export default function ReviewerProfileScreen() {
             )}
           </RNView>
 
-          {/* Request a Review Button */}
-          <TouchableOpacity
-            style={styles.requestButton}
-            onPress={handleRequestReview}
-            activeOpacity={0.8}
-            accessibilityLabel="Request a review from this reviewer"
-          >
-            <ExpoLinearGradient
-              colors={[Colors.brand.accentMagenta, Colors.brand.accentOrange]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.requestButtonGradient}
+          {/* Payment Options */}
+          <RNView style={styles.paymentSection}>
+            <RNView style={styles.paymentHeader}>
+              <Text style={styles.paymentTitle}>Request a Review</Text>
+              <TouchableOpacity onPress={() => setShowPriceExplanation(true)}>
+                <Text style={styles.explanationLink}>Why different prices?</Text>
+              </TouchableOpacity>
+            </RNView>
+
+            {/* Web Payment Option */}
+            <TouchableOpacity
+              style={[
+                styles.paymentOption,
+                paymentMethod === 'web' && styles.paymentOptionSelected,
+              ]}
+              onPress={() => setPaymentMethod('web')}
+              activeOpacity={0.8}
             >
-              <Text style={styles.requestButtonText}>Request a Review</Text>
-            </ExpoLinearGradient>
-          </TouchableOpacity>
+              <RNView style={styles.paymentOptionContent}>
+                <RNView>
+                  <Text style={styles.paymentOptionTitle}>Continue on the Web</Text>
+                  <Text style={styles.paymentOptionSubtitle}>Lower price</Text>
+                </RNView>
+                <Text style={styles.paymentOptionPrice}>${webPrice}</Text>
+              </RNView>
+              <Text style={styles.paymentOptionDescription}>
+                Complete your purchase on our website
+              </Text>
+            </TouchableOpacity>
+
+            {/* In-App Purchase Option */}
+            {Platform.OS === 'ios' && purchaseReviewRequest && (
+              <TouchableOpacity
+                style={[
+                  styles.paymentOption,
+                  paymentMethod === 'inapp' && styles.paymentOptionSelected,
+                ]}
+                onPress={() => setPaymentMethod('inapp')}
+                activeOpacity={0.8}
+              >
+                <RNView style={styles.paymentOptionContent}>
+                  <RNView>
+                    <Text style={styles.paymentOptionTitle}>Continue in App</Text>
+                    <Text style={styles.paymentOptionSubtitle}>Higher price</Text>
+                  </RNView>
+                  <Text style={styles.paymentOptionPrice}>${iapPrice}</Text>
+                </RNView>
+                <Text style={styles.paymentOptionDescription}>
+                  Purchase directly in the app
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Payment Button */}
+            <TouchableOpacity
+              style={styles.requestButton}
+              onPress={handlePayment}
+              activeOpacity={0.8}
+              accessibilityLabel="Request a review from this reviewer"
+            >
+              <ExpoLinearGradient
+                colors={[Colors.brand.accentMagenta, Colors.brand.accentOrange]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.requestButtonGradient}
+              >
+                <Text style={styles.requestButtonText}>
+                  {paymentMethod === 'web'
+                    ? `Continue on Web - $${webPrice}`
+                    : `Continue in App - $${iapPrice}`}
+                </Text>
+              </ExpoLinearGradient>
+            </TouchableOpacity>
+          </RNView>
+
+          {/* Price Explanation Modal */}
+          <Modal
+            visible={showPriceExplanation}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowPriceExplanation(false)}
+          >
+            <RNView style={styles.modalOverlay}>
+              <RNView style={styles.modalContent}>
+                <RNView style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Why are these prices different?</Text>
+                  <TouchableOpacity onPress={() => setShowPriceExplanation(false)}>
+                    <Text style={styles.modalClose}>×</Text>
+                  </TouchableOpacity>
+                </RNView>
+                <Text style={styles.modalBody}>
+                  The fee for in-app purchases does not apply to purchases made directly through Auro. 
+                  This is why the price is lower when you continue on the web.
+                </Text>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={() => setShowPriceExplanation(false)}
+                >
+                  <ExpoLinearGradient
+                    colors={[Colors.brand.accentMagenta, Colors.brand.accentOrange]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.modalButtonGradient}
+                  >
+                    <Text style={styles.modalButtonText}>Got it</Text>
+                  </ExpoLinearGradient>
+                </TouchableOpacity>
+              </RNView>
+            </RNView>
+          </Modal>
 
           {/* Stats */}
           <RNView style={styles.statsRow}>
@@ -296,9 +446,65 @@ const styles = StyleSheet.create({
   reviewComment: { color: Colors.brand.textPrimary, marginBottom: 4 },
   reviewMeta: { color: Colors.brand.textSecondary, fontSize: 12 },
   emptyText: { color: Colors.brand.textSecondary },
-  requestButton: {
+  paymentSection: {
     marginTop: 16,
     marginBottom: 16,
+  },
+  paymentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  paymentTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+  },
+  explanationLink: {
+    fontSize: 14,
+    color: Colors.brand.accentOrange,
+    textDecorationLine: 'underline',
+  },
+  paymentOption: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  paymentOptionSelected: {
+    backgroundColor: 'rgba(255, 111, 0, 0.1)',
+    borderColor: 'rgba(255, 111, 0, 0.5)',
+  },
+  paymentOptionContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  paymentOptionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.brand.textPrimary,
+    marginBottom: 4,
+  },
+  paymentOptionSubtitle: {
+    fontSize: 13,
+    color: Colors.brand.textSecondary,
+  },
+  paymentOptionPrice: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+  },
+  paymentOptionDescription: {
+    fontSize: 14,
+    color: Colors.brand.textSecondary,
+  },
+  requestButton: {
+    marginTop: 8,
     borderRadius: 16,
     overflow: 'hidden',
     shadowColor: Colors.brand.accentMagenta,
@@ -318,6 +524,58 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     letterSpacing: 0.5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: Colors.brand.cardBackground,
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: Colors.brand.border,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: Colors.brand.textPrimary,
+    flex: 1,
+  },
+  modalClose: {
+    fontSize: 28,
+    color: Colors.brand.textSecondary,
+    marginLeft: 16,
+  },
+  modalBody: {
+    fontSize: 16,
+    color: Colors.brand.textSecondary,
+    lineHeight: 24,
+    marginBottom: 20,
+  },
+  modalButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  modalButtonGradient: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
 });
 

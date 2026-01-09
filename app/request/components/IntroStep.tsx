@@ -20,7 +20,7 @@ export default function IntroStep({ onNext }: Props) {
           style={styles.buttonGradient}
         >
           <Text style={styles.buttonText}>Get Started</Text>
-        </LinearGradient>
+        </ExpoLinearGradient>
       </TouchableOpacity>
     </View>
   );

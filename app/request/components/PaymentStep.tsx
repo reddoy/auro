@@ -16,10 +16,27 @@ import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import Colors from '@/constants/Colors';
 import { supabase } from '@/lib/supabase';
 import type { RequestData } from '../index';
-import { purchaseReviewRequest, initIAP, endConnection } from '@/lib/inAppPurchases';
 import { getTierInfo, getProductIdForRate, findNearestTier } from '@/lib/iapPriceTiers';
 import PriceTierPicker from '@/components/PriceTierPicker';
 import Avatar from '@/components/Avatar';
+
+// Lazy load IAP functions to avoid errors in Expo Go
+let purchaseReviewRequest: any;
+let initIAP: any;
+let endConnection: any;
+
+try {
+  const iapModule = require('@/lib/inAppPurchases');
+  purchaseReviewRequest = iapModule.purchaseReviewRequest;
+  initIAP = iapModule.initIAP;
+  endConnection = iapModule.endConnection;
+} catch (error) {
+  // IAP not available in Expo Go - will only work in development/production builds
+  console.warn('[PaymentStep] IAP module not available (Expo Go limitation)');
+  purchaseReviewRequest = async () => ({ success: false, error: 'IAP not available in Expo Go' });
+  initIAP = async () => false;
+  endConnection = async () => {};
+}
 
 type Props = {
   requestData: RequestData;
@@ -39,18 +56,27 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
   const [iapInitialized, setIapInitialized] = useState(false);
 
   useEffect(() => {
-    // Initialize IAP on mount
+    // Initialize IAP on mount (only if available, not in Expo Go)
     const init = async () => {
-      if (Platform.OS === 'ios') {
-        const initialized = await initIAP();
-        setIapInitialized(initialized);
+      if (Platform.OS === 'ios' && initIAP && typeof initIAP === 'function') {
+        try {
+          const initialized = await initIAP();
+          setIapInitialized(initialized);
+        } catch (error) {
+          console.warn('[PaymentStep] IAP initialization failed (likely Expo Go):', error);
+          setIapInitialized(false);
+        }
       }
     };
     init();
 
     return () => {
-      if (Platform.OS === 'ios') {
-        endConnection();
+      if (Platform.OS === 'ios' && endConnection && typeof endConnection === 'function') {
+        try {
+          endConnection();
+        } catch (error) {
+          // Ignore cleanup errors
+        }
       }
     };
   }, []);
@@ -147,6 +173,15 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
   const handleIAPPayment = async () => {
     if (Platform.OS !== 'ios') {
       Alert.alert('Not Available', 'In-app purchases are only available on iOS.');
+      return;
+    }
+
+    // Check if IAP is available (not in Expo Go)
+    if (!purchaseReviewRequest || typeof purchaseReviewRequest !== 'function') {
+      Alert.alert(
+        'Not Available',
+        'In-app purchases require a development build. Please use EAS Build or a development build instead of Expo Go.'
+      );
       return;
     }
 
@@ -280,7 +315,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
         </TouchableOpacity>
 
         {/* In-App Purchase Option */}
-        {Platform.OS === 'ios' && (
+        {Platform.OS === 'ios' && purchaseReviewRequest && typeof purchaseReviewRequest === 'function' && (
           <TouchableOpacity
             style={[
               styles.paymentOption,
