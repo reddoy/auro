@@ -14,21 +14,21 @@ const poppins = Poppins({ subsets: ['latin'], weight: ['400', '600', '700'] });
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://auro.app'),
   title: 'Auro - Rate Guys, Get Paid',
-  description: 'Join content creators and influencers earning $200+ daily reviewing guys\' profiles. Set your own rates, work on your schedule, and monetize your eye for style.',
-  keywords: 'content creators, style reviewer, profile reviewer, monetize expertise, influencer income, fashion advice, dating coach, women entrepreneurs',
+  description: 'Auro is fully live on web and mobile web. Review men\'s dating profiles, set your own rates, and keep 80% of every completed review.',
+  keywords: 'web app, mobile web, profile reviewer, dating profile feedback, monetize expertise, reviewer marketplace, women creators',
   icons: {
     icon: '/auro_aura_logo.png',
   },
   openGraph: {
     title: 'Auro - Rate Guys, Get Paid',
-    description: 'Join content creators and influencers earning $200+ daily reviewing guys\' profiles. Set your own rates, work on your schedule.',
+    description: 'Fully launched on web and mobile web. Review profiles, set your own rates, and keep 80% of every completed review.',
     images: ['/auro_aura_logo.png'],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Auro - Rate Guys, Get Paid',
-    description: 'Join creators earning $200+ daily reviewing profiles. Set your own rates, work on your schedule.',
+    description: 'Fully launched on web and mobile web. Keep 80% of completed review payments.',
     images: ['/auro_aura_logo.png'],
   },
 };

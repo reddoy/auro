@@ -1,0 +1,9 @@
+name,table_size,index_size,total_size,estimated_row_count,seq_scans
+public.requests,152 kB,304 kB,456 kB,1,2078
+public.profiles,80 kB,64 kB,144 kB,53,125440
+public.reviewer_reviews,16 kB,80 kB,96 kB,0,151
+public.reviewee_waitlist,16 kB,48 kB,64 kB,1,231
+public.disputes,8192 bytes,56 kB,64 kB,0,237
+public.timeout_log,8192 bytes,32 kB,40 kB,0,198
+public.maintenance_log,8192 bytes,32 kB,40 kB,0,197
+public.webhook_events,8192 bytes,32 kB,40 kB,0,149

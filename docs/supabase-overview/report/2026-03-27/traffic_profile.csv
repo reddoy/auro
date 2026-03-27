@@ -1,0 +1,21 @@
+schemaname,table_name,blocks_read,write_tuples,blocks_write,activity_ratio
+public,requests,57,389,778,13.6:1 (Write-Heavy)
+auth,users,41,2066,284.965517241379,7.0:1 (Write-Heavy)
+storage,objects,64,1382,119.635820895522,1.9:1 (Write-Heavy)
+public,profiles,18,1822,77.531914893617,4.3:1 (Write-Heavy)
+auth,refresh_tokens,27,1694,61.9756097560976,2.3:1 (Write-Heavy)
+auth,sessions,18,931,59.4255319148936,3.3:1 (Write-Heavy)
+auth,audit_log_entries,18,1499,51.043085476025,2.8:1 (Write-Heavy)
+auth,identities,18,380,43.0188679245283,2.4:1 (Write-Heavy)
+cron,job_run_details,5,695,35,7.0:1 (Write-Heavy)
+auth,one_time_tokens,15,315,16.5789473684211,1.1:1 (Write-Heavy)
+auth,mfa_amr_claims,10,526,16.9677419354839,1.7:1 (Write-Heavy)
+auth,mfa_factors,13,2,-0,Read-Only
+public,reviewer_reviews,11,4,-0,Read-Only
+storage,migrations,7,79,2.7719298245614,0.4:1 (Write-Heavy)
+auth,flow_state,8,6,-0,Read-Only
+auth,schema_migrations,6,69,1.11290322580645,1:5.4 (Read-Heavy)
+public,reviewee_waitlist,6,2,-0,Read-Only
+storage,buckets,6,5,-0,Read-Only
+realtime,schema_migrations,4,67,1.06349206349206,0.3:1 (Write-Heavy)
+cron,job,4,1,-0,Read-Only

@@ -3,7 +3,7 @@
  * Shared with mobile app's lib/iapPriceTiers.ts
  */
 
-// Define price tiers - these should match products in App Store Connect
+// Define supported web checkout price tiers
 // Each tier represents the WEB price (before IAP markup)
 // 
 // More products on lower end, spaced out more as prices increase above $100

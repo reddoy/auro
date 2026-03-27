@@ -1,22 +1,17 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useEffect, useRef, Suspense } from 'react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import CountdownTimer from '../components/CountdownTimer';
 import RevieweeWaitlist from '../components/RevieweeWaitlist';
-import { supabase } from '../lib/supabase';
 import { ArrowRight, Star, DollarSign, Clock, Users, TrendingUp, CheckCircle } from 'lucide-react';
 import { useIosSourceFlag } from '@/hooks/useIosSourceFlag';
 
 export const dynamic = 'force-dynamic';
 
 function HomePageContent() {
-  // Removed unused showRibbon state
-  const [reviewerCount, setReviewerCount] = useState<number>(0);
-  const [isLoadingCount, setIsLoadingCount] = useState<boolean>(true);
   const desktopVideoRef = useRef<HTMLVideoElement>(null);
   const desktopOverlayRef = useRef<HTMLAnchorElement>(null);
   const mobileVideoRef = useRef<HTMLVideoElement>(null);
@@ -24,42 +19,6 @@ function HomePageContent() {
   const isIosSource = useIosSourceFlag();
   const iosCtaMessage =
     "Purchases are unavailable in the iOS in-app browser. Open appauro.com in Safari or on desktop to continue.";
-
-  useEffect(() => {
-    const fetchReviewerCount = async () => {
-      try {
-        // Only run on client side
-        if (typeof window === 'undefined') return;
-        
-        if (!supabase) {
-          console.error('Supabase client is not available');
-          return;
-        }
-        
-        // Query profiles table directly (creators table doesn't exist)
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id', { count: 'exact' })
-          .eq('is_reviewer', 'approved');
-
-        if (error) {
-          console.error('Failed to fetch reviewer count:', error.message);
-          // Keep current count instead of resetting to 0
-        } else {
-          setReviewerCount(data?.length || 0);
-        }
-      } catch (err) {
-        console.error('Error fetching reviewer count:', err);
-        // Keep current count instead of resetting to 0 on error
-      } finally {
-        setIsLoadingCount(false);
-      }
-    };
-
-    fetchReviewerCount();
-    const interval = setInterval(fetchReviewerCount, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Video handling for desktop
   useEffect(() => {
@@ -127,16 +86,6 @@ function HomePageContent() {
     };
   }, []);
 
-  const spotsLeft = Math.max(0, 35 - reviewerCount);
-  const isNearFull = spotsLeft <= 10;
-  const isFull = spotsLeft === 0;
-  
-  const getSubText = () => {
-    if (isFull) return 'Spots Filled! 🎉';
-    if (isNearFull) return `Only ${spotsLeft} left! ⚡`;
-    return 'Join exclusive founding group';
-  };
-
   return (
     <div className="min-h-screen bg-background text-foreground mobile-smooth-scroll">
       {/* Hero Section */}
@@ -203,9 +152,9 @@ function HomePageContent() {
                     <a
                       href="/reviewers/apply"
                       className="flex items-center justify-center"
-                      aria-label={`Only ${spotsLeft} founding spots left - Apply now`}
+                      aria-label="Apply to become a reviewer"
                     >
-                      <span className="truncate">Only {spotsLeft} founding spots left</span>
+                      <span className="truncate">Apply to become a reviewer</span>
                       <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" aria-hidden="true" />
                     </a>
                   </Button>
@@ -250,15 +199,6 @@ function HomePageContent() {
                 </div>
               </div>
 
-              {/* Mobile App Launch Countdown */}
-              <div className="text-center mobile-text-reveal bg-white/5 backdrop-blur-sm rounded-xl p-6 mx-4" style={{ animationDelay: '1.4s' }}>
-                <p className="text-white/90 text-base font-semibold mb-3">🚀 App launches in:</p>
-                <CountdownTimer 
-                  targetDate={new Date('2025-12-01T21:00:00-08:00')}
-                  className="text-lg font-bold"
-                />
-              </div>
-
               {/* Stats */}
               <div className="mobile-text-reveal mobile-stats px-6" style={{ animationDelay: '1.6s' }}>
                 <div className="flex flex-col gap-3 text-sm text-white">
@@ -272,7 +212,7 @@ function HomePageContent() {
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>Launch December 1st</span>
+                    <span>Built for web + mobile web</span>
                   </div>
                 </div>
               </div>
@@ -321,21 +261,12 @@ function HomePageContent() {
                     >
                       <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
                         <span className="mobile-button-text">
-                          🚀 Start Earning Today ({isLoadingCount ? 'Loading...' : `${reviewerCount}/35 spots taken`})
+                          Start Earning on Auro
                         </span>
                         <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                       </a>
                     </Button>
                   )}
-                </div>
-
-                {/* App Launch Countdown */}
-                <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 py-8 space-y-4">
-                  <p className="text-white/90 text-base font-semibold">🚀 App launches in:</p>
-                  <CountdownTimer 
-                    targetDate={new Date('2025-12-01T21:00:00-08:00')}
-                    className="text-xl font-bold"
-                  />
                 </div>
 
                 {/* Stats */}
@@ -350,7 +281,7 @@ function HomePageContent() {
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>Launch December 1st</span>
+                    <span>Built for web + mobile web</span>
                   </div>
                 </div>
               </div>
@@ -409,18 +340,18 @@ function HomePageContent() {
         </div>
       </section>
 
-      {/* Founding Members Section */}
-      <section id="founding-program" className="py-16 lg:py-24 bg-[#0c0325]">
+      {/* Platform Economics Section */}
+      <section id="platform-economics" className="py-16 lg:py-24 bg-[#0c0325]">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-16">
             <div className="space-y-6">
               <Badge variant="gradient" className="text-sm px-4 py-2 font-semibold">
-                🚨 FOUNDING MEMBERS ONLY
+                FULLY LAUNCHED
               </Badge>
               <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight">
-                First 35 reviewers get exclusive benefits{' '}
+                Transparent platform split:{' '}
                 <span className="bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
-                  forever
+                  reviewers keep 80%
                 </span>
               </h2>
             </div>
@@ -436,7 +367,7 @@ function HomePageContent() {
                 </CardHeader>
                 <CardContent>
                   <CardDescription className="text-center text-white/90 text-base leading-relaxed">
-                    Keep more of what you earn compared to regular members.
+                    You keep 80% of every completed review payment.
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -446,11 +377,11 @@ function HomePageContent() {
                   <div className="w-20 h-20 bg-orange-500/30 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/20">
                     <Star className="w-10 h-10 text-orange-400" />
               </div>
-                  <CardTitle className="text-2xl font-bold text-white">Exclusive Badge</CardTitle>
+                  <CardTitle className="text-2xl font-bold text-white">20% Platform Fee</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <CardDescription className="text-center text-white/90 text-base leading-relaxed">
-                    Get recommended more to guys looking for reviewers.
+                    Auro takes 20% to run the platform and support payouts.
                   </CardDescription>
                 </CardContent>
               </Card>
@@ -460,33 +391,15 @@ function HomePageContent() {
                   <div className="w-20 h-20 bg-blue-500/30 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/20">
                     <Users className="w-10 h-10 text-blue-400" />
                   </div>
-                  <CardTitle className="text-2xl font-bold text-white">Founder Access</CardTitle>
+                  <CardTitle className="text-2xl font-bold text-white">Simple Revenue Split</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <CardDescription className="text-center text-white/90 text-base leading-relaxed">
-                    Direct line to me for support and feedback.
+                    Every completed review follows the same 80% reviewer / 20% Auro model.
                   </CardDescription>
                 </CardContent>
               </Card>
             </div>
-            
-            {/* Countdown Timer */}
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <h3 className="text-2xl font-semibold text-white">Limited Time Offer</h3>
-                <p className="text-white/80">
-                  Founding member benefits end on launch day
-                </p>
-              </div>
-              <div className="flex justify-center">
-                <CountdownTimer 
-                  targetDate={new Date('2025-12-01T21:00:00-08:00')}
-                  className="main-countdown"
-                />
-              </div>
-            </div>
-            
-            {/* Removed CTA to reduce clutter - keeping focus on main hero CTA */}
           </div>
         </div>
       </section>
@@ -497,7 +410,7 @@ function HomePageContent() {
           <div className="text-center space-y-16">
             <div className="space-y-4">
               <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight">How It Works</h2>
-              <p className="text-xl md:text-2xl text-white/80 leading-relaxed">Start earning in {isIosSource ? '2' : '3'} simple steps</p>
+              <p className="text-xl md:text-2xl text-white/80 leading-relaxed">Start earning on web in {isIosSource ? '2' : '3'} simple steps</p>
             </div>
             
             {/* Process Steps */}
@@ -604,28 +517,28 @@ function HomePageContent() {
         <div className="container mx-auto px-4">
           <div className="text-center space-y-16">
             <div className="space-y-4">
-              <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight">What Early Reviewers Are Saying</h2>
-              <p className="text-xl md:text-2xl text-white/80 leading-relaxed">Join the community that's already making money</p>
+              <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight">What Reviewers Are Saying</h2>
+              <p className="text-xl md:text-2xl text-white/80 leading-relaxed">A real web marketplace for profile feedback</p>
             </div>
             
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-orange-400/40 hover:bg-white/[0.15] transition-all duration-300 mobile-card-hover">
                 <CardContent className="p-8 space-y-5">
                   <p className="text-white text-base leading-relaxed italic">
-                    "OMG, so many guys on dating apps are actually cute but their profiles just don't show it. I'm stoked to be a founding reviewer and help them glow up their pics and bios."
+                    "So many guys are close to having solid profiles, they just need honest feedback. Auro makes it easy to help and get paid."
                   </p>
                   <div className="flex items-center gap-4 pt-2">
                     <Avatar className="w-20 h-20 md:w-24 md:h-24 ring-2 ring-orange-500/50 overflow-hidden">
                       <AvatarImage 
                         src="/jenna_headshot.jpg" 
-                        alt="Jenna - Founding Reviewer"
+                        alt="Jenna - Reviewer"
                         className="object-cover scale-125"
                       />
                       <AvatarFallback className="bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold text-2xl">J</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-bold text-white text-xl md:text-2xl">Jenna</p>
-                      <p className="text-sm text-white/80">Founding Reviewer</p>
+                      <p className="text-sm text-white/80">Reviewer</p>
                     </div>
                   </div>
                 </CardContent>
@@ -634,13 +547,13 @@ function HomePageContent() {
               <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-orange-400/40 hover:bg-white/[0.15] transition-all duration-300 mobile-card-hover">
                 <CardContent className="p-8 space-y-5">
                   <p className="text-white text-base leading-relaxed italic">
-                    "Honestly, sometimes all it takes is a little tweak here or there to get more matches. I'm excited to be part of Auro and spill the tea with honest feedback."
+                    "Sometimes one tweak makes a huge difference in matches. I like that I can give direct feedback and keep 80%."
                   </p>
                   <div className="flex items-center gap-4 pt-2">
                     <Avatar className="w-20 h-20 md:w-24 md:h-24 ring-2 ring-red-500/50 overflow-hidden">
                       <AvatarImage 
                         src="/katie_headshot.jpg" 
-                        alt="Katie - Founding Reviewer"
+                        alt="Katie - Reviewer"
                         className="object-cover scale-y-110 scale-x-100"
                         style={{ objectPosition: 'center 40%' }}
                       />
@@ -648,7 +561,7 @@ function HomePageContent() {
                     </Avatar>
                     <div>
                       <p className="font-bold text-white text-xl md:text-2xl">Katie</p>
-                      <p className="text-sm text-white/80">Founding Reviewer</p>
+                      <p className="text-sm text-white/80">Reviewer</p>
                     </div>
                   </div>
                 </CardContent>
@@ -667,7 +580,7 @@ function HomePageContent() {
             <div className="flex flex-col md:flex-row items-center gap-8">
               <div className="flex-shrink-0 w-40 h-40 rounded-2xl overflow-hidden shadow-lg">
                 <img 
-                  src="/rj-headshot.jpg" 
+                  src="/rohan-headshot.jpg" 
                   alt="RJ, founder of Auro - helping men improve their style and helping women monetize their expertise" 
                   className="w-full h-full object-cover scale-125" 
                   loading="lazy"
@@ -685,7 +598,7 @@ function HomePageContent() {
                 </p>
                 <p className="text-xl font-bold leading-relaxed">
                   <span className="bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
-                    Join the first 35 founding reviewers and lock in 80% earnings forever.
+                    Auro is now fully launched on web and mobile web.
                   </span>
                 </p>
               </div>
@@ -704,7 +617,7 @@ function HomePageContent() {
                 Ready to Start Earning?
               </h2>
               <p className="text-xl md:text-2xl text-white/90 leading-relaxed mobile-text-reveal" style={{ animationDelay: '0.4s' }}>
-                Join the first 35 founding reviewers and lock in exclusive benefits forever
+                Keep 80% of every review you complete on Auro
               </p>
             </div>
             
@@ -716,17 +629,15 @@ function HomePageContent() {
                 asChild
               >
                 <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
-                  <span className="mobile-button-text">🚀 Start Earning Today ({isLoadingCount ? 'Loading...' : `${reviewerCount}/35 spots taken`})</span>
+                  <span className="mobile-button-text">Start Earning Today</span>
                   <ArrowRight className="ml-1 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                 </a>
               </Button>
               
               <div className="text-center sm:text-left">
-                <p className="text-sm text-white/80 font-semibold">
-                  {isLoadingCount ? 'Loading...' : (spotsLeft > 0 ? `${spotsLeft} spots remaining` : 'Spots filled!')}
-                </p>
+                <p className="text-sm text-white/80 font-semibold">Fully live on web and mobile web</p>
                 <p className="text-xs text-white/80">
-                  Benefits end December 1st, 2025
+                  80% to reviewer, 20% platform fee
                 </p>
               </div>
             </div>
@@ -742,11 +653,11 @@ function HomePageContent() {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500 animate-pulse" style={{ animationDelay: '0.4s' }} />
-                <span>Exclusive founding badge</span>
+                <span>No app store fee split</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500 animate-pulse" style={{ animationDelay: '0.6s' }} />
-                <span>Direct founder access</span>
+                <span>Built for web + mobile web</span>
               </div>
             </div>
           </div>

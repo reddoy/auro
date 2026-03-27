@@ -22,7 +22,7 @@
    - MFA flows available under `app/two-factor-*` (optional but ensure templates `site/email-templates/mfa-added.html`, etc. are wired).
 
 ## Data Touchpoints
-- **Supabase Auth**: email confirmation, Google OAuth, password reset (redirect to `auro://auth/confirm`).
+- **Supabase Auth**: email confirmation, Google OAuth, password reset (redirect to web auth routes).
 - **Profiles table**: `ensureProfileForCurrentUser()` seeds row; `lib/profile.ts` manages preferences & metadata.
 - **Storage**: avatar uploads via Supabase Storage bucket `avatars` (configurable through `EXPO_PUBLIC_SUPABASE_AVATAR_BUCKET`).
 - **Notifications**: onboarding prompts rely on Expo push; backend endpoints at `https://www.appauro.com/api/notifications/*`.
@@ -34,7 +34,7 @@
    - Negative tests: weak password, underage DOB, duplicate email, rate limit/resend throttle.
    - Ensure metadata (name, phone) visible in Supabase `auth.users` + `profiles`.
 2. **Google OAuth**
-   - Confirm redirect URI for native (`auro://auth/callback`) works on physical device + TestFlight build.
+   - Confirm redirect URI for web (`https://app.appauro.com/auth/callback`) works on desktop and mobile browsers.
    - Validate unverified Google emails trigger confirm screen (see `handleGoogleSignIn` logic).
 3. **Forgot Password**
    - Trigger from login tab; confirm Supabase email uses correct branding and recovery deep link.
@@ -47,7 +47,7 @@
    - Walk through `onboarding/reviewer/*` screens, including package creation and Stripe Connect linking flows.
    - Ensure Connect onboarding uses the correct environment (test vs live) before production.
 6. **Notification Permissions**
-   - iOS: simulate “Allow”, “Don’t Allow”, “Off in settings”. Verify fallback instructions appear and `preferences.notifications_enabled` toggles.
+   - Mobile web: verify notification prompts and fallback instructions where browser permissions are supported.
    - Backend: confirm Expo push tokens stored and `send-push-notification` Edge function can reach device.
 7. **MFA / Security**
    - Add/remove MFA flows (`app/two-factor-setup.tsx`, templates `site/email-templates/mfa-*`). Confirm QR + backup codes stored securely.

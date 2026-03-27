@@ -70,11 +70,11 @@ export default function ReviewerCounter({ maxReviewers = 35, className = '' }: R
       </div>
       <div className="counter-message">
         {isFull ? (
-          <span className="counter-full">Founding spots filled! 🎉</span>
+          <span className="counter-full">Reviewer capacity reached 🎉</span>
         ) : isNearFull ? (
-          <span className="counter-urgent">Only {spotsLeft} spots left! ⚡</span>
+          <span className="counter-urgent">Only {spotsLeft} reviewer spots available ⚡</span>
         ) : (
-          <span className="counter-normal">Exclusive founding spots</span>
+          <span className="counter-normal">Open reviewer applications</span>
         )}
       </div>
     </div>

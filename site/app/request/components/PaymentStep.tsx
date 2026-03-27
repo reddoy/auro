@@ -14,7 +14,7 @@ type Props = {
   supabase: any;
 };
 
-// Price tier system - rounds to nearest tier for IAP products
+// Price tier system - rounds to nearest supported web tier
 // Tiers range from $5 to $10,000
 function findNearestTier(rate: number): number {
   const tiers = [
@@ -52,19 +52,12 @@ function findNearestTier(rate: number): number {
   return nearestTier;
 }
 
-// Calculate in-app purchase price to account for Apple's 30% cut while preserving 20% margin
-// Formula: IAP_price = web_price * 1.43 (rounded up)
-function calculateIAPPrice(webPrice: number): number {
-  return Math.ceil(webPrice * 1.43);
-}
-
 export default function PaymentStep({ requestData, onSuccess, onBack, supabase }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [creatorInfo, setCreatorInfo] = useState<any>(null);
   const [price, setPrice] = useState(75); // Default price
   const [showPriceExplanation, setShowPriceExplanation] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'web' | 'inapp'>('web');
 
   useEffect(() => {
     const fetchCreatorInfo = async () => {
@@ -140,23 +133,6 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
     setError('');
 
     try {
-      if (paymentMethod === 'inapp') {
-        // For in-app purchases, redirect to mobile app or show instructions
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        if (isMobile) {
-          // Try to open the app with deep link
-          const appUrl = `auro://request?creatorId=${requestData.creatorId || ''}&creatorSlug=${requestData.creatorSlug || ''}`;
-          window.location.href = appUrl;
-          // Fallback message after a delay
-          setTimeout(() => {
-            setError('Please open this page in the Auro mobile app to complete your in-app purchase.');
-          }, 1000);
-          return;
-        } else {
-          throw new Error('In-app purchases are only available in the Auro mobile app. Please download the app or use the web checkout option.');
-        }
-      }
-
       console.log('🚀 Starting payment process...');
       
       const fallbackUserId = await getFallbackUserId();
@@ -234,8 +210,6 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
 
   // Get tier info for the reviewer's rate
   const tierWebPrice = findNearestTier(price); // The actual price used (may differ from reviewer's rate)
-  const iapPrice = calculateIAPPrice(tierWebPrice);
-
   // Avatar URLs are resolved by AsyncAvatar
 
   return (
@@ -286,29 +260,27 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
               </div>
             </div>
 
-            {/* Dual Pricing Options */}
+            {/* Pricing Explanation */}
             <div className="payment-options">
               <div className="payment-option-header">
-                <h4>Choose Payment Method</h4>
+                <h4>Payment Method</h4>
                 <button
                   type="button"
                   className="price-explanation-link"
                   onClick={() => setShowPriceExplanation(true)}
                 >
-                  Why are these prices different?
+                  How fees work
                 </button>
               </div>
 
               <div className="payment-option-cards">
-                {/* Web Payment Option */}
                 <div
-                  className={`payment-option-card ${paymentMethod === 'web' ? 'selected' : ''}`}
-                  onClick={() => setPaymentMethod('web')}
+                  className="payment-option-card selected"
                 >
                   <div className="payment-option-header-card">
                     <div>
                       <h5>Continue on the Web</h5>
-                      <p className="payment-option-subtitle">Lower price</p>
+                      <p className="payment-option-subtitle">Secure Stripe checkout</p>
                     </div>
                     <div className="payment-option-price">
                       <span className="price-amount">${tierWebPrice}</span>
@@ -320,26 +292,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
                     </div>
                   </div>
                   <p className="payment-option-description">
-                    Complete your purchase on our website
-                  </p>
-                </div>
-
-                {/* In-App Purchase Option */}
-                <div
-                  className={`payment-option-card ${paymentMethod === 'inapp' ? 'selected' : ''}`}
-                  onClick={() => setPaymentMethod('inapp')}
-                >
-                  <div className="payment-option-header-card">
-                    <div>
-                      <h5>Continue in App</h5>
-                      <p className="payment-option-subtitle">Higher price</p>
-                    </div>
-                    <div className="payment-option-price">
-                      <span className="price-amount">${iapPrice}</span>
-                    </div>
-                  </div>
-                  <p className="payment-option-description">
-                    Purchase directly in the mobile app
+                    Auro is fully web + mobile web
                   </p>
                 </div>
               </div>
@@ -356,11 +309,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
                   <span className="spinner"></span>
                   Processing...
                 </span>
-              ) : paymentMethod === 'web' ? (
-                `Continue on the Web - $${price}`
-              ) : (
-                `Continue in App - $${iapPrice}`
-              )}
+              ) : `Continue on the Web - $${price}`}
             </button>
 
             <div className="review-includes">
@@ -420,7 +369,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
               </p>
               <p>
                 <span className="payment-note-icon">📱</span>
-                After payment, you'll get access to download our mobile app to track your review progress.
+                After payment, track your request in the Auro web app on desktop or mobile browser.
               </p>
             </div>
           </div>
@@ -432,7 +381,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
         <div className="modal-overlay" onClick={() => setShowPriceExplanation(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Why are these prices different?</h3>
+              <h3>How fees work</h3>
               <button
                 type="button"
                 className="modal-close"
@@ -443,8 +392,8 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
             </div>
             <div className="modal-body">
               <p>
-                The fee for in-app purchases does not apply to purchases made directly through Auro. 
-                This is why the price is lower when you continue on the web.
+                Auro now runs fully on web and mobile web. Reviewers keep 80% of each completed review payment,
+                and Auro takes a 20% platform fee.
               </p>
             </div>
             <div className="modal-footer">

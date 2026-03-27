@@ -2,11 +2,10 @@
 # Payments, Refunds & Stripe Logic
 
 ## Architecture Overview
-- **Client payment capture** (`lib/payments.ts`)
-  - Uses Stripe PaymentSheet via `openPaymentSheet`.
-  - Requests PaymentIntent + Ephemeral Key from Supabase Edge Function `supabase/functions/payments-create-sheet`.
-  - Derives base URL from `EXPO_PUBLIC_API_URL` or Supabase project ref; ensure production builds point to the deployed Edge Function (currently defaults to `https://zxazjbduiistnfstnwka.supabase.co/functions/v1/payments-create-sheet`).
-  - Requires `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` (currently placeholder) and matching `STRIPE_SECRET_KEY` in Supabase function env.
+- **Client payment capture**
+  - Uses Stripe Checkout from web/mobile web flows.
+  - Requests checkout sessions through `site/app/api/checkout/create-session/route.ts`.
+  - Requires `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` and server-side `STRIPE_SECRET_KEY`.
 - **Request lifecycle**
   - Successful payment populates `requests` row with Stripe metadata (session, payment_intent, amount, application_fee, etc.).
   - Reviewer accepts → completes review → `submitRequestReview` (in `lib/api.ts`) calls `site/app/api/payments/distribute-reviewer-payment`.
@@ -23,7 +22,7 @@
 ## Data & Secrets
 - `requests` table fields involved: `amount_cents`, `application_fee_cents`, `stripe_session_id`, `stripe_payment_intent_id`, `payment_distributed`, `reviewer_amount_cents`, `payment_status`, `refund_status`, `refunded_amount_cents`, `payment_distribution_error`, `payment_distribution_attempts`, `refund_reason`.
 - Environment variables:
-  - **Client**: `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `EXPO_PUBLIC_API_URL`, `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
+  - **Client**: `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
   - **Supabase Functions**: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
   - **Next.js backend**: `STRIPE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `EXPO_ACCESS_TOKEN` (for push), optional `SLACK_WEBHOOK`.
   - **Stripe Connect**: Reviewer onboarding endpoints rely on `connect-express-onboarding/login` functions; confirm `EXPO_PUBLIC_SUPABASE_FN_*` overrides in production if using custom domains.
@@ -52,8 +51,8 @@
    - Observe logging/alerts for persistent failures.
 7. **Stripe Webhooks**
    - Send test `payment_intent.succeeded` to Supabase function; verify signature validation and plan enhancement to update `requests`.
-8. **Compliance – App Store**
-   - Confirm iOS builds never expose Stripe checkout in a webview triggered from `?src=ios` contexts (per business requirement). Add guard rails in marketing site if missing.
+8. **Embedded Browser Compliance**
+   - Confirm embedded iOS in-app browsers show fallback messaging and do not allow blocked checkout paths where applicable.
 9. **Security**
    - Ensure `SUPABASE_SERVICE_ROLE_KEY` only used server-side (Next.js APIs). Mobile app must never embed it.
    - Run through `scripts/test-*` utilities with live keys in a secure environment to confirm Connect accounts & balances prior to launch.
@@ -64,7 +63,7 @@
 - Stripe webhook handler currently noop; without status syncing, manual reconciliation required. Implement DB update or rely solely on API flow but document.
 - Missing automated scheduler to call `/api/payments/process-timeout-refunds` & `/api/payments/retry-failed-distributions`; set up cron (e.g., Vercel cron, Supabase Scheduled Functions, or external job).
 - Need alerts/monitoring when `payment_distribution_error` or `refund_status='failed'` occurs (Slack/email).
-- Verify policy for avoiding Apple IAP: ensure marketing site hides purchase CTAs when `?src=ios` query present (current codebase lacks enforcement—add before review).
+- Verify `?src=ios` guardrails still work for embedded browser contexts on mobile web.
 
 ## Next Actions
 - Replace placeholder Stripe keys and `auroAccountId`, store via secure secrets (EAS, Vercel, Supabase).

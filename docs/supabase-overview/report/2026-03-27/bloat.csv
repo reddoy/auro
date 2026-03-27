@@ -1,0 +1,26 @@
+type,name,bloat,waste
+table,public.requests,4.0,24 kB
+index,public.profiles::idx_profiles_is_reviewer_pending,2.0,8192 bytes
+index,public.profiles::idx_profiles_push_token,2.0,8192 bytes
+index,public.requests::idx_requests_accept_by,2.0,8192 bytes
+index,public.requests::idx_requests_deliver_by,2.0,8192 bytes
+index,public.requests::idx_requests_dispute_status,2.0,8192 bytes
+index,public.requests::idx_requests_influencer_archived_created_at,2.0,8192 bytes
+index,public.requests::idx_requests_influencer_status,2.0,8192 bytes
+index,public.requests::idx_requests_payment_distributed,2.0,8192 bytes
+index,public.requests::idx_requests_payment_distributed_at,2.0,8192 bytes
+index,public.requests::idx_requests_payment_distribution_attempts,2.0,8192 bytes
+index,public.profiles::idx_profiles_is_reviewer_approved,2.0,8192 bytes
+index,public.requests::idx_requests_payment_distribution_failed_at,2.0,8192 bytes
+index,public.requests::idx_requests_refund_status,2.0,8192 bytes
+index,public.requests::idx_requests_refunded_at,2.0,8192 bytes
+index,public.requests::idx_requests_status,2.0,8192 bytes
+index,public.requests::idx_requests_status_completed,2.0,8192 bytes
+index,public.requests::idx_requests_timeout_status,2.0,8192 bytes
+index,public.requests::idx_requests_user_archived_created_at,2.0,8192 bytes
+index,public.requests::requests_payment_status_idx,2.0,8192 bytes
+index,public.requests::requests_pkey,2.0,8192 bytes
+index,public.requests::requests_stripe_session_id_idx,2.0,8192 bytes
+index,public.requests::idx_requests_payment_distribution_error,2.0,8192 bytes
+table,public.profiles,1.0,0 bytes
+index,public.profiles::profiles_pkey,1.0,0 bytes

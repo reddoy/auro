@@ -1,9 +1,25 @@
 import { createClient } from '@supabase/supabase-js';
+import { buildAvatarObjectPath } from '../../../../lib/avatar-path';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { bio, focusAreas, hourlyRate, avatarUrl, avatarPath, socials, instagramHandle, tiktokHandle, phone, marketingConsent, userId: userIdFromBody } = body || {};
+    const {
+      bio,
+      focusAreas,
+      hourlyRate,
+      avatarUrl,
+      avatarPath,
+      socials,
+      instagramHandle,
+      tiktokHandle,
+      phone,
+      marketingConsent,
+      userId: userIdFromBody,
+      firstName,
+      lastName,
+      email,
+    } = body || {};
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -11,6 +27,13 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'Server not configured' }), { status: 500 });
     }
     const admin = createClient(url, key);
+
+    const normalizeAvatarPath = (value: string): string => {
+      if (!value) return '';
+      if (!/^https?:\/\//i.test(value)) return value.replace(/^avatars\//, '');
+      const match = value.match(/\/(?:storage\/v1\/)?object\/(?:public|sign)\/avatars\/([^?]+)/);
+      return match?.[1] ? decodeURIComponent(match[1]) : value;
+    };
 
     // SECURITY: Only trust the auth token - NEVER accept userId from request body
     const auth = req.headers.get('authorization') || '';
@@ -73,7 +96,7 @@ export async function POST(req: Request) {
     // Check if user can complete reviewer signup (prevent duplicates)
     const { data: existingProfile } = await admin
       .from('profiles')
-      .select('reviewer_signup_status, is_reviewer')
+      .select('reviewer_signup_status, is_reviewer, first_name, last_name, email')
       .eq('id', userId)
       .single();
     
@@ -105,58 +128,52 @@ export async function POST(req: Request) {
       reviewerUpdates.hourly_rate = Number(hourlyRate);
     }
     
-    // CRITICAL: Move avatar from temp-uploads to permanent storage if it exists
+    // Standardize avatar path to readable folders while keeping old files untouched.
+    // We copy into the new path instead of moving/deleting legacy objects.
     let finalAvatarPath: string | undefined = undefined;
     if (avatarPath) {
-      // If avatarPath is in temp-uploads, move it to permanent storage
-      if (avatarPath.startsWith('temp-uploads/')) {
-        try {
-          const avatarsBucket = process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET || 'avatars';
-          
-          // Extract the filename from the path
-          const pathParts = avatarPath.split('/');
-          const filename = pathParts[pathParts.length - 1];
-          const directoryPath = avatarPath.substring(0, avatarPath.lastIndexOf('/') + 1);
-          
-          // List files in the temp directory to find the actual file
+      const normalizedPath = normalizeAvatarPath(avatarPath);
+      const avatarsBucket = process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET || 'avatars';
+      let sourcePath = normalizedPath;
+
+      try {
+        if (normalizedPath.startsWith('temp-uploads/')) {
+          const directoryPath = normalizedPath.substring(0, normalizedPath.lastIndexOf('/') + 1);
           const { data: files, error: listError } = await (admin.storage as any)
             .from(avatarsBucket)
             .list(directoryPath, { limit: 1 });
-          
+
           if (!listError && files && files.length > 0) {
-            const actualFile = files[0];
-            const fromPath = directoryPath + actualFile.name;
-            const toPath = `users/${userId}/avatar/${actualFile.name}`;
-            
-            // Move the file to permanent storage
-            const { error: moveError } = await (admin.storage as any)
-              .from(avatarsBucket)
-              .move(fromPath, toPath);
-            
-            if (!moveError) {
-              finalAvatarPath = toPath;
-              console.log(`[Apply] Moved avatar from ${fromPath} to ${toPath}`);
-            } else {
-              console.error('[Apply] Error moving avatar:', moveError);
-              // Fallback to temp path if move fails
-              finalAvatarPath = avatarPath;
-            }
-          } else {
-            console.warn('[Apply] No files found in temp directory:', directoryPath);
-            // File might already be moved or deleted, use the path as-is
-            finalAvatarPath = avatarPath;
+            sourcePath = directoryPath + files[0].name;
           }
-        } catch (err) {
-          console.error('[Apply] Exception moving avatar:', err);
-          // Fallback to temp path if move fails
-          finalAvatarPath = avatarPath;
         }
-      } else {
-        // Already a permanent path
-        finalAvatarPath = avatarPath;
+
+        const sourceExt = (sourcePath.split('.').pop() || 'jpg').toLowerCase();
+        const destinationPath = buildAvatarObjectPath({
+          firstName: firstName || existingProfile?.first_name,
+          lastName: lastName || existingProfile?.last_name,
+          ownerId: userId,
+          ownerEmail: email || existingProfile?.email,
+          ext: sourceExt,
+        });
+
+        const { error: copyError } = await (admin.storage as any)
+          .from(avatarsBucket)
+          .copy(sourcePath, destinationPath);
+
+        if (!copyError) {
+          finalAvatarPath = destinationPath;
+          console.log(`[Apply] Copied avatar from ${sourcePath} to ${destinationPath}`);
+        } else {
+          console.error('[Apply] Error copying avatar to standardized path:', copyError);
+          finalAvatarPath = normalizedPath;
+        }
+      } catch (err) {
+        console.error('[Apply] Exception standardizing avatar path:', err);
+        finalAvatarPath = normalizedPath;
       }
     } else if (avatarUrl) {
-      finalAvatarPath = avatarUrl;
+      finalAvatarPath = normalizeAvatarPath(avatarUrl);
     }
     
     if (finalAvatarPath) {

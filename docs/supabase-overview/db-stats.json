@@ -1,0 +1,6 @@
+
+  
+   Name     | Database Size | Total Index Size | Total Table Size | Total Toast Size | Time Since Stats Reset   | Index Hit Rate | Table Hit Rate | WAL Size 
+  ----------|---------------|------------------|------------------|------------------|--------------------------|----------------|----------------|----------
+   postgres | 15 MB         | 648 kB           | 96 kB            | 0 bytes          | 226 days 21:01:13.723319 | 1.00           | 1.00           | 80 MB    
+

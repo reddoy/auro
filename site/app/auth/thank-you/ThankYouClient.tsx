@@ -36,36 +36,18 @@ export default function ThankYouClient() {
           
           <h1 className="text-white text-2xl font-semibold mb-3">Email Confirmed! 🎉</h1>
           <p className="text-[#C7BFD9] mt-2 mb-6">
-            Thank you for confirming your email. You're all set! Please navigate back to sign in within the app.
+            Thank you for confirming your email. You're all set! Continue on Auro web or mobile web.
           </p>
 
           <RequestLink>Request a review</RequestLink>
           
           <div className="mt-6 grid grid-cols-1 gap-3 w-full">
-            <a 
-              href="https://apps.apple.com/app/auro" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="block w-full rounded-2xl px-5 py-3 text-center font-semibold" 
-              style={{ color: "#EDE8F7", backgroundColor: "#2C1746", border: "1px solid rgba(255,255,255,0.08)" }}
-            >
-              Download on the App Store
-            </a>
-            <a 
-              href="https://play.google.com/store/apps/details?id=com.auro" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="block w-full rounded-2xl px-5 py-3 text-center font-semibold" 
-              style={{ color: "#EDE8F7", backgroundColor: "#2C1746", border: "1px solid rgba(255,255,255,0.08)" }}
-            >
-              Get it on Google Play
-            </a>
             <Link 
-              href="/auth/callback" 
+              href="https://app.appauro.com" 
               className="block w-full rounded-2xl px-5 py-3 text-center font-semibold" 
               style={{ color: "#EDE8F7", backgroundColor: "#2C1746", border: "1px solid rgba(255,255,255,0.08)" }}
             >
-              Open the app
+              Open Auro Web App
             </Link>
           </div>
         </div>

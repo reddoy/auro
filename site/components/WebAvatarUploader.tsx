@@ -11,13 +11,21 @@ interface WebAvatarUploaderProps {
   onAvatarChange: (avatarUrl: string | null, avatarPath: string | null) => void;
   size?: number;
   className?: string;
+  ownerFirstName?: string | null;
+  ownerLastName?: string | null;
+  ownerId?: string | null;
+  ownerEmail?: string | null;
 }
 
 export default function WebAvatarUploader({ 
   currentAvatarUrl, 
   onAvatarChange, 
   size = 120,
-  className = ''
+  className = '',
+  ownerFirstName,
+  ownerLastName,
+  ownerId,
+  ownerEmail,
 }: WebAvatarUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -104,6 +112,10 @@ export default function WebAvatarUploader({
           contentType: croppedFile.type,
           category: 'avatar',
           uploadSessionId: uploadSessionId,
+          ownerFirstName: ownerFirstName || null,
+          ownerLastName: ownerLastName || null,
+          ownerId: ownerId || null,
+          ownerEmail: ownerEmail || null,
         }),
       });
 

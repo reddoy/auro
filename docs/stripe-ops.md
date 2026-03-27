@@ -4,7 +4,7 @@
 ## Key Inventory
 - **Secrets**
   - `STRIPE_SECRET_KEY` — required in Supabase Edge (`payments-create-sheet`, `stripe-webhook`) and Next.js API routes under `site/app/api/payments/**`.
-  - `STRIPE_PUBLISHABLE_KEY` — configured in Expo `app.json` (`extra.stripePublishableKey` placeholder). Set corresponding `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
+  - `STRIPE_PUBLISHABLE_KEY` — configured for web via `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`.
   - `STRIPE_WEBHOOK_SECRET` — used in `supabase/functions/stripe-webhook`.
   - `STRIPE_PLATFORM_ACCOUNT_ID` — platform account the payout retries use (replaces hard-coded acct id).
   - `OPERATIONS_WEBHOOK_URL` (or `SLACK_WEBHOOK_URL`) — Slack channel for alerts triggered by cron jobs / failures.
@@ -62,7 +62,7 @@
    - Rotate Stripe keys; store in:
      - Supabase project secrets (`supabase secrets set`).
      - Vercel/host env for Next.js.
-     - EAS secrets for Expo (Publishable only; never store secret in app).
+    - Web host env vars for public publishable key and secure server secrets.
 2. **Webhook Verification**
    - Confirm production webhook endpoint is reachable (HTTP 200) and secret matches Stripe dashboard.
    - Add dead-letter queue / logging for failed webhook processing.
@@ -84,5 +84,5 @@
 - Consider persisting cron run results (e.g., `ops_events` table) for audit retention beyond Slack.
 - Extend webhook coverage for `payment_intent.canceled`, Connect `payout.failed`, and add automatic retries for disputes after resolution.
 - Scripts rely on local `.env`; add sample `.env.example` outlining required variables and warn against committing secrets.
-- Confirm Apple’s “no in-app purchase” requirement is met by gating flows triggered from iOS-sourced links (tie into marketing site logic).
+- Confirm embedded iOS browser guardrails are working for `?src=ios` links on mobile web.
 

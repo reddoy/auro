@@ -1,7 +1,7 @@
 ## Manual QA Script
 
 ### Devices & Builds
-- Test on iOS TestFlight + Android internal app + responsive web (Chrome + Safari).
+- Test on responsive web (desktop + mobile browsers: Chrome + Safari).
 - Use production-like Supabase/Stripe sandbox with feature flags mirroring launch config.
 
 ### Core Journey
@@ -9,8 +9,8 @@
    - Load `/request` with clean storage; confirm intro renders after auth check.
    - Complete creator selection, upload at least three photos, provide prompts, accept consent, authenticate, pay, reach download screen.
 2. **Mobile deep link**
-   - Tap CTA inside app: ensures URL parameters prefill reviewer and skip to photo upload.
-   - Verify attribution flag `?src=ios` hides web purchase CTA if required.
+   - Tap CTA from social/mobile browser: ensures URL parameters prefill reviewer and skip to photo upload where supported.
+   - Verify iOS in-app browser messaging appears when checkout is blocked in embedded browser contexts.
 3. **OAuth interruption**
    - Start from desktop, progress to auth, initiate Google sign-in, close browser, reopen link; ensure state restores and continues at payment.
 4. **Payment failure + retry**
@@ -34,14 +34,14 @@
 - [ ] Anonymous storage bucket CORS + size limits validated.
 
 ### Monitoring & Analytics
-- [ ] Enable Sentry (web + native) with release tags.
+- [ ] Enable Sentry (web) with release tags.
 - [ ] Verify analytics events for each step, including failures.
 - [ ] Log payment attempt IDs + request IDs for reconciliation.
 
-### Store Readiness
-- [ ] App metadata, screenshots, privacy policy, support URL updated.
-- [ ] Review guidelines satisfied (no external purchase prompts in iOS flow if `src=ios`).
-- [ ] Deep link routing tested via universal links/app links.
+### Web Readiness
+- [ ] Landing page, privacy policy, and support URL updated.
+- [ ] Checkout guardrails for embedded iOS browser contexts verified.
+- [ ] Mobile web routing tested from social and messaging links.
 
 ### Operations
 - [ ] Runbook for support escalations linked in `docs/runbooks.md`.

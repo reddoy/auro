@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { buildAvatarObjectPath } from '../../../../lib/avatar-path';
 
 function corsHeaders(req: Request): HeadersInit {
   const origin = req.headers.get('origin') || '*';
@@ -20,7 +21,19 @@ export async function OPTIONS(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { fileName, contentType, category, uploadSessionId, action, path, expiresIn } = body || {};
+    const {
+      fileName,
+      contentType,
+      category,
+      uploadSessionId,
+      action,
+      path,
+      expiresIn,
+      ownerFirstName,
+      ownerLastName,
+      ownerId,
+      ownerEmail,
+    } = body || {};
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || process.env.SUPABASE_ANON_KEY || '';
@@ -75,7 +88,17 @@ export async function POST(req: Request) {
 
     const safeCategory = (category || 'web').toString().replace(/[^a-zA-Z0-9_-]/g, '');
     const safeSession = (uploadSessionId || 'anon').toString().replace(/[^a-zA-Z0-9_-]/g, '');
-    const objectPath = `temp-uploads/${safeSession}/${safeCategory}/${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
+    const objectPath =
+      safeCategory === 'avatar'
+        ? buildAvatarObjectPath({
+            firstName: ownerFirstName,
+            lastName: ownerLastName,
+            ownerId: ownerId,
+            ownerEmail: ownerEmail,
+            fallbackId: safeSession,
+            ext: fileExt,
+          })
+        : `temp-uploads/${safeSession}/${safeCategory}/${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
 
     const bucket = (safeCategory === 'selfie' || safeCategory === 'avatar') ? avatarBucket : requestMediaBucket;
     const { data, error } = await (supabase.storage as any).from(bucket).createSignedUploadUrl(objectPath);

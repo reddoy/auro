@@ -11,7 +11,7 @@ import WebAvatarUploader from '../../../components/WebAvatarUploader';
 import PriceTierSelector from '../../../components/PriceTierSelector';
 
 
-export default function FoundingReviewerApplyPage() {
+export default function ReviewerApplyPage() {
   const [step, setStep] = useState<number>(1);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,6 +31,7 @@ export default function FoundingReviewerApplyPage() {
   const [signupStatus, setSignupStatus] = useState<'not_started' | 'pending' | 'completed' | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
+  const [signupUserId, setSignupUserId] = useState<string | null>(null);
   const router = useRouter();
 
   // Retry utility function
@@ -126,6 +127,30 @@ export default function FoundingReviewerApplyPage() {
     }
   }, [step, firstName, lastName, email, phone, marketingConsent, avatarUrl, avatarPath, hourlyRate, saveFormData]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const setInitialSignupUserId = async () => {
+      try {
+        const localId = localStorage.getItem('auro_signup_user_id');
+        if (localId) {
+          setSignupUserId(localId);
+          return;
+        }
+      } catch {}
+
+      try {
+        if (!supabase?.auth) return;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.id) {
+          setSignupUserId(session.user.id);
+        }
+      } catch {}
+    };
+
+    setInitialSignupUserId();
+  }, []);
+
   // Check if resuming from OAuth - improved with retry logic
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -203,6 +228,7 @@ export default function FoundingReviewerApplyPage() {
                 try {
                   localStorage.setItem('auro_signup_email', email);
                   localStorage.setItem('auro_signup_user_id', user.id);
+                  setSignupUserId(user.id);
                   if (given_name && family_name) {
                     localStorage.setItem('auro_signup_full_name', `${given_name} ${family_name}`);
                   }
@@ -217,6 +243,7 @@ export default function FoundingReviewerApplyPage() {
               try {
                 localStorage.setItem('auro_signup_email', user.email);
                 localStorage.setItem('auro_signup_user_id', user.id);
+                setSignupUserId(user.id);
               } catch (storageError) {
                 console.warn('[ReviewerApply] Failed to store OAuth data in localStorage:', storageError);
               }
@@ -382,6 +409,7 @@ export default function FoundingReviewerApplyPage() {
                 try {
                   localStorage.setItem('auro_signup_email', session.user.email);
                   localStorage.setItem('auro_signup_user_id', session.user.id);
+                  setSignupUserId(session.user.id);
                   if (session.user.user_metadata?.given_name && session.user.user_metadata?.family_name) {
                     localStorage.setItem('auro_signup_full_name', `${session.user.user_metadata.given_name} ${session.user.user_metadata.family_name}`);
                   }
@@ -614,6 +642,7 @@ export default function FoundingReviewerApplyPage() {
           // Store signup data for later use
           try {
             localStorage.setItem('auro_signup_user_id', data.user.id);
+            setSignupUserId(data.user.id);
             localStorage.setItem('auro_signup_email', email);
             localStorage.setItem('auro_signup_full_name', fullName);
           } catch {}
@@ -728,6 +757,7 @@ export default function FoundingReviewerApplyPage() {
                 }
                 if (signupUserId) {
                   localStorage.setItem('auro_signup_user_id', signupUserId);
+                  setSignupUserId(signupUserId);
                 }
               } catch {}
             }
@@ -982,7 +1012,7 @@ export default function FoundingReviewerApplyPage() {
                 </h1>
                 
                 <p className="text-sm md:text-base text-gray-300 px-4 leading-relaxed max-w-xl mx-auto">
-                  Earn money giving honest feedback. Join the first 35 reviewers and lock in exclusive perks.
+                  Earn money giving honest feedback. Auro is live on web and mobile web.
                 </p>
               </div>
 
@@ -1032,8 +1062,8 @@ export default function FoundingReviewerApplyPage() {
                 {/* Live counter urgency bar */}
                 <div className="bg-gradient-to-r from-orange-500/20 via-pink-500/20 to-purple-600/20 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-orange-500/30">
                   <div className="flex items-center justify-between mb-1.5 md:mb-2">
-                    <span className="text-xs md:text-sm font-medium text-orange-300">Founding Spots</span>
-                    <span className="text-xs md:text-sm font-bold text-white">{Math.max(0, 35 - reviewerCount)}/35 left</span>
+                    <span className="text-xs md:text-sm font-medium text-orange-300">Reviewer Capacity</span>
+                    <span className="text-xs md:text-sm font-bold text-white">{Math.max(0, 35 - reviewerCount)}/35 available</span>
                   </div>
                   <div className="w-full bg-white/10 rounded-full h-2 md:h-3 overflow-hidden">
                     <div 
@@ -1050,7 +1080,7 @@ export default function FoundingReviewerApplyPage() {
                   onClick={() => setStep(2)}
                 >
                   <div className="flex items-center justify-center gap-2 md:gap-3">
-                    <span>Join Now - Limited Spots!</span>
+                    <span>Start Your Reviewer Application</span>
                     <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
                   </div>
                 </Button>
@@ -1404,6 +1434,10 @@ export default function FoundingReviewerApplyPage() {
                     setAvatarPath(path);
                   }}
                   size={140}
+                  ownerFirstName={firstName}
+                  ownerLastName={lastName}
+                  ownerId={signupUserId}
+                  ownerEmail={email}
                 />
                 <p className="text-sm text-gray-300 text-center max-w-sm">
                   Upload a clear photo of yourself. This is required to complete your application.
@@ -1519,7 +1553,7 @@ export default function FoundingReviewerApplyPage() {
                     {/* Note */}
                     <div className="text-center">
                       <p className="text-xs text-green-300/70 whitespace-nowrap">
-                        💰 80% take-home rate for founding reviewers
+                        💰 80% take-home rate on every completed review
                       </p>
                     </div>
                   </div>
@@ -1697,7 +1731,7 @@ export default function FoundingReviewerApplyPage() {
                 </div>
                 <div className="text-sm text-gray-200 leading-relaxed">
                   <p>
-                    Hey! I go over every single application personally to make sure that your request aligns with our platform. We're going to be launching soon, and we'll let you know if you're accepted.
+                    Hey! I review every application personally to make sure it aligns with the quality bar on Auro. We will follow up as soon as your application has been reviewed.
                   </p>
                 </div>
               </div>
