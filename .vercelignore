@@ -1,5 +1,4 @@
-# Ignore marketing site files when building Expo web app
-/site
-/server
+# Next.js app lives in /site — never ignore it.
+# Trim upload size for the Vercel project rooted at the repository root.
 /supabase
-
+/server

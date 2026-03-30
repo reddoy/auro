@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid authentication' }, { status: 401 });
     }
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com';
     const redirectTo = `${siteUrl}/auth/confirm?type=invite&email=${encodeURIComponent(email)}`;
 
     // Send invitation email using the resend method with type 'invite'

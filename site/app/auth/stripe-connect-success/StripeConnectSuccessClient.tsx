@@ -16,7 +16,7 @@ export default function StripeConnectSuccessClient() {
           
           <div className="mt-6 grid grid-cols-1 gap-3 w-full">
             <Link 
-              href="https://app.appauro.com" 
+              href="/app" 
               className="block w-full rounded-2xl px-5 py-3 text-center font-semibold" 
               style={{ color: "#EDE8F7", backgroundColor: "#2C1746", border: "1px solid rgba(255,255,255,0.08)" }}
             >

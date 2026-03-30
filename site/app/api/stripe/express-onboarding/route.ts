@@ -65,7 +65,7 @@ export async function POST(req: Request) {
         .eq('id', reviewerId);
     }
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com';
     const successUrl = returnUrl || `${siteUrl}/auth/stripe-connect-success`;
     const accountLink = await stripe.accountLinks.create({
       account: connectAccountId!,

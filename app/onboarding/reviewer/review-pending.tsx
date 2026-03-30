@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Image, View as RNView } from 'react-native';
+import { StyleSheet, ScrollView, KeyboardAvoidingView, Platform, View as RNView } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,8 +9,6 @@ import { updateProfilePreferences } from '@/lib/profile';
 import { MotionView, MotionPressable, cardEntrance } from '@/components/motion';
 import { MotionDelays } from '@/components/motion/tokens';
 import { FadeInDown, ZoomIn } from 'react-native-reanimated';
-
-// Using the rohan headshot from assets
 
 export default function ReviewPendingScreen() {
   const insets = useSafeAreaInsets();
@@ -52,11 +50,9 @@ export default function ReviewPendingScreen() {
         <View style={styles.content}>
           <MotionView entering={ZoomIn.duration(500).delay(MotionDelays.quick)}>
             <RNView style={styles.avatarContainer}>
-              <Image 
-                source={require('@/assets/images/rohan-headshot-backyard.jpg')}
-                style={styles.avatar}
-                resizeMode="cover"
-              />
+              <RNView style={[styles.avatar, styles.avatarPlaceholder]}>
+                <Text style={styles.avatarInitials}>RJ</Text>
+              </RNView>
             </RNView>
           </MotionView>
           
@@ -141,7 +137,17 @@ const styles = StyleSheet.create({
   avatar: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
+  },
+  avatarPlaceholder: {
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitials: {
+    fontSize: 40,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+    fontFamily: 'Poppins_700Bold',
   },
   title: {
     fontSize: 32,

@@ -114,7 +114,7 @@ function Inner() {
                   <p className="text-[#C7BFD9] mt-2">{email ? `Verified ${email}.` : "You're all set."} Choose a next step below.</p>
                   <RequestLink>Request a review</RequestLink>
                   <div className="mt-3 grid grid-cols-1 gap-3 w-full">
-                    <Link href="https://app.appauro.com" className="block w-full rounded-2xl px-5 py-3 text-center font-semibold" style={{ color: "#EDE8F7", backgroundColor: "#2C1746", border: "1px solid rgba(255,255,255,0.08)" }}>Open Auro Web App</Link>
+                    <Link href="/app" className="block w-full rounded-2xl px-5 py-3 text-center font-semibold" style={{ color: "#EDE8F7", backgroundColor: "#2C1746", border: "1px solid rgba(255,255,255,0.08)" }}>Open Auro Web App</Link>
                   </div>
                 </>
               )}
@@ -163,7 +163,7 @@ function Inner() {
             <>
               <h1 className="text-white text-2xl font-semibold">Confirm your email</h1>
               <p className="text-[#C7BFD9] mt-2">We sent a verification link{email ? ` to ${email}` : ""}. Click it to continue.</p>
-              <Link href="https://app.appauro.com" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "linear-gradient(90deg,#FF6F00,#FF2D55)" }}>
+              <Link href="/app" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "linear-gradient(90deg,#FF6F00,#FF2D55)" }}>
                 Open Auro Web App
               </Link>
             </>

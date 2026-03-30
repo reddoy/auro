@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Email does not match your account' }, { status: 400 });
     }
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com';
     const redirectTo = `${siteUrl}/auth/confirm?type=reauthentication&email=${encodeURIComponent(email)}`;
 
     // Send reauthentication email via magic link

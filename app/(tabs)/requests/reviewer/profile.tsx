@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, View as RNView, Linking, Image, Platform, Modal, Alert } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, View as RNView, Linking, Platform, Modal, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -12,6 +12,7 @@ import { getSignedAvatarUrl } from '@/lib/profile';
 import type { DbReviewerSummary } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { getTierInfo } from '@/lib/iapPriceTiers';
+import { SocialBrandIcon } from '@/components/SocialBrandIcon';
 
 // Lazy load IAP functions to avoid errors in Expo Go
 let purchaseReviewRequest: any;
@@ -21,12 +22,6 @@ try {
 } catch (error) {
   purchaseReviewRequest = null;
 }
-
-const socialIcons = {
-  instagram: require('../../../../Instagram_icon-removebg-preview.png'),
-  tiktok: require('../../../../tiktok-icon-free-png-removebg-preview.png'),
-  linktree: require('../../../../linktreelogo.png'),
-};
 
 export default function ReviewerProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -361,7 +356,7 @@ export default function ReviewerProfileScreen() {
                   if (lt) items.push({ key: 'linktree', handle: lt, url: `https://linktr.ee/${lt}`, text: `${lt}` });
                   return items.map((it) => (
                     <TouchableOpacity key={it.key} style={styles.socialBtn} onPress={() => openLink(it.url)} accessibilityRole="link" accessibilityLabel={`Open ${it.key} ${it.handle}`}>
-                      <Image source={socialIcons[it.key]} style={styles.socialIcon} resizeMode="contain" />
+                      <SocialBrandIcon brand={it.key} size={20} style={styles.socialIcon} />
                       <Text style={styles.socialText}>{it.text}</Text>
                     </TouchableOpacity>
                   ));

@@ -396,8 +396,8 @@ export async function POST(req: Request) {
         auro_fee_cents: finalApplicationFeeCents.toString(),
         auro_fee_bps: auroFeeBps.toString(), // Always 2000 (20%) for all reviewers
       },
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com'}/checkout/success?rid={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com'}/checkout/cancel`,
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/checkout/success?rid={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/checkout/cancel`,
     };
 
     // Temporarily disable Connect for testing - payments go to platform account

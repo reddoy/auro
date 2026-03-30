@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, Image, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname } from 'expo-router';
-import { Text } from '@/components/Themed';
-import Colors from '@/constants/Colors';
+import { AuroMark } from '@/components/AuroMark';
 
 interface LogoHeaderProps {
   backgroundColor?: string;
@@ -38,12 +37,7 @@ export default function LogoHeader({
     <View style={[styles.container, { backgroundColor }]}>
       <View style={[styles.safeAreaSpacer, { height: Platform.OS === 'web' ? 0 : insets.top }]} />
       <View style={styles.logoContainer}>
-        <Image 
-          source={require('@/auro_aura_logo_nobg.png')} 
-          style={styles.logo}
-          resizeMode="contain"
-        />
-        <Text style={styles.brandText}>Auro</Text>
+        <AuroMark height={40} />
       </View>
     </View>
   );
@@ -65,17 +59,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
     backgroundColor: 'transparent',
-  },
-  logo: {
-    width: 48,
-    height: 48,
-    marginRight: 12,
-  },
-  brandText: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    fontFamily: 'Poppins_700Bold',
   },
 });
 

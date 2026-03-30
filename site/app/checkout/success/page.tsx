@@ -94,7 +94,7 @@ export default function CheckoutSuccessPage() {
           
           <div className="download-buttons">
             <button
-              onClick={() => window.open('https://app.appauro.com', '_blank')}
+              onClick={() => window.open('/app', '_blank')}
               className="download-btn ios-btn"
             >
               <div className="btn-text">

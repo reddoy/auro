@@ -238,7 +238,7 @@ export default function TermsPage() {
             <ul style={{ marginLeft: 20, marginBottom: 16 }}>
               <li>Email: <a href="mailto:legal@appauro.com" style={{ color: 'white' }}>legal@appauro.com</a></li>
               <li>General Support: <a href="mailto:support@appauro.com" style={{ color: 'white' }}>support@appauro.com</a></li>
-              <li>Website: <a href="https://www.appauro.com" style={{ color: 'white' }}>www.appauro.com</a></li>
+              <li>Website: <a href="https://appauro.com" style={{ color: 'white' }}>appauro.com</a></li>
             </ul>
           </section>
         </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { View, Text } from '@/components/Themed';
-import { Image } from 'expo-image';
+import { AuroMark } from '@/components/AuroMark';
 import Colors from '@/constants/Colors';
 
 type Props = {
@@ -15,7 +15,7 @@ export default function SectionSlideCard({ title, subtitle, revieweeName, style 
   return (
     <View style={[styles.card, style]}>
       {/* Minimal Auro Logo */}
-      <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 64, height: 32, marginBottom: 24, alignSelf: 'center', opacity: 0.9 }} contentFit="contain" />
+      <AuroMark height={32} style={{ marginBottom: 24, alignSelf: 'center', opacity: 0.9 }} />
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>
         {subtitle.replace('{name}', revieweeName)}

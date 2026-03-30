@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, Alert, View, TextInput, KeyboardAvoidingView, Platform, ScrollView, View as RNView, Image } from 'react-native';
+import { StyleSheet, TouchableOpacity, Alert, View, TextInput, KeyboardAvoidingView, Platform, ScrollView, View as RNView } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,11 +10,7 @@ import type { Profile } from '@/types';
 import { MotionView, cardEntrance } from '@/components/motion';
 import { SkeletonBlock, SkeletonCircle, SkeletonParagraph } from '@/components/Skeletons';
 import { copyToClipboard } from '@/lib/clipboard';
-
-const socialIcons = {
-  instagram: require('../../../Instagram_icon-removebg-preview.png'),
-  tiktok: require('../../../tiktok-icon-free-png-removebg-preview.png'),
-};
+import { SocialBrandIcon } from '@/components/SocialBrandIcon';
 
 export default function ProfileLinkScreen() {
   const insets = useSafeAreaInsets();
@@ -140,8 +136,8 @@ export default function ProfileLinkScreen() {
           {/* Share Section */}
           <MotionView entering={cardEntrance(0)} style={styles.shareSection}>
             <View style={styles.socialIconsContainer}>
-              <Image source={socialIcons.instagram} style={styles.socialIcon} resizeMode="contain" />
-              <Image source={socialIcons.tiktok} style={styles.socialIcon} resizeMode="contain" />
+              <SocialBrandIcon brand="instagram" size={48} style={styles.socialIcon} />
+              <SocialBrandIcon brand="tiktok" size={48} style={styles.socialIcon} />
             </View>
             <Text style={styles.shareTitle}>Share Your Profile Link</Text>
             <Text style={styles.shareDescription}>

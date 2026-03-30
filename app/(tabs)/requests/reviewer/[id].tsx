@@ -12,6 +12,7 @@ import { getRequestById, getProfileById, acceptRequest, denyRequest, submitReque
 import { getSignedAvatarUrl } from '@/lib/profile';
 import type { DbRequestSummary } from '@/types';
 import Avatar from '@/components/Avatar';
+import { AuroMark } from '@/components/AuroMark';
 import StatusBadge from '@/components/StatusBadge';
 import { Image } from 'expo-image';
 import SimplePhotoModal from '@/components/SimplePhotoModal';
@@ -1129,15 +1130,7 @@ export default function ReviewerRequestScreen() {
                       }}>
                       {/* Auro Logo inside the box */}
                       <RNView style={{ marginBottom: 16, alignItems: 'center' }}>
-                        <Image 
-                          source={require('@/auro_aura_logo_nobg.png')} 
-                          style={{ 
-                            width: 72, 
-                            height: 36, 
-                            opacity: 0.95,
-                          }} 
-                          contentFit="contain" 
-                        />
+                        <AuroMark height={36} style={{ opacity: 0.95 }} />
                       </RNView>
                       
                       <Text style={[styles.overlayTitle, { 
@@ -1244,15 +1237,7 @@ export default function ReviewerRequestScreen() {
                       alignItems: 'center',
                       zIndex: 2,
                     }}>
-                      <Image 
-                        source={require('@/auro_aura_logo_nobg.png')} 
-                        style={{ 
-                          width: 56, 
-                          height: 28, 
-                          opacity: 0.9,
-                        }} 
-                        contentFit="contain" 
-                      />
+                      <AuroMark height={28} style={{ opacity: 0.9 }} />
                     </RNView>
 
                     {/* Photo info overlay - positioned below photo, centered */}
@@ -1305,15 +1290,8 @@ export default function ReviewerRequestScreen() {
                   <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center', paddingTop: 0, paddingBottom: 0, flex: 1 }] }>
                     {/* Auro Logo and Title */}
                     <RNView style={{ alignItems: 'center', marginBottom: Platform.OS === 'ios' ? 8 : 12, width: '100%' }}>
-                      <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: Platform.OS === 'ios' ? 6 : 8 }}>
-                        <Image 
-                          source={require('@/auro_aura_logo_nobg.png')} 
-                          style={{ width: 56, height: 28 }} 
-                          contentFit="contain" 
-                        />
-                        <Text style={{ color: Colors.brand.textPrimary, fontSize: 26, fontWeight: '900', letterSpacing: 0.5 }}>
-                          Auro
-                        </Text>
+                      <RNView style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: Platform.OS === 'ios' ? 6 : 8 }}>
+                        <AuroMark height={30} />
                       </RNView>
                       <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 4, fontSize: 24, paddingHorizontal: 20 }]}>
                         Overall Rating
@@ -1421,15 +1399,8 @@ export default function ReviewerRequestScreen() {
                   <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 20, paddingBottom: 20 }] }>
                     {/* Auro Logo and Title */}
                     <RNView style={{ alignItems: 'center', marginBottom: 32, width: '100%' }}>
-                      <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                        <Image 
-                          source={require('@/auro_aura_logo_nobg.png')} 
-                          style={{ width: 64, height: 32 }} 
-                          contentFit="contain" 
-                        />
-                        <Text style={{ color: Colors.brand.textPrimary, fontSize: 32, fontWeight: '900', letterSpacing: 0.5 }}>
-                          Auro
-                        </Text>
+                      <RNView style={{ alignItems: 'center', marginBottom: 20 }}>
+                        <AuroMark height={36} />
                       </RNView>
                       <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 8, fontSize: 32, paddingHorizontal: 20, color: Colors.brand.status.completed }]}>
                         ✓ What stands out? (Pros)
@@ -1492,15 +1463,8 @@ export default function ReviewerRequestScreen() {
                   <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 20, paddingBottom: 20 }] }>
                     {/* Auro Logo and Title */}
                     <RNView style={{ alignItems: 'center', marginBottom: 32, width: '100%' }}>
-                      <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                        <Image 
-                          source={require('@/auro_aura_logo_nobg.png')} 
-                          style={{ width: 64, height: 32 }} 
-                          contentFit="contain" 
-                        />
-                        <Text style={{ color: Colors.brand.textPrimary, fontSize: 32, fontWeight: '900', letterSpacing: 0.5 }}>
-                          Auro
-                        </Text>
+                      <RNView style={{ alignItems: 'center', marginBottom: 20 }}>
+                        <AuroMark height={36} />
                       </RNView>
                       <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 8, fontSize: 32, paddingHorizontal: 20, color: Colors.brand.status.rejected }]}>
                         ✗ What stands out? (Cons)
@@ -1562,11 +1526,8 @@ export default function ReviewerRequestScreen() {
                 {slide.type === 'overall' && (
                   <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center', paddingTop: 0, paddingBottom: 0, flex: 1 }] }>
                     {/* Auro Logo with Text - Top */}
-                    <RNView style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 12 }}>
-                      <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 64, height: 32 }} contentFit="contain" />
-                      <Text style={{ fontSize: 32, fontWeight: '700', color: '#FFFFFF', fontFamily: 'Poppins_700Bold' }}>
-                        Auro
-                      </Text>
+                    <RNView style={{ alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                      <AuroMark height={36} />
                     </RNView>
                     
                     {/* Both Profile Pictures - Circular, side by side - At Top */}
@@ -1684,7 +1645,7 @@ export default function ReviewerRequestScreen() {
                   >
                     <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 0, paddingBottom: 20, minHeight: '100%' }] }>
                       {/* Auro Logo */}
-                      <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 56, height: 28, marginBottom: 12, alignSelf: 'center' }} contentFit="contain" />
+                      <AuroMark height={28} style={{ marginBottom: 12, alignSelf: 'center' }} />
                       <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 4, fontSize: 24, paddingHorizontal: 20 }]}>
                         Pros & Cons Summary
                       </Text>
@@ -1816,7 +1777,7 @@ export default function ReviewerRequestScreen() {
                 {slide.type === 'save' && (
                   <RNView style={[styles.overlayCard, { width: '100%', maxWidth: '100%', alignItems: 'center', justifyContent: 'center', paddingTop: 0, paddingBottom: 0, flex: 1 }] }>
                     {/* Auro Logo */}
-                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 72, height: 36, marginBottom: 24, alignSelf: 'center' }} contentFit="contain" />
+                    <AuroMark height={36} style={{ marginBottom: 24, alignSelf: 'center' }} />
                     <Text style={[styles.overlayTitle, { textAlign: 'center', width: '100%', marginBottom: 12, fontSize: 28, paddingHorizontal: 20 }]}>
                       Save Review
                     </Text>

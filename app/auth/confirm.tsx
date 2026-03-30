@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Animated } from 'react-native';
+import { StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Animated } from 'react-native';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Text, View } from '@/components/Themed';
@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { MotionView, MotionPressable, cardEntrance, subtleFadeIn } from '@/components/motion';
 import { MotionDelays } from '@/components/motion/tokens';
 import { FadeInDown, ZoomIn } from 'react-native-reanimated';
+import { AuroMark } from '@/components/AuroMark';
 
 export default function ConfirmEmailScreen() {
   const { email, token_hash, type } = useLocalSearchParams<{ email?: string; token_hash?: string; type?: string }>();
@@ -137,7 +138,7 @@ export default function ConfirmEmailScreen() {
           ]}
         >
           <MotionView entering={ZoomIn.duration(400).delay(MotionDelays.quick)}>
-            <Image source={require('@/Auro_side_side_no_bg.png')} style={styles.logo} resizeMode="contain" />
+            <AuroMark height={56} style={styles.logo} />
           </MotionView>
           
           {isConfirming && (

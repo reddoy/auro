@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { ActivityIndicator, StyleSheet, Image, TouchableOpacity, Animated } from 'react-native';
+import { ActivityIndicator, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -8,6 +8,7 @@ import { getCurrentProfile, resolveOnboardingDestination } from '@/lib/profile';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
+import { AuroMark } from '@/components/AuroMark';
 
 export default function AuthCallback() {
   const { code, error_description, error, linked } = useLocalSearchParams();
@@ -169,11 +170,7 @@ export default function AuthCallback() {
           <View style={styles.iconContainer}>
             <Ionicons name="checkmark-circle" size={64} color={Colors.brand.success} />
           </View>
-          <Image
-            source={require('@/Auro_side_side_no_bg.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <AuroMark height={56} style={styles.logo} />
           <Text style={styles.title}>Welcome to Auro! 🎉</Text>
           <Text style={styles.body}>Successfully signed in. Redirecting you now...</Text>
         </Animated.View>
@@ -183,11 +180,7 @@ export default function AuthCallback() {
           <View style={styles.iconContainer}>
             <Ionicons name="close-circle" size={64} color={Colors.brand.error} />
           </View>
-          <Image
-            source={require('@/Auro_side_side_no_bg.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <AuroMark height={56} style={styles.logo} />
           <Text style={styles.title}>We couldn't confirm your email</Text>
           <Text style={styles.body}>{message || 'An error occurred during authentication.'}</Text>
           <TouchableOpacity style={styles.button} onPress={() => router.replace('/auth')}>

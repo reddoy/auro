@@ -7,12 +7,12 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Text, View } from '@/components/Themed';
+import { AuroMark } from '@/components/AuroMark';
 import { supabase } from '@/lib/supabase';
 import Colors from '@/constants/Colors';
 import { MotionView, MotionPressable, cardEntrance, subtleFadeIn } from '@/components/motion';
 import { MotionDelays } from '@/components/motion/tokens';
 import { FadeInDown, ZoomIn } from 'react-native-reanimated';
-import { Image } from 'react-native';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -99,12 +99,7 @@ export default function ForgotPasswordScreen() {
           {/* Logo and Brand Name */}
           <MotionView entering={ZoomIn.duration(400).delay(MotionDelays.quick)}>
             <View style={[styles.logoContainer, isCompact && styles.logoContainerCompact, styles.logoContainerOutside]}>
-              <Image 
-                source={require('@/auro_aura_logo_nobg.png')} 
-                style={[styles.logoImage, isCompact && styles.logoImageCompact]}
-                resizeMode="contain"
-              />
-              <Text style={[styles.brandText, isCompact && styles.brandTextCompact]}>Auro</Text>
+              <AuroMark height={isCompact ? 36 : 44} />
             </View>
           </MotionView>
 

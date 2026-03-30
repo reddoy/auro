@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, TouchableOpacity, View as RNView, Platform, Image, useWindowDimensions } from 'react-native';
+import { StyleSheet, TouchableOpacity, View as RNView, Platform, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -101,11 +101,9 @@ export default function OnboardingWelcomeScreen() {
           
           <RNView style={styles.introRow}>
             <MotionView entering={ZoomIn.duration(400).delay(MotionDelays.quick)} style={styles.avatarContainer}>
-              <Image 
-                source={require('../../rohan-headshot.jpg')}
-                style={styles.avatar}
-                resizeMode="cover"
-              />
+              <RNView style={[styles.avatar, styles.avatarPlaceholder]}>
+                <Text style={styles.avatarInitials}>RJ</Text>
+              </RNView>
             </MotionView>
             <MotionView entering={FadeInDown.duration(400).delay(MotionDelays.item)} style={styles.introTextContainer}>
               <Text style={styles.introText}>
@@ -196,7 +194,17 @@ const styles = StyleSheet.create({
   avatar: {
     width: '100%',
     height: '100%',
-    transform: [{ scale: 1.5 }, { translateY: -10 }],
+  },
+  avatarPlaceholder: {
+    backgroundColor: Colors.brand.cardBackgroundLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarInitials: {
+    fontSize: 40,
+    fontWeight: '700',
+    color: Colors.brand.textPrimary,
+    fontFamily: 'Poppins_700Bold',
   },
   introTextContainer: {
     flex: 1,

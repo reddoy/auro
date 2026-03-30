@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Image, Platform, useWindowDimensions } from 'react-native';
+import { StyleSheet, View, Platform, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +15,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Text } from '@/components/Themed';
+import { AuroMark } from '@/components/AuroMark';
 import Colors from '@/constants/Colors';
 import { MotionPressable, MotionView, cardEntrance, subtleFadeIn } from '@/components/motion';
 
@@ -180,12 +181,7 @@ export default function IntroScreen() {
       {/* Logo and Brand Name */}
       <View style={{ paddingTop: insets.top + 10 }}>
         <MotionView entering={subtleFadeIn()} style={styles.logoContainer}>
-          <Image 
-            source={require('@/auro_aura_logo_nobg.png')} 
-            style={[styles.logoImage, isCompact && styles.logoImageCompact]}
-            resizeMode="contain"
-          />
-          <Text style={[styles.brandText, isCompact && styles.brandTextCompact]}>Auro</Text>
+          <AuroMark height={isCompact ? 36 : 44} />
         </MotionView>
       </View>
 
@@ -195,11 +191,11 @@ export default function IntroScreen() {
           {/* Bumble (Left) */}
           <MotionView entering={subtleFadeIn()} style={[styles.appLogoWrapper, styles.bumbleWrapper]}>
             <View style={styles.imageContainer}>
-              <Image 
-                source={require('../bumble_logo.png')} 
-                style={styles.appLogo}
-                resizeMode="cover"
-              />
+              <View style={[styles.appLogo, { backgroundColor: '#FFE566', alignItems: 'center', justifyContent: 'center' }]}>
+                <Text style={{ fontWeight: '800', color: '#111', fontSize: 15, textAlign: 'center' }} numberOfLines={2}>
+                  Bumble
+                </Text>
+              </View>
             </View>
             <Animated.View style={[styles.notificationBadge, bumbleBadgeStyle]}>
               <Animated.View style={[styles.notificationGlow, bumbleGlowStyle]} />
@@ -212,11 +208,11 @@ export default function IntroScreen() {
           {/* Hinge (Center) */}
           <MotionView entering={subtleFadeIn()} style={[styles.appLogoWrapper, styles.hingeWrapper]}>
             <View style={styles.imageContainer}>
-              <Image 
-                source={require('../hinge-dating-app-icon-hd.jpg')} 
-                style={styles.appLogo}
-                resizeMode="cover"
-              />
+              <View style={[styles.appLogo, { backgroundColor: '#6D3BE8', alignItems: 'center', justifyContent: 'center' }]}>
+                <Text style={{ fontWeight: '800', color: '#fff', fontSize: 15, textAlign: 'center' }} numberOfLines={2}>
+                  Hinge
+                </Text>
+              </View>
             </View>
             <Animated.View style={[styles.notificationBadge, hingeBadgeStyle]}>
               <Animated.View style={[styles.notificationGlow, hingeGlowStyle]} />
@@ -229,11 +225,11 @@ export default function IntroScreen() {
           {/* Tinder (Right) */}
           <MotionView entering={subtleFadeIn()} style={[styles.appLogoWrapper, styles.tinderWrapper]}>
             <View style={styles.imageContainer}>
-              <Image 
-                source={require('../tinder_logo.png')} 
-                style={styles.appLogo}
-                resizeMode="cover"
-              />
+              <View style={[styles.appLogo, { backgroundColor: '#FE3C72', alignItems: 'center', justifyContent: 'center' }]}>
+                <Text style={{ fontWeight: '800', color: '#fff', fontSize: 15, textAlign: 'center' }} numberOfLines={2}>
+                  Tinder
+                </Text>
+              </View>
             </View>
             <Animated.View style={[styles.notificationBadge, tinderBadgeStyle]}>
               <Animated.View style={[styles.notificationGlow, tinderGlowStyle]} />

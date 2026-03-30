@@ -2,33 +2,31 @@ import type { Metadata } from 'next';
 import React from 'react';
 import { Poppins } from 'next/font/google';
 import '../styles.css';
-import CountdownTimer from '../components/CountdownTimer';
-import ReviewerCounter from '../components/ReviewerCounter';
-import ConditionalNav from '../components/ConditionalNav';
 import GoogleAnalytics from '../components/GoogleAnalytics';
 import { IosSourceTracker } from '../components/IosSourceTracker';
+import ConditionalChrome from '../components/ConditionalChrome';
 
 // Fonts must be initialized at module scope
 const poppins = Poppins({ subsets: ['latin'], weight: ['400', '600', '700'] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://auro.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'),
   title: 'Auro - Rate Guys, Get Paid',
-  description: 'Auro is fully live on web and mobile web. Review men\'s dating profiles, set your own rates, and keep 80% of every completed review.',
-  keywords: 'web app, mobile web, profile reviewer, dating profile feedback, monetize expertise, reviewer marketplace, women creators',
+  description: 'Auro is live on the web. Review men\'s dating profiles, set your own rates, and keep 80% of every completed review.',
+  keywords: 'web app, profile reviewer, dating profile feedback, monetize expertise, reviewer marketplace, women creators',
   icons: {
     icon: '/auro_aura_logo.png',
   },
   openGraph: {
     title: 'Auro - Rate Guys, Get Paid',
-    description: 'Fully launched on web and mobile web. Review profiles, set your own rates, and keep 80% of every completed review.',
+    description: 'Fully launched on the web. Review profiles, set your own rates, and keep 80% of every completed review.',
     images: ['/auro_aura_logo.png'],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Auro - Rate Guys, Get Paid',
-    description: 'Fully launched on web and mobile web. Keep 80% of completed review payments.',
+    description: 'Fully launched on the web. Keep 80% of completed review payments.',
     images: ['/auro_aura_logo.png'],
   },
 };
@@ -44,39 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${poppins.className} snap-y`}>
         <IosSourceTracker />
         {GA_MEASUREMENT_ID && <GoogleAnalytics GA_MEASUREMENT_ID={GA_MEASUREMENT_ID} />}
-        <header className="nav">
-          <div className="container">
-            <div className="nav-content">
-              <a href="/" className="brand mobile-brand-centered" aria-label="Auro Home">
-                <img src="/auro_aura_logo_nobg.png" alt="Auro logo" width={40} height={40} />
-                <span className="brand__name">Auro</span>
-              </a>
-              
-              
-              <nav className="nav-cta-section">
-                <ConditionalNav />
-              </nav>
-            </div>
-          </div>
-        </header>
-        <main style={{ padding: 0 }}>{children}</main>
-        <footer>
-          <div className="container footer__inner">
-            <div className="text-center sm:text-left">
-              <a href="https://coolhandstudios.xyz" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-2)', textDecoration: 'none' }}>
-                © {new Date().getFullYear()} Cool Hand Studios LLC
-              </a>
-              <span style={{ color: 'var(--text-2)' }}> · All rights reserved.</span>
-            </div>
-            <div className="footer__links">
-              <a href="/">Home</a>
-              <a href="/privacy">Privacy</a>
-              <a href="/terms">Terms</a>
-              <a href="/contact">Contact</a>
-              <a href="/support">Support</a>
-            </div>
-          </div>
-        </footer>
+        <ConditionalChrome>{children}</ConditionalChrome>
       </body>
     </html>
   );

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { StyleSheet, Alert, FlatList, Platform, Linking, Switch, View as RNView, Image, RefreshControl, ScrollView, Modal, TextInput, KeyboardAvoidingView, TouchableOpacity } from 'react-native';
+import { StyleSheet, Alert, FlatList, Platform, Linking, Switch, View as RNView, RefreshControl, ScrollView, Modal, TextInput, KeyboardAvoidingView, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
@@ -17,12 +17,7 @@ import { getRequestsByReviewer } from '@/lib/api';
 import { MotionPressable, MotionView, cardEntrance, subtleFadeIn } from '@/components/motion';
 import { SkeletonBlock, SkeletonCircle, SkeletonParagraph } from '@/components/Skeletons';
 import { clearPushTokenFromSupabase } from '@/lib/notifications';
-
-const socialIcons = {
-  instagram: require('../../../Instagram_icon-removebg-preview.png'),
-  tiktok: require('../../../tiktok-icon-free-png-removebg-preview.png'),
-  linktree: require('../../../linktreelogo.png'),
-};
+import { SocialBrandIcon } from '@/components/SocialBrandIcon';
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -886,7 +881,7 @@ export default function ProfileScreen() {
                     if (lt) items.push({ label: 'Linktree', url: `https://linktr.ee/${lt.replace(/^@+/, '')}`, key: 'linktree' });
                     return items.map((it, idx) => (
                       <MotionPressable key={`${it.label}-${idx}`} onPress={() => Linking.openURL(it.url)} style={styles.socialLinkBtn}>
-                        <Image source={socialIcons[it.key]} style={styles.socialIcon} resizeMode="contain" />
+                        <SocialBrandIcon brand={it.key} size={20} style={styles.socialIcon} />
                         <Text style={styles.socialLinkText}>{it.label}</Text>
                       </MotionPressable>
                     ));

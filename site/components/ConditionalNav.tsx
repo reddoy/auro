@@ -12,7 +12,7 @@ export default function ConditionalNav() {
     <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
       {/* Sign In - Always visible */}
       <a 
-        href="https://app.appauro.com" 
+        href="/app" 
         style={{
           color: 'white',
           textDecoration: 'none',

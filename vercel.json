@@ -1,0 +1,22 @@
+{
+  "buildCommand": "cd site && npm run build",
+  "devCommand": "cd site && npm run dev",
+  "installCommand": "cd site && npm install",
+  "outputDirectory": "site/.next",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "crons": [
+    {
+      "path": "/api/payments/retry-failed-distributions",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/payments/process-timeout-refunds",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/notifications/send-reviewer-deadline-warnings",
+      "schedule": "0 4 * * *"
+    }
+  ]
+}

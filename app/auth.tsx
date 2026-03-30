@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Platform, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Image, KeyboardAvoidingView, useWindowDimensions, Modal, Animated } from 'react-native';
+import { Platform, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, KeyboardAvoidingView, useWindowDimensions, Modal, Animated } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
@@ -13,6 +13,7 @@ import { AntDesign, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { Text, View } from '@/components/Themed';
+import { AuroMark } from '@/components/AuroMark';
 import { useLocalSearchParams, router } from 'expo-router';
 import Colors from '@/constants/Colors';
 import { ensureProfileForCurrentUser } from '@/lib/api';
@@ -1180,12 +1181,7 @@ export default function AuthScreen() {
         {/* Logo and Brand Name - Outside and above the form card */}
         <MotionView entering={ZoomIn.duration(400).delay(MotionDelays.quick)}>
           <View style={[styles.logoContainer, isCompact && styles.logoContainerCompact, styles.logoContainerOutside]}>
-            <Image 
-              source={require('@/auro_aura_logo_nobg.png')} 
-              style={[styles.logoImage, isCompact && styles.logoImageCompact]}
-              resizeMode="contain"
-            />
-            <Text style={[styles.brandText, isCompact && styles.brandTextCompact]}>Auro</Text>
+            <AuroMark height={isCompact ? 36 : 44} />
           </View>
         </MotionView>
 

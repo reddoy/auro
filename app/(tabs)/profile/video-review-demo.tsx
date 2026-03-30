@@ -13,6 +13,7 @@ import MediaRecorder from '@/components/MediaRecorder';
 import StarRating from '@/components/StarRating';
 import SectionSlideCard from '@/components/SectionSlideCard';
 import PaginationDots from '@/components/PaginationDots';
+import { AuroMark } from '@/components/AuroMark';
 
 type DatingProfileData = {
   profilePhoto: string | null;
@@ -592,7 +593,7 @@ export default function DatingProfileUploadScreen() {
               >
                 {slide.type === 'profile' && (
                   <RNView style={[styles.overlayCard, { width: frameMetrics.frameWidth, maxHeight: frameMetrics.frameHeight }]}>
-                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 16, alignSelf: 'center' }} contentFit="contain" />
+                    <AuroMark height={40} style={{ marginBottom: 16, alignSelf: 'center' }} />
                     <Text style={styles.overlayTitle}>{slide.data.name}</Text>
                     {slide.data.message ? (<Text style={styles.overlayText}>{slide.data.message}</Text>) : null}
                     {slide.data.profilePicture ? (<Image source={{ uri: slide.data.profilePicture }} style={{ width: '100%', aspectRatio: 1, borderRadius: 12, marginTop: 12 }} contentFit="cover" />) : null}
@@ -610,7 +611,7 @@ export default function DatingProfileUploadScreen() {
                 
                 {slide.type === 'photo' && (
                   <RNView style={[styles.overlayPhotoCard, { width: frameMetrics.frameWidth, maxHeight: frameMetrics.frameHeight }]}>
-                    <Image source={require('@/auro_aura_logo_nobg.png')} style={{ width: 80, height: 40, marginBottom: 12, alignSelf: 'center' }} contentFit="contain" />
+                    <AuroMark height={40} style={{ marginBottom: 12, alignSelf: 'center' }} />
                     <Text style={styles.overlayTitle}>{slide.data.category} - Photo {slide.data.photoIndex + 1}</Text>
                     <TouchableOpacity
                       style={{ width: '100%', aspectRatio: 3/4, borderRadius: 12, marginTop: 8, overflow: 'hidden' }}
@@ -635,11 +636,7 @@ export default function DatingProfileUploadScreen() {
                       style={styles.overallGradient}
                     >
                       <RNView style={styles.overallCardHeader}>
-                        <Image
-                          source={require('@/auro_aura_logo_nobg.png')}
-                          style={styles.overallLogo}
-                          contentFit="contain"
-                        />
+                        <AuroMark height={34} style={styles.overallLogo} />
                         <RNView style={styles.ratingBadge}>
                           <Text style={styles.ratingBadgeNumber}>
                             {videoReviewState.overallRating > 0

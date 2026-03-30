@@ -9,6 +9,9 @@ dist/
 web-build/
 expo-env.d.ts
 
+# Expo web bundle copied into Next public/ during site build (regenerated on deploy)
+site/public/app/
+
 # Native
 .kotlin/
 *.orig.*
@@ -35,3 +38,6 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# Next.js build output (never commit)
+site/.next/

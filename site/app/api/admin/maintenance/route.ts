@@ -35,7 +35,7 @@ export async function POST(req: Request) {
           });
         } else {
           // Process timeout refunds via API
-          const refundResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com'}/api/payments/process-timeout-refunds`, {
+          const refundResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/api/payments/process-timeout-refunds`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ processAll: true })
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
       try {
         console.log('[maintenance] Retrying failed distributions...');
         
-        const retryResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com'}/api/payments/retry-failed-distributions`, {
+        const retryResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/api/payments/retry-failed-distributions`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ retryAll: true })

@@ -16,7 +16,7 @@ Thank you for requesting a review with Auro!
 
 Continue in the Auro web app to track your review progress and get notified when your feedback is ready:
 
-🌐 Web app: https://app.appauro.com
+🌐 Web app: same site → /app
 
 Your request ID: ${requestId || 'N/A'}
 
@@ -89,7 +89,7 @@ The Auro Team`);
 
           <div className="download-options">
             <button
-              onClick={() => window.open('https://app.appauro.com', '_blank')}
+              onClick={() => window.open('/app', '_blank')}
               className="download-button app-store"
             >
               <div className="download-text">
