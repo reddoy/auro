@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import React from 'react';
+import AppLayoutClient from '@/components/app/AppLayoutClient';
 
 export const metadata: Metadata = {
   title: 'Auro',
@@ -15,7 +16,7 @@ export default function WebAppLayout({ children }: { children: React.ReactNode }
         color: '#fff',
       }}
     >
-      {children}
+      <AppLayoutClient>{children}</AppLayoutClient>
     </div>
   );
 }

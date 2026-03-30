@@ -137,6 +137,7 @@ export interface DbUserProfile {
   id: string;
   email?: string;
   name?: string;
+  username?: string | null;
   bio?: string | null;
   avatarUrl?: string | null;
   // Optional flag surfaced for app logic

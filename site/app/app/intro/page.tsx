@@ -16,7 +16,7 @@ export default function AppIntroPage() {
     >
       <h1 style={{ fontSize: 28, fontWeight: 700 }}>Welcome to Auro</h1>
       <p style={{ color: '#C7BFD9', maxWidth: 360, lineHeight: 1.5 }}>
-        Sign in to continue. The full experience is moving to the web — more screens will appear here as we finish the migration from the old app shell.
+        Sign in to open your inbox: after you sign in you&apos;ll land on <strong>My reviews</strong> with the same request list as before (web only — no app install).
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center' }}>
         <Link

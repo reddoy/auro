@@ -78,10 +78,11 @@ export function resolveOnboardingDestination(profile: Profile | null | undefined
       return '/onboarding/role-selection';
     case 'push_notifications':
     case 'push-notifications':
-      return '/onboarding/push-notifications';
+      // Web: no push setup — send users to the app hub.
+      return '/(tabs)/requests';
     case 'completed':
       return '/(tabs)/requests';
     default:
-      return '/onboarding/push-notifications';
+      return '/(tabs)/requests';
   }
 }
