@@ -1,13 +1,2 @@
-# Ignore Expo app files when building marketing site
-/app
-/assets
-/components
-/constants
-/lib
-/types
-/scripts
-app.json
-expo-env.d.ts
-vercel.json
-EXPO_WEB_DEPLOYMENT.md
-
+# Next.js app lives in ./app — do not list ./app here.
+# Root Vercel config uses this project from ../vercel.json (build: cd site && …).

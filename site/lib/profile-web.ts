@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { Profile } from '@shared/types';
+import type { Profile } from '@/types';
 
 /** Browser-side profile fetch (same query as legacy Expo `getCurrentProfile`). */
 export async function getCurrentProfileWeb(): Promise<Profile | null> {

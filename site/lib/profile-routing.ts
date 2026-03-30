@@ -1,9 +1,8 @@
-import type { Profile } from '../types';
+import type { Profile } from '@/types';
 
 /**
  * Determines which reviewer onboarding step to start from based on existing profile data.
  * Returns the route and onboarding step preference to set.
- * Shared by Expo app and Next.js web app.
  */
 export function getReviewerOnboardingStartStep(profile: Profile | null | undefined): { route: string; step: string } {
   if (!profile) {
@@ -32,7 +31,8 @@ export function getReviewerOnboardingStartStep(profile: Profile | null | undefin
 }
 
 /**
- * Resolves the destination route based on the user's onboarding status (Expo Router paths).
+ * Resolves the destination route based on onboarding status.
+ * Returns legacy tab/onboarding path segments; map with mapExpoRouterPathToNext for Next.js URLs.
  */
 export function resolveOnboardingDestination(profile: Profile | null | undefined): string {
   if (!profile) {

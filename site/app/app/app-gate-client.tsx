@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { getCurrentProfileWeb } from '@/lib/profile-web';
-import { resolveOnboardingDestination } from '@shared/lib/profile-routing';
+import { resolveOnboardingDestination } from '@/lib/profile-routing';
 import { mapExpoRouterPathToNext } from '@/lib/app-paths';
 
 export default function AppGateClient() {

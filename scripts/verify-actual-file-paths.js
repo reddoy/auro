@@ -6,18 +6,13 @@
  */
 
 const { createClient } = require('@supabase/supabase-js');
-const fs = require('fs');
-const path = require('path');
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 
-// Read config from app.json
-const appJsonPath = path.join(__dirname, '..', 'app.json');
-const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'));
-
-const supabaseUrl = appJson.expo.extra.supabaseUrl;
-const supabaseAnonKey = appJson.expo.extra.supabaseAnonKey;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ Missing Supabase config in app.json');
+if (!supabaseUrl) {
+  console.error(
+    '❌ Set NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL in the environment.'
+  );
   process.exit(1);
 }
 

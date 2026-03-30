@@ -1,6 +1,5 @@
 /**
- * Price Tier Constants for Web
- * Shared with mobile app's lib/iapPriceTiers.ts
+ * Price tier constants for web checkout (Stripe).
  */
 
 // Define supported web checkout price tiers
