@@ -1,8 +1,8 @@
 {
-  "buildCommand": "cd site && npm run build",
-  "devCommand": "cd site && npm run dev",
-  "installCommand": "cd site && npm install",
-  "outputDirectory": "site/.next",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "outputDirectory": ".next",
   "framework": "nextjs",
   "regions": ["iad1"],
   "crons": [
