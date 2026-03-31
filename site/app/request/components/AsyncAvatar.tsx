@@ -130,12 +130,13 @@ export default function AsyncAvatar({ avatarPathOrUrl, alt, size = 64 }: Props) 
             </div>
           ) : (
             <img 
-              src="/auro_aura_logo_nobg.png" 
+              src="/auro_aura_logo.png" 
               alt="Auro Logo" 
               style={{ 
                 width: size * 0.6, 
                 height: size * 0.6, 
-                objectFit: 'contain' 
+                objectFit: 'cover',
+                borderRadius: size * 0.18,
               }} 
             />
           )

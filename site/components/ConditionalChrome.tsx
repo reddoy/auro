@@ -24,7 +24,13 @@ export default function ConditionalChrome({ children }: Props) {
         <div className="container">
           <div className="nav-content">
             <a href="/" className="brand mobile-brand-centered" aria-label="Auro Home">
-              <img src="/auro_aura_logo_nobg.png" alt="Auro logo" width={40} height={40} />
+              <img
+                src="/auro_aura_logo.png"
+                alt="Auro logo"
+                width={40}
+                height={40}
+                style={{ borderRadius: 12 }}
+              />
               <span className="brand__name">Auro</span>
             </a>
             <nav className="nav-cta-section">

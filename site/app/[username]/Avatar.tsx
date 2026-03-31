@@ -88,12 +88,13 @@ export default function Avatar({ src, alt, size = 48 }: { src?: string; alt: str
         </div>
       ) : (
         <img 
-          src="/auro_aura_logo_nobg.png" 
+          src="/auro_aura_logo.png" 
           alt="Auro Logo" 
           style={{ 
             width: size * 0.6, 
             height: size * 0.6, 
-            objectFit: 'contain' 
+            objectFit: 'cover',
+            borderRadius: size * 0.18,
           }} 
         />
       )}
