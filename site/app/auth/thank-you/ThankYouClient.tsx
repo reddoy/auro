@@ -1,25 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useIosSourceFlag } from "@/hooks/useIosSourceFlag";
 
 const requestLinkStyle = {
   backgroundImage: "linear-gradient(90deg,#FF6F00,#FF2D55)",
 };
 
 function RequestLink({ children }: { children: React.ReactNode }) {
-  const isIosSource = useIosSourceFlag();
-  const iosMessage =
-    "Purchases are unavailable inside the iOS in-app browser. Please open this link in Safari or on desktop.";
-
-  if (isIosSource) {
-    return (
-      <div className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold border border-white/30 bg-white/5 text-center text-sm">
-        {iosMessage}
-      </div>
-    );
-  }
-
   return (
     <Link href="/request" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={requestLinkStyle}>
       {children}

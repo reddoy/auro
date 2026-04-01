@@ -1,9 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-const IOS_SOURCE_COOKIE = 'auro_ios_src';
-const IOS_SOURCE_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
-
 function buildCorsHeaders(req: NextRequest): Headers {
   const origin = req.headers.get('origin') || '*';
   const requestedHeaders = req.headers.get('access-control-request-headers');
@@ -14,18 +11,6 @@ function buildCorsHeaders(req: NextRequest): Headers {
   headers.set('Access-Control-Allow-Headers', requestedHeaders || 'content-type, authorization, accept');
   headers.set('Access-Control-Max-Age', '86400');
   return headers;
-}
-
-function maybeSetIosCookie(req: NextRequest, res: NextResponse) {
-  const source = req.nextUrl.searchParams.get('src');
-  if (source === 'ios') {
-    res.cookies.set(IOS_SOURCE_COOKIE, '1', {
-      path: '/',
-      httpOnly: false,
-      sameSite: 'lax',
-      maxAge: IOS_SOURCE_TTL_SECONDS,
-    });
-  }
 }
 
 export function middleware(req: NextRequest) {
@@ -41,9 +26,7 @@ export function middleware(req: NextRequest) {
     const slug = pathname.replace('/reviewers/', '');
     const url = req.nextUrl.clone();
     url.pathname = `/${slug}`;
-    const redirectResponse = NextResponse.redirect(url, 301);
-    maybeSetIosCookie(req, redirectResponse);
-    return redirectResponse;
+    return NextResponse.redirect(url, 301);
   }
 
   let response: NextResponse;
@@ -53,7 +36,6 @@ export function middleware(req: NextRequest) {
 
     if (req.method === 'OPTIONS') {
       response = new NextResponse(null, { status: 204, headers: cors });
-      maybeSetIosCookie(req, response);
       return response;
     }
 
@@ -63,7 +45,6 @@ export function middleware(req: NextRequest) {
     response = NextResponse.next();
   }
 
-  maybeSetIosCookie(req, response);
   return response;
 }
 

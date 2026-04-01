@@ -3,7 +3,6 @@ import React from 'react';
 import { Poppins } from 'next/font/google';
 import '../styles.css';
 import GoogleAnalytics from '../components/GoogleAnalytics';
-import { IosSourceTracker } from '../components/IosSourceTracker';
 import ConditionalChrome from '../components/ConditionalChrome';
 
 // Fonts must be initialized at module scope
@@ -40,7 +39,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
       </head>
       <body className={`${poppins.className} snap-y`}>
-        <IosSourceTracker />
         {GA_MEASUREMENT_ID && <GoogleAnalytics GA_MEASUREMENT_ID={GA_MEASUREMENT_ID} />}
         <ConditionalChrome>{children}</ConditionalChrome>
       </body>

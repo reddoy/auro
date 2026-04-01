@@ -95,7 +95,7 @@ export default function CheckoutSuccessPage() {
           <div className="download-buttons">
             <button
               onClick={() => window.open('/app', '_blank')}
-              className="download-btn ios-btn"
+              className="download-btn web-btn"
             >
               <div className="btn-text">
                 <span className="btn-label">OPEN</span>
@@ -259,26 +259,15 @@ export default function CheckoutSuccessPage() {
           text-decoration: none;
         }
 
-        .ios-btn {
+        .web-btn {
           background: #000;
           color: white;
         }
 
-        .ios-btn:hover {
+        .web-btn:hover {
           background: #333;
           transform: translateY(-2px);
           box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-        }
-
-        .android-btn {
-          background: #01875f;
-          color: white;
-        }
-
-        .android-btn:hover {
-          background: #1a9b6f;
-          transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(1, 135, 95, 0.3);
         }
 
         .btn-text {

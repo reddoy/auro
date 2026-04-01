@@ -1,27 +1,30 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+
+const signInLinkStyle: React.CSSProperties = {
+  color: 'white',
+  textDecoration: 'none',
+  fontWeight: 500,
+  fontSize: '15px',
+  transition: 'opacity 0.2s ease',
+  cursor: 'pointer',
+  opacity: 0.9,
+};
 
 export default function ConditionalNav() {
   const pathname = usePathname();
-  
-  // Hide the apply button when on the apply flow pages
-  const isOnApplyPage = pathname?.startsWith('/reviewers/apply') || pathname?.startsWith('/reviewers/thanks');
-  
+
+  const isOnApplyPage =
+    pathname?.startsWith('/reviewers/apply') || pathname?.startsWith('/reviewers/thanks');
+  const isOnRequestFlow = pathname === '/request' || pathname?.startsWith('/request/');
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-      {/* Sign In - Always visible */}
-      <a 
-        href="/app" 
-        style={{
-          color: 'white',
-          textDecoration: 'none',
-          fontWeight: '500',
-          fontSize: '15px',
-          transition: 'opacity 0.2s ease',
-          cursor: 'pointer',
-          opacity: 0.9
-        }}
+    <div className="conditional-nav" style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+      <Link
+        href="/auth/magic-link"
+        style={signInLinkStyle}
         onMouseOver={(e) => {
           e.currentTarget.style.opacity = '1';
         }}
@@ -30,16 +33,21 @@ export default function ConditionalNav() {
         }}
       >
         Sign In
-      </a>
-      
-      {/* Become Reviewer button - hidden on apply page */}
+      </Link>
+
       {!isOnApplyPage && (
-        <a className="cta-nav-integrated" href="/reviewers/apply">
+        <Link className="cta-nav-integrated" href="/reviewers/apply">
           <div className="cta-text-section">
             <span className="cta-main-text">Become a Reviewer</span>
             <span className="cta-sub-text">80% to reviewer • 20% platform fee</span>
           </div>
-        </a>
+        </Link>
+      )}
+
+      {!isOnRequestFlow && (
+        <Link className="cta-nav cta-nav--get-reviewed" href="/request">
+          Get Reviewed
+        </Link>
       )}
     </div>
   );

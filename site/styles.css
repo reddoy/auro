@@ -3523,7 +3523,27 @@ footer {
   }
   
   .nav-cta-section {
-    display: none; /* Hide CTA section on mobile */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    max-width: min(100% - 120px, 50%);
+    margin-left: auto;
+  }
+
+  .conditional-nav .cta-sub-text {
+    display: none;
+  }
+
+  .conditional-nav .cta-nav-integrated {
+    min-width: 0;
+    padding: 10px 12px;
+  }
+
+  .conditional-nav .cta-nav--get-reviewed {
+    padding: 10px 14px;
+    font-size: 13px;
+    white-space: nowrap;
   }
   
   .nav-countdown-section {

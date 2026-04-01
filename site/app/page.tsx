@@ -7,7 +7,6 @@ import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import RevieweeWaitlist from '../components/RevieweeWaitlist';
 import { ArrowRight, Star, DollarSign, Clock, Users, TrendingUp, CheckCircle } from 'lucide-react';
-import { useIosSourceFlag } from '@/hooks/useIosSourceFlag';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,9 +15,6 @@ function HomePageContent() {
   const desktopOverlayRef = useRef<HTMLAnchorElement>(null);
   const mobileVideoRef = useRef<HTMLVideoElement>(null);
   const mobileOverlayRef = useRef<HTMLAnchorElement>(null);
-  const isIosSource = useIosSourceFlag();
-  const iosCtaMessage =
-    "Purchases are unavailable in the iOS in-app browser. Open appauro.com in Safari or on desktop to continue.";
 
   // Video handling for desktop
   useEffect(() => {
@@ -106,18 +102,18 @@ function HomePageContent() {
               <div className="space-y-4">
                 <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.3] text-center tracking-tight px-4">
                   <span className="block text-white mobile-text-reveal whitespace-nowrap" style={{ animationDelay: '0.4s' }}>
-                    Guys get <span className="bg-clip-text text-transparent" style={{ color: '#ff6b35' }}>reviewed</span>.
+                    Two sides. One platform.
                   </span>
                   <span className="block text-white mobile-text-reveal whitespace-nowrap mt-2" style={{ animationDelay: '0.6s' }}>
-                    Guys get <span className="bg-clip-text text-transparent" style={{ color: '#cc3598' }}>advice</span>.
+                    <span className="bg-clip-text text-transparent" style={{ color: '#ff6b35' }}>Reviewers earn</span> by giving advice.
                   </span>
                   <span className="block text-white mobile-text-reveal whitespace-nowrap mt-2" style={{ animationDelay: '0.8s' }}>
-                    Girls get <span className="bg-clip-text text-transparent italic underline decoration-2 underline-offset-4" style={{ color: '#ea4c64' }}>paid</span>.
+                    Guys get <span className="bg-clip-text text-transparent italic underline decoration-2 underline-offset-4" style={{ color: '#ea4c64' }}>reviewed</span> and improve.
                   </span>
                 </h1>
                 
                 <p className="text-lg text-white/90 max-w-lg mx-auto mobile-text-reveal leading-relaxed px-4 font-medium" style={{ animationDelay: '1s' }}>
-                  Get paid to review men's dating profiles and give help.
+                  Join as a reviewer or request a profile review in minutes.
                 </p>
                 
                 <div className="mobile-text-reveal space-y-2 px-4" style={{ animationDelay: '1.1s' }}>
@@ -136,29 +132,38 @@ function HomePageContent() {
                 </div>
               </div>
 
-              {/* CTA Button - Moved above iPhone for better conversion */}
-              <div className="flex justify-center mobile-text-reveal mb-8 px-4" style={{ animationDelay: '1.2s' }}>
-                {isIosSource ? (
-                  <div className="w-full max-w-sm rounded-2xl border border-white/20 bg-white/5 px-4 py-3 text-center text-sm font-semibold text-white/80 shadow-2xl">
-                    {iosCtaMessage}
-                  </div>
-                ) : (
-                  <Button
-                    size="xl"
-                    variant="gradient"
-                    className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-sm text-base sm:text-lg px-4 sm:px-6 py-3 shadow-2xl font-semibold"
-                    asChild
+              {/* CTA Buttons - both core paths */}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center mobile-text-reveal mb-8 px-4" style={{ animationDelay: '1.2s' }}>
+                <Button
+                  size="xl"
+                  variant="gradient"
+                  className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-sm text-base sm:text-lg px-4 sm:px-6 py-3 shadow-2xl font-semibold"
+                  asChild
+                >
+                  <a
+                    href="/reviewers/apply"
+                    className="flex items-center justify-center"
+                    aria-label="Apply to become a reviewer"
                   >
-                    <a
-                      href="/reviewers/apply"
-                      className="flex items-center justify-center"
-                      aria-label="Apply to become a reviewer"
-                    >
-                      <span className="truncate">Apply to become a reviewer</span>
-                      <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" aria-hidden="true" />
-                    </a>
-                  </Button>
-                )}
+                    <span className="truncate">Become a Reviewer</span>
+                    <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" aria-hidden="true" />
+                  </a>
+                </Button>
+                <Button
+                  size="xl"
+                  variant="secondary"
+                  className="group w-full max-w-sm text-base sm:text-lg px-4 sm:px-6 py-3 shadow-2xl font-semibold border border-white/20 bg-white/10 text-white hover:bg-white/20"
+                  asChild
+                >
+                  <a
+                    href="/request"
+                    className="flex items-center justify-center"
+                    aria-label="Request a profile review"
+                  >
+                    <span className="truncate">Get Reviewed</span>
+                    <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" aria-hidden="true" />
+                  </a>
+                </Button>
               </div>
 
               {/* Mobile iPhone Video - Moved below CTA with proper spacing */}
@@ -176,25 +181,17 @@ function HomePageContent() {
                       muted
                       aria-label="Demo video showing how Auro app works - reviewing a guy's profile and style"
                     />
-                    {isIosSource ? (
-                      <div className="mobile-iphone-overlay ios-blocked" aria-live="polite">
-                        <div className="overlay-content text-center text-sm font-semibold text-white">
-                          <p>{iosCtaMessage}</p>
-                        </div>
+                    <a
+                      ref={mobileOverlayRef}
+                      href="/reviewers/apply"
+                      className="mobile-iphone-overlay"
+                      aria-label="Click to see the full review and get your personalized style review"
+                    >
+                      <div className="overlay-content">
+                        <h3>👆 Click here to see the full review</h3>
+                        <p>Get your personalized style review</p>
                       </div>
-                    ) : (
-                      <a
-                        ref={mobileOverlayRef}
-                        href="/reviewers/apply"
-                        className="mobile-iphone-overlay"
-                        aria-label="Click to see the full review and get your personalized style review"
-                      >
-                        <div className="overlay-content">
-                          <h3>👆 Click here to see the full review</h3>
-                          <p>Get your personalized style review</p>
-                        </div>
-                      </a>
-                    )}
+                    </a>
                   </div>
                 </div>
               </div>
@@ -231,42 +228,45 @@ function HomePageContent() {
                 <div className="space-y-6">
                   <h1 className="text-5xl xl:text-6xl font-extrabold leading-[1.2] tracking-tight pb-2">
                     <span className="block text-white pb-1 whitespace-nowrap">
-                      Guys get <span className="bg-clip-text text-transparent" style={{ color: '#d83a86' }}>reviewed</span>.
+                      Two sides. One platform.
                     </span>
                     <span className="block text-white whitespace-nowrap pb-1">
-                      Guys get <span className="bg-clip-text text-transparent" style={{ color: '#cc3598' }}>advice</span>.
+                      <span className="bg-clip-text text-transparent" style={{ color: '#cc3598' }}>Reviewers earn</span> by giving advice.
                     </span>
                     <span className="block text-white pb-1 whitespace-nowrap">
-                      Girls get <span className="bg-clip-text text-transparent italic underline decoration-2 underline-offset-4" style={{ color: '#ea4c64' }}>paid</span>.
+                      Guys get <span className="bg-clip-text text-transparent italic underline decoration-2 underline-offset-4" style={{ color: '#ea4c64' }}>reviewed</span> and improve.
                     </span>
                   </h1>
                   
                   <p className="text-xl text-white/90 max-w-2xl leading-relaxed font-medium">
-                    Get paid to review men's dating profiles and give help.
+                    Join as a reviewer or request a profile review in minutes.
                   </p>
                 </div>
                 
-                {/* CTA Button */}
-                <div className="flex justify-start">
-                  {isIosSource ? (
-                    <div className="rounded-2xl border border-white/20 bg-white/5 px-6 py-4 text-base font-semibold text-white/80 shadow-2xl max-w-md">
-                      {iosCtaMessage}
-                    </div>
-                  ) : (
-                    <Button
-                      size="xl"
-                      variant="gradient"
-                      className="group text-lg px-8 py-4 shadow-2xl hover:shadow-3xl transition-all duration-300"
-                      asChild
-                    >
-                      <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
-                        <span className="mobile-button-text">
-                          Start Earning on Auro
-                        </span>
-                        <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
-                      </a>
-                    </Button>
-                  )}
+                {/* CTA Buttons */}
+                <div className="flex flex-wrap gap-3 justify-start">
+                  <Button
+                    size="xl"
+                    variant="gradient"
+                    className="group text-lg px-8 py-4 shadow-2xl hover:shadow-3xl transition-all duration-300"
+                    asChild
+                  >
+                    <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
+                      <span className="mobile-button-text">Become a Reviewer</span>
+                      <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                    </a>
+                  </Button>
+                  <Button
+                    size="xl"
+                    variant="secondary"
+                    className="group text-lg px-8 py-4 shadow-2xl border border-white/20 bg-white/10 text-white hover:bg-white/20 transition-all duration-300"
+                    asChild
+                  >
+                    <a href="/request" className="flex items-center justify-center gap-2">
+                      <span className="mobile-button-text">Get Reviewed</span>
+                      <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                    </a>
+                  </Button>
                 </div>
 
                 {/* Stats */}
@@ -299,24 +299,16 @@ function HomePageContent() {
                       muted
                       aria-label="Demo video showing how Auro app works - reviewing a guy's profile and style"
                     />
-                    {isIosSource ? (
-                      <div className="desktop-iphone-overlay ios-blocked" aria-live="polite">
-                        <div className="overlay-content text-center text-base font-semibold text-white">
-                          {iosCtaMessage}
-                        </div>
+                    <a
+                      ref={desktopOverlayRef}
+                      href="/reviewers/apply"
+                      className="desktop-iphone-overlay"
+                    >
+                      <div className="overlay-content">
+                        <h3>👆 Click here to see the full review</h3>
+                        <p>Get your personalized style review</p>
                       </div>
-                    ) : (
-                      <a
-                        ref={desktopOverlayRef}
-                        href="/reviewers/apply"
-                        className="desktop-iphone-overlay"
-                      >
-                        <div className="overlay-content">
-                          <h3>👆 Click here to see the full review</h3>
-                          <p>Get your personalized style review</p>
-                        </div>
-                      </a>
-                    )}
+                    </a>
                   </div>
                   
                   {/* Floating Benefit Callouts */}
@@ -336,6 +328,49 @@ function HomePageContent() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Request a Review Path */}
+      <section className="py-16 lg:py-24 bg-[#0c0325]">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <Card className="bg-white/10 backdrop-blur-md border-white/20">
+              <CardContent className="p-8 md:p-10">
+                <div className="grid gap-8 md:grid-cols-[1.2fr_1fr] md:items-center">
+                  <div className="space-y-4">
+                    <Badge variant="outline" className="border-orange-400/40 text-orange-300 bg-orange-500/20">
+                      FOR GUYS WHO WANT BETTER RESULTS
+                    </Badge>
+                    <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+                      Request a review. Get honest, actionable feedback.
+                    </h2>
+                    <p className="text-white/85 text-lg leading-relaxed">
+                      Submit your photos and profile details, get direct feedback from real women, and leave with clear next steps for better matches.
+                    </p>
+                    <div className="flex flex-wrap gap-3 pt-2">
+                      <Badge variant="outline" className="text-xs border-purple-400/40 text-purple-300 bg-purple-500/20">Dating profile feedback</Badge>
+                      <Badge variant="outline" className="text-xs border-green-400/40 text-green-300 bg-green-500/20">Style + photo suggestions</Badge>
+                      <Badge variant="outline" className="text-xs border-blue-400/40 text-blue-300 bg-blue-500/20">Fast turnaround</Badge>
+                    </div>
+                  </div>
+                  <div className="flex md:justify-end">
+                    <Button
+                      size="xl"
+                      variant="gradient"
+                      className="group w-full md:w-auto text-lg px-8 py-4 shadow-2xl hover:shadow-3xl transition-all duration-300"
+                      asChild
+                    >
+                      <a href="/request" className="flex items-center justify-center gap-2" aria-label="Start your review request">
+                        <span>Request a Review</span>
+                        <ArrowRight className="ml-1 w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -410,30 +445,28 @@ function HomePageContent() {
           <div className="text-center space-y-16">
             <div className="space-y-4">
               <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight">How It Works</h2>
-              <p className="text-xl md:text-2xl text-white/80 leading-relaxed">Start earning on web in {isIosSource ? '2' : '3'} simple steps</p>
+              <p className="text-xl md:text-2xl text-white/80 leading-relaxed">Start earning on web in 3 simple steps</p>
             </div>
             
             {/* Process Steps */}
-            <div className={`grid gap-8 max-w-6xl mx-auto ${isIosSource ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
-              {!isIosSource && (
-                <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
-                  <CardHeader className="text-center">
-                    <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white font-bold text-2xl shadow-lg">
-                      1
-                    </div>
-                    <CardTitle className="text-2xl font-bold text-white">Set Your Rate & Share Your Link</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <CardDescription className="text-center text-white/80 text-base leading-relaxed">
-                      Set your own price per review and share your Auro profile link on social media. Guys pay through your link and request reviews.
-                    </CardDescription>
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      <Badge variant="outline" className="text-xs border-orange-400/40 text-orange-300 bg-orange-500/20">💰 You set your rates</Badge>
-                      <Badge variant="outline" className="text-xs border-orange-400/40 text-orange-300 bg-orange-500/20">📱 Share on Instagram/TikTok</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+            <div className="grid gap-8 max-w-6xl mx-auto md:grid-cols-3">
+              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
+                <CardHeader className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white font-bold text-2xl shadow-lg">
+                    1
+                  </div>
+                  <CardTitle className="text-2xl font-bold text-white">Set Your Rate & Share Your Link</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <CardDescription className="text-center text-white/80 text-base leading-relaxed">
+                    Set your own price per review and share your Auro profile link on social media. Guys pay through your link and request reviews.
+                  </CardDescription>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    <Badge variant="outline" className="text-xs border-orange-400/40 text-orange-300 bg-orange-500/20">💰 You set your rates</Badge>
+                    <Badge variant="outline" className="text-xs border-orange-400/40 text-orange-300 bg-orange-500/20">📱 Share on Instagram/TikTok</Badge>
+                  </div>
+                </CardContent>
+              </Card>
               
               <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
                 <CardHeader className="text-center">
