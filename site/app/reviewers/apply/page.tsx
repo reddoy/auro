@@ -1037,8 +1037,8 @@ export default function ReviewerApplyPage() {
                         <Star className="w-4 h-4 md:w-6 md:h-6 text-orange-400" />
                       </div>
                       <div className="text-center">
-                        <div className="text-sm md:text-lg font-bold text-white">80%</div>
-                        <div className="text-[10px] md:text-xs text-gray-300">earnings forever</div>
+                        <div className="text-sm md:text-lg font-bold text-white">You keep most</div>
+                        <div className="text-[10px] md:text-xs text-gray-300">of each review</div>
                       </div>
                     </div>
                   </div>
@@ -1548,13 +1548,6 @@ export default function ReviewerApplyPage() {
                           <span className="text-lg font-semibold text-blue-300">${(takeHomeRate * 20).toFixed(2)}</span>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Note */}
-                    <div className="text-center">
-                      <p className="text-xs text-green-300/70 whitespace-nowrap">
-                        💰 80% take-home rate on every completed review
-                      </p>
                     </div>
                   </div>
                 );

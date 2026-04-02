@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import RevieweeWaitlist from '../components/RevieweeWaitlist';
-import { ArrowRight, Star, DollarSign, Clock, Users, TrendingUp, CheckCircle } from 'lucide-react';
+import { ArrowRight, Sparkles, DollarSign, Clock, Users, TrendingUp, CheckCircle } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -100,20 +100,12 @@ function HomePageContent() {
               
               {/* Main Headline */}
               <div className="space-y-4">
-                <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.3] text-center tracking-tight px-4">
-                  <span className="block text-white mobile-text-reveal whitespace-nowrap" style={{ animationDelay: '0.4s' }}>
-                    Two sides. One platform.
-                  </span>
-                  <span className="block text-white mobile-text-reveal whitespace-nowrap mt-2" style={{ animationDelay: '0.6s' }}>
-                    <span className="bg-clip-text text-transparent" style={{ color: '#ff6b35' }}>Reviewers earn</span> by giving advice.
-                  </span>
-                  <span className="block text-white mobile-text-reveal whitespace-nowrap mt-2" style={{ animationDelay: '0.8s' }}>
-                    Guys get <span className="bg-clip-text text-transparent italic underline decoration-2 underline-offset-4" style={{ color: '#ea4c64' }}>reviewed</span> and improve.
-                  </span>
+                <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.15] text-center tracking-tight px-4 text-balance max-w-2xl mx-auto mobile-text-reveal" style={{ animationDelay: '0.4s' }}>
+                  <span className="text-white">Get honest feedback on your dating profile.</span>
                 </h1>
                 
-                <p className="text-lg text-white/90 max-w-lg mx-auto mobile-text-reveal leading-relaxed px-4 font-medium" style={{ animationDelay: '1s' }}>
-                  Join as a reviewer or request a profile review in minutes.
+                <p className="text-lg text-white/90 max-w-lg mx-auto mobile-text-reveal leading-relaxed px-4 font-medium text-balance" style={{ animationDelay: '1s' }}>
+                  Reviewers earn by giving advice. Guys get reviewed and improve. Join either side in minutes.
                 </p>
                 
                 <div className="mobile-text-reveal space-y-2 px-4" style={{ animationDelay: '1.1s' }}>
@@ -127,7 +119,7 @@ function HomePageContent() {
                   </div>
                   <div className="flex items-center justify-center gap-2 text-base text-white/90">
                     <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
-                    <span className="font-medium">80% earnings forever</span>
+                    <span className="font-medium">Paid when you complete a review</span>
                   </div>
                 </div>
               </div>
@@ -205,7 +197,7 @@ function HomePageContent() {
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>80% earnings forever</span>
+                    <span>Clear payout breakdown in the app</span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
@@ -220,26 +212,18 @@ function HomePageContent() {
         <div className="hidden lg:flex items-center justify-center min-h-screen">
           <div className="container mx-auto px-4 relative z-10">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
-              {/* Left Content */}
-              <div className="text-left space-y-8">
+              {/* Left Content — min-w-0 lets copy wrap inside the grid track instead of overflowing under the phone */}
+              <div className="text-left space-y-8 min-w-0 pr-2 xl:pr-6">
                 {/* Removed redundant badge to save space and reduce clutter */}
                 
-                {/* Main Headline */}
+                {/* Main Headline — RMH-style: one strong line + supporting line (no nowrap) */}
                 <div className="space-y-6">
-                  <h1 className="text-5xl xl:text-6xl font-extrabold leading-[1.2] tracking-tight pb-2">
-                    <span className="block text-white pb-1 whitespace-nowrap">
-                      Two sides. One platform.
-                    </span>
-                    <span className="block text-white whitespace-nowrap pb-1">
-                      <span className="bg-clip-text text-transparent" style={{ color: '#cc3598' }}>Reviewers earn</span> by giving advice.
-                    </span>
-                    <span className="block text-white pb-1 whitespace-nowrap">
-                      Guys get <span className="bg-clip-text text-transparent italic underline decoration-2 underline-offset-4" style={{ color: '#ea4c64' }}>reviewed</span> and improve.
-                    </span>
+                  <h1 className="text-4xl xl:text-5xl 2xl:text-6xl font-extrabold leading-[1.12] tracking-tight text-white text-balance max-w-2xl">
+                    Get honest feedback on your dating profile.
                   </h1>
                   
-                  <p className="text-xl text-white/90 max-w-2xl leading-relaxed font-medium">
-                    Join as a reviewer or request a profile review in minutes.
+                  <p className="text-lg xl:text-xl text-white/90 max-w-xl leading-relaxed font-medium text-pretty">
+                    Reviewers earn by giving advice. Guys get reviewed and improve. Join either side in minutes.
                   </p>
                 </div>
                 
@@ -277,7 +261,7 @@ function HomePageContent() {
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>80% earnings forever</span>
+                    <span>Paid when you complete a review</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500" />
@@ -321,8 +305,8 @@ function HomePageContent() {
                   
                   <div className="absolute bottom-2 right-2 glass rounded-lg p-2 shadow-lg animate-slide-in-right hover-lift" style={{ animationDelay: '0.5s' }}>
                     <div className="flex items-center gap-2">
-                      <Star className="w-4 h-4 text-orange-500" />
-                      <span className="text-xs font-medium text-white">80% earnings forever</span>
+                      <Sparkles className="w-4 h-4 text-orange-400" />
+                      <span className="text-xs font-medium text-white">Specific, usable feedback</span>
                     </div>
                   </div>
                 </div>
@@ -375,66 +359,19 @@ function HomePageContent() {
         </div>
       </section>
 
-      {/* Platform Economics Section */}
+      {/* Payouts — one clear mention; details also in reviewer flow */}
       <section id="platform-economics" className="py-16 lg:py-24 bg-[#0c0325]">
         <div className="container mx-auto px-4">
-          <div className="text-center space-y-16">
-            <div className="space-y-6">
-              <Badge variant="gradient" className="text-sm px-4 py-2 font-semibold">
-                FULLY LAUNCHED
-              </Badge>
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight">
-                Transparent platform split:{' '}
-                <span className="bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
-                  reviewers keep 80%
-                </span>
-              </h2>
-            </div>
-            
-            {/* Benefits Grid */}
-            <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-              <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-green-400/40 hover:bg-white/[0.15] transition-all duration-300 hover:scale-105 mobile-card-hover">
-                <CardHeader className="text-center">
-                  <div className="w-20 h-20 bg-green-500/30 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/20">
-                    <DollarSign className="w-10 h-10 text-green-400" />
-                </div>
-                  <CardTitle className="text-2xl font-bold text-white">80% Earnings</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-center text-white/90 text-base leading-relaxed">
-                    You keep 80% of every completed review payment.
-                  </CardDescription>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-orange-400/40 hover:bg-white/[0.15] transition-all duration-300 hover:scale-105 mobile-card-hover">
-                <CardHeader className="text-center">
-                  <div className="w-20 h-20 bg-orange-500/30 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/20">
-                    <Star className="w-10 h-10 text-orange-400" />
-              </div>
-                  <CardTitle className="text-2xl font-bold text-white">20% Platform Fee</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-center text-white/90 text-base leading-relaxed">
-                    Auro takes 20% to run the platform and support payouts.
-                  </CardDescription>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-blue-400/40 hover:bg-white/[0.15] transition-all duration-300 hover:scale-105 mobile-card-hover">
-                <CardHeader className="text-center">
-                  <div className="w-20 h-20 bg-blue-500/30 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/20">
-                    <Users className="w-10 h-10 text-blue-400" />
-                  </div>
-                  <CardTitle className="text-2xl font-bold text-white">Simple Revenue Split</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-center text-white/90 text-base leading-relaxed">
-                    Every completed review follows the same 80% reviewer / 20% Auro model.
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            </div>
+          <div className="max-w-2xl mx-auto text-center space-y-6">
+            <Badge variant="gradient" className="text-sm px-4 py-2 font-semibold">
+              FULLY LAUNCHED
+            </Badge>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white leading-tight tracking-tight">
+              Straightforward payouts
+            </h2>
+            <p className="text-lg md:text-xl text-white/85 leading-relaxed">
+              Reviewers keep <span className="text-white font-semibold">80%</span> of each completed review. The rest is a platform fee that covers payments, support, and running Auro—you’ll see the exact breakdown when you set your rate or complete checkout.
+            </p>
           </div>
         </div>
       </section>
@@ -580,7 +517,7 @@ function HomePageContent() {
               <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-orange-400/40 hover:bg-white/[0.15] transition-all duration-300 mobile-card-hover">
                 <CardContent className="p-8 space-y-5">
                   <p className="text-white text-base leading-relaxed italic">
-                    "Sometimes one tweak makes a huge difference in matches. I like that I can give direct feedback and keep 80%."
+                    "Sometimes one tweak makes a huge difference in matches. I like that I can give direct feedback and get paid for it."
                   </p>
                   <div className="flex items-center gap-4 pt-2">
                     <Avatar className="w-20 h-20 md:w-24 md:h-24 ring-2 ring-red-500/50 overflow-hidden">
@@ -650,7 +587,7 @@ function HomePageContent() {
                 Ready to Start Earning?
               </h2>
               <p className="text-xl md:text-2xl text-white/90 leading-relaxed mobile-text-reveal" style={{ animationDelay: '0.4s' }}>
-                Keep 80% of every review you complete on Auro
+                Set your rate, share your link, and get paid when reviews finish.
               </p>
             </div>
             
@@ -669,9 +606,6 @@ function HomePageContent() {
               
               <div className="text-center sm:text-left">
                 <p className="text-sm text-white/80 font-semibold">Fully live on web and mobile web</p>
-                <p className="text-xs text-white/80">
-                  80% to reviewer, 20% platform fee
-                </p>
               </div>
             </div>
             
@@ -682,11 +616,11 @@ function HomePageContent() {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500 animate-pulse" style={{ animationDelay: '0.2s' }} />
-                <span>80% earnings forever</span>
+                <span>You set your rates</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500 animate-pulse" style={{ animationDelay: '0.4s' }} />
-                <span>No app store fee split</span>
+                <span>Web-first—no app store cut on your link</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500 animate-pulse" style={{ animationDelay: '0.6s' }} />

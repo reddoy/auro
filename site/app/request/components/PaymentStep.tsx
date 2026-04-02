@@ -392,8 +392,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
             </div>
             <div className="modal-body">
               <p>
-                Auro now runs fully on web and mobile web. Reviewers keep 80% of each completed review payment,
-                and Auro takes a 20% platform fee.
+                Auro runs on web and mobile web. Reviewers receive 80% of each completed payment; the rest is Auro’s platform fee. You’ll see the exact amounts before you pay.
               </p>
             </div>
             <div className="modal-footer">

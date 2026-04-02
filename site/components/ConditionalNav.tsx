@@ -39,7 +39,6 @@ export default function ConditionalNav() {
         <Link className="cta-nav-integrated" href="/reviewers/apply">
           <div className="cta-text-section">
             <span className="cta-main-text">Become a Reviewer</span>
-            <span className="cta-sub-text">80% to reviewer • 20% platform fee</span>
           </div>
         </Link>
       )}
