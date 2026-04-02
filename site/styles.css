@@ -3484,6 +3484,43 @@ footer {
   gap: 16px;
 }
 
+/* Nav ribbon: match CTA widths (Become a Reviewer vs Get Reviewed) */
+.conditional-nav .nav-ribbon-ctas {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.conditional-nav .nav-ribbon-ctas > .cta-nav-integrated,
+.conditional-nav .nav-ribbon-ctas > .cta-nav.cta-nav--get-reviewed {
+  flex: 1 1 200px;
+  min-width: 200px;
+  max-width: 260px;
+  box-sizing: border-box;
+  justify-content: center;
+}
+
+.conditional-nav .nav-ribbon-ctas > .cta-nav-integrated {
+  /* Base .cta-nav-integrated uses min-width: 200px; keep ribbon pair aligned */
+  min-width: 200px;
+  justify-content: center;
+}
+
+.conditional-nav .nav-ribbon-ctas > .cta-nav-integrated .cta-text-section {
+  align-items: center;
+  width: 100%;
+  text-align: center;
+}
+
+.conditional-nav .nav-ribbon-ctas > .cta-nav.cta-nav--get-reviewed {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
 .nav .reviewer-counter {
   gap: 4px;
   padding: 8px 12px;
@@ -3535,12 +3572,35 @@ footer {
     display: none;
   }
 
-  .conditional-nav .cta-nav-integrated {
+  .conditional-nav .nav-ribbon-ctas {
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  /* Two CTAs: share the row evenly */
+  .conditional-nav .nav-ribbon-ctas:has(> :nth-child(2)) {
+    width: 100%;
+  }
+
+  .conditional-nav .nav-ribbon-ctas > .cta-nav-integrated,
+  .conditional-nav .nav-ribbon-ctas > .cta-nav.cta-nav--get-reviewed {
+    flex: 1 1 0;
     min-width: 0;
+    max-width: none;
+  }
+
+  .conditional-nav .nav-ribbon-ctas > .cta-nav-integrated:only-child,
+  .conditional-nav .nav-ribbon-ctas > .cta-nav.cta-nav--get-reviewed:only-child {
+    flex: 0 1 auto;
+    min-width: 160px;
+    max-width: 280px;
+  }
+
+  .conditional-nav .nav-ribbon-ctas > .cta-nav-integrated {
     padding: 10px 12px;
   }
 
-  .conditional-nav .cta-nav--get-reviewed {
+  .conditional-nav .nav-ribbon-ctas > .cta-nav.cta-nav--get-reviewed {
     padding: 10px 14px;
     font-size: 13px;
     white-space: nowrap;

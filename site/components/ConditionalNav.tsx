@@ -35,19 +35,21 @@ export default function ConditionalNav() {
         Sign In
       </Link>
 
-      {!isOnApplyPage && (
-        <Link className="cta-nav-integrated" href="/reviewers/apply">
-          <div className="cta-text-section">
-            <span className="cta-main-text">Become a Reviewer</span>
-          </div>
-        </Link>
-      )}
+      <div className="nav-ribbon-ctas" aria-label="Primary actions">
+        {!isOnApplyPage && (
+          <Link className="cta-nav-integrated" href="/reviewers/apply">
+            <div className="cta-text-section">
+              <span className="cta-main-text">Become a Reviewer</span>
+            </div>
+          </Link>
+        )}
 
-      {!isOnRequestFlow && (
-        <Link className="cta-nav cta-nav--get-reviewed" href="/request">
-          Get Reviewed
-        </Link>
-      )}
+        {!isOnRequestFlow && (
+          <Link className="cta-nav cta-nav--get-reviewed" href="/request">
+            Get Reviewed
+          </Link>
+        )}
+      </div>
     </div>
   );
 }
