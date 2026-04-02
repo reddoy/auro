@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com';
     const redirectTo = `${siteUrl}/auth/confirm?type=reauthentication&email=${encodeURIComponent(email)}`;
 
-    // Send reauthentication email via magic link
+    // Send reauthentication OTP email (Supabase)
     const { error } = await admin.auth.signInWithOtp({
       email,
       options: {

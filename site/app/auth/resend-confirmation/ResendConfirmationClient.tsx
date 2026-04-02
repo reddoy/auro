@@ -72,7 +72,7 @@ export default function ResendConfirmationClient() {
                 </button>
               </form>
 
-              <Link href="/auth/callback" className="mt-4 text-[#C7BFD9] text-sm hover:text-white">
+              <Link href="/auth/sign-in" className="mt-4 text-[#C7BFD9] text-sm hover:text-white">
                 Back to sign in
               </Link>
             </>
@@ -88,7 +88,7 @@ export default function ResendConfirmationClient() {
                 We've sent a confirmation link to <strong className="text-white">{email}</strong>. 
                 Click the link in the email to confirm your account.
               </p>
-              <Link href="/auth/callback" className="inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "linear-gradient(90deg,#FF6F00,#FF2D55)" }}>
+              <Link href="/auth/sign-in" className="inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "linear-gradient(90deg,#FF6F00,#FF2D55)" }}>
                 Back to sign in
               </Link>
             </>

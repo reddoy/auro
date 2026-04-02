@@ -82,7 +82,7 @@ export default function InviteClient() {
                 </button>
               </form>
 
-              <Link href="/auth/callback" className="mt-4 text-[#C7BFD9] text-sm hover:text-white">
+              <Link href="/auth/sign-in" className="mt-4 text-[#C7BFD9] text-sm hover:text-white">
                 Cancel
               </Link>
             </>
@@ -98,7 +98,7 @@ export default function InviteClient() {
                 We've sent an invitation to <strong className="text-white">{email}</strong>. 
                 They'll receive an email with instructions to sign up.
               </p>
-              <Link href="/auth/callback" className="inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "linear-gradient(90deg,#FF6F00,#FF2D55)" }}>
+              <Link href="/auth/sign-in" className="inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "linear-gradient(90deg,#FF6F00,#FF2D55)" }}>
                 Back to home
               </Link>
             </>

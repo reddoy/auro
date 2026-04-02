@@ -91,8 +91,7 @@ export async function GET(req: NextRequest) {
     // Use the access token to get user info and create a proper session
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-    
+
     if (!supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json({ error: 'Server not configured' }, { status: 500 });
     }
@@ -111,26 +110,6 @@ export async function GET(req: NextRequest) {
     if (userError || !user) {
       tempCodes.delete(code);
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-
-    // If we have service role key, we can create a proper session
-    // Otherwise, return the access token and let the client handle it
-    if (serviceRoleKey) {
-      const adminClient = createClient(supabaseUrl, serviceRoleKey);
-      
-      // Generate a new session for the user using admin API
-      // Note: This creates a new session, which is what we want for web
-      const { data: sessionData, error: sessionError } = await adminClient.auth.admin.generateLink({
-        type: 'magiclink',
-        email: user.email || '',
-        options: {
-          redirectTo: `${req.nextUrl.origin}/request`,
-        },
-      });
-
-      // Actually, a better approach: use the access token to create a session cookie
-      // For now, return the access token and session info that the client can use
-      // The client will use setSession with the access token
     }
 
     // Delete the code after use (one-time use)

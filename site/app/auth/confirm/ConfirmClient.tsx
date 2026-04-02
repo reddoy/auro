@@ -30,6 +30,7 @@ function Inner() {
 
   const isSignup = useMemo(() => type === "signup", [type]);
   const isInvite = useMemo(() => type === "invite", [type]);
+  /** Legacy email links may still use type=magiclink in the URL; we verify but do not expose that name in the UI. */
   const isMagicLink = useMemo(() => type === "magiclink", [type]);
   const isEmailChange = useMemo(() => type === "email_change", [type]);
   const isReauthentication = useMemo(() => type === "reauthentication", [type]);
@@ -115,7 +116,7 @@ function Inner() {
               {isMagicLink && (
                 <>
                   <h1 className="text-white text-2xl font-semibold">Signed in successfully! ✅</h1>
-                  <p className="text-[#C7BFD9] mt-2">You've been signed in using your magic link.</p>
+                  <p className="text-[#C7BFD9] mt-2">You&apos;re all set.</p>
                   <RequestLink>Continue to App</RequestLink>
                 </>
               )}

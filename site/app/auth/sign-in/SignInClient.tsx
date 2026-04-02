@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import type { Session } from '@supabase/supabase-js';
 import AuthStep from '@/app/request/components/AuthStep';
 import { supabase } from '@/lib/supabase';
 
@@ -32,7 +33,7 @@ function SignInInner() {
 
     void sync();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_event: string, session: Session | null) => {
       const u = session?.user;
       const real = !!u && (u as { app_metadata?: { provider?: string } }).app_metadata?.provider !== 'anon';
       setIsAuthenticated(real);

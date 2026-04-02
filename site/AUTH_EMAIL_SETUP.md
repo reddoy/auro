@@ -14,21 +14,17 @@ All pages are located in `site/app/auth/`:
    - Allows users to resend their email confirmation link
    - API route: `/api/auth/resend-confirmation`
 
-3. **Magic Link Sign In** - `/auth/magic-link`
-   - Allows users to sign in via a one-time magic link
-   - API route: `/api/auth/magic-link`
-
-4. **Change Email Address** - `/auth/change-email`
+3. **Change Email Address** - `/auth/change-email`
    - Allows authenticated users to change their email address
    - Requires authentication
    - API route: `/api/auth/change-email`
 
-5. **Reauthenticate** - `/auth/reauthenticate`
+4. **Reauthenticate** - `/auth/reauthenticate`
    - Allows authenticated users to re-authenticate before sensitive actions
    - Requires authentication
    - API route: `/api/auth/reauthenticate`
 
-6. **Invite User** - `/auth/invite`
+5. **Invite User** - `/auth/invite`
    - Allows authenticated users to invite others to sign up
    - Requires authentication
    - API route: `/api/auth/invite`
@@ -49,22 +45,17 @@ The following email templates need to be customized in your Supabase dashboard (
    - Template variables: `{{ .ConfirmationURL }}`, `{{ .Token }}`, `{{ .SiteURL }}`, `{{ .Email }}`
    - Redirect URL: `https://www.appauro.com/auth/confirm`
 
-3. **Magic Link** (`magic_link`)
-   - Sent for magic link sign-in
-   - Template variables: `{{ .ConfirmationURL }}`, `{{ .Token }}`, `{{ .SiteURL }}`, `{{ .Email }}`
-   - Redirect URL: `https://www.appauro.com/auth/callback`
-
-4. **Change Email Address** (`change_email`)
+3. **Change Email Address** (`change_email`)
    - Sent when user changes email
    - Template variables: `{{ .ConfirmationURL }}`, `{{ .Token }}`, `{{ .SiteURL }}`, `{{ .Email }}`
    - Redirect URL: `https://www.appauro.com/auth/confirm?type=email_change`
 
-5. **Reset Password** (`reset_password`)
+4. **Reset Password** (`reset_password`)
    - Sent for password reset
    - Template variables: `{{ .ConfirmationURL }}`, `{{ .Token }}`, `{{ .SiteURL }}`, `{{ .Email }}`
    - Redirect URL: `https://www.appauro.com/auth/confirm?type=recovery`
 
-6. **Reauthentication** (`reauthentication`)
+5. **Reauthentication** (`reauthentication`)
    - Sent for reauthentication
    - Template variables: `{{ .ConfirmationURL }}`, `{{ .Token }}`, `{{ .SiteURL }}`, `{{ .Email }}`
    - Redirect URL: `https://www.appauro.com/auth/confirm?type=reauthentication`
@@ -123,7 +114,7 @@ To test the email flows:
 These pages handle users landing from email links:
 
 1. **Confirm Email** - `/auth/confirm`
-   - Handles: signup, invite, magic link, email change, reauthentication
+   - Handles: signup, invite, email change, reauthentication (and legacy `type=magiclink` links from old emails only)
    - Automatically verifies tokens and shows appropriate success messages
 
 2. **Reset Password** - `/auth/reset-password`
@@ -141,6 +132,7 @@ These pages handle users landing from email links:
 
 ## Notes
 
+- The web app no longer offers passwordless “magic link” sign-in (`/auth/magic-link` redirects to `/auth/sign-in`). In **Supabase Dashboard → Authentication → Providers → Email**, disable passwordless / magic-link sign-in if you do not want Supabase to send those emails for new logins.
 - All authentication-required pages (change-email, reauthenticate, invite) require the user to be signed in
 - The API routes use the Supabase service role key for admin operations
 - Security notification emails are sent automatically by Supabase - no API routes needed

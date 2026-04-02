@@ -73,7 +73,7 @@ function Inner() {
 
       setSuccess(true);
       setTimeout(() => {
-        router.push("/auth/callback");
+        router.push("/auth/sign-in");
       }, 2000);
     } catch (err: any) {
       setError(err.message || "Failed to reset password. Please try again.");
@@ -190,7 +190,7 @@ function Inner() {
             </button>
           </form>
 
-          <Link href="/auth/callback" className="mt-4 text-[#C7BFD9] text-sm hover:text-white">
+          <Link href="/auth/sign-in" className="mt-4 text-[#C7BFD9] text-sm hover:text-white">
             Back to sign in
           </Link>
         </div>

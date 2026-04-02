@@ -12,7 +12,7 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'Supabase not configured' }), { status: 500 });
     }
     const admin = createClient(url, key);
-    // send magic link/verification email
+    // Resend signup confirmation email
     const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/auth/confirm?type=signup`;
     const { error } = await (admin.auth as any).resend({
       type: 'signup',

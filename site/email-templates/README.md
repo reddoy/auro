@@ -16,7 +16,6 @@ This directory contains HTML email templates for all authentication and security
 |------------------------|-----------|-------------|
 | `confirm_signup` | `confirm-signup.html` | Email confirmation after signup |
 | `invite_user` | `invite-user.html` | Invitation email for new users |
-| `magic_link` | `magic-link.html` | Magic link for passwordless sign-in |
 | `change_email` | `change-email.html` | Email change confirmation |
 | `reset_password` | `reset-password.html` | Password reset link |
 | `reauthentication` | `reauthentication.html` | Re-authentication verification |

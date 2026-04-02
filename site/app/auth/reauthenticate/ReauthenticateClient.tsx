@@ -83,7 +83,7 @@ export default function ReauthenticateClient() {
                 </button>
               </form>
 
-              <Link href="/auth/callback" className="mt-4 text-[#C7BFD9] text-sm hover:text-white">
+              <Link href="/auth/sign-in" className="mt-4 text-[#C7BFD9] text-sm hover:text-white">
                 Cancel
               </Link>
             </>
@@ -99,7 +99,7 @@ export default function ReauthenticateClient() {
                 We've sent a verification link to <strong className="text-white">{email}</strong>. 
                 Click the link in the email to complete reauthentication.
               </p>
-              <Link href="/auth/callback" className="inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "linear-gradient(90deg,#FF6F00,#FF2D55)" }}>
+              <Link href="/auth/sign-in" className="inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "linear-gradient(90deg,#FF6F00,#FF2D55)" }}>
                 Back to home
               </Link>
             </>
