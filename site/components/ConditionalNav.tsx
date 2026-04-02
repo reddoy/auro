@@ -23,7 +23,7 @@ export default function ConditionalNav() {
   return (
     <div className="conditional-nav" style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
       <Link
-        href="/auth/magic-link"
+        href="/auth/sign-in"
         style={signInLinkStyle}
         onMouseOver={(e) => {
           e.currentTarget.style.opacity = '1';

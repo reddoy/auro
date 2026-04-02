@@ -89,7 +89,7 @@ export default function AppProfilePage() {
           </Link>
 
           <Link
-            href="/auth/magic-link"
+            href="/auth/sign-in"
             className="block w-full rounded-2xl border border-white/15 py-3 text-center font-semibold text-[#C7BFD9]"
           >
             Sign-in options

@@ -10,10 +10,26 @@ type Props = {
   supabase: any;
   requestData?: RequestData;
   onSaveState?: () => void;
+  /** Path (with optional query) sent to OAuth as redirect_to after /auth/callback. Defaults to current URL. */
+  oauthReturnPath?: string;
+  /** Label for the primary button when already signed in (request flow vs standalone). */
+  continueCtaLabel?: string;
+  /** Default tab on first render. */
+  initialAuthTab?: 'signin' | 'signup';
 };
 
-export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, requestData, onSaveState }: Props) {
-  const [isSignUp, setIsSignUp] = useState(true);
+export default function AuthStep({
+  isAuthenticated,
+  onNext,
+  onBack,
+  supabase,
+  requestData,
+  onSaveState,
+  oauthReturnPath,
+  continueCtaLabel = 'Continue to Payment',
+  initialAuthTab = 'signup',
+}: Props) {
+  const [isSignUp, setIsSignUp] = useState(() => initialAuthTab !== 'signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -306,10 +322,14 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, re
     try {
       await saveOAuthState();
 
+      const oauthReturn =
+        oauthReturnPath ??
+        `${window.location.pathname}${window.location.search}`;
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?redirect_to=${encodeURIComponent(window.location.pathname + window.location.search)}`,
+          redirectTo: `${window.location.origin}/auth/callback?redirect_to=${encodeURIComponent(oauthReturn)}`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -336,10 +356,14 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, re
     try {
       await saveOAuthState();
 
+      const oauthReturn =
+        oauthReturnPath ??
+        `${window.location.pathname}${window.location.search}`;
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?redirect_to=${encodeURIComponent(window.location.pathname + window.location.search)}`,
+          redirectTo: `${window.location.origin}/auth/callback?redirect_to=${encodeURIComponent(oauthReturn)}`,
         }
       });
 
@@ -372,7 +396,7 @@ export default function AuthStep({ isAuthenticated, onNext, onBack, supabase, re
             Back
           </button>
           <button type="button" onClick={onNext} className="btn-primary">
-            Continue to Payment
+            {continueCtaLabel}
           </button>
           <button
             type="button"
