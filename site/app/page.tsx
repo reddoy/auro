@@ -100,7 +100,7 @@ function HomePageContent() {
               
               {/* Main Headline */}
               <div className="space-y-4">
-                <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.15] text-center tracking-tight px-4 text-balance max-w-2xl mx-auto mobile-text-reveal" style={{ animationDelay: '0.4s' }}>
+                <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.15] text-center tracking-tight px-4 max-w-2xl mx-auto mobile-text-reveal hyphens-none" style={{ animationDelay: '0.4s' }}>
                   <span className="text-white">Get honest feedback on your dating profile.</span>
                 </h1>
                 
@@ -213,22 +213,22 @@ function HomePageContent() {
           <div className="container mx-auto px-4 relative z-10">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               {/* Left Content — min-w-0 lets copy wrap inside the grid track instead of overflowing under the phone */}
-              <div className="text-left space-y-8 min-w-0 pr-2 xl:pr-6">
+              <div className="text-left space-y-5 min-w-0 pr-2 xl:pr-6">
                 {/* Removed redundant badge to save space and reduce clutter */}
                 
-                {/* Main Headline — RMH-style: one strong line + supporting line (no nowrap) */}
-                <div className="space-y-6">
-                  <h1 className="text-4xl xl:text-5xl 2xl:text-6xl font-extrabold leading-[1.12] tracking-tight text-white text-balance max-w-2xl">
+                {/* Main Headline — hyphens-none avoids ugly "feed-back" breaks; even spacing to CTAs below */}
+                <div className="space-y-4">
+                  <h1 className="text-4xl xl:text-5xl 2xl:text-6xl font-extrabold leading-[1.12] tracking-tight text-white max-w-2xl hyphens-none">
                     Get honest feedback on your dating profile.
                   </h1>
                   
-                  <p className="text-lg xl:text-xl text-white/90 max-w-xl leading-relaxed font-medium text-pretty">
+                  <p className="text-lg xl:text-xl text-white/90 max-w-xl leading-relaxed font-medium text-pretty hyphens-none">
                     Reviewers earn by giving advice. Guys get reviewed and improve. Join either side in minutes.
                   </p>
                 </div>
                 
                 {/* CTA Buttons */}
-                <div className="flex flex-wrap gap-3 justify-start">
+                <div className="flex flex-wrap gap-3 justify-start pt-1">
                   <Button
                     size="xl"
                     variant="gradient"
@@ -253,21 +253,21 @@ function HomePageContent() {
                   </Button>
                 </div>
 
-                {/* Stats */}
-                <div className="flex flex-wrap gap-4 text-sm text-white">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
+                {/* Trust line — column layout aligns checks with headline (no ragged wrap grid) */}
+                <ul className="flex flex-col gap-2.5 text-sm text-white pt-1 list-none m-0 p-0" aria-label="Key benefits">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0 mt-0.5" aria-hidden />
                     <span>No commitment required</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0 mt-0.5" aria-hidden />
                     <span>Paid when you complete a review</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0 mt-0.5" aria-hidden />
                     <span>Built for web + mobile web</span>
-                  </div>
-                </div>
+                  </li>
+                </ul>
               </div>
               
               {/* Right Content - Desktop iPhone Video */}
