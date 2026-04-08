@@ -26,7 +26,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 px-2 pt-2"
         style={{
           paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
-          background: 'linear-gradient(90deg, #2B1055 0%, #18082E 100%)',
+          background: '#0C0325',
           boxShadow: '0 -8px 32px rgba(0,0,0,0.35)',
         }}
         aria-label="App navigation"

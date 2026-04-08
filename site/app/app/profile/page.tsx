@@ -49,7 +49,7 @@ export default function AppProfilePage() {
 
   if (loading) {
     return (
-      <div className="px-4 py-10 text-center text-[#C7BFD9]">Loading…</div>
+      <div className="px-4 py-10 text-center text-white/70">Loading…</div>
     );
   }
 
@@ -59,7 +59,7 @@ export default function AppProfilePage() {
         <h1 className="text-2xl font-bold text-white">Profile</h1>
         <p className="mt-2 text-lg text-white/90">{displayName}</p>
         {profile?.username ? (
-          <p className="text-sm text-[#C7BFD9]">@{profile.username}</p>
+          <p className="text-sm text-white/70">@{profile.username}</p>
         ) : null}
 
         <div className="mt-8 space-y-3">
@@ -67,8 +67,7 @@ export default function AppProfilePage() {
             <button
               type="button"
               onClick={copyLink}
-              className="w-full rounded-2xl py-3 text-center font-bold text-[#1A0B2E]"
-              style={{ background: 'linear-gradient(90deg, #FF6F00, #FF8F3C)' }}
+              className="w-full rounded-2xl bg-primary py-3 text-center font-bold text-primary-foreground hover:bg-primary/90"
             >
               Copy profile link
             </button>
@@ -90,7 +89,7 @@ export default function AppProfilePage() {
 
           <Link
             href="/auth/sign-in"
-            className="block w-full rounded-2xl border border-white/15 py-3 text-center font-semibold text-[#C7BFD9]"
+            className="block w-full rounded-2xl border border-white/15 py-3 text-center font-semibold text-white/70"
           >
             Sign-in options
           </Link>
@@ -98,7 +97,7 @@ export default function AppProfilePage() {
           <button
             type="button"
             onClick={signOut}
-            className="w-full rounded-2xl py-3 text-center font-semibold text-red-300"
+            className="w-full rounded-2xl py-3 text-center font-semibold text-destructive"
           >
             Sign out
           </button>

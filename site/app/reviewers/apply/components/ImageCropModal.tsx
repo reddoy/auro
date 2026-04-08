@@ -91,7 +91,7 @@ export default function ImageCropModal({ image, onCropComplete, onClose }: Props
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-      <div className="bg-gradient-to-br from-[#0c0325] to-[#1a0b3d] rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden border border-white/10">
+      <div className="bg-gradient-to-br from-background to-card rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden border border-white/10">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <h3 className="text-xl font-bold text-white">Crop Profile Picture</h3>
@@ -142,7 +142,7 @@ export default function ImageCropModal({ image, onCropComplete, onClose }: Props
               <label className="text-sm font-medium text-gray-300">Rotation</label>
               <button
                 onClick={() => setRotation((prev) => (prev + 90) % 360)}
-                className="flex items-center gap-2 text-xs text-orange-400 hover:text-orange-300"
+                className="flex items-center gap-2 text-xs text-primary hover:text-primary/85"
               >
                 <RotateCw className="w-4 h-4" />
                 Rotate 90°
@@ -170,7 +170,7 @@ export default function ImageCropModal({ image, onCropComplete, onClose }: Props
             </Button>
             <Button
               onClick={handleCrop}
-              className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+              className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white"
             >
               Apply Crop
             </Button>
@@ -184,7 +184,7 @@ export default function ImageCropModal({ image, onCropComplete, onClose }: Props
           width: 20px;
           height: 20px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #ff6f00, #9333ea);
+          background: #F26955;
           cursor: pointer;
           box-shadow: 0 2px 8px rgba(255, 111, 0, 0.4);
         }
@@ -193,7 +193,7 @@ export default function ImageCropModal({ image, onCropComplete, onClose }: Props
           width: 20px;
           height: 20px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #ff6f00, #9333ea);
+          background: #F26955;
           cursor: pointer;
           border: none;
           box-shadow: 0 2px 8px rgba(255, 111, 0, 0.4);

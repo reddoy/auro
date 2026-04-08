@@ -91,7 +91,7 @@ export default function ReviewRequestClient({ id }: { id: string }) {
 
   if (loading) {
     return (
-      <div className="px-4 py-10 text-center text-[#C7BFD9]">Loading…</div>
+      <div className="px-4 py-10 text-center text-white/70">Loading…</div>
     );
   }
 
@@ -99,7 +99,7 @@ export default function ReviewRequestClient({ id }: { id: string }) {
     return (
       <div className="px-4 py-10">
         <p className="text-red-300">{error || 'Not found'}</p>
-        <Link href="/app/requests" className="mt-4 inline-block text-[#FF2D55]">
+        <Link href="/app/requests" className="mt-4 inline-block text-primary">
           ← Back to list
         </Link>
       </div>
@@ -117,7 +117,7 @@ export default function ReviewRequestClient({ id }: { id: string }) {
 
   return (
     <div className="px-4 pb-8 pt-6">
-      <Link href="/app/requests" className="text-sm text-[#FF2D55]">
+      <Link href="/app/requests" className="text-sm text-primary">
         ← My reviews
       </Link>
       <div className="mx-auto mt-4 max-w-lg">
@@ -132,7 +132,7 @@ export default function ReviewRequestClient({ id }: { id: string }) {
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">{reviewerName}</h1>
-            <p className="text-sm text-[#C7BFD9]">
+            <p className="text-sm text-white/70">
               {new Date(request.createdAt).toLocaleString()}
             </p>
             <div className="mt-2">
@@ -143,7 +143,7 @@ export default function ReviewRequestClient({ id }: { id: string }) {
 
         {photoUrls.length > 0 && (
           <div className="mt-6">
-            <p className="mb-2 text-sm font-medium text-[#C7BFD9]">Photos</p>
+            <p className="mb-2 text-sm font-medium text-white/70">Photos</p>
             <div className="flex flex-wrap gap-2">
               {photoUrls.map((src) => (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -159,19 +159,19 @@ export default function ReviewRequestClient({ id }: { id: string }) {
         )}
 
         {(request.status === 'pending' || request.status === 'accepted') && (
-          <p className="mt-8 rounded-xl border border-white/10 bg-white/5 p-4 text-[#C7BFD9]">
+          <p className="mt-8 rounded-xl border border-white/10 bg-white/5 p-4 text-white/70">
             Payment is still pending. Check your email to complete checkout.
           </p>
         )}
 
         {request.status === 'paid' && (
-          <p className="mt-8 text-[#C7BFD9]">
+          <p className="mt-8 text-white/70">
             Payment complete — your reviewer will accept and start soon.
           </p>
         )}
 
         {request.status === 'in_progress' && (
-          <p className="mt-8 text-[#C7BFD9]">Your reviewer is working on this request.</p>
+          <p className="mt-8 text-white/70">Your reviewer is working on this request.</p>
         )}
 
         {request.status === 'completed' && review && (
@@ -180,7 +180,7 @@ export default function ReviewRequestClient({ id }: { id: string }) {
               Overall {(review.ratings?.overall ?? '—') as string | number}/10
             </p>
             {review.feedback?.generalFeedback ? (
-              <p className="whitespace-pre-wrap text-[#C7BFD9]">{review.feedback.generalFeedback}</p>
+              <p className="whitespace-pre-wrap text-white/70">{review.feedback.generalFeedback}</p>
             ) : null}
             {videoSrc && (
               <video src={videoSrc} controls className="w-full rounded-xl" />
@@ -189,7 +189,7 @@ export default function ReviewRequestClient({ id }: { id: string }) {
         )}
 
         {request.status === 'rejected' && (
-          <p className="mt-8 text-[#C7BFD9]">This request was declined. If you paid, a refund should process automatically.</p>
+          <p className="mt-8 text-white/70">This request was declined. If you paid, a refund should process automatically.</p>
         )}
       </div>
     </div>

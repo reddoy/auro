@@ -91,7 +91,7 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
   return (
     <div style={{ 
       minHeight: '100vh',
-      background: '#0c0325',
+      background: 'var(--bg)',
       padding: '20px'
     }}>
       <div style={{ 
@@ -130,7 +130,7 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
                   position: 'absolute',
                   bottom: '0',
                   right: '0',
-                  background: 'linear-gradient(90deg, #FF6F00 0%, #FF2D55 100%)',
+                  background: '#F26955',
                   color: 'white',
                   padding: '6px 12px',
                   borderRadius: '20px',
@@ -159,7 +159,7 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
               <p style={{ 
                 margin: '0 0 20px 0',
                 fontSize: '16px',
-                color: '#C7BFD9'
+                color: 'rgba(255,255,255,0.72)'
               }}>
                 @{reviewer.slug}
               </p>
@@ -193,7 +193,7 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
                 margin: 0,
                 fontSize: '16px',
                 lineHeight: '1.6',
-                color: '#C7BFD9'
+                color: 'rgba(255,255,255,0.72)'
               }}>
                 {reviewer.bio}
               </p>
@@ -223,7 +223,7 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
                       padding: '10px 16px',
                       fontSize: '14px',
                       fontWeight: '600',
-                      background: 'linear-gradient(90deg, #FF6F00 0%, #FF2D55 100%)',
+                      background: '#F26955',
                       color: 'white',
                       borderRadius: '25px',
                       boxShadow: '0 2px 8px rgba(255, 45, 85, 0.3)'
@@ -346,7 +346,7 @@ export default async function ReviewerPage({ params }: { params: { slug: string 
           {/* Pricing & CTA */}
           <div style={{ 
             padding: '24px',
-            background: 'linear-gradient(90deg, #FF6F00 0%, #FF2D55 100%)',
+            background: '#F26955',
             borderRadius: '16px',
             color: 'white',
             textAlign: 'center'

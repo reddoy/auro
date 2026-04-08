@@ -31,7 +31,7 @@ export default function RequestButton({ slug, reviewerId }: { slug: string; revi
         border: 'none',
         borderRadius: '16px',
         background: 'white',
-        color: '#FF2D55',
+        color: '#F26955',
         cursor: loading ? 'not-allowed' : 'pointer',
         transition: 'all 0.3s ease',
         opacity: loading ? 0.7 : 1,
@@ -65,7 +65,7 @@ export default function RequestButton({ slug, reviewerId }: { slug: string; revi
             width: '20px',
             height: '20px',
             border: '2px solid rgba(255, 45, 85, 0.3)',
-            borderTop: '2px solid #FF2D55',
+            borderTop: '2px solid #F26955',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite'
           }} />

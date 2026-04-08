@@ -86,7 +86,7 @@ export default function RevieweeWaitlist() {
 
       <style jsx>{`
         .reviewee-waitlist-container {
-          background: linear-gradient(135deg, rgba(108, 99, 255, 0.1), rgba(255, 101, 132, 0.1));
+          background: rgba(242, 105, 85, 0.12);
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 12px;
           padding: 24px;

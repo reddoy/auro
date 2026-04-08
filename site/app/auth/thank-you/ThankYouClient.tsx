@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 const requestLinkStyle = {
-  backgroundImage: "linear-gradient(90deg,#FF6F00,#FF2D55)",
+  backgroundImage: "#F26955",
 };
 
 function RequestLink({ children }: { children: React.ReactNode }) {
@@ -22,7 +22,7 @@ export default function ThankYouClient() {
           <div className="text-6xl mb-6">🎉</div>
           
           <h1 className="text-white text-2xl font-semibold mb-3">Email Confirmed! 🎉</h1>
-          <p className="text-[#C7BFD9] mt-2 mb-6">
+          <p className="text-white/70 mt-2 mb-6">
             Thank you for confirming your email. You're all set! Continue on Auro web or mobile web.
           </p>
 

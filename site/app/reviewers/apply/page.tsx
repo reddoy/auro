@@ -889,12 +889,12 @@ export default function ReviewerApplyPage() {
     const progressPercent = Math.min(100, ((step - 1) / (lastStepId - 1)) * 100);
 
     return (
-      <div className="w-full px-2 py-3 md:px-4 md:py-6 bg-gradient-to-b from-[#0c0325]/50 to-transparent">
+      <div className="w-full px-2 py-3 md:px-4 md:py-6 bg-gradient-to-b from-background/50 to-transparent">
         <div className="flex items-center justify-between relative max-w-5xl mx-auto">
           {/* Progress line */}
           <div className="absolute top-4 md:top-6 left-0 right-0 h-0.5 bg-white/10">
             <div 
-              className="h-full bg-gradient-to-r from-orange-500 to-purple-600 transition-all duration-500 ease-out shadow-sm shadow-orange-500/50"
+              className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500 ease-out shadow-sm shadow-primary/50"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -917,9 +917,9 @@ export default function ReviewerApplyPage() {
                     w-7 h-7 md:w-12 md:h-12 rounded-full flex items-center justify-center text-sm font-semibold
                     transition-all duration-300 ease-out
                     ${isCompleted 
-                      ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-lg shadow-orange-500/30' 
+                      ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/30' 
                       : isCurrent 
-                        ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-xl shadow-orange-500/50 scale-110' 
+                        ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-xl shadow-primary/50 scale-110' 
                         : 'bg-white/10 border border-white/20 text-gray-400'
                     }
                   `}
@@ -933,7 +933,7 @@ export default function ReviewerApplyPage() {
                 <span className={`
                   mt-1 md:mt-2 text-[10px] md:text-xs font-medium text-center px-0.5
                   hidden sm:block
-                  ${isCurrent ? 'text-orange-400 font-bold' : isCompleted ? 'text-white' : 'text-gray-500'}
+                  ${isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-white' : 'text-gray-500'}
                 `}>
                   {stepItem.shortLabel}
                 </span>
@@ -948,9 +948,9 @@ export default function ReviewerApplyPage() {
   // Show loading state while checking signup status
   if (isCheckingStatus) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0c0325] via-[#1a0b3d] to-[#0c0325] text-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-white flex items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin mx-auto"></div>
+          <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto"></div>
           <p className="text-gray-300">Checking your account status...</p>
         </div>
       </div>
@@ -960,7 +960,7 @@ export default function ReviewerApplyPage() {
   // Show completion message if they already completed signup
   if (signupStatus === 'completed') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#0c0325] via-[#1a0b3d] to-[#0c0325] text-white flex items-center justify-center px-6">
+      <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-white flex items-center justify-center px-6">
         <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
           <CardContent className="py-12 text-center space-y-6">
             <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto">
@@ -977,7 +977,7 @@ export default function ReviewerApplyPage() {
             <div className="flex gap-3">
               <Button
                 asChild
-                className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+                className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white"
               >
                 <a href="/">
                   Back to Home
@@ -991,7 +991,7 @@ export default function ReviewerApplyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0c0325] via-[#1a0b3d] to-[#0c0325] text-white">
+    <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-white">
       <div className="w-full">
         <Stepper />
       </div>
@@ -1006,7 +1006,7 @@ export default function ReviewerApplyPage() {
                 <h1 className="text-3xl md:text-5xl font-bold leading-tight px-2">
                   <span className="block text-white">Girls rate guys.</span>
                   <span className="block text-white">Guys get advice.</span>
-                  <span className="block bg-gradient-to-r from-orange-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
+                  <span className="block bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
                     Girls get paid.
                   </span>
                 </h1>
@@ -1031,10 +1031,10 @@ export default function ReviewerApplyPage() {
                     </div>
                   </div>
                   
-                  <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/5 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-orange-500/20">
+                  <div className="bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-primary/20">
                     <div className="flex flex-col items-center space-y-1 md:space-y-2">
-                      <div className="w-9 h-9 md:w-12 md:h-12 bg-gradient-to-br from-orange-500/30 to-orange-600/20 rounded-full flex items-center justify-center">
-                        <Star className="w-4 h-4 md:w-6 md:h-6 text-orange-400" />
+                      <div className="w-9 h-9 md:w-12 md:h-12 bg-gradient-to-br from-primary/30 to-primary/20 rounded-full flex items-center justify-center">
+                        <Star className="w-4 h-4 md:w-6 md:h-6 text-primary" />
                       </div>
                       <div className="text-center">
                         <div className="text-sm md:text-lg font-bold text-white">You keep most</div>
@@ -1043,10 +1043,10 @@ export default function ReviewerApplyPage() {
                     </div>
                   </div>
                   
-                  <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-purple-500/20">
+                  <div className="bg-gradient-to-br from-secondary/10 to-secondary/5 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-secondary/20">
                     <div className="flex flex-col items-center space-y-1 md:space-y-2">
-                      <div className="w-9 h-9 md:w-12 md:h-12 bg-gradient-to-br from-purple-500/30 to-purple-600/20 rounded-full flex items-center justify-center">
-                        <Clock className="w-4 h-4 md:w-6 md:h-6 text-purple-400" />
+                      <div className="w-9 h-9 md:w-12 md:h-12 bg-gradient-to-br from-secondary/30 to-secondary/20 rounded-full flex items-center justify-center">
+                        <Clock className="w-4 h-4 md:w-6 md:h-6 text-secondary" />
                       </div>
                       <div className="text-center">
                         <div className="text-sm md:text-lg font-bold text-white">Flexible</div>
@@ -1060,14 +1060,14 @@ export default function ReviewerApplyPage() {
               {/* Bottom Section - CTA + Urgency */}
               <div className="space-y-2.5 md:space-y-4 px-4 pb-4 md:pb-6">
                 {/* Live counter urgency bar */}
-                <div className="bg-gradient-to-r from-orange-500/20 via-pink-500/20 to-purple-600/20 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-orange-500/30">
+                <div className="bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-primary/30">
                   <div className="flex items-center justify-between mb-1.5 md:mb-2">
-                    <span className="text-xs md:text-sm font-medium text-orange-300">Reviewer Capacity</span>
+                    <span className="text-xs md:text-sm font-medium text-primary/85">Reviewer Capacity</span>
                     <span className="text-xs md:text-sm font-bold text-white">{Math.max(0, 35 - reviewerCount)}/35 available</span>
                   </div>
                   <div className="w-full bg-white/10 rounded-full h-2 md:h-3 overflow-hidden">
                     <div 
-                      className="h-full bg-gradient-to-r from-orange-500 to-pink-500 transition-all duration-500 rounded-full"
+                      className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500 rounded-full"
                       style={{ width: `${Math.min(100, ((35 - reviewerCount) / 35) * 100)}%` }}
                     />
                   </div>
@@ -1076,7 +1076,7 @@ export default function ReviewerApplyPage() {
                 {/* Main CTA */}
                 <Button 
                   size="xl" 
-                  className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white py-5 md:py-6 text-base md:text-lg font-bold rounded-2xl shadow-2xl shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300 border-2 border-white/10"
+                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white py-5 md:py-6 text-base md:text-lg font-bold rounded-2xl shadow-2xl shadow-primary/30 hover:shadow-primary/50 transition-all duration-300 border-2 border-white/10"
                   onClick={() => setStep(2)}
                 >
                   <div className="flex items-center justify-center gap-2 md:gap-3">
@@ -1093,7 +1093,7 @@ export default function ReviewerApplyPage() {
                   </div>
                   <div className="w-0.5 h-0.5 bg-gray-600 rounded-full"></div>
                   <div className="flex items-center gap-1 md:gap-1.5">
-                    <Shield className="w-3 h-3 md:w-4 md:h-4 text-purple-400" />
+                    <Shield className="w-3 h-3 md:w-4 md:h-4 text-secondary" />
                     <span>Vetted only</span>
                   </div>
                 </div>
@@ -1120,7 +1120,7 @@ export default function ReviewerApplyPage() {
                   <p className="text-gray-300">
                     You're authenticated with Google as <span className="text-green-400 font-semibold">{email}</span>
                     {signupStatus === 'pending' && (
-                      <span className="block mt-2 text-orange-400 text-sm">
+                      <span className="block mt-2 text-primary text-sm">
                         You started the application process. You can continue where you left off.
                       </span>
                     )}
@@ -1138,7 +1138,7 @@ export default function ReviewerApplyPage() {
                   </Button>
                   <Button
                     onClick={() => setStep(4)}
-                    className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+                    className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white"
                   >
                     Continue
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -1187,7 +1187,7 @@ export default function ReviewerApplyPage() {
                   <span className="w-full border-t border-gray-600" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-[#0c0325] px-2 text-gray-400">Or continue with email</span>
+                  <span className="bg-background px-2 text-gray-400">Or continue with email</span>
                 </div>
             </div>
 
@@ -1200,7 +1200,7 @@ export default function ReviewerApplyPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="jane@example.com"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
 
@@ -1212,7 +1212,7 @@ export default function ReviewerApplyPage() {
                       id="marketing-consent"
                       checked={marketingConsent}
                       onChange={(e) => setMarketingConsent(e.target.checked)}
-                      className="mt-1 w-4 h-4 text-orange-500 bg-white/10 border-white/20 rounded focus:ring-orange-500 focus:ring-2"
+                      className="mt-1 w-4 h-4 text-primary bg-white/10 border-white/20 rounded focus:ring-primary focus:ring-2"
                     />
                     <label htmlFor="marketing-consent" className="text-sm text-gray-300 leading-relaxed">
                       I agree to receive marketing messages by email and SMS about new features, opportunities, and updates
@@ -1234,7 +1234,7 @@ export default function ReviewerApplyPage() {
                 <Button
                   onClick={handleNext}
                   disabled={loading || !email}
-                  className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+                  className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white"
                 >
                   {loading ? 'Please wait...' : 'Continue'}
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -1273,7 +1273,7 @@ export default function ReviewerApplyPage() {
                   </Button>
                   <Button
                     onClick={() => setStep(4)}
-                    className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+                    className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white"
                   >
                     Continue
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -1309,7 +1309,7 @@ export default function ReviewerApplyPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Create a strong password"
                     autoComplete="new-password"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     style={{
                       WebkitTextFillColor: '#ffffff',
                       WebkitBoxShadow: '0 0 0px 1000px rgba(255, 255, 255, 0.1) inset',
@@ -1327,7 +1327,7 @@ export default function ReviewerApplyPage() {
                             level <= passwordStrength.score
                               ? isPasswordValid
                                 ? 'bg-green-400'
-                                : 'bg-orange-400'
+                                : 'bg-primary'
                               : 'bg-gray-600'
                           }`}
                         />
@@ -1344,7 +1344,7 @@ export default function ReviewerApplyPage() {
                     onChange={(e) => setPasswordConfirm(e.target.value)}
                     placeholder="Re-enter your password"
                     autoComplete="new-password"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     style={{
                       WebkitTextFillColor: '#ffffff',
                       WebkitBoxShadow: '0 0 0px 1000px rgba(255, 255, 255, 0.1) inset',
@@ -1392,7 +1392,7 @@ export default function ReviewerApplyPage() {
                 <Button
                   onClick={handleNext}
                   disabled={loading || !isPasswordValid || !passwordsMatch}
-                  className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+                  className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white"
                 >
                   {loading ? 'Creating...' : 'Continue'}
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -1458,7 +1458,7 @@ export default function ReviewerApplyPage() {
               <Button
                 onClick={handleNext}
                 disabled={!avatarUrl || !avatarPath}
-                className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -1532,7 +1532,7 @@ export default function ReviewerApplyPage() {
                     </div>
 
                     {/* Projected Earnings Section */}
-                    <div className="bg-gradient-to-br from-blue-500/20 via-indigo-500/20 to-purple-600/20 border border-blue-500/30 rounded-xl p-5">
+                    <div className="bg-gradient-to-br from-blue-500/20 via-indigo-500/20 to-secondary/20 border border-blue-500/30 rounded-xl p-5">
                       <h3 className="text-sm font-semibold text-white mb-4 text-center">Projected Earnings</h3>
                       <div className="space-y-3">
                         <div className="flex items-center justify-between whitespace-nowrap">
@@ -1555,11 +1555,11 @@ export default function ReviewerApplyPage() {
 
               {/* Default Earnings Info */}
               {(!hourlyRate || isNaN(parseFloat(hourlyRate)) || parseFloat(hourlyRate) <= 0) && (
-                <div className="bg-gradient-to-br from-orange-500/20 via-pink-500/20 to-purple-600/20 border border-orange-500/30 rounded-xl p-5">
+                <div className="bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20 border border-primary/30 rounded-xl p-5">
                   <div className="text-center space-y-2">
                     <p className="text-sm font-semibold text-white">Typical Rate</p>
                     <p className="text-sm text-gray-300 whitespace-nowrap">
-                      Most reviewers: <span className="text-orange-400 font-semibold">$25-50</span> per review
+                      Most reviewers: <span className="text-primary font-semibold">$25-50</span> per review
                     </p>
                     <p className="text-xs text-gray-400">Set your rate above or we'll suggest one</p>
                   </div>
@@ -1579,7 +1579,7 @@ export default function ReviewerApplyPage() {
               </Button>
               <Button
                 onClick={handleNext}
-                className="flex-1 bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white"
+                className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white"
               >
                 Continue
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -1620,7 +1620,7 @@ export default function ReviewerApplyPage() {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="Jane"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
                 
@@ -1631,7 +1631,7 @@ export default function ReviewerApplyPage() {
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     placeholder="Doe"
-                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
               </div>
@@ -1644,7 +1644,7 @@ export default function ReviewerApplyPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+1 (555) 123-4567"
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 />
                 <p className="text-xs text-gray-400">
                   We'll use this to notify you about new review requests and payment updates.
@@ -1665,7 +1665,7 @@ export default function ReviewerApplyPage() {
               <Button
                 onClick={handleNext}
                 disabled={loading || !phone || !firstName || !lastName}
-                className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white py-6 text-base font-semibold rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
+                className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white py-6 text-base font-semibold rounded-xl shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all duration-300"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -1705,9 +1705,9 @@ export default function ReviewerApplyPage() {
               </div>
 
               {/* Rohan's Message */}
-              <div className="bg-gradient-to-br from-orange-500/20 via-pink-500/20 to-purple-600/20 border border-orange-500/30 rounded-xl p-6 space-y-4 backdrop-blur-sm">
+              <div className="bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20 border border-primary/30 rounded-xl p-6 space-y-4 backdrop-blur-sm">
                 <div className="flex items-center gap-4">
-                  <div className="relative w-20 h-20 rounded-full overflow-hidden flex-shrink-0 border-2 border-orange-500/50 shadow-lg">
+                  <div className="relative w-20 h-20 rounded-full overflow-hidden flex-shrink-0 border-2 border-primary/50 shadow-lg">
                     <img
                       src="/rohan-headshot-backyard-min.jpg"
                       alt="Rohan"
@@ -1730,7 +1730,7 @@ export default function ReviewerApplyPage() {
               </div>
 
               {/* Next Steps */}
-              <div className="bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-600/10 border border-blue-500/20 rounded-xl p-6 space-y-4">
+              <div className="bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-secondary/10 border border-blue-500/20 rounded-xl p-6 space-y-4">
                 <h4 className="text-base font-semibold text-white text-center">What happens next?</h4>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
@@ -1752,7 +1752,7 @@ export default function ReviewerApplyPage() {
               <div className="space-y-4 pt-2">
                 <Button 
                   asChild
-                  className="w-full bg-gradient-to-r from-orange-500 to-purple-600 hover:from-orange-600 hover:to-purple-700 text-white py-6 text-base font-semibold rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
+                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white py-6 text-base font-semibold rounded-xl shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all duration-300"
                 >
                   <a href="/">
                     Back to Home
@@ -1760,7 +1760,7 @@ export default function ReviewerApplyPage() {
                 </Button>
                 
                 <p className="text-xs text-gray-400 text-center">
-                  Questions? Reach out to us at <span className="text-orange-400">support@appauro.com</span>
+                  Questions? Reach out to us at <span className="text-primary">support@appauro.com</span>
                 </p>
               </div>
             </CardContent>

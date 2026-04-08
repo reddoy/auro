@@ -205,7 +205,7 @@ export default function WebAvatarUploader({
           >
             <CardContent className="p-0">
               <div 
-                className="relative overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-orange-500 transition-colors"
+                className="relative overflow-hidden border-2 border-primary bg-card transition-colors"
                 style={{ 
                   width: size, 
                   height: size,
@@ -243,7 +243,7 @@ export default function WebAvatarUploader({
                     }}
                   />
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-gray-400" style={{ borderRadius: '50%' }}>
+                  <div className="flex h-full w-full flex-col items-center justify-center text-white/60" style={{ borderRadius: '50%' }}>
                     <Camera className="w-8 h-8 mb-2" />
                     <span className="text-sm font-medium">Add Photo</span>
                   </div>
@@ -251,7 +251,7 @@ export default function WebAvatarUploader({
                 
                 {uploading && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <div className="w-8 h-8 border-4 border-orange-500/30 border-t-orange-500 rounded-full animate-spin"></div>
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary/30 border-t-primary"></div>
                   </div>
                 )}
               </div>
@@ -263,7 +263,7 @@ export default function WebAvatarUploader({
               type="button"
               variant="destructive"
               size="sm"
-              className="absolute -top-2 -right-2 w-6 h-6 rounded-full p-0 bg-red-500 hover:bg-red-600 border-0 shadow-lg"
+              className="absolute -right-2 -top-2 h-6 w-6 rounded-full border-0 bg-destructive p-0 shadow-lg hover:bg-destructive/90"
               onClick={(e) => {
                 e.stopPropagation();
                 handleRemoveAvatar();
@@ -283,10 +283,10 @@ export default function WebAvatarUploader({
         />
 
         <div className="text-center">
-          <p className="text-sm text-gray-400 mb-2">
+          <p className="mb-2 text-sm text-white/70">
             Upload a clear photo of yourself
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-white/50">
             JPG, PNG up to 5MB
           </p>
         </div>

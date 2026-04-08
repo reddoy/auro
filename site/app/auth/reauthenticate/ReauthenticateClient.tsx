@@ -52,7 +52,7 @@ export default function ReauthenticateClient() {
           {!sent ? (
             <>
               <h1 className="text-white text-2xl font-semibold mb-2">Re-authenticate</h1>
-              <p className="text-[#C7BFD9] mb-6">
+              <p className="text-white/70 mb-6">
                 For security purposes, please verify your identity before performing this action. 
                 Enter your email address to receive a verification link.
               </p>
@@ -64,7 +64,7 @@ export default function ReauthenticateClient() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email address"
                   required
-                  className="w-full px-4 py-3 rounded-xl bg-[#2C1746] border border-[rgba(255,255,255,0.1)] text-white placeholder-[#C7BFD9] focus:outline-none focus:border-[#FF2D55] mb-4"
+                  className="w-full px-4 py-3 rounded-xl bg-[#2C1746] border border-[rgba(255,255,255,0.1)] text-white placeholder-[rgba(255,255,255,0.72)] focus:outline-none focus:border-[#F26955] mb-4"
                 />
 
                 {error && (
@@ -77,13 +77,13 @@ export default function ReauthenticateClient() {
                   type="submit"
                   disabled={loading}
                   className="w-full rounded-2xl px-5 py-3 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ backgroundImage: loading ? "none" : "linear-gradient(90deg,#FF6F00,#FF2D55)" }}
+                  style={{ backgroundImage: loading ? "none" : "#F26955" }}
                 >
                   {loading ? "Sending..." : "Send Verification Link"}
                 </button>
               </form>
 
-              <Link href="/auth/sign-in" className="mt-4 text-[#C7BFD9] text-sm hover:text-white">
+              <Link href="/auth/sign-in" className="mt-4 text-white/70 text-sm hover:text-white">
                 Cancel
               </Link>
             </>
@@ -95,11 +95,11 @@ export default function ReauthenticateClient() {
                 </svg>
               </div>
               <h1 className="text-white text-2xl font-semibold mb-2">Check your email</h1>
-              <p className="text-[#C7BFD9] mb-6">
+              <p className="text-white/70 mb-6">
                 We've sent a verification link to <strong className="text-white">{email}</strong>. 
                 Click the link in the email to complete reauthentication.
               </p>
-              <Link href="/auth/sign-in" className="inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "linear-gradient(90deg,#FF6F00,#FF2D55)" }}>
+              <Link href="/auth/sign-in" className="inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "#F26955" }}>
                 Back to home
               </Link>
             </>

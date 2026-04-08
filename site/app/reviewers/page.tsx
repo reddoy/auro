@@ -119,12 +119,12 @@ export default function ReviewersIndexPage() {
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center',
-        background: '#0c0325'
+        background: 'var(--bg)'
       }}>
         <div style={{ textAlign: 'center' }}>
           <div className="loading-spinner" style={{ 
             border: '4px solid rgba(255,111,0,0.2)',
-            borderTop: '4px solid #FF6F00',
+            borderTop: '4px solid #F26955',
             borderRadius: '50%',
             width: '50px',
             height: '50px',
@@ -140,7 +140,7 @@ export default function ReviewersIndexPage() {
   return (
     <div style={{ 
       minHeight: '100vh',
-      background: '#0c0325',
+      background: 'var(--bg)',
       paddingBottom: '60px'
     }}>
       {/* Hero Section */}
@@ -241,7 +241,7 @@ export default function ReviewersIndexPage() {
                 fontWeight: '600',
                 border: 'none',
                 borderRadius: '25px',
-                background: selectedFilter === id ? 'linear-gradient(90deg, #FF6F00 0%, #FF2D55 100%)' : 'rgba(255,255,255,0.1)',
+                background: selectedFilter === id ? '#F26955' : 'rgba(255,255,255,0.1)',
                 color: 'white',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
@@ -283,7 +283,7 @@ export default function ReviewersIndexPage() {
             textAlign: 'center',
             border: '1px solid rgba(255,255,255,0.06)'
           }}>
-            <p style={{ fontSize: '18px', color: '#C7BFD9', margin: 0 }}>
+            <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.72)', margin: 0 }}>
               {searchTerm ? `No reviewers found matching "${searchTerm}"` : 'No reviewers available yet'}
             </p>
           </div>
@@ -353,7 +353,7 @@ export default function ReviewersIndexPage() {
                       <p style={{ 
                         margin: 0,
                         fontSize: '14px',
-                        color: '#C7BFD9',
+                        color: 'rgba(255,255,255,0.72)',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap'
@@ -377,21 +377,21 @@ export default function ReviewersIndexPage() {
                 }}>
                   {reviewer.rating_average ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Star fill="#FF6F00" stroke="#FF6F00" size={18} />
+                      <Star fill="#F26955" stroke="#F26955" size={18} />
                       <span style={{ fontWeight: '700', fontSize: '16px', color: '#FFFFFF' }}>
                         {reviewer.rating_average.toFixed(1)}
                       </span>
                     </div>
                   ) : (
-                    <div style={{ color: '#C7BFD9', fontSize: '14px' }}>New</div>
+                    <div style={{ color: 'rgba(255,255,255,0.72)', fontSize: '14px' }}>New</div>
                   )}
                   
                   {reviewer.hourly_rate && (
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: '700', fontSize: '18px', color: '#FF2D55' }}>
+                      <div style={{ fontWeight: '700', fontSize: '18px', color: '#F26955' }}>
                         ${reviewer.hourly_rate}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#C7BFD9' }}>per review</div>
+                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.72)' }}>per review</div>
                     </div>
                   )}
                 </div>
@@ -401,7 +401,7 @@ export default function ReviewersIndexPage() {
                   <p style={{ 
                     margin: '0 0 16px 0',
                     fontSize: '14px',
-                    color: '#C7BFD9',
+                    color: 'rgba(255,255,255,0.72)',
                     lineHeight: '1.6',
                     display: '-webkit-box',
                     WebkitLineClamp: 3,
@@ -427,7 +427,7 @@ export default function ReviewersIndexPage() {
                           padding: '6px 12px',
                           fontSize: '12px',
                           fontWeight: '600',
-                          background: 'linear-gradient(90deg, #FF6F00 0%, #FF2D55 100%)',
+                          background: '#F26955',
                           color: 'white',
                           borderRadius: '20px'
                         }}
@@ -439,7 +439,7 @@ export default function ReviewersIndexPage() {
                       <span style={{
                         padding: '6px 12px',
                         fontSize: '12px',
-                        color: '#C7BFD9',
+                        color: 'rgba(255,255,255,0.72)',
                         background: 'rgba(255,255,255,0.1)',
                         borderRadius: '20px'
                       }}>

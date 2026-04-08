@@ -218,7 +218,7 @@ export default function AdminPaymentsPage() {
         minHeight: '100vh',
         color: '#FFFFFF'
       }}>
-        <p style={{ color: '#C7BFD9' }}>Loading...</p>
+        <p style={{ color: 'rgba(255,255,255,0.72)' }}>Loading...</p>
       </div>
     );
   }
@@ -237,7 +237,7 @@ export default function AdminPaymentsPage() {
         border: '1px solid rgba(255, 255, 255, 0.1)'
       }}>
         <h1 style={{ fontSize: '28px', marginBottom: '10px', color: '#FFFFFF' }}>Pingle Pongle</h1>
-        <p style={{ color: '#C7BFD9', marginBottom: '30px' }}>Enter email and password to continue</p>
+        <p style={{ color: 'rgba(255,255,255,0.72)', marginBottom: '30px' }}>Enter email and password to continue</p>
         
         <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           <input
@@ -276,7 +276,7 @@ export default function AdminPaymentsPage() {
           <button
             type="submit"
             style={{
-              background: 'linear-gradient(90deg, #FF6F00 0%, #FF2D55 100%)',
+              background: '#F26955',
               color: 'white',
               border: 'none',
               padding: '12px 24px',
@@ -320,7 +320,7 @@ export default function AdminPaymentsPage() {
         color: '#FFFFFF'
       }}>
         <h1 style={{ fontSize: '24px', marginBottom: '10px', color: '#FFFFFF' }}>Access Denied</h1>
-        <p style={{ color: '#C7BFD9' }}>You do not have permission to access this page.</p>
+        <p style={{ color: 'rgba(255,255,255,0.72)' }}>You do not have permission to access this page.</p>
       </div>
     );
   }
@@ -340,7 +340,7 @@ export default function AdminPaymentsPage() {
       color: '#FFFFFF'
     }}>
       <h1 style={{ fontSize: '32px', marginBottom: '10px', color: '#FFFFFF' }}>Pingle Pongle</h1>
-      <p style={{ color: '#C7BFD9', marginBottom: '30px' }}>
+      <p style={{ color: 'rgba(255,255,255,0.72)', marginBottom: '30px' }}>
         Payment management and distribution tools
       </p>
 
@@ -356,31 +356,31 @@ export default function AdminPaymentsPage() {
             <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '5px', color: '#FFFFFF' }}>
               ${((stats.totalRevenue || 0) / 100).toFixed(2)}
             </div>
-            <div style={{ color: '#C7BFD9' }}>Total Revenue</div>
+            <div style={{ color: 'rgba(255,255,255,0.72)' }}>Total Revenue</div>
           </div>
           <div style={{ background: '#2A1B3D', padding: '20px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
             <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '5px', color: '#FFFFFF' }}>
               ${((stats.totalPaidOut || 0) / 100).toFixed(2)}
             </div>
-            <div style={{ color: '#C7BFD9' }}>Paid to Reviewers</div>
+            <div style={{ color: 'rgba(255,255,255,0.72)' }}>Paid to Reviewers</div>
           </div>
-          <div style={{ background: '#342346', padding: '20px', borderRadius: '8px', border: '1px solid #FF6F00' }}>
+          <div style={{ background: '#342346', padding: '20px', borderRadius: '8px', border: '1px solid #F26955' }}>
             <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '5px', color: '#FFFFFF' }}>
               ${((stats.pendingPayouts || 0) / 100).toFixed(2)}
             </div>
-            <div style={{ color: '#C7BFD9' }}>Pending Payouts</div>
+            <div style={{ color: 'rgba(255,255,255,0.72)' }}>Pending Payouts</div>
           </div>
           <div style={{ background: '#2A1B3D', padding: '20px', borderRadius: '8px', border: '1px solid #FF4D4F' }}>
             <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '5px', color: '#FF4D4F' }}>
               {stats.failedDistributions || 0}
             </div>
-            <div style={{ color: '#C7BFD9' }}>Failed Distributions</div>
+            <div style={{ color: 'rgba(255,255,255,0.72)' }}>Failed Distributions</div>
           </div>
           <div style={{ background: '#2A1B3D', padding: '20px', borderRadius: '8px', border: '1px solid #FF4D4F' }}>
             <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '5px', color: '#FF4D4F' }}>
               {stats.timeoutRequests || 0}
             </div>
-            <div style={{ color: '#C7BFD9' }}>Timeout Requests</div>
+            <div style={{ color: 'rgba(255,255,255,0.72)' }}>Timeout Requests</div>
           </div>
         </div>
       )}
@@ -396,7 +396,7 @@ export default function AdminPaymentsPage() {
           onClick={handleRetryDistributions}
           disabled={processing !== null}
           style={{
-            background: processing === 'retry' ? '#342346' : 'linear-gradient(90deg, #FF6F00 0%, #FF2D55 100%)',
+            background: processing === 'retry' ? '#342346' : '#F26955',
             color: 'white',
             border: 'none',
             padding: '16px 24px',
@@ -417,7 +417,7 @@ export default function AdminPaymentsPage() {
             disabled={processing !== null}
             title="Processes requests that have timed out (reviewer didn't accept within 14 days or complete within 48 hours) and automatically refunds the customer via Stripe"
             style={{
-              background: processing === 'timeout' ? '#342346' : '#FF6F00',
+              background: processing === 'timeout' ? '#342346' : '#F26955',
               color: 'white',
               border: 'none',
               padding: '16px 24px',
@@ -431,7 +431,7 @@ export default function AdminPaymentsPage() {
           >
             {processing === 'timeout' ? '⏳ Processing...' : '⏰ Process Timeout Refunds'}
           </button>
-          <span style={{ fontSize: '12px', color: '#C7BFD9', marginTop: '-4px' }}>
+          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.72)', marginTop: '-4px' }}>
             Refunds customers for timed-out requests
           </span>
         </div>
@@ -481,7 +481,7 @@ export default function AdminPaymentsPage() {
           marginBottom: '20px'
         }}>
           <h3 style={{ marginTop: 0, color: '#3DDC84', marginBottom: '15px' }}>✅ Processing Complete</h3>
-          <div style={{ background: '#1F1629', padding: '15px', borderRadius: '4px', fontFamily: 'monospace', fontSize: '14px', color: '#C7BFD9' }}>
+          <div style={{ background: '#1F1629', padding: '15px', borderRadius: '4px', fontFamily: 'monospace', fontSize: '14px', color: 'rgba(255,255,255,0.72)' }}>
             {result.results && (
               <>
                 <div style={{ color: '#FFFFFF' }}><strong>Processed:</strong> {result.results.processed || 0}</div>
@@ -490,7 +490,7 @@ export default function AdminPaymentsPage() {
                 <div style={{ color: '#FFB300' }}><strong>Skipped:</strong> {result.results.skipped || 0}</div>
               </>
             )}
-            {result.message && <div style={{ color: '#C7BFD9', marginTop: '10px' }}><strong>Message:</strong> {result.message}</div>}
+            {result.message && <div style={{ color: 'rgba(255,255,255,0.72)', marginTop: '10px' }}><strong>Message:</strong> {result.message}</div>}
           </div>
         </div>
       )}
@@ -521,19 +521,19 @@ export default function AdminPaymentsPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px' }}>
           <div>
             <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>{totalPending}</div>
-            <div style={{ color: '#C7BFD9', fontSize: '14px' }}>Total Pending</div>
+            <div style={{ color: 'rgba(255,255,255,0.72)', fontSize: '14px' }}>Total Pending</div>
           </div>
           <div>
             <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FFFFFF' }}>${(totalPendingAmount / 100).toFixed(2)}</div>
-            <div style={{ color: '#C7BFD9', fontSize: '14px' }}>Total Amount</div>
+            <div style={{ color: 'rgba(255,255,255,0.72)', fontSize: '14px' }}>Total Amount</div>
           </div>
           <div>
             <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#3DDC84' }}>{withStripe}</div>
-            <div style={{ color: '#C7BFD9', fontSize: '14px' }}>Ready to Pay</div>
+            <div style={{ color: 'rgba(255,255,255,0.72)', fontSize: '14px' }}>Ready to Pay</div>
           </div>
           <div>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#FF6F00' }}>{withoutStripe}</div>
-            <div style={{ color: '#C7BFD9', fontSize: '14px' }}>Waiting for Stripe</div>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#F26955' }}>{withoutStripe}</div>
+            <div style={{ color: 'rgba(255,255,255,0.72)', fontSize: '14px' }}>Waiting for Stripe</div>
           </div>
         </div>
       </div>
@@ -545,26 +545,26 @@ export default function AdminPaymentsPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#1F1629' }}>
-                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid rgba(255, 255, 255, 0.1)', color: '#C7BFD9' }}>Request ID</th>
-                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid rgba(255, 255, 255, 0.1)', color: '#C7BFD9' }}>Reviewer</th>
-                <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid rgba(255, 255, 255, 0.1)', color: '#C7BFD9' }}>Amount</th>
-                <th style={{ padding: '12px', textAlign: 'center', borderBottom: '2px solid rgba(255, 255, 255, 0.1)', color: '#C7BFD9' }}>Stripe</th>
-                <th style={{ padding: '12px', textAlign: 'center', borderBottom: '2px solid rgba(255, 255, 255, 0.1)', color: '#C7BFD9' }}>Attempts</th>
-                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid rgba(255, 255, 255, 0.1)', color: '#C7BFD9' }}>Error</th>
-                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid rgba(255, 255, 255, 0.1)', color: '#C7BFD9' }}>Completed</th>
+                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid rgba(255, 255, 255, 0.1)', color: 'rgba(255,255,255,0.72)' }}>Request ID</th>
+                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid rgba(255, 255, 255, 0.1)', color: 'rgba(255,255,255,0.72)' }}>Reviewer</th>
+                <th style={{ padding: '12px', textAlign: 'right', borderBottom: '2px solid rgba(255, 255, 255, 0.1)', color: 'rgba(255,255,255,0.72)' }}>Amount</th>
+                <th style={{ padding: '12px', textAlign: 'center', borderBottom: '2px solid rgba(255, 255, 255, 0.1)', color: 'rgba(255,255,255,0.72)' }}>Stripe</th>
+                <th style={{ padding: '12px', textAlign: 'center', borderBottom: '2px solid rgba(255, 255, 255, 0.1)', color: 'rgba(255,255,255,0.72)' }}>Attempts</th>
+                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid rgba(255, 255, 255, 0.1)', color: 'rgba(255,255,255,0.72)' }}>Error</th>
+                <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid rgba(255, 255, 255, 0.1)', color: 'rgba(255,255,255,0.72)' }}>Completed</th>
               </tr>
             </thead>
             <tbody>
               {pendingPayments.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: '#C7BFD9' }}>
+                  <td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.72)' }}>
                     No pending payments! 🎉
                   </td>
                 </tr>
               ) : (
                 pendingPayments.map((payment) => (
                   <tr key={payment.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                    <td style={{ padding: '12px', fontFamily: 'monospace', fontSize: '12px', color: '#C7BFD9' }}>
+                    <td style={{ padding: '12px', fontFamily: 'monospace', fontSize: '12px', color: 'rgba(255,255,255,0.72)' }}>
                       {payment.id.slice(0, 8)}...
                     </td>
                     <td style={{ padding: '12px', color: '#FFFFFF' }}>
@@ -577,13 +577,13 @@ export default function AdminPaymentsPage() {
                       {payment.reviewer?.stripe_connect_account_id ? (
                         <span style={{ color: '#3DDC84', fontWeight: '600' }}>✅</span>
                       ) : (
-                        <span style={{ color: '#FF6F00', fontWeight: '600' }}>⏸️</span>
+                        <span style={{ color: '#F26955', fontWeight: '600' }}>⏸️</span>
                       )}
                     </td>
-                    <td style={{ padding: '12px', textAlign: 'center', color: '#C7BFD9' }}>
+                    <td style={{ padding: '12px', textAlign: 'center', color: 'rgba(255,255,255,0.72)' }}>
                       {payment.payment_distribution_attempts || 0}
                     </td>
-                    <td style={{ padding: '12px', fontSize: '12px', color: '#C7BFD9', maxWidth: '300px' }}>
+                    <td style={{ padding: '12px', fontSize: '12px', color: 'rgba(255,255,255,0.72)', maxWidth: '300px' }}>
                       {payment.payment_distribution_error ? (
                         <span title={payment.payment_distribution_error}>
                           {payment.payment_distribution_error.length > 50 
@@ -594,7 +594,7 @@ export default function AdminPaymentsPage() {
                         <span style={{ color: '#666' }}>—</span>
                       )}
                     </td>
-                    <td style={{ padding: '12px', fontSize: '12px', color: '#C7BFD9' }}>
+                    <td style={{ padding: '12px', fontSize: '12px', color: 'rgba(255,255,255,0.72)' }}>
                       {new Date(payment.created_at).toLocaleDateString()}
                     </td>
                   </tr>

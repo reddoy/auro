@@ -1,0 +1,34 @@
+## Design Context (Auro / Impeccable)
+
+### Users
+- **Primary audience**: Both sides, slightly reviewer-first (they create supply, quality, and trust).
+- **Job to be done**: Help men quickly understand and improve how they’re perceived on dating apps through honest, actionable feedback from real women.
+- **Emotional target**: Safe, honest, slightly premium, efficient — no fluff, no cringe, no judgment.
+
+### Brand Personality
+- **Three words**: Honest • Sharp • Attractive
+- **Boundaries**:
+  - Never “Tinder”: too gamified / shallow.
+  - Avoid Fiverr/Upwork vibes: cheap/transactional.
+  - Avoid “rate me lol” / Reddit energy: keep dignity high.
+
+### Aesthetic Direction
+- **Direction**: Minimal + slightly premium (confident and clean; not flashy, not playful).
+- **Theme**: Both long-term; start dark-first for premium/dating-app vibe.
+- **Palette**: Neutrals (black/charcoal/off-white) with **orange as an accent** for energy/CTA.
+- **Avoid**: Saturated gradients, neon, “startup rainbow” palettes.
+- **Preference**: Contrast + spacing > decoration.
+
+### Accessibility
+- **Baseline**: WCAG 2.1 AA (especially contrast + readability).
+- **Specifics**:
+  - High contrast for profile images + text (core to product).
+  - Minimal motion (no distracting animations).
+  - Clear hierarchy so users can scan feedback instantly.
+
+### Design Principles
+- Clarity > cleverness.
+- Feedback should feel valuable, not entertaining.
+- Every screen answers: “What do I do next?”
+- Trust is everything (real people, real opinions, no gimmicks).
+

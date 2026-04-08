@@ -10,7 +10,7 @@ export default function StripeConnectSuccessClient() {
           <div className="text-6xl mb-6">🎉</div>
           
           <h1 className="text-white text-2xl font-semibold mb-3">Stripe Connect Setup Complete!</h1>
-          <p className="text-[#C7BFD9] mt-2 mb-6">
+          <p className="text-white/70 mt-2 mb-6">
             Thank you for completing your Stripe Connect setup. You're now ready to receive payouts on Auro web.
           </p>
           

@@ -257,7 +257,7 @@ export default function RequestsPageClient() {
     <div className="px-4 pb-4 pt-6">
       <div className="mx-auto max-w-lg">
         <h1 className="text-2xl font-bold text-white">My reviews</h1>
-        <p className="mt-1 text-sm text-[#C7BFD9]">
+        <p className="mt-1 text-sm text-white/70">
           {isReviewer ? 'Requests you give and receive' : 'Your review requests'}
         </p>
 
@@ -265,8 +265,7 @@ export default function RequestsPageClient() {
           <button
             type="button"
             onClick={copyProfileLink}
-            className="mt-4 w-full rounded-2xl py-3 text-center text-base font-bold text-[#1A0B2E]"
-            style={{ background: 'linear-gradient(90deg, #FF6F00, #FF8F3C)' }}
+            className="mt-4 w-full rounded-2xl bg-primary py-3 text-center text-base font-bold text-primary-foreground hover:bg-primary/90"
           >
             Copy profile link
           </button>
@@ -289,7 +288,7 @@ export default function RequestsPageClient() {
               }`}
             >
               {label}
-              <span className="ml-1 text-white/50">({count})</span>
+              <span className="ml-1 text-white/70">({count})</span>
             </button>
           ))}
         </div>
@@ -298,7 +297,7 @@ export default function RequestsPageClient() {
           type="button"
           onClick={() => loadAll('refresh')}
           disabled={refreshing}
-          className="mt-3 text-sm font-medium text-[#FF2D55] disabled:opacity-50"
+          className="mt-3 text-sm font-medium text-primary disabled:opacity-50"
         >
           {refreshing ? 'Refreshing…' : 'Refresh'}
         </button>
@@ -306,14 +305,14 @@ export default function RequestsPageClient() {
 
       <div className="mx-auto mt-6 max-w-lg space-y-4">
         {loading ? (
-          <p className="text-center text-[#C7BFD9]">Loading…</p>
+          <p className="text-center text-white/70">Loading…</p>
         ) : filtered.length === 0 ? (
           <div
             className="rounded-2xl border border-white/10 p-8 text-center"
             style={{ background: 'rgba(36, 18, 59, 0.6)' }}
           >
-            <p className="text-[#C7BFD9]">No requests here yet.</p>
-            <Link href="/request" className="mt-4 inline-block font-semibold text-[#FF2D55]">
+            <p className="text-white/70">No requests here yet.</p>
+            <Link href="/request" className="mt-4 inline-block font-semibold text-primary">
               Start a review →
             </Link>
           </div>
@@ -348,7 +347,7 @@ export default function RequestsPageClient() {
                   <AvatarCircle src={avatarSrc} name={displayName} size={56} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-lg font-bold text-white">{displayName}</p>
-                    <p className="text-sm text-[#C7BFD9]">
+                    <p className="text-sm text-white/70">
                       {new Date(item.createdAt).toLocaleDateString()}
                     </p>
                     <div className="mt-2">
@@ -362,13 +361,13 @@ export default function RequestsPageClient() {
                       />
                     </div>
                     {item.status === 'completed' && item.review?.ratings?.overall != null && (
-                      <p className="mt-3 text-sm text-[#FF6F00]">
+                      <p className="mt-3 text-sm text-primary">
                         Overall {(item.review as { ratings: { overall: number } }).ratings.overall}/10
                         {item.review?.media?.videoUrl ? ' · Video attached' : ''}
                       </p>
                     )}
                     {(item.status === 'accepted' || item.status === 'pending') && (
-                      <p className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-[#C7BFD9]">
+                      <p className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/70">
                         {userIsReviewer
                           ? 'Waiting for the requester to finish payment (48h window).'
                           : 'Finish payment from your email — you have 48 hours.'}
@@ -380,7 +379,7 @@ export default function RequestsPageClient() {
                           <span
                             role="button"
                             tabIndex={0}
-                            className="text-[#C7BFD9] underline"
+                            className="text-white/70 underline"
                             onClick={(e) => {
                               e.stopPropagation();
                               archiveRequest(item.id).then(() =>
@@ -400,7 +399,7 @@ export default function RequestsPageClient() {
                           <span
                             role="button"
                             tabIndex={0}
-                            className="text-[#C7BFD9] underline"
+                            className="text-white/70 underline"
                             onClick={(e) => {
                               e.stopPropagation();
                               unarchiveRequest(item.id).then(() =>

@@ -26,7 +26,7 @@ export default function Avatar({ src, alt, size = 64 }: { src?: string | null; a
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        border: '2px solid #FF6F00',
+        border: '2px solid #F26955',
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
         position: 'relative',
       }}

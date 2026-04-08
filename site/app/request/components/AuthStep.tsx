@@ -626,7 +626,7 @@ export default function AuthStep({
                   <a 
                     href="/auth/forgot-password"
                     className="link-button"
-                    style={{ fontSize: '14px', color: '#FF2D55' }}
+                    style={{ fontSize: '14px', color: '#F26955' }}
                   >
                     Forgot Password?
                   </a>

@@ -20,7 +20,7 @@ export default function Avatar({ src, alt, size = 48 }: { src?: string; alt: str
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    border: '2px solid #FF6F00',
+    border: '2px solid #F26955',
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
     position: 'relative',
   };

@@ -19,7 +19,7 @@ export default function BecomeReviewerButton() {
           border: '2px solid white',
           borderRadius: '30px',
           background: isHovered ? 'white' : 'transparent',
-          color: isHovered ? '#0c0325' : 'white',
+          color: isHovered ? 'var(--bg)' : 'white',
           textDecoration: 'none',
           transition: 'all 0.3s ease',
           boxShadow: '0 4px 20px rgba(255, 255, 255, 0.1)'

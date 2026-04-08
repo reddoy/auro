@@ -62,7 +62,7 @@ export default function IntroStep({ onNext }: Props) {
           <div className="intro-headline">
             <h1 className="intro-title mobile-text-reveal" style={{ animationDelay: '0.2s' }}>
               <span className="block text-white">
-                Get Expert <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-pink-500 bg-clip-text text-transparent">Dating Profile Feedback</span>
+                Get Expert <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">Dating Profile Feedback</span>
               </span>
             </h1>
             
@@ -108,7 +108,7 @@ export default function IntroStep({ onNext }: Props) {
             <div className="intro-headline">
               <h1 className="intro-title-desktop">
                 <span className="block text-white pb-2">
-                  Get Expert <span className="bg-gradient-to-r from-orange-400 via-orange-500 to-pink-500 bg-clip-text text-transparent">Dating Profile Feedback</span>
+                  Get Expert <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">Dating Profile Feedback</span>
                 </span>
               </h1>
               
@@ -124,7 +124,7 @@ export default function IntroStep({ onNext }: Props) {
             <div className="desktop-benefits">
               <div className="desktop-benefit-card">
                 <div className="benefit-icon-circle">
-                  <Star className="w-6 h-6 text-orange-400" />
+                  <Star className="w-6 h-6 text-primary" />
                 </div>
                 <div>
                   <h3 className="benefit-title">Real Feedback</h3>
@@ -189,7 +189,7 @@ export default function IntroStep({ onNext }: Props) {
               
               {/* Floating Benefit Callouts */}
               <div className="floating-callout floating-callout-top">
-                <Star className="w-4 h-4 text-orange-500" />
+                <Star className="w-4 h-4 text-primary" />
                 <span>Honest feedback from women</span>
               </div>
               
@@ -287,7 +287,7 @@ export default function IntroStep({ onNext }: Props) {
           font-size: 1.125rem;
           font-weight: 700;
           color: white;
-          background: linear-gradient(135deg, #cc3597 0%, #e34271 100%);
+          background: #C8349B;
           border: none;
           border-radius: 0.75rem;
           cursor: pointer;
@@ -468,7 +468,7 @@ export default function IntroStep({ onNext }: Props) {
           font-size: 1.125rem;
           font-weight: 700;
           color: white;
-          background: linear-gradient(135deg, #cc3597 0%, #e34271 100%);
+          background: #C8349B;
           border: none;
           border-radius: 0.75rem;
           cursor: pointer;
@@ -562,7 +562,7 @@ export default function IntroStep({ onNext }: Props) {
           display: flex;
           justify-content: center;
           align-items: center;
-          background: linear-gradient(135deg, #6C63FF, #FF6584);
+          background: #F26955;
           color: white;
           opacity: 0;
           transition: opacity 1s ease;
@@ -649,7 +649,7 @@ export default function IntroStep({ onNext }: Props) {
           display: flex;
           justify-content: center;
           align-items: center;
-          background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+          background: #F26955;
           color: white;
           opacity: 0;
           transition: opacity 1s ease;

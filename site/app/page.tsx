@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import RevieweeWaitlist from '../components/RevieweeWaitlist';
-import { ArrowRight, Sparkles, DollarSign, Clock, Users, TrendingUp, CheckCircle } from 'lucide-react';
+import { ArrowRight, Sparkles, DollarSign, Clock, TrendingUp, CheckCircle } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,10 +87,10 @@ function HomePageContent() {
       {/* Hero Section */}
       <section className="relative min-h-screen overflow-hidden pt-16 lg:pt-0" role="banner" aria-label="Hero section">
         {/* Clean Background */}
-        <div className="absolute inset-0 bg-[#0c0325]" />
+        <div className="absolute inset-0 bg-background" />
         
         {/* Mobile Background Gradient */}
-        <div className="absolute inset-0 lg:hidden bg-gradient-to-b from-[#0c0325] via-[#0f0528] to-[#0c0325]" />
+        <div className="absolute inset-0 bg-background/95 lg:hidden" />
         
         
         {/* Hero Content - Mobile Only */}
@@ -125,11 +125,11 @@ function HomePageContent() {
               </div>
 
               {/* CTA Buttons - both core paths */}
-              <div className="flex flex-col sm:flex-row gap-3 justify-center mobile-text-reveal mb-8 px-4" style={{ animationDelay: '1.2s' }}>
+              <div className="mb-8 flex flex-col justify-center gap-3 px-4 mobile-text-reveal sm:flex-row" style={{ animationDelay: '1.2s' }}>
                 <Button
                   size="xl"
                   variant="gradient"
-                  className="group mobile-gradient-border mobile-touch-feedback mobile-optimized mobile-cta-glow w-full max-w-sm text-base sm:text-lg px-4 sm:px-6 py-3 shadow-2xl font-semibold"
+                  className="group w-full max-w-sm px-4 py-3 text-base font-semibold sm:px-6 sm:text-lg"
                   asChild
                 >
                   <a
@@ -144,7 +144,7 @@ function HomePageContent() {
                 <Button
                   size="xl"
                   variant="secondary"
-                  className="group w-full max-w-sm text-base sm:text-lg px-4 sm:px-6 py-3 shadow-2xl font-semibold border border-white/20 bg-white/10 text-white hover:bg-white/20"
+                  className="group w-full max-w-sm border-white/25 bg-white/5 px-4 py-3 text-base font-semibold text-white hover:bg-white/10 sm:px-6 sm:text-lg"
                   asChild
                 >
                   <a
@@ -243,7 +243,7 @@ function HomePageContent() {
                   <Button
                     size="xl"
                     variant="secondary"
-                    className="group text-lg px-8 py-4 shadow-2xl border border-white/20 bg-white/10 text-white hover:bg-white/20 transition-all duration-300"
+                    className="group border border-white/20 bg-white/[0.08] px-8 py-4 text-base font-medium text-white shadow-lg transition-all duration-300 hover:bg-white/[0.15]"
                     asChild
                   >
                     <a href="/request" className="flex items-center justify-center gap-2">
@@ -296,17 +296,17 @@ function HomePageContent() {
                   </div>
                   
                   {/* Floating Benefit Callouts */}
-                  <div className="absolute top-2 right-2 glass rounded-lg p-2 shadow-lg animate-slide-in-right hover-lift">
+                  <div className="absolute right-2 top-2 glass rounded-lg p-2 shadow-lg hover-lift">
                     <div className="flex items-center gap-2">
                       <DollarSign className="w-4 h-4 text-green-500" />
-                      <span className="text-xs font-medium text-white">Set your own rates</span>
+                      <span className="text-sm font-medium text-white">Set your own rates</span>
                     </div>
                   </div>
                   
-                  <div className="absolute bottom-2 right-2 glass rounded-lg p-2 shadow-lg animate-slide-in-right hover-lift" style={{ animationDelay: '0.5s' }}>
+                  <div className="absolute bottom-2 right-2 glass rounded-lg p-2 shadow-lg hover-lift">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-orange-400" />
-                      <span className="text-xs font-medium text-white">Specific, usable feedback</span>
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium text-white">Specific, usable feedback</span>
                     </div>
                   </div>
                 </div>
@@ -317,26 +317,26 @@ function HomePageContent() {
       </section>
 
       {/* Request a Review Path */}
-      <section className="py-16 lg:py-24 bg-[#0c0325]">
+      <section className="bg-background py-16 lg:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
-            <Card className="bg-white/10 backdrop-blur-md border-white/20">
+            <Card className="border-white/20 bg-white/5 backdrop-blur-sm">
               <CardContent className="p-8 md:p-10">
                 <div className="grid gap-8 md:grid-cols-[1.2fr_1fr] md:items-center">
                   <div className="space-y-4">
-                    <Badge variant="outline" className="border-orange-400/40 text-orange-300 bg-orange-500/20">
+                    <Badge variant="outline" className="border-primary/40 bg-primary/15 text-primary">
                       FOR GUYS WHO WANT BETTER RESULTS
                     </Badge>
-                    <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+                    <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
                       Request a review. Get honest, actionable feedback.
                     </h2>
-                    <p className="text-white/85 text-lg leading-relaxed">
+                    <p className="text-lg leading-relaxed text-white/85">
                       Submit your photos and profile details, get direct feedback from real women, and leave with clear next steps for better matches.
                     </p>
                     <div className="flex flex-wrap gap-3 pt-2">
-                      <Badge variant="outline" className="text-xs border-purple-400/40 text-purple-300 bg-purple-500/20">Dating profile feedback</Badge>
-                      <Badge variant="outline" className="text-xs border-green-400/40 text-green-300 bg-green-500/20">Style + photo suggestions</Badge>
-                      <Badge variant="outline" className="text-xs border-blue-400/40 text-blue-300 bg-blue-500/20">Fast turnaround</Badge>
+                      <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Dating profile feedback</Badge>
+                      <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Style + photo suggestions</Badge>
+                      <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Fast turnaround</Badge>
                     </div>
                   </div>
                   <div className="flex md:justify-end">
@@ -360,13 +360,13 @@ function HomePageContent() {
       </section>
 
       {/* Payouts — one clear mention; details also in reviewer flow */}
-      <section id="platform-economics" className="py-16 lg:py-24 bg-[#0c0325]">
+      <section id="platform-economics" className="bg-background py-16 lg:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center space-y-6">
             <Badge variant="gradient" className="text-sm px-4 py-2 font-semibold">
               FULLY LAUNCHED
             </Badge>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white leading-tight tracking-tight">
+            <h2 className="text-3xl font-bold leading-tight tracking-tight text-white md:text-4xl lg:text-5xl">
               Straightforward payouts
             </h2>
             <p className="text-lg md:text-xl text-white/85 leading-relaxed">
@@ -377,66 +377,66 @@ function HomePageContent() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-16 lg:py-24 bg-[#0c0325]">
+      <section className="bg-background py-16 lg:py-24">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-16">
             <div className="space-y-4">
-              <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight">How It Works</h2>
-              <p className="text-xl md:text-2xl text-white/80 leading-relaxed">Start earning on web in 3 simple steps</p>
+              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">How It Works</h2>
+              <p className="text-lg leading-relaxed text-white/80 md:text-xl">Start earning on web in 3 simple steps</p>
             </div>
             
             {/* Process Steps */}
             <div className="grid gap-8 max-w-6xl mx-auto md:grid-cols-3">
               <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
                 <CardHeader className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white font-bold text-2xl shadow-lg">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-xl font-semibold text-primary-foreground shadow-md">
                     1
                   </div>
-                  <CardTitle className="text-2xl font-bold text-white">Set Your Rate & Share Your Link</CardTitle>
+                  <CardTitle className="text-xl font-semibold text-white md:text-2xl">Set Your Rate & Share Your Link</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <CardDescription className="text-center text-white/80 text-base leading-relaxed">
                     Set your own price per review and share your Auro profile link on social media. Guys pay through your link and request reviews.
                   </CardDescription>
                   <div className="flex flex-wrap gap-2 justify-center">
-                    <Badge variant="outline" className="text-xs border-orange-400/40 text-orange-300 bg-orange-500/20">💰 You set your rates</Badge>
-                    <Badge variant="outline" className="text-xs border-orange-400/40 text-orange-300 bg-orange-500/20">📱 Share on Instagram/TikTok</Badge>
+                    <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">You set your rates</Badge>
+                    <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Share on Instagram/TikTok</Badge>
                   </div>
                 </CardContent>
               </Card>
               
               <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
                 <CardHeader className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 text-white font-bold text-2xl shadow-lg">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-xl font-semibold text-primary-foreground shadow-md">
                     2
                   </div>
-                  <CardTitle className="text-2xl font-bold text-white">Rate & Give Advice</CardTitle>
+                  <CardTitle className="text-xl font-semibold text-white md:text-2xl">Rate & Give Advice</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <CardDescription className="text-center text-white/80 text-base leading-relaxed">
                     Accept requests and rate men on attractiveness, style, and social profiles (Hinge/Tinder/Instagram) from 1-5. Give specific advice on what they could improve.
                   </CardDescription>
                   <div className="flex flex-wrap gap-2 justify-center">
-                    <Badge variant="outline" className="text-xs border-purple-400/40 text-purple-300 bg-purple-500/20">📊 Rate 1-5 scale</Badge>
-                    <Badge variant="outline" className="text-xs border-purple-400/40 text-purple-300 bg-purple-500/20">💡 Give improvement advice</Badge>
+                    <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Rate 1-5 scale</Badge>
+                    <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Give improvement advice</Badge>
                   </div>
                 </CardContent>
               </Card>
               
               <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
                 <CardHeader className="text-center">
-                  <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white font-bold text-2xl shadow-lg">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-xl font-semibold text-primary-foreground shadow-md">
                     3
                   </div>
-                  <CardTitle className="text-2xl font-bold text-white">Get Paid & Build Your Brand</CardTitle>
+                  <CardTitle className="text-xl font-semibold text-white md:text-2xl">Get Paid & Build Your Brand</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <CardDescription className="text-center text-white/80 text-base leading-relaxed">
                     Get paid instantly after your review. If the guy consents, you can post the review to social media to build your brand and attract more review requests.
                   </CardDescription>
                   <div className="flex flex-wrap gap-2 justify-center">
-                    <Badge variant="outline" className="text-xs border-green-400/40 text-green-300 bg-green-500/20">💳 Instant payments</Badge>
-                    <Badge variant="outline" className="text-xs border-green-400/40 text-green-300 bg-green-500/20">📸 Build your brand</Badge>
+                    <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Instant payments</Badge>
+                    <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Build your brand</Badge>
               </div>
                 </CardContent>
               </Card>
@@ -451,7 +451,7 @@ function HomePageContent() {
                       <Clock className="w-7 h-7 text-blue-400" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-xl mb-2 text-white">Work Your Schedule</h4>
+                      <h4 className="mb-2 text-xl font-semibold text-white">Work Your Schedule</h4>
                       <p className="text-white/80 text-base leading-relaxed">
                         Review profiles whenever you want - mornings, evenings, weekends
                       </p>
@@ -467,7 +467,7 @@ function HomePageContent() {
                       <TrendingUp className="w-7 h-7 text-green-400" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-xl mb-2 text-white">Scale Your Income</h4>
+                      <h4 className="mb-2 text-xl font-semibold text-white">Scale Your Income</h4>
                       <p className="text-white/80 text-base leading-relaxed">
                         Increase your rates as you build reputation and demand grows
                       </p>
@@ -483,28 +483,28 @@ function HomePageContent() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-16 lg:py-24 bg-[#0c0325]">
+      <section className="bg-background py-16 lg:py-24">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-16">
             <div className="space-y-4">
-              <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight">What Reviewers Are Saying</h2>
-              <p className="text-xl md:text-2xl text-white/80 leading-relaxed">A real web marketplace for profile feedback</p>
+              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">What Reviewers Are Saying</h2>
+              <p className="text-lg leading-relaxed text-white/80 md:text-xl">A real web marketplace for profile feedback</p>
             </div>
             
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-orange-400/40 hover:bg-white/[0.15] transition-all duration-300 mobile-card-hover">
+              <Card className="border-white/20 bg-white/10 backdrop-blur-md transition-all duration-300 hover:border-primary/45 hover:bg-white/[0.15] mobile-card-hover">
                 <CardContent className="p-8 space-y-5">
                   <p className="text-white text-base leading-relaxed italic">
                     "So many guys are close to having solid profiles, they just need honest feedback. Auro makes it easy to help and get paid."
                   </p>
                   <div className="flex items-center gap-4 pt-2">
-                    <Avatar className="w-20 h-20 md:w-24 md:h-24 ring-2 ring-orange-500/50 overflow-hidden">
+                    <Avatar className="h-20 w-20 overflow-hidden ring-2 ring-primary/50 md:h-24 md:w-24">
                       <AvatarImage 
                         src="/jenna_headshot.jpg" 
                         alt="Jenna - Reviewer"
                         className="object-cover scale-125"
                       />
-                      <AvatarFallback className="bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold text-2xl">J</AvatarFallback>
+                      <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-2xl">J</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-bold text-white text-xl md:text-2xl">Jenna</p>
@@ -514,20 +514,20 @@ function HomePageContent() {
                 </CardContent>
               </Card>
               
-              <Card className="bg-white/10 backdrop-blur-md border-white/20 hover:border-orange-400/40 hover:bg-white/[0.15] transition-all duration-300 mobile-card-hover">
+              <Card className="border-white/20 bg-white/10 backdrop-blur-md transition-all duration-300 hover:border-primary/45 hover:bg-white/[0.15] mobile-card-hover">
                 <CardContent className="p-8 space-y-5">
                   <p className="text-white text-base leading-relaxed italic">
                     "Sometimes one tweak makes a huge difference in matches. I like that I can give direct feedback and get paid for it."
                   </p>
                   <div className="flex items-center gap-4 pt-2">
-                    <Avatar className="w-20 h-20 md:w-24 md:h-24 ring-2 ring-red-500/50 overflow-hidden">
+                    <Avatar className="h-20 w-20 overflow-hidden ring-2 ring-primary/50 md:h-24 md:w-24">
                       <AvatarImage 
                         src="/katie_headshot.jpg" 
                         alt="Katie - Reviewer"
                         className="object-cover scale-y-110 scale-x-100"
                         style={{ objectPosition: 'center 40%' }}
                       />
-                      <AvatarFallback className="bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold text-2xl">K</AvatarFallback>
+                      <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-2xl">K</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-bold text-white text-xl md:text-2xl">Katie</p>
@@ -542,10 +542,10 @@ function HomePageContent() {
       </section>
 
       {/* Founder Section */}
-      <section className="py-16 lg:py-24 bg-[#0c0325]">
+      <section className="bg-background py-16 lg:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-10">
-            <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight">Why I started Auro</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Why I started Auro</h2>
             
             <div className="flex flex-col md:flex-row items-center gap-8">
               <div className="flex-shrink-0 w-40 h-40 rounded-2xl overflow-hidden shadow-lg">
@@ -566,8 +566,8 @@ function HomePageContent() {
                 <p className="text-xl text-white/90 leading-relaxed">
                   So I built Auro to connect guys who need help with women who can give it. This way women get paid for their expertise and guys get a leg up in the tough dating scene. Everyone wins.
                 </p>
-                <p className="text-xl font-bold leading-relaxed">
-                  <span className="bg-gradient-to-r from-orange-500 to-purple-600 bg-clip-text text-transparent">
+                <p className="text-xl font-semibold leading-relaxed text-white">
+                  <span className="text-primary">
                     Auro is now fully launched on web and mobile web.
                   </span>
                 </p>
@@ -578,12 +578,12 @@ function HomePageContent() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-16 lg:py-24 bg-[#0c0325] relative overflow-hidden">
+      <section className="relative overflow-hidden bg-background py-16 lg:py-24">
         
         <div className="container mx-auto px-6 sm:px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-10">
             <div className="space-y-6">
-              <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight mobile-text-reveal" style={{ animationDelay: '0.2s' }}>
+              <h2 className="text-3xl font-bold tracking-tight text-white mobile-text-reveal md:text-4xl lg:text-5xl" style={{ animationDelay: '0.2s' }}>
                 Ready to Start Earning?
               </h2>
               <p className="text-xl md:text-2xl text-white/90 leading-relaxed mobile-text-reveal" style={{ animationDelay: '0.4s' }}>
@@ -595,7 +595,7 @@ function HomePageContent() {
               <Button 
                 size="xl" 
                 variant="gradient" 
-                className="group text-base sm:text-lg px-6 sm:px-8 py-4 mobile-gradient-border animate-pulse-glow shadow-2xl hover:shadow-3xl transition-all duration-300 w-full max-w-sm sm:max-w-none"
+                className="group w-full max-w-sm px-6 py-4 text-base sm:max-w-none sm:px-8 sm:text-lg"
                 asChild
               >
                 <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
@@ -611,19 +611,19 @@ function HomePageContent() {
             
             <div className="flex flex-wrap gap-6 justify-center text-sm text-white/80 mobile-text-reveal" style={{ animationDelay: '0.8s' }}>
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500 animate-pulse" />
+                <CheckCircle className="h-4 w-4 text-green-500" />
                 <span>No commitment required</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500 animate-pulse" style={{ animationDelay: '0.2s' }} />
+                <CheckCircle className="h-4 w-4 text-green-500" />
                 <span>You set your rates</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500 animate-pulse" style={{ animationDelay: '0.4s' }} />
+                <CheckCircle className="h-4 w-4 text-green-500" />
                 <span>Web-first—no app store cut on your link</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500 animate-pulse" style={{ animationDelay: '0.6s' }} />
+                <CheckCircle className="h-4 w-4 text-green-500" />
                 <span>Built for web + mobile web</span>
               </div>
             </div>
@@ -632,7 +632,7 @@ function HomePageContent() {
       </section>
 
       {/* Reviewee Waitlist Section - Small and subtle */}
-      <section className="py-12 bg-[#0c0325]">
+      <section className="bg-background py-12">
         <div className="container mx-auto px-4">
           <RevieweeWaitlist />
         </div>
@@ -649,30 +649,9 @@ function HomePageContent() {
           border-radius: 30px;
           background: #000;
           overflow: hidden;
-          box-shadow: 
-            0 0 30px rgba(236, 72, 153, 0.6),
-            0 0 60px rgba(236, 72, 153, 0.4),
-            0 0 90px rgba(236, 72, 153, 0.2),
-            0 0 20px rgba(0,0,0,0.4);
+          box-shadow: 0 20px 50px rgba(0,0,0,0.45);
           margin: 0 auto;
-          animation: iphone-glow-pulse 3s ease-in-out infinite;
-        }
-
-        @keyframes iphone-glow-pulse {
-          0%, 100% { 
-            box-shadow: 
-              0 0 30px rgba(236, 72, 153, 0.6),
-              0 0 60px rgba(236, 72, 153, 0.4),
-              0 0 90px rgba(236, 72, 153, 0.2),
-              0 0 20px rgba(0,0,0,0.4);
-          }
-          50% { 
-            box-shadow: 
-              0 0 40px rgba(236, 72, 153, 0.8),
-              0 0 80px rgba(236, 72, 153, 0.6),
-              0 0 120px rgba(236, 72, 153, 0.3),
-              0 0 20px rgba(0,0,0,0.4);
-          }
+          animation: none;
         }
 
         .desktop-iphone-frame::before {
@@ -705,7 +684,7 @@ function HomePageContent() {
           display: flex;
           justify-content: center;
           align-items: center;
-          background: linear-gradient(135deg, #6C63FF, #FF6584);
+          background: rgba(20, 12, 34, 0.95);
           color: white;
           opacity: 0;
           pointer-events: none;
@@ -718,7 +697,7 @@ function HomePageContent() {
         }
         
         .desktop-iphone-overlay:hover {
-          background: linear-gradient(135deg, #5A51FF, #FF5070);
+          background: rgba(20, 12, 34, 0.98);
         }
 
         .desktop-iphone-overlay .overlay-content h3 {
@@ -742,33 +721,9 @@ function HomePageContent() {
           border-radius: 28px;
           background: #000;
           overflow: hidden;
-          box-shadow: 
-            0 0 25px rgba(236, 72, 153, 0.6),
-            0 0 50px rgba(236, 72, 153, 0.4),
-            0 0 75px rgba(236, 72, 153, 0.2),
-            0 0 30px rgba(0,0,0,0.6),
-            inset 0 0 20px rgba(255,255,255,0.05);
+          box-shadow: 0 18px 40px rgba(0,0,0,0.55);
           margin: 0 auto;
-          animation: mobile-iphone-glow-pulse 3s ease-in-out infinite;
-        }
-
-        @keyframes mobile-iphone-glow-pulse {
-          0%, 100% { 
-            box-shadow: 
-              0 0 25px rgba(236, 72, 153, 0.6),
-              0 0 50px rgba(236, 72, 153, 0.4),
-              0 0 75px rgba(236, 72, 153, 0.2),
-              0 0 30px rgba(0,0,0,0.6),
-              inset 0 0 20px rgba(255,255,255,0.05);
-          }
-          50% { 
-            box-shadow: 
-              0 0 35px rgba(236, 72, 153, 0.8),
-              0 0 70px rgba(236, 72, 153, 0.6),
-              0 0 105px rgba(236, 72, 153, 0.3),
-              0 0 30px rgba(0,0,0,0.6),
-              inset 0 0 20px rgba(255,255,255,0.05);
-          }
+          animation: none;
         }
 
 
@@ -789,7 +744,7 @@ function HomePageContent() {
           display: flex;
           justify-content: center;
           align-items: center;
-          background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+          background: rgba(20, 12, 34, 0.94);
           color: white;
           opacity: 0;
           pointer-events: none;
@@ -802,7 +757,7 @@ function HomePageContent() {
         }
         
         .mobile-iphone-overlay:active {
-          background: linear-gradient(135deg, #ff5555, #ff7878);
+          background: rgba(20, 12, 34, 0.98);
         }
 
         .mobile-iphone-overlay .overlay-content h3 {

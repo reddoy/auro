@@ -65,11 +65,8 @@ export default function AppGateClient() {
         gap: 16,
       }}
     >
-      <div
-        className="h-10 w-10 animate-spin rounded-full border-[3px] border-[rgba(255,45,85,0.25)] border-t-[#FF2D55]"
-        aria-hidden
-      />
-      <p style={{ color: '#C7BFD9', fontSize: 15 }}>{message}</p>
+      <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-primary/25 border-t-primary" aria-hidden />
+      <p style={{ color: 'rgba(255,255,255,0.72)', fontSize: 15 }}>{message}</p>
     </div>
   );
 }

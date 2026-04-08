@@ -152,7 +152,7 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
 
   if (loading) {
     return (
-      <div className="px-4 py-10 text-center text-[#C7BFD9]">
+      <div className="px-4 py-10 text-center text-white/70">
         Loading…
       </div>
     );
@@ -162,7 +162,7 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
     return (
       <div className="px-4 py-10">
         <p className="text-red-300">{error || 'Not found'}</p>
-        <Link href="/app/requests" className="mt-4 inline-block text-[#FF2D55]">
+        <Link href="/app/requests" className="mt-4 inline-block text-primary">
           ← Back to list
         </Link>
       </div>
@@ -171,7 +171,7 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
 
   return (
     <div className="px-4 pb-8 pt-6">
-      <Link href="/app/requests" className="text-sm text-[#FF2D55]">
+      <Link href="/app/requests" className="text-sm text-primary">
         ← My reviews
       </Link>
       <div className="mx-auto mt-4 max-w-lg">
@@ -188,7 +188,7 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">{requesterName}</h1>
-            <p className="text-sm text-[#C7BFD9]">
+            <p className="text-sm text-white/70">
               {new Date(request.createdAt).toLocaleString()}
             </p>
             <div className="mt-2">
@@ -199,12 +199,12 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
 
         {request.status === 'paid' && (
           <div className="mt-8 space-y-3">
-            <p className="text-[#C7BFD9]">Payment received. Accept to start or decline to refund.</p>
+            <p className="text-white/70">Payment received. Accept to start or decline to refund.</p>
             <button
               type="button"
               disabled={busy}
               onClick={onAccept}
-              className="w-full rounded-2xl bg-[#4CAF50] py-3 font-bold text-white disabled:opacity-50"
+              className="w-full rounded-2xl bg-primary py-3 font-bold text-primary-foreground disabled:opacity-50 hover:bg-primary/90"
             >
               Accept
             </button>
@@ -222,7 +222,7 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
         {request.status === 'in_progress' && (
           <div className="mt-8 space-y-4">
             <h2 className="text-lg font-semibold text-white">Submit review</h2>
-            <label className="block text-sm text-[#C7BFD9]">
+            <label className="block text-sm text-white/70">
               Overall (1–10)
               <input
                 type="number"
@@ -233,7 +233,7 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
                 className="mt-1 w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-white"
               />
             </label>
-            <label className="block text-sm text-[#C7BFD9]">
+            <label className="block text-sm text-white/70">
               Written feedback (optional)
               <textarea
                 value={feedback}
@@ -243,7 +243,7 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
                 placeholder="What went well, what to improve…"
               />
             </label>
-            <label className="block text-sm text-[#C7BFD9]">
+            <label className="block text-sm text-white/70">
               Video review (optional)
               <input
                 type="file"
@@ -256,8 +256,7 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
               type="button"
               disabled={busy}
               onClick={onSubmitReview}
-              className="w-full rounded-2xl py-3 font-bold text-[#1A0B2E] disabled:opacity-50"
-              style={{ background: 'linear-gradient(90deg, #FF2D55, #FF6F00)' }}
+              className="w-full rounded-2xl bg-primary py-3 font-bold text-primary-foreground disabled:opacity-50 hover:bg-primary/90"
             >
               {busy ? 'Submitting…' : 'Submit review'}
             </button>
@@ -267,7 +266,7 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
         {request.status === 'completed' && request.review && (
           <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-4">
             <p className="font-semibold text-white">Submitted</p>
-            <p className="mt-2 text-[#C7BFD9]">
+            <p className="mt-2 text-white/70">
               Overall: {(request.review as { ratings?: { overall?: number } }).ratings?.overall ?? '—'}/10
             </p>
             {(request.review as { media?: { videoUrl?: string | null } }).media?.videoUrl && (
@@ -281,7 +280,7 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
         )}
 
         {['pending', 'accepted', 'rejected'].includes(request.status) && (
-          <p className="mt-8 text-[#C7BFD9]">
+          <p className="mt-8 text-white/70">
             {request.status === 'rejected'
               ? 'You declined this request.'
               : 'Waiting on payment or next step.'}

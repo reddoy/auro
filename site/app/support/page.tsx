@@ -14,7 +14,7 @@ function EmailLink() {
         fontWeight: '600',
         textDecoration: 'none',
         padding: '12px 24px',
-        background: 'linear-gradient(135deg, #ff6b35 0%, #cc3598 100%)',
+        background: '#F26955',
         borderRadius: '8px',
         display: 'inline-block',
         transition: 'transform 0.2s, box-shadow 0.2s',

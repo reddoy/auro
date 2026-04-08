@@ -64,25 +64,24 @@
     animation: float 3s ease-in-out infinite;
   }
   
-  /* Gradient text effect */
+  /* Reserved utility for sparse emphasis only */
   .gradient-text {
-    @apply bg-gradient-to-r from-purple-600 via-pink-500 to-red-400 bg-clip-text text-transparent;
+    color: hsl(var(--foreground));
   }
   
-  /* Glass morphism effect */
+  /* Subtle translucent panel effect */
   .glass {
-    @apply bg-white/5 backdrop-blur-sm border border-white/10;
+    @apply bg-white/[0.03] backdrop-blur-sm border border-white/15;
   }
   
-  /* Enhanced hover effects */
+  /* Subtle hover lift to preserve calm visual tone */
   .hover-lift {
-    @apply transition-all duration-300 hover:scale-105 hover:shadow-xl;
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg;
   }
   
-  /* Mobile-specific stunning effects */
+  /* Mobile accent wash kept intentionally subtle */
   .mobile-hero-bg {
-    background: radial-gradient(ellipse at center, rgba(204, 53, 151, 0.2) 0%, rgba(217, 58, 129, 0.15) 25%, rgba(227, 66, 113, 0.1) 50%, transparent 70%);
-    animation: pulse-glow 4s ease-in-out infinite;
+    background: radial-gradient(ellipse at center, rgba(255, 111, 0, 0.12) 0%, rgba(255, 111, 0, 0.06) 45%, transparent 75%);
   }
   
   .mobile-floating-orb {
@@ -96,7 +95,6 @@
   .mobile-iphone-container {
     position: relative;
     transform-style: preserve-3d;
-    animation: mobile-iphone-float 8s ease-in-out infinite;
     z-index: 10;
     margin: 20px 0;
     padding: 0 20px;
@@ -109,10 +107,9 @@
     transform: translate(-50%, -50%);
     width: 120%;
     height: 120%;
-    background: radial-gradient(circle, rgba(255, 107, 107, 0.3) 0%, rgba(255, 142, 142, 0.2) 40%, rgba(255, 165, 165, 0.1) 70%, transparent 90%);
+    background: radial-gradient(circle, rgba(255, 111, 0, 0.16) 0%, rgba(255, 111, 0, 0.08) 42%, transparent 80%);
     border-radius: 40px;
-    filter: blur(20px);
-    animation: mobile-glow-pulse 4s ease-in-out infinite;
+    filter: blur(22px);
     z-index: -1;
   }
   
@@ -130,9 +127,8 @@
   }
   
   .mobile-text-reveal {
-    animation: mobile-text-slide-up 1s ease-out forwards;
-    opacity: 0;
-    transform: translateY(30px);
+    opacity: 1;
+    transform: translateY(0);
   }
   
   .mobile-card-hover {
@@ -360,45 +356,45 @@
 }
 
 :root {
-  --background: 12 3 37;
-  --foreground: 255 255 255;
-  --card: 255 255 255;
-  --card-foreground: 12 3 37;
-  --popover: 255 255 255;
-  --popover-foreground: 12 3 37;
-  --primary: 255 111 0;
-  --primary-foreground: 255 255 255;
-  --secondary: 147 51 234;
-  --secondary-foreground: 255 255 255;
-  --muted: 255 255 255;
-  --muted-foreground: 12 3 37;
-  --accent: 255 111 0;
-  --accent-foreground: 255 255 255;
-  --destructive: 227 66 113;
-  --destructive-foreground: 255 255 255;
-  --border: 255 255 255 / 0.2;
-  --input: 255 255 255 / 0.1;
-  --ring: 255 111 0;
+  --background: 258 85% 8%;
+  --foreground: 28 30% 96%;
+  --card: 258 48% 13%;
+  --card-foreground: 28 30% 96%;
+  --popover: 258 48% 13%;
+  --popover-foreground: 28 30% 96%;
+  --primary: 8 86% 64%;
+  --primary-foreground: 30 24% 10%;
+  --secondary: 337 69% 55%;
+  --secondary-foreground: 28 30% 96%;
+  --muted: 258 32% 16%;
+  --muted-foreground: 28 18% 80%;
+  --accent: 318 59% 49%;
+  --accent-foreground: 28 30% 96%;
+  --destructive: 353 81% 61%;
+  --destructive-foreground: 28 30% 96%;
+  --border: 258 28% 26%;
+  --input: 258 28% 26%;
+  --ring: 8 86% 64%;
   --radius: 0.5rem;
   
   /* Legacy variables for compatibility */
   --bg: #0c0325;
-  --card: #FFFFFF;
+  --legacy-card: #FFFFFF;
   --card-hover: #F8F9FA;
   --text: #FFFFFF;
   --text-2: rgba(255, 255, 255, 0.8);
   --text-3: rgba(255, 255, 255, 0.6);
-  --border: rgba(255, 255, 255, 0.2);
+  --legacy-border: rgba(255, 255, 255, 0.2);
   --border-hover: rgba(255, 255, 255, 0.3);
   --divider: rgba(255, 255, 255, 0.2);
   --shadow: rgba(0, 0, 0, 0.1);
   --shadow-lg: rgba(0, 0, 0, 0.2);
-  --grad-start: #FF6F00;
-  --grad-mid: #FF8A00;
-  --grad-purple: #9333EA;
-  --grad-end: #A855F7;
-  --accent-blue: #FF6F00;
-  --accent-purple: #9333EA;
+  --grad-start: #F26955;
+  --grad-mid: #DB3E79;
+  --grad-purple: #C8349B;
+  --grad-end: #EC4C5F;
+  --accent-blue: #F26955;
+  --accent-purple: #C8349B;
   --nav-h: 60px;
 }
 

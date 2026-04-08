@@ -168,7 +168,7 @@ export default function CheckoutSuccessPage() {
       <style jsx>{`
         .success-page {
           min-height: 100vh;
-          background: linear-gradient(135deg, #1A0B2E 0%, #2D1B69 50%, #1A0B2E 100%);
+          background: #0C0325;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -208,7 +208,7 @@ export default function CheckoutSuccessPage() {
           font-weight: 700;
           color: white;
           margin: 0 0 16px 0;
-          background: linear-gradient(135deg, #FF6F00, #FF8E53);
+          background: #F26955;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -387,7 +387,7 @@ export default function CheckoutSuccessPage() {
         }
 
         .verify-btn {
-          background: linear-gradient(135deg, #FF6F00, #FF8E53);
+          background: #F26955;
           color: white;
           border: none;
           padding: 12px 20px;

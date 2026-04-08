@@ -31,7 +31,7 @@ export default function RequestButton({ slug, reviewerId }: { slug: string; revi
         border: 'none',
         borderRadius: '16px',
         background: 'white',
-        color: '#FF2D55',
+        color: '#F26955',
         cursor: loading ? 'not-allowed' : 'pointer',
         transition: 'all 0.3s ease',
         opacity: loading ? 0.7 : 1,

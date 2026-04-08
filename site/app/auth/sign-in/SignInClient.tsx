@@ -43,7 +43,7 @@ function SignInInner() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0c0325] via-[#1a0b3d] to-[#0c0325] text-white">
+    <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-white">
       <div className="request-content px-4 max-w-6xl mx-auto py-8">
         <AuthStep
           isAuthenticated={isAuthenticated}
@@ -63,7 +63,7 @@ export default function SignInClient() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-[#1A0B2E] text-[#C7BFD9]">
+        <div className="min-h-screen flex items-center justify-center bg-[#1A0B2E] text-white/70">
           Loading…
         </div>
       }

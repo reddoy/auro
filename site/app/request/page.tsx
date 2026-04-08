@@ -126,7 +126,7 @@ export default function RequestPage() {
   // Check if Supabase client is properly configured
   if (!supabaseClient) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-background via-card to-background flex items-center justify-center p-4">
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 max-w-md w-full text-center">
           <div className="text-6xl mb-4">⚠️</div>
           <h1 className="text-2xl font-bold text-white mb-4">Configuration Error</h1>
@@ -935,12 +935,12 @@ export default function RequestPage() {
     const currentIndex = STEPS.indexOf(currentStep);
 
     return (
-      <div className="w-full px-2 py-3 md:px-4 md:py-6 bg-gradient-to-b from-[#0c0325]/50 to-transparent">
+      <div className="w-full px-2 py-3 md:px-4 md:py-6 bg-gradient-to-b from-background/50 to-transparent">
         <div className="flex items-center justify-between relative max-w-6xl mx-auto">
           {/* Progress line */}
           <div className="absolute top-4 md:top-6 left-0 right-0 h-0.5 bg-white/10">
             <div 
-              className="h-full bg-gradient-to-r from-orange-500 to-purple-600 transition-all duration-500 ease-out shadow-sm shadow-orange-500/50"
+              className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500 ease-out shadow-sm shadow-primary/50"
               style={{ width: `${(currentIndex / (stepConfigs.length - 1)) * 100}%` }}
             />
           </div>
@@ -962,9 +962,9 @@ export default function RequestPage() {
                     w-7 h-7 md:w-12 md:h-12 rounded-full flex items-center justify-center text-xs md:text-base font-semibold
                     transition-all duration-300 ease-out
                     ${isCompleted 
-                      ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-lg shadow-orange-500/30' 
+                      ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/30' 
                       : isCurrent 
-                        ? 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-xl shadow-orange-500/50 scale-110' 
+                        ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-xl shadow-primary/50 scale-110' 
                         : 'bg-white/10 border border-white/20 text-gray-400'
                     }
                   `}
@@ -974,7 +974,7 @@ export default function RequestPage() {
                 <span className={`
                   mt-1 md:mt-2 text-[10px] md:text-xs font-medium text-center px-0.5
                   hidden sm:block
-                  ${isCurrent ? 'text-orange-400 font-bold' : isCompleted ? 'text-white' : 'text-gray-500'}
+                  ${isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-white' : 'text-gray-500'}
                 `}>
                   {stepItem.label}
                 </span>
@@ -1041,7 +1041,7 @@ export default function RequestPage() {
     }
 
     return (
-      <div className="w-full px-4 py-3 bg-gradient-to-r from-[#0c0325]/80 to-[#1a0b3d]/80 border-b border-white/10">
+      <div className="w-full px-4 py-3 bg-gradient-to-r from-background/80 to-card/80 border-b border-white/10">
         <div className="max-w-6xl mx-auto flex items-center justify-center gap-3">
           <div className="flex items-center gap-3 bg-white/5 rounded-full px-4 py-2.5 border border-white/10 shadow-lg shadow-green-500/10">
             <div className="relative">
@@ -1050,7 +1050,7 @@ export default function RequestPage() {
                 alt={reviewerInfo.full_name}
                 size={32}
               />
-              <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-4 h-4 rounded-full bg-green-500 text-white text-[10px] font-bold border-2 border-[#0c0325] shadow-sm">
+              <div className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center w-4 h-4 rounded-full bg-green-500 text-white text-[10px] font-bold border-2 border-background shadow-sm">
                 ✓
               </div>
             </div>
@@ -1064,7 +1064,7 @@ export default function RequestPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0c0325] via-[#1a0b3d] to-[#0c0325] text-white">
+    <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-white">
       <div className="w-full">
         <Stepper />
         <SelectedReviewerIndicator />
