@@ -20,7 +20,7 @@ export default function AppIntroPage() {
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center' }}>
         <Link
-          href="/auth/sign-in"
+          href="/auth/sign-in?redirect_to=/app"
           style={{
             display: 'inline-block',
             padding: '12px 24px',

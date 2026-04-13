@@ -40,7 +40,12 @@ export default function AppGateClient() {
         try {
           const profile = await getCurrentProfileWeb();
           const expoPath = resolveOnboardingDestination(profile);
-          router.replace(mapExpoRouterPathToNext(expoPath));
+          let dest = mapExpoRouterPathToNext(expoPath);
+          // Web onboarding routes are stubs; send users to the live inbox instead.
+          if (dest.startsWith('/app/onboarding')) {
+            dest = '/app/requests';
+          }
+          router.replace(dest);
         } catch (err) {
           console.warn('[app gate] profile load failed', err);
           router.replace('/app/requests');

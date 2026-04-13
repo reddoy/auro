@@ -5,13 +5,12 @@ import { usePathname } from 'next/navigation';
 
 const nav = [
   { href: '/app/requests', label: 'My reviews' },
-  { href: '/request', label: 'New request' },
-  { href: '/app/profile', label: 'Profile' },
+  { href: '/app/profile', label: 'Account' },
 ];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  if (pathname === '/app') {
+  if (pathname === '/app' || pathname === '/app/intro' || pathname?.startsWith('/app/intro/')) {
     return <>{children}</>;
   }
   const isActive = (href: string) =>

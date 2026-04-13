@@ -56,7 +56,7 @@ export default function AppProfilePage() {
   return (
     <div className="px-4 pb-8 pt-6">
       <div className="mx-auto max-w-lg">
-        <h1 className="text-2xl font-bold text-white">Profile</h1>
+        <h1 className="text-2xl font-bold text-white">Account</h1>
         <p className="mt-2 text-lg text-white/90">{displayName}</p>
         {profile?.username ? (
           <p className="text-sm text-white/70">@{profile.username}</p>

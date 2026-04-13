@@ -98,8 +98,10 @@ export default function RequestsPageClient() {
           setUserProfile(null);
           return;
         }
-        const reviewerMode = !!(profile as { is_reviewer?: string }).is_reviewer;
-        setIsReviewer(!!reviewerMode);
+        const reviewerStatus = (profile as { is_reviewer?: string | null }).is_reviewer;
+        const reviewerMode =
+          reviewerStatus === 'approved' || reviewerStatus === 'pending';
+        setIsReviewer(reviewerMode);
         setUserProfile({
           id: profile.id,
           username: profile.username ?? undefined,
