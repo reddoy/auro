@@ -98,14 +98,18 @@ function HomePageContent() {
           <div className="text-center space-y-6 mobile-hero-content w-full">
               {/* Removed redundant badge to save space and reduce clutter */}
               
-              {/* Main Headline */}
+              {/* Main Headline — controlled lines read cleaner than one ragged wrap */}
               <div className="space-y-4">
-                <h1 className="text-4xl md:text-5xl font-extrabold leading-[1.15] text-center tracking-tight px-4 max-w-2xl mx-auto mobile-text-reveal hyphens-none" style={{ animationDelay: '0.4s' }}>
-                  <span className="text-white">Get honest feedback on your dating profile.</span>
+                <h1
+                  className="text-4xl md:text-5xl font-extrabold leading-tight text-center tracking-tight px-4 max-w-lg mx-auto mobile-text-reveal hyphens-none text-balance text-white"
+                  style={{ animationDelay: '0.4s' }}
+                >
+                  <span className="block">How you read in apps,</span>
+                  <span className="block">spelled out by reviewers.</span>
                 </h1>
                 
                 <p className="text-lg text-white/90 max-w-lg mx-auto mobile-text-reveal leading-relaxed px-4 font-medium text-balance" style={{ animationDelay: '1s' }}>
-                  Reviewers earn by giving advice. Guys get reviewed and improve. Join either side in minutes.
+                  Reviewers set their rates and answer paid requests. Guys get specific notes on photos and prompts—not a pep talk. Start in minutes on web or mobile web.
                 </p>
                 
                 <div className="mobile-text-reveal space-y-2 px-4" style={{ animationDelay: '1.1s' }}>
@@ -125,11 +129,14 @@ function HomePageContent() {
               </div>
 
               {/* CTA Buttons - both core paths */}
-              <div className="mb-8 flex flex-col justify-center gap-3 px-4 mobile-text-reveal sm:flex-row" style={{ animationDelay: '1.2s' }}>
+              <div
+                className="mx-auto mb-8 flex w-full max-w-sm flex-col items-stretch justify-center gap-3 px-4 mobile-text-reveal sm:max-w-none sm:flex-row sm:justify-center"
+                style={{ animationDelay: '1.2s' }}
+              >
                 <Button
                   size="xl"
                   variant="gradient"
-                  className="group w-full max-w-sm px-4 py-3 text-base font-semibold sm:px-6 sm:text-lg"
+                  className="group w-full px-4 py-3 text-base font-semibold sm:w-auto sm:max-w-sm sm:px-6 sm:text-lg"
                   asChild
                 >
                   <a
@@ -144,7 +151,7 @@ function HomePageContent() {
                 <Button
                   size="xl"
                   variant="secondary"
-                  className="group w-full max-w-sm border-white/25 bg-white/5 px-4 py-3 text-base font-semibold text-white hover:bg-white/10 sm:px-6 sm:text-lg"
+                  className="group w-full border-white/25 bg-white/5 px-4 py-3 text-base font-semibold text-white hover:bg-white/10 sm:w-auto sm:max-w-sm sm:px-6 sm:text-lg"
                   asChild
                 >
                   <a
@@ -216,14 +223,15 @@ function HomePageContent() {
               <div className="text-left space-y-5 min-w-0 pr-2 xl:pr-6">
                 {/* Removed redundant badge to save space and reduce clutter */}
                 
-                {/* Main Headline — hyphens-none avoids ugly "feed-back" breaks; even spacing to CTAs below */}
+                {/* Main Headline — same two-line cadence as mobile for a stable block */}
                 <div className="space-y-4">
-                  <h1 className="text-4xl xl:text-5xl 2xl:text-6xl font-extrabold leading-[1.12] tracking-tight text-white max-w-2xl hyphens-none">
-                    Get honest feedback on your dating profile.
+                  <h1 className="text-4xl xl:text-5xl 2xl:text-6xl font-extrabold leading-tight tracking-tight text-white max-w-2xl hyphens-none text-pretty">
+                    <span className="block">How you read in apps,</span>
+                    <span className="block">spelled out by reviewers.</span>
                   </h1>
                   
                   <p className="text-lg xl:text-xl text-white/90 max-w-xl leading-relaxed font-medium text-pretty hyphens-none">
-                    Reviewers earn by giving advice. Guys get reviewed and improve. Join either side in minutes.
+                    Reviewers set their rates and answer paid requests. Guys get specific notes on photos and prompts—not a pep talk. Start in minutes on web or mobile web.
                   </p>
                 </div>
                 
