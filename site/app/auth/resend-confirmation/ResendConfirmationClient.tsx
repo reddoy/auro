@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 export default function ResendConfirmationClient() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    const q = searchParams.get("email");
+    if (q) setEmail(q);
+  }, [searchParams]);
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");

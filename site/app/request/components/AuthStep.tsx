@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import type { RequestData } from '../page';
 
 type Props = {
@@ -36,6 +37,10 @@ export default function AuthStep({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+  /** After sign-up when Supabase requires email confirmation (no session yet). */
+  const [awaitingEmailConfirmation, setAwaitingEmailConfirmation] = useState(false);
+  /** Shown after failed password sign-in — often means email not confirmed yet. */
+  const [showConfirmEmailHint, setShowConfirmEmailHint] = useState(false);
   // SMS 2FA removed
 
   useEffect(() => {
@@ -75,18 +80,9 @@ export default function AuthStep({
       return;
     }
 
-    // Validate Supabase URL and key are configured
-    const supabaseUrl = (supabase as any)?.supabaseUrl || (supabase as any)?.supabaseKey;
-    if (!supabaseUrl) {
-      console.error('[AuthStep] Supabase URL/key not configured');
-      setError('Database connection not configured. Please contact support.');
-      return;
-    }
-
-    console.log('[AuthStep] Starting sign-up with validated Supabase client');
-
     setLoading(true);
     setError('');
+    setAwaitingEmailConfirmation(false);
 
     try {
       // Get the site URL for email redirect
@@ -152,27 +148,30 @@ export default function AuthStep({
 
         // Ensure profile via server (service role), independent of RLS
         try {
-          
-          const response = await fetch('/api/auth/ensure-profile', {
+          await fetch('/api/auth/ensure-profile', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ userId: data.user.id, email, fullName })
           });
-          const result = await response.json();
-          
         } catch (err: any) {
           console.error('[AuthStep] ensure-profile error:', err?.message);
         }
 
-        // On the client, also attempt to upsert profile using authenticated session if available
-        try {
-          await supabase
-            .from('profiles')
-            .upsert({ id: data.user.id, full_name: fullName, email }, { onConflict: 'id' });
-        } catch {}
-
-        // Do not force verified session here to reduce friction; proceed to payment
-        onNext();
+        if (data.session) {
+          // Email confirmation disabled or already confirmed — session exists
+          try {
+            await supabase
+              .from('profiles')
+              .upsert({ id: data.user.id, full_name: fullName, email }, { onConflict: 'id' });
+          } catch {}
+          onNext();
+        } else {
+          // Typical production: confirm email before a session exists — do not redirect to /app
+          setAwaitingEmailConfirmation(true);
+          setIsSignUp(false);
+          setPassword('');
+          setShowConfirmEmailHint(false);
+        }
       }
     } catch (error: any) {
       console.error('[AuthStep] Signup catch block:', {
@@ -239,6 +238,7 @@ export default function AuthStep({
 
     setLoading(true);
     setError('');
+    setShowConfirmEmailHint(false);
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -263,7 +263,19 @@ export default function AuthStep({
         setError('Sign-in did not complete. Please try again.');
       }
     } catch (error: any) {
-      setError(error.message || 'Sign in failed');
+      const raw = String(error?.message || '').toLowerCase();
+      if (
+        raw.includes('invalid login credentials') ||
+        raw.includes('invalid credentials') ||
+        raw.includes('email not confirmed')
+      ) {
+        setError(
+          'We could not sign you in with that email and password. If you just created an account, open the confirmation link in your email first—until then, password sign-in will not work.'
+        );
+        setShowConfirmEmailHint(true);
+      } else {
+        setError(error.message || 'Sign in failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -376,6 +388,44 @@ export default function AuthStep({
 
   // SMS 2FA removed
 
+  if (awaitingEmailConfirmation) {
+    const resendHref = `/auth/resend-confirmation?email=${encodeURIComponent(email)}`;
+    return (
+      <div className="auth-step">
+        <div className="step-header">
+          <h2>Confirm your email</h2>
+          <p>
+            We sent a link to <strong>{email}</strong>. Open it to activate your account, then return here and sign in.
+          </p>
+          <p style={{ opacity: 0.85, fontSize: '15px', marginTop: '8px' }}>
+            No email yet? Check spam and promotions. You can resend the link if it does not arrive within a few minutes.
+          </p>
+        </div>
+        <div className="auth-form" style={{ marginTop: '8px' }}>
+          <Link href={resendHref} className="btn-primary auth-submit" style={{ textAlign: 'center', textDecoration: 'none', display: 'block' }}>
+            Resend confirmation email
+          </Link>
+          <button
+            type="button"
+            className="btn-secondary auth-submit"
+            style={{ marginTop: '12px', width: '100%' }}
+            onClick={() => {
+              setAwaitingEmailConfirmation(false);
+              setIsSignUp(false);
+            }}
+          >
+            Back to sign in
+          </button>
+        </div>
+        <div className="step-actions">
+          <button type="button" onClick={onBack} className="btn-secondary">
+            Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (isAuthenticated) {
     return (
       <div className="auth-step authenticated">
@@ -453,6 +503,7 @@ export default function AuthStep({
               className={`auth-tab ${isSignUp ? 'active' : ''}`}
               onClick={() => {
                 setIsSignUp(true);
+                setShowConfirmEmailHint(false);
                 // Only clear error if it's not the "already exists" message
                 if (!error?.includes('already exists')) {
                   setError('');
@@ -466,6 +517,7 @@ export default function AuthStep({
               className={`auth-tab ${!isSignUp ? 'active' : ''}`}
               onClick={() => {
                 setIsSignUp(false);
+                setShowConfirmEmailHint(false);
                 // Only clear error if it's not the "already exists" message
                 if (!error?.includes('already exists')) {
                   setError('');
@@ -573,6 +625,7 @@ export default function AuthStep({
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
+                    setShowConfirmEmailHint(false);
                     if (error) setError('');
                   }}
                   placeholder="Enter your email"
@@ -595,6 +648,7 @@ export default function AuthStep({
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
+                    setShowConfirmEmailHint(false);
                     if (error) setError('');
                   }}
                   placeholder={isSignUp ? "Create a password (min 6 characters)" : "Enter your password"}
@@ -622,7 +676,7 @@ export default function AuthStep({
               </button>
 
               {!isSignUp && (
-                <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                <div style={{ marginTop: '12px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <a 
                     href="/auth/forgot-password"
                     className="link-button"
@@ -630,6 +684,15 @@ export default function AuthStep({
                   >
                     Forgot Password?
                   </a>
+                  {showConfirmEmailHint && (
+                    <Link
+                      href={`/auth/resend-confirmation?email=${encodeURIComponent(email)}`}
+                      className="link-button"
+                      style={{ fontSize: '14px', color: '#F26955' }}
+                    >
+                      Resend confirmation email
+                    </Link>
+                  )}
                 </div>
               )}
             </div>

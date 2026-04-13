@@ -10,14 +10,17 @@ export async function POST(req: Request) {
     }
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
-    
-    if (!url || !key) {
-      return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+    if (!url || !serviceKey) {
+      return NextResponse.json(
+        { error: 'Confirmation emails are not configured on the server. Please contact support.' },
+        { status: 500 }
+      );
     }
 
-    const admin = createClient(url, key);
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com';
+    const admin = createClient(url, serviceKey);
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com').replace(/\/$/, '');
     const redirectTo = `${siteUrl}/auth/confirm?type=signup`;
 
     const { error } = await (admin.auth as any).resend({
