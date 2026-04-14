@@ -1,5 +1,10 @@
 'use client';
 
+import AppBackToInbox from '@/components/app/AppBackToInbox';
+import AppMountReveal from '@/components/app/AppMountReveal';
+import { RequestDetailSkeleton } from '@/components/app/app-skeletons';
+import StatusBadge from '@/components/app/StatusBadge';
+import { useAppToast } from '@/components/app/AppToastProvider';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
@@ -13,10 +18,10 @@ import { uploadRequestMediaWeb } from '@/lib/request-media-web';
 import { getDisplayAvatarUrl } from '@/lib/avatar';
 import { supabase } from '@/lib/supabase';
 import type { DbRequestSummary } from '@/types';
-import StatusBadge from '@/components/app/StatusBadge';
 
 export default function ReviewerRequestClient({ id }: { id: string }) {
   const router = useRouter();
+  const { showToast } = useAppToast();
   const [request, setRequest] = useState<DbRequestSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -108,7 +113,7 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
       const updated = await denyRequest(request.id);
       setRequest(updated);
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : 'Decline failed');
+      showToast(e instanceof Error ? e.message : 'Decline failed');
     } finally {
       setBusy(false);
     }
@@ -117,7 +122,7 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
   const onSubmitReview = async () => {
     if (!request) return;
     if (overall < 1 || overall > 10) {
-      alert('Overall rating must be 1–10');
+      showToast('Overall rating must be 1–10');
       return;
     }
     setBusy(true);
@@ -141,29 +146,28 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
         imageUrl: null,
       });
       setRequest(updated);
-      alert('Review submitted!');
-      router.push('/app/requests');
+      showToast('Review submitted');
+      router.push('/app/requests?tab=active');
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : 'Submit failed');
+      showToast(e instanceof Error ? e.message : 'Submit failed');
     } finally {
       setBusy(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="px-4 py-10 text-center text-white/70">
-        Loading…
-      </div>
-    );
+    return <RequestDetailSkeleton />;
   }
 
   if (error || !request) {
     return (
       <div className="px-4 py-10">
         <p className="text-red-300">{error || 'Not found'}</p>
-        <Link href="/app/requests" className="mt-4 inline-block text-primary">
-          ← Back to list
+        <Link
+          href="/app/requests?tab=active"
+          className="mt-4 inline-block text-sm font-medium text-primary"
+        >
+          ← Back to inbox
         </Link>
       </div>
     );
@@ -171,10 +175,9 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
 
   return (
     <div className="px-4 pb-8 pt-6">
-      <Link href="/app/requests" className="text-sm text-primary">
-        ← My reviews
-      </Link>
-      <div className="mx-auto mt-4 max-w-lg">
+      <AppBackToInbox />
+      <AppMountReveal ready={!!request}>
+      <div className="mx-auto max-w-lg">
         <div className="flex items-center gap-4">
           <div
             className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white/10 text-lg font-semibold"
@@ -287,6 +290,7 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
           </p>
         )}
       </div>
+      </AppMountReveal>
     </div>
   );
 }

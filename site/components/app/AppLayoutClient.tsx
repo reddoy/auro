@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import AppQueryProvider from './AppQueryProvider';
 import AppShell from './AppShell';
+import AppToastProvider from './AppToastProvider';
+import { AppChromeSkeleton } from './app-skeletons';
 
 function isPublicAppPath(pathname: string | null): boolean {
   if (!pathname) return false;
-  if (pathname === '/app') return true;
   if (pathname === '/app/intro' || pathname.startsWith('/app/intro/')) return true;
   return false;
 }
@@ -42,16 +44,14 @@ export default function AppLayoutClient({ children }: { children: React.ReactNod
   }, [publicPath, pathname, router]);
 
   if (!ready) {
-    return (
-      <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 px-4">
-        <div
-          className="h-10 w-10 animate-spin rounded-full border-[3px] border-primary/25 border-t-primary"
-          aria-hidden
-        />
-        <p className="text-sm text-white/70">Loading…</p>
-      </div>
-    );
+    return <AppChromeSkeleton />;
   }
 
-  return <AppShell>{children}</AppShell>;
+  return (
+    <AppQueryProvider>
+      <AppToastProvider>
+        <AppShell>{children}</AppShell>
+      </AppToastProvider>
+    </AppQueryProvider>
+  );
 }

@@ -455,7 +455,20 @@ export default function RequestPage() {
                       });
                       
                       if (!sessionError && sessionData.session) {
-                        const isRealUser = !!sessionData.session.user && (sessionData.session.user as any)?.app_metadata?.provider !== 'anon';
+                        let isRealUser =
+                          !!sessionData.session.user &&
+                          (sessionData.session.user as any)?.app_metadata?.provider !== 'anon';
+                        if (isRealUser && sessionData.session.user?.id) {
+                          const { data: profRow } = await client
+                            .from('profiles')
+                            .select('id')
+                            .eq('id', sessionData.session.user.id)
+                            .maybeSingle();
+                          if (!profRow) {
+                            await client.auth.signOut();
+                            isRealUser = false;
+                          }
+                        }
                         setIsAuthenticated(isRealUser);
                         
                         console.log('[RequestPage] Session established from app, user:', userData.id);
@@ -512,6 +525,19 @@ export default function RequestPage() {
                   await new Promise(resolve => setTimeout(resolve, 500));
                 }
                 retries++;
+              }
+
+              // Orphan JWT: real auth user but profile row removed — treat as signed out
+              if (isRealUser && session?.user?.id) {
+                const { data: profRow } = await client
+                  .from('profiles')
+                  .select('id')
+                  .eq('id', session.user.id)
+                  .maybeSingle();
+                if (!profRow) {
+                  await client.auth.signOut();
+                  isRealUser = false;
+                }
               }
               
               setIsAuthenticated(isRealUser);
@@ -600,7 +626,18 @@ export default function RequestPage() {
             return;
           }
           const { data: { subscription } } = client.auth.onAuthStateChange(async (event: any, session: any) => {
-            const isRealUser = !!session?.user && (session.user as any)?.app_metadata?.provider !== 'anon';
+            let isRealUser = !!session?.user && (session.user as any)?.app_metadata?.provider !== 'anon';
+            if (isRealUser && session?.user?.id) {
+              const { data: profRow } = await client
+                .from('profiles')
+                .select('id')
+                .eq('id', session.user.id)
+                .maybeSingle();
+              if (!profRow) {
+                await client.auth.signOut();
+                isRealUser = false;
+              }
+            }
             setIsAuthenticated(isRealUser);
             
             console.log('[RequestPage] Auth state change:', event, 'isRealUser:', isRealUser, 'currentStep:', currentStepRef.current);

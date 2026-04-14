@@ -107,11 +107,13 @@ function HomePageContent() {
               {/* Headline + sub: generous leading so descenders never collide; CTAs before checklist to match desktop rhythm */}
               <div className="space-y-6">
                 <h1
-                  className="text-4xl font-bold leading-[1.22] text-center tracking-[-0.02em] text-white [text-wrap:balance] hyphens-none max-w-lg px-4 mobile-text-reveal sm:text-5xl sm:leading-[1.2]"
+                  className="text-4xl font-bold leading-[1.24] text-center tracking-[-0.02em] text-white [text-wrap:balance] hyphens-none max-w-lg px-4 mobile-text-reveal sm:text-5xl sm:leading-[1.26]"
                   style={{ animationDelay: '0.4s' }}
                 >
                   <span className="block [text-wrap:balance]">Get dating profile feedback</span>
-                  <span className="mt-2 block text-white/95 [text-wrap:balance] sm:mt-2.5">from real women</span>
+                  <span className="mt-[0.32em] block text-white/95 [text-wrap:balance] sm:mt-[0.36em]">
+                    from real women
+                  </span>
                 </h1>
 
                 <p
@@ -229,9 +231,11 @@ function HomePageContent() {
                 {/* Removed redundant badge to save space and reduce clutter */}
                 
                 <div className="space-y-6">
-                  <h1 className="max-w-2xl hyphens-none text-pretty text-4xl font-bold leading-[1.22] tracking-[-0.02em] text-white sm:text-5xl sm:leading-[1.2] xl:text-[2.75rem] xl:leading-[1.2] 2xl:text-5xl 2xl:leading-[1.18]">
+                  <h1 className="max-w-2xl hyphens-none text-pretty text-4xl font-bold leading-[1.22] tracking-[-0.02em] text-white sm:text-5xl sm:leading-[1.24] xl:text-[2.75rem] xl:leading-[1.26] 2xl:text-5xl 2xl:leading-[1.24]">
                     <span className="block [text-wrap:balance]">Get dating profile feedback</span>
-                    <span className="mt-2 block text-white/95 [text-wrap:balance] xl:mt-2.5">from real women</span>
+                    <span className="mt-[0.34em] block text-white/95 [text-wrap:balance] xl:mt-[0.38em]">
+                      from real women
+                    </span>
                   </h1>
 
                   <p className="max-w-xl text-lg font-medium leading-relaxed text-white/85 xl:text-xl text-pretty hyphens-none">

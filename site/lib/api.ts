@@ -137,26 +137,49 @@ export async function getUserProfile(): Promise<DbUserProfile | null> {
     .eq('id', user.id)
     .maybeSingle();
   if (error) throw error;
-  if (profile) {
-    const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || null;
-    return {
-      id: profile.id,
-      email: user.email ?? undefined,
-      name: fullName || profile.username || undefined,
-      username: profile.username ?? null,
-      bio: profile.bio ?? null,
-      avatarUrl: profile.avatar_url ?? null,
-      // @ts-ignore - optional flag for app logic
-      is_reviewer: (profile as any)?.is_reviewer ?? undefined,
-    } as DbUserProfile;
+  if (!profile) {
+    // No DB row (e.g. profile deleted while JWT still valid) — not a usable app identity.
+    return null;
   }
+  const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || null;
   return {
-    id: user.id,
+    id: profile.id,
     email: user.email ?? undefined,
-    name: user.user_metadata?.name,
-    bio: null,
-    avatarUrl: null,
+    name: fullName || profile.username || undefined,
+    username: profile.username ?? null,
+    bio: profile.bio ?? null,
+    avatarUrl: profile.avatar_url ?? null,
+    // @ts-ignore - optional flag for app logic
+    is_reviewer: (profile as any)?.is_reviewer ?? undefined,
   } as DbUserProfile;
+}
+
+/**
+ * If there is a real (non-anon) session but no profiles row, sign out.
+ * Returns true when the session was cleared (orphaned auth after profile delete).
+ */
+export async function signOutIfProfileRowMissing(): Promise<boolean> {
+  const { data: sessionData } = await sb().auth.getSession();
+  const user = sessionData.session?.user;
+  if (!user) return false;
+  if ((user as { app_metadata?: { provider?: string } }).app_metadata?.provider === 'anon') {
+    return false;
+  }
+
+  const { data: profile, error } = await sb()
+    .from('profiles')
+    .select('id')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (error) {
+    console.warn('[signOutIfProfileRowMissing]', error);
+    return false;
+  }
+  if (!profile) {
+    await sb().auth.signOut();
+    return true;
+  }
+  return false;
 }
 
 // Ensure a profile row exists for the current user. Safe to call after login.

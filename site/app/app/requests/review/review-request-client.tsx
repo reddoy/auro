@@ -1,5 +1,9 @@
 'use client';
 
+import AppBackToInbox from '@/components/app/AppBackToInbox';
+import AppMountReveal from '@/components/app/AppMountReveal';
+import { RequestDetailSkeleton } from '@/components/app/app-skeletons';
+import StatusBadge from '@/components/app/StatusBadge';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { getRequestById, markReviewAsViewed } from '@/lib/api';
@@ -7,7 +11,6 @@ import { getDisplayAvatarUrl } from '@/lib/avatar';
 import { getSignedStorageUrl } from '@/lib/storage-media-url';
 import { supabase } from '@/lib/supabase';
 import type { DbRequestSummary } from '@/types';
-import StatusBadge from '@/components/app/StatusBadge';
 
 export default function ReviewRequestClient({ id }: { id: string }) {
   const [request, setRequest] = useState<DbRequestSummary | null>(null);
@@ -90,17 +93,18 @@ export default function ReviewRequestClient({ id }: { id: string }) {
   }, [load]);
 
   if (loading) {
-    return (
-      <div className="px-4 py-10 text-center text-white/70">Loading…</div>
-    );
+    return <RequestDetailSkeleton />;
   }
 
   if (error || !request) {
     return (
       <div className="px-4 py-10">
         <p className="text-red-300">{error || 'Not found'}</p>
-        <Link href="/app/requests" className="mt-4 inline-block text-primary">
-          ← Back to list
+        <Link
+          href="/app/requests?tab=active"
+          className="mt-4 inline-block text-sm font-medium text-primary"
+        >
+          ← Back to inbox
         </Link>
       </div>
     );
@@ -117,10 +121,9 @@ export default function ReviewRequestClient({ id }: { id: string }) {
 
   return (
     <div className="px-4 pb-8 pt-6">
-      <Link href="/app/requests" className="text-sm text-primary">
-        ← My reviews
-      </Link>
-      <div className="mx-auto mt-4 max-w-lg">
+      <AppBackToInbox />
+      <AppMountReveal ready={!!request}>
+      <div className="mx-auto max-w-lg">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white/10 text-lg font-semibold text-white">
             {avatarUrl ? (
@@ -192,6 +195,7 @@ export default function ReviewRequestClient({ id }: { id: string }) {
           <p className="mt-8 text-white/70">This request was declined. If you paid, a refund should process automatically.</p>
         )}
       </div>
+      </AppMountReveal>
     </div>
   );
 }

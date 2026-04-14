@@ -190,9 +190,9 @@
     font-size: clamp(2rem, 8vw, 4rem);
   }
 
-  /* Enhanced mobile text readability */
+  /* Enhanced mobile text readability — line-height/weight come from the component
+     so Tailwind utilities win; avoid crushing multi-line heroes (was 1.1 vs utility). */
   .mobile-hero-content h1 {
-    line-height: 1.1;
     letter-spacing: -0.02em;
     font-weight: 800;
   }
@@ -5694,6 +5694,9 @@ footer {
 .auth-step.authenticated {
   text-align: center;
   padding: 40px 20px;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .auth-container {

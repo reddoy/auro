@@ -24,27 +24,53 @@ function SignInInner() {
   useEffect(() => {
     if (!supabase?.auth) return;
 
+    const syncFromSession = async (session: Session | null) => {
+      const u = session?.user;
+      const real =
+        !!u && (u as { app_metadata?: { provider?: string } }).app_metadata?.provider !== 'anon';
+      if (!real || !u?.id) {
+        setIsAuthenticated(false);
+        return;
+      }
+      const { data: row, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', u.id)
+        .maybeSingle();
+      if (error) {
+        console.warn('[SignInClient] profile check failed:', error);
+        setIsAuthenticated(false);
+        return;
+      }
+      if (!row) {
+        await supabase.auth.signOut();
+        setIsAuthenticated(false);
+        return;
+      }
+      setIsAuthenticated(true);
+    };
+
     const sync = async () => {
       const { data } = await supabase.auth.getSession();
-      const u = data.session?.user;
-      const real = !!u && (u as { app_metadata?: { provider?: string } }).app_metadata?.provider !== 'anon';
-      setIsAuthenticated(real);
+      await syncFromSession(data.session ?? null);
     };
 
     void sync();
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event: string, session: Session | null) => {
-      const u = session?.user;
-      const real = !!u && (u as { app_metadata?: { provider?: string } }).app_metadata?.provider !== 'anon';
-      setIsAuthenticated(real);
+      void syncFromSession(session);
     });
 
     return () => sub.subscription.unsubscribe();
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-white">
-      <div className="request-content px-4 max-w-6xl mx-auto py-8">
+    <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-white flex flex-col">
+      <div
+        className="flex flex-1 flex-col justify-center px-4 py-10 sm:py-12"
+        style={{ minHeight: 'calc(100dvh - var(--nav-h, 60px) - 140px)' }}
+      >
+        <div className="request-content px-4 max-w-6xl mx-auto py-8 w-full">
         <AuthStep
           isAuthenticated={isAuthenticated}
           onNext={() => router.replace(returnTo)}
@@ -54,6 +80,7 @@ function SignInInner() {
           continueCtaLabel="Continue"
           initialAuthTab="signin"
         />
+        </div>
       </div>
     </div>
   );

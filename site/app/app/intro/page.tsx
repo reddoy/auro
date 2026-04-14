@@ -2,39 +2,37 @@ import Link from 'next/link';
 
 export default function AppIntroPage() {
   return (
-    <div
-      style={{
-        minHeight: '100dvh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-        textAlign: 'center',
-        gap: 20,
-      }}
-    >
-      <h1 style={{ fontSize: 28, fontWeight: 700 }}>Welcome to Auro</h1>
-      <p style={{ color: 'rgba(255,255,255,0.72)', maxWidth: 360, lineHeight: 1.5 }}>
-        Sign in to open the app: you&apos;ll land on <strong>Home</strong> with your overview, then <strong>My reviews</strong> for your full inbox (web only — no app install).
-      </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center' }}>
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-6 px-6 py-12 text-center">
+      {/* eslint-disable-next-line @next/next/no-img-element -- static mark */}
+      <img
+        src="/auro_aura_logo.png"
+        alt=""
+        width={56}
+        height={56}
+        decoding="async"
+        className="h-14 w-14 object-contain"
+        aria-hidden
+      />
+      <div className="max-w-md space-y-3">
+        <h1 className="text-2xl font-semibold tracking-tight text-white">Welcome to Auro</h1>
+        <p className="text-[15px] leading-relaxed text-white/70">
+          Sign in to open the app: you&apos;ll land on <span className="font-medium text-white/90">Home</span> with
+          your overview, then <span className="font-medium text-white/90">My reviews</span> for your full inbox (web
+          only — no app install).
+        </p>
+      </div>
+      <div className="flex w-full max-w-xs flex-col items-stretch gap-3 sm:max-w-sm">
         <Link
           href="/auth/sign-in?redirect_to=/app"
-          style={{
-            display: 'inline-block',
-            padding: '12px 24px',
-            borderRadius: 999,
-            background: '#F26955',
-            color: '#1A0B2E',
-            fontWeight: 600,
-            textDecoration: 'none',
-          }}
+          className="inline-flex items-center justify-center rounded-2xl bg-primary px-6 py-3.5 text-[15px] font-semibold text-primary-foreground shadow-[0_10px_28px_-6px_hsl(var(--primary)/0.45)] transition hover:bg-primary/92 active:scale-[0.99] motion-reduce:transform-none"
         >
           Sign in
         </Link>
-        <Link href="/" style={{ color: 'rgba(255,255,255,0.72)', alignSelf: 'center', textDecoration: 'underline' }}>
-          Back to home
+        <Link
+          href="/"
+          className="py-2 text-center text-sm font-medium text-white/60 underline-offset-4 transition hover:text-white/90 hover:underline"
+        >
+          Back to marketing site
         </Link>
       </div>
     </div>

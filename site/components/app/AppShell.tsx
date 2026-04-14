@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 
 const nav = [
   { href: '/app', label: 'Home', Icon: Home },
-  { href: '/app/requests', label: 'My reviews', Icon: ListChecks },
+  { href: '/app/requests?tab=active', label: 'My reviews', Icon: ListChecks },
   { href: '/app/profile', label: 'Account', Icon: UserRound },
 ] as const;
 
@@ -17,8 +17,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
   const isActive = (href: string) => {
     if (href === '/app') return pathname === '/app' || pathname === '/app/';
-    if (href === '/app/requests')
-      return pathname === href || pathname?.startsWith('/app/requests/');
+    if (href.startsWith('/app/requests'))
+      return pathname === '/app/requests' || pathname?.startsWith('/app/requests/');
     return pathname === href || pathname?.startsWith(href + '/');
   };
 

@@ -164,7 +164,7 @@ function AuthCallbackContent() {
           // No session yet - set up auth state listener to wait for it
           console.log('[AuthCallback] No session yet, setting up auth listener...');
           
-          const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
+          const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
             console.log('[AuthCallback] Auth state change:', event, !!session);
             
             if (event === 'SIGNED_IN' && session) {
@@ -185,6 +185,16 @@ function AuthCallbackContent() {
                   const fullName = metadata.full_name || metadata.name || '';
                   if (fullName) localStorage.setItem('auro_signup_full_name', fullName);
                 }
+
+                await fetch('/api/auth/ensure-profile', {
+                  method: 'POST',
+                  headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({
+                    userId: user.id,
+                    email: user.email,
+                    fullName: user.user_metadata?.full_name || user.user_metadata?.name,
+                  }),
+                });
               } catch (e) {
                 console.error('[AuthCallback] Failed to store user info:', e);
               }
