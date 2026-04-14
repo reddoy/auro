@@ -10,6 +10,8 @@ Your app uses Stripe in multiple places:
 - **Supabase Edge Functions**: Payment intent creation and webhooks
 - **Stripe Connect**: Reviewer onboarding and payouts
 
+**Web Checkout (Next.js):** Destination charges to the reviewer’s Connect account are **off by default**. Set `STRIPE_CONNECT_DESTINATION_CHARGES=true` in Vercel only after `stripe.accounts.retrieve` shows `charges_enabled` and `details_submitted` for that reviewer account; otherwise checkout stays on the platform account (current safe default).
+
 ## Step 1: Get Your Production Stripe Keys
 
 1. Log in to your [Stripe Dashboard](https://dashboard.stripe.com)

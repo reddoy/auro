@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { INTERNAL_AURO_HEADER, getInternalJobSecret } from '@/lib/internal-fetch-secret';
 
 export async function POST(req: Request) {
   try {
@@ -69,9 +70,13 @@ export async function POST(req: Request) {
       const request = (dispute as any).requests;
       if (request?.stripe_payment_intent_id && refundAmountCents > 0) {
         try {
+          const internal = getInternalJobSecret();
           const refundResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/api/payments/refund`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              ...(internal ? { [INTERNAL_AURO_HEADER]: internal } : {}),
+            },
             body: JSON.stringify({
               requestId: request.id,
               reason: 'dispute_resolution',

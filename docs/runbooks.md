@@ -10,6 +10,13 @@
 
 Both endpoints also accept `POST` for manual runs. Add `?token=<CRON_SECRET>` to bypass the cron header when running from Postman/cURL.
 
+**Where jobs run:** Schedules are defined in `site/vercel.json` (and mirrored in root `vercel.json` for monorepo layout). Vercel invokes these routes on the production deployment; they are not Supabase Edge cron unless you add a separate scheduler there.
+
+## Stripe Checkout (async payment methods)
+- `checkout.session.completed` may arrive while `payment_status` is still `unpaid` for async methods (e.g. some bank debits). The app also handles `checkout.session.async_payment_succeeded` using the same fulfillment path as completed sessions when `payment_status` is `paid`.
+- `checkout.session.async_payment_failed` records `payment_distribution_error = stripe_checkout_async_payment_failed` on the pending `requests` row (if still `status=pending`) for support triage; no charge succeeds in this path.
+- Register all three event types on the Next.js webhook endpoint in the Stripe Dashboard.
+
 ## Payout Retry Runbook
 1. **Alert surfaces**
    - Slack message from `[Cron] Retry payouts` summarises processed/success/failed.

@@ -400,9 +400,22 @@ export async function POST(req: Request) {
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/checkout/cancel`,
     };
 
-    // Temporarily disable Connect for testing - payments go to platform account
-    // TODO: Re-enable Connect once connected accounts are properly onboarded
-    if (false && connectAccountId) {
+    // Destination charges: opt-in via STRIPE_CONNECT_DESTINATION_CHARGES=true and a Connect-ready account.
+    let useConnectDestination = process.env.STRIPE_CONNECT_DESTINATION_CHARGES === 'true';
+    let connectReady = false;
+    if (useConnectDestination && connectAccountId) {
+      try {
+        const acct = await stripe.accounts.retrieve(connectAccountId);
+        connectReady = !!(acct.charges_enabled && acct.details_submitted);
+        if (!connectReady) {
+          console.warn('[create-session] Connect account not ready (charges_enabled/details_submitted):', connectAccountId);
+        }
+      } catch (acctErr) {
+        console.warn('[create-session] Could not verify Connect account; using platform checkout', acctErr);
+        useConnectDestination = false;
+      }
+    }
+    if (useConnectDestination && connectAccountId && connectReady) {
       sessionParams.payment_intent_data = {
         transfer_data: {
           destination: connectAccountId as string,
@@ -411,7 +424,9 @@ export async function POST(req: Request) {
       };
       console.log('[create-session] Using destination charge with Connect account:', connectAccountId);
     } else {
-      console.log('[create-session] Using regular checkout (Connect disabled for testing)');
+      console.log(
+        '[create-session] Using platform checkout (set STRIPE_CONNECT_DESTINATION_CHARGES=true and complete Connect onboarding to enable destination charges)'
+      );
     }
     
     console.log('[create-session] ===== CREATING STRIPE CHECKOUT SESSION =====');

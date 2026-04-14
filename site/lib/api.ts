@@ -17,6 +17,27 @@ function sb() {
   return supabase;
 }
 
+async function authenticatedJsonFetch<T>(path: string, body: unknown): Promise<T> {
+  const { data: sessionData } = await sb().auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) {
+    throw new Error('Not signed in');
+  }
+  const res = await fetch(`${getSiteBaseUrl()}${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  const json = (await res.json().catch(() => ({}))) as T & { error?: string };
+  if (!res.ok) {
+    throw new Error((json as { error?: string }).error || `Request failed (${res.status})`);
+  }
+  return json as T;
+}
+
 function mapRequestRow(row: any): DbRequestSummary {
   return {
     id: row.id,
@@ -432,238 +453,41 @@ export async function submitRequestReview(params: {
   imageUrl?: string | null;
 }): Promise<DbRequestSummary> {
   const { requestId, review, videoUrl, imageUrl } = params;
-  
-  // CRITICAL: Input validation
+
   if (!requestId || typeof requestId !== 'string' || requestId.length < 10) {
     throw new Error('Invalid request ID');
   }
-  
   if (!review || typeof review !== 'object') {
     throw new Error('Invalid review data');
   }
-  
-  // Validate ratings - using 1-10 scale (matches main reviewer screen and StarRating component)
-  if (!review.ratings || typeof review.ratings.overall !== 'number' || 
-      review.ratings.overall < 1 || review.ratings.overall > 10) {
+  if (!review.ratings || typeof review.ratings.overall !== 'number' || review.ratings.overall < 1 || review.ratings.overall > 10) {
     throw new Error('Overall rating must be between 1 and 10');
   }
-  
-  // Validate video/image URLs if provided
   if (videoUrl && typeof videoUrl !== 'string') {
     throw new Error('Invalid video URL');
   }
   if (imageUrl && typeof imageUrl !== 'string') {
     throw new Error('Invalid image URL');
   }
-  
-  // CRITICAL: Check if review already exists to prevent duplicate submissions
-  const { data: existingRequest } = await sb()
-    .from('requests')
-    .select('id, status, review')
-    .eq('id', requestId)
-    .maybeSingle();
-  
-  if (!existingRequest) {
-    throw new Error('Request not found');
-  }
-  
-  if (existingRequest.status === 'completed' && existingRequest.review) {
-    // Review already submitted - return existing review
-    console.warn('[submitRequestReview] Review already submitted for request:', requestId);
-    const refetched = await getRequestById(requestId);
-    if (!refetched) throw new Error('Request not found');
-    return refetched;
-  }
-  
-  if (existingRequest.status !== 'in_progress' && existingRequest.status !== 'paid') {
-    throw new Error(`Cannot submit review for request with status: ${existingRequest.status}`);
-  }
-  
-  // CRITICAL: Use atomic update to prevent concurrent submissions
-  // Only update if status is still 'in_progress' or 'paid' (not already completed)
-  const withMedia = { ...review, media: { videoUrl: videoUrl ?? null, imageUrl: imageUrl ?? null } } as any;
-  const { data, error } = await sb()
-    .from('requests')
-    .update({ review: withMedia, status: 'completed' })
-    .eq('id', requestId)
-    .in('status', ['in_progress', 'paid']) // Only update if still in progress/paid (atomic check)
-    .select('id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps')
-    .maybeSingle();
-  
-  if (error) throw error;
-  
-  // If no data returned, it means the status changed (race condition - another process completed it)
-  if (!data) {
-    console.warn('[submitRequestReview] Request status changed during submission (race condition)');
-    const refetched = await getRequestById(requestId);
-    if (!refetched) throw new Error('Request not found');
-    return refetched;
-  }
-  if (data) {
-    const result = mapRequestRow(data);
-    
-    // Send notification to reviewer about review submission
-    // IMPORTANT: Only send to the reviewer (influencer_id), NOT the reviewee (user_id)
-    if (data.influencer_id && data.influencer_id !== data.user_id) {
-      try {
-        console.log('[submitRequestReview] Sending notification to reviewer about submission', {
-          reviewerId: data.influencer_id,
-          revieweeId: data.user_id,
-          requestId: requestId,
-        });
-        
-        // Call Next.js API route to send notification
-        const baseUrl = getSiteBaseUrl();
-        fetch(`${baseUrl}/api/notifications/send`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId: data.influencer_id,
-            title: 'Review Submitted! ✅',
-            body: 'Your review has been submitted! The reviewee can now see your feedback.',
-            data: {
-              type: 'review_submitted',
-              requestId: requestId,
-            },
-          }),
-        }).catch(err => console.error('Failed to send review submission notification:', err));
-      } catch (notifError) {
-        // Don't fail the review submission if notification fails
-        console.error('Error sending review submission notification:', notifError);
-      }
-    } else {
-      console.warn('[submitRequestReview] Skipping notification: reviewer ID same as reviewee or missing', {
-        reviewerId: data.influencer_id,
-        revieweeId: data.user_id,
-        requestId: requestId,
-      });
-    }
-    
-    // Trigger payment distribution to reviewer
-    try {
-      const baseUrl = getSiteBaseUrl();
-      console.log(`[payment-distribution] Attempting to distribute payment for request: ${requestId}`);
-      console.log(`[payment-distribution] Request ID type: ${typeof requestId}`);
-      console.log(`[payment-distribution] Request ID length: ${requestId?.length}`);
-      console.log(`[payment-distribution] Using base URL: ${baseUrl}`);
-      
-      // Validate requestId format
-      if (!requestId || typeof requestId !== 'string' || requestId.length < 10) {
-        console.error('[payment-distribution] Invalid requestId format:', requestId);
-        return result; // Skip payment distribution for invalid requestId
-      }
-      
-      const response = await fetch(`${baseUrl}/api/payments/distribute-reviewer-payment`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestId })
-      });
-      
-      console.log(`[payment-distribution] Response status: ${response.status}`);
-      console.log(`[payment-distribution] Response ok: ${response.ok}`);
-      
-      if (!response.ok) {
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch (parseError) {
-          errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
-        }
-        console.error('[payment-distribution] Payment distribution failed:', errorData);
-        console.error('[payment-distribution] Error type:', errorData.errorType);
-        console.error('[payment-distribution] Full error details:', JSON.stringify(errorData, null, 2));
-        
-        // Enhanced logging for debugging
-        if (errorData.errorType === 'INVALID_CONNECT_ACCOUNT') {
-          console.error('[payment-distribution] 🚨 ACCOUNT ISSUE DETECTED:');
-          console.error('[payment-distribution] Reviewer:', errorData.reviewerName);
-          console.error('[payment-distribution] Account ID:', errorData.reviewerId);
-          console.error('[payment-distribution] Stripe Error:', errorData.stripeErrorCode);
-          console.error('[payment-distribution] 💡 SOLUTION: Have the reviewer complete their Stripe Connect setup');
-        }
-        
-        // Don't fail the review submission, but log the specific error
-        if (errorData.error === 'Request not found') {
-          console.warn('[payment-distribution] Request not found in database - this might be a timing issue');
-        }
-      } else {
-        const successData = await response.json().catch(() => ({}));
-        console.log('[payment-distribution] Payment distribution successful:', successData);
-      }
-    } catch (paymentError: unknown) {
-      console.error('[payment-distribution] Network error distributing payment:', paymentError);
-      console.error(
-        '[payment-distribution] Error message:',
-        paymentError instanceof Error ? paymentError.message : paymentError
-      );
-      console.error(
-        '[payment-distribution] Error stack:',
-        paymentError instanceof Error ? paymentError.stack : undefined
-      );
-      // Don't fail the review submission if payment distribution fails
-      // The payment can be distributed manually later
-    }
-    
-    return result;
-  }
-  const refetched = await getRequestById(requestId);
-  if (!refetched) throw new Error('Request not found after submitting review');
-  return refetched;
+
+  const json = await authenticatedJsonFetch<{ ok?: boolean; request: Record<string, unknown> }>('/api/reviews/submit', {
+    requestId,
+    review,
+    videoUrl: videoUrl ?? null,
+    imageUrl: imageUrl ?? null,
+  });
+  return mapRequestRow(json.request);
 }
 
-// Reviewer decisions
+// Reviewer decisions (server-verified via API routes + service role)
 export async function acceptRequest(id: string): Promise<DbRequestSummary> {
-  const current = await getRequestById(id);
-  if (!current) throw new Error('Request not found');
-  if (current.status !== 'paid') {
-    throw new Error('Cannot accept until payment is completed');
-  }
-  return updateRequestStatus(id, 'in_progress');
+  const json = await authenticatedJsonFetch<{ request: Record<string, unknown> }>('/api/reviews/accept', { requestId: id });
+  return mapRequestRow(json.request);
 }
 
 export async function denyRequest(id: string): Promise<DbRequestSummary> {
-  const current = await getRequestById(id);
-  if (!current) throw new Error('Request not found');
-  if (current.status !== 'paid') {
-    throw new Error('Cannot deny until payment is completed');
-  }
-  
-  // Update status to rejected first
-  const updated = await updateRequestStatus(id, 'rejected');
-  
-  // Trigger automatic refund
-  try {
-    const baseUrl = getSiteBaseUrl();
-    console.log(`[automatic-refund] Triggering refund for denied request: ${id}`);
-    
-    const response = await fetch(`${baseUrl}/api/payments/refund`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        requestId: id, 
-        reason: 'requested_by_customer',
-        partial: false
-      })
-    });
-    
-    console.log(`[automatic-refund] Response status: ${response.status}`);
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('[automatic-refund] Error response:', errorData);
-      // Don't throw error - status update should still succeed
-    } else {
-      const successData = await response.json();
-      console.log('[automatic-refund] Success response:', successData);
-    }
-  } catch (refundError) {
-    console.error('[automatic-refund] Refund failed:', refundError);
-    // Don't throw error - status update should still succeed
-  }
-  
-  return updated;
+  const json = await authenticatedJsonFetch<{ request: Record<string, unknown> }>('/api/reviews/deny', { requestId: id });
+  return mapRequestRow(json.request);
 }
 
 export async function archiveRequest(id: string): Promise<DbRequestSummary> {

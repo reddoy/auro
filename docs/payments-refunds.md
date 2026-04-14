@@ -8,16 +8,16 @@
   - Requires `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` and server-side `STRIPE_SECRET_KEY`.
 - **Request lifecycle**
   - Successful payment populates `requests` row with Stripe metadata (session, payment_intent, amount, application_fee, etc.).
-  - Reviewer accepts → completes review → `submitRequestReview` (in `lib/api.ts`) calls `site/app/api/payments/distribute-reviewer-payment`.
+  - Reviewer accepts → completes review → `submitRequestReview` in `lib/api.ts` calls authenticated `POST /api/reviews/submit`, which updates `requests` with the service role and then calls `distribute-reviewer-payment`.
   - Payment distribution checks Connect account, available balance, and updates `requests.payment_status`, `payment_distributed`, `stripe_transfer_id`.
 - **Refund handling**
-  - `site/app/api/payments/refund/route.ts` supports manual + automatic refunds (full or partial) using `requests` data.
-  - Timeout automation: `site/app/api/payments/process-timeout-refunds` refunds requests stuck in `status=timeout`.
-  - Reviewer denial triggers refund via same API (see `denyRequest` in `lib/api.ts`).
+  - `site/app/api/payments/refund/route.ts` supports manual + automatic refunds (full or partial) using `requests` data. **Auth:** callers must be (a) Vercel cron (`x-vercel-cron`), (b) trusted internal (`x-auro-internal: CRON_SECRET`), (c) the reviewer assigned to the request (Supabase JWT), or (d) a configured admin. Set `CRON_SECRET` in Vercel so server routes (e.g. dispute resolution, reviewer decline) can invoke refunds safely.
+  - Timeout automation: `site/app/api/payments/process-timeout-refunds` refunds requests stuck in `status=timeout` (uses Stripe directly, not the refund route).
+  - Reviewer denial: `POST /api/reviews/deny` updates status then calls `/api/payments/refund` with `x-auro-internal`.
 - **Ops & Recovery**
   - `site/app/api/payments/retry-distribution` & `retry-failed-distributions` reprocess failed transfers with balance checks.
   - Scripts under `scripts/*.js` (e.g., `test-payment-api.js`, `check-reviewer-payments.js`) help validate Stripe accounts locally (requires `.env` with Stripe keys).
-  - Supabase Edge `stripe-webhook` verifies Stripe events; currently a stub (only signature validation). Needs enhancement if production requires automatic status updates.
+  - Next.js `site/app/api/stripe/webhook` handles Checkout completion, async payment success/failure, and refund-related events; keep `webhook_events` idempotency table in sync. Supabase Edge `stripe-webhook` may still exist for legacy paths—deduplicate endpoints in Stripe Dashboard so only one stack owns each event type in production.
 
 ## Data & Secrets
 - `requests` table fields involved: `amount_cents`, `application_fee_cents`, `stripe_session_id`, `stripe_payment_intent_id`, `payment_distributed`, `reviewer_amount_cents`, `payment_status`, `refund_status`, `refunded_amount_cents`, `payment_distribution_error`, `payment_distribution_attempts`, `refund_reason`.

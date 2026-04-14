@@ -1,6 +1,6 @@
 # Production Ready Checklist
 
-This document summarizes what's been fixed and what you need to do before pushing to production.
+This document summarizes what's been fixed and what you need to do before pushing to production. **Primary product surface is the Next.js web app (`site/`) on Vercel** with Supabase; the Expo `app/` tree is legacy unless you ship native again.
 
 ## ✅ What's Been Fixed
 

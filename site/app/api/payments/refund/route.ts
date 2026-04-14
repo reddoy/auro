@@ -1,5 +1,7 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { isTrustedInternalRequest } from '@/lib/internal-fetch-secret';
+import { parseBearerToken, verifyAdminAccess } from '@/lib/admin-server';
 
 export async function POST(req: Request) {
   try {
@@ -21,6 +23,39 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'Server misconfigured' }), { status: 500 });
     }
     const admin = createClient(url, key);
+
+    const internalOk = isTrustedInternalRequest(req);
+    const vercelCron = !!req.headers.get('x-vercel-cron');
+    if (!internalOk && !vercelCron) {
+      const bearer = parseBearerToken(req);
+      if (!bearer) {
+        return new Response(JSON.stringify({ error: 'Authentication required' }), { status: 401 });
+      }
+      const { data: authUser, error: authErr } = await admin.auth.getUser(bearer);
+      if (authErr || !authUser?.user?.id) {
+        return new Response(JSON.stringify({ error: 'Invalid session' }), { status: 401 });
+      }
+      const uid = authUser.user.id;
+      const { data: ownerRow, error: ownerErr } = await admin
+        .from('requests')
+        .select('influencer_id')
+        .eq('id', requestId)
+        .maybeSingle();
+      if (ownerErr) {
+        return new Response(JSON.stringify({ error: 'Failed to authorize refund' }), { status: 500 });
+      }
+      if (!ownerRow) {
+        return new Response(JSON.stringify({ error: 'Request not found' }), { status: 404 });
+      }
+      let allowed = (ownerRow as { influencer_id: string }).influencer_id === uid;
+      if (!allowed) {
+        const adminSession = await verifyAdminAccess(admin, bearer);
+        allowed = !!adminSession;
+      }
+      if (!allowed) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+      }
+    }
 
     // IDEMPOTENCY: Check if we've already processed this refund request
     // Use idempotency key if provided, otherwise generate one from requestId + timestamp

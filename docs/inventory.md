@@ -2,7 +2,7 @@
 # Inventory – Web + Backend
 
 ## Repositories & Major Surfaces
-- `app/` — Legacy Expo Router React Native client retained for archival/reference only (not active delivery target).
+- `app/` — Legacy Expo Router React Native client (optional / archival). **Launch and ops work are web-first** (`site/` + Supabase); native app config in `app.json` is not required for the live web product.
 - `site/` — Next.js app for marketing, web app surfaces, and backend APIs (`site/app/api/**`). This is the active product surface.
 - `supabase/` — Database schema migrations plus Edge Functions powering login/onboarding, payments, push, SMS, and Stripe webhooks.
 - `scripts/` — Local node/PowerShell helpers to validate Stripe balances, Connect accounts, payouts, and API connectivity.
@@ -50,9 +50,10 @@
 4. **Stripe**: Connect platform live keys, webhook endpoints for both site backend and Supabase Edge functions, Connect application fee configuration.
 
 ## Observations / Next Steps
-- Stripe publishable key placeholder indicates production build not ready; confirm via Stripe dashboard.
+- **Secrets (web):** Vercel production must set `NEXT_PUBLIC_SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY`, Stripe keys, `NEXT_PUBLIC_SITE_URL`, `CRON_SECRET` (used for cron query auth and internal `x-auro-internal` calls such as dispute refunds and reviewer decline → refund), and optionally `STRIPE_CONNECT_DESTINATION_CHARGES=true` when Connect accounts are production-ready.
+- **Database:** Apply migration `20260413120000_requests_rls_and_update_guard.sql` so `requests` uses RLS (participants only) plus a trigger limiting which columns each role may change; reviewer accept/deny/submit mutations go through authenticated Next.js routes using the service role.
 - Ensure web domain configuration (`app.appauro.com`) is correct across auth redirects and Stripe return URLs.
-- `server/` empty—confirm whether any production cron/worker stack exists or if Supabase Edge functions cover all jobs.
+- `server/` empty—confirm whether any production cron/worker stack exists or if Supabase Edge functions cover all jobs (today: Vercel crons hit Next API routes per `site/vercel.json`).
 - Scripts under `scripts/*.js` rely on local `.env` for Stripe secrets; document usage for ops.
 
 This inventory establishes the components needed for the remaining readiness tasks (signup/onboarding validation, payments/refunds, review storage, Stripe ops, QA matrix).

@@ -48,6 +48,15 @@
 - [ ] Manual refund instructions verified (`docs/payments-refunds.md`).
 - [ ] On-call contact for launch window confirmed.
 
+### Reviewer app + API (staging)
+- [ ] Sign in as the assigned reviewer; open `/app/requests/reviewer/<id>`; **Accept** moves request to in-progress (check `accept_by` / `deliver_by`).
+- [ ] **Decline** on a paid test request refunds the customer (Stripe test refund + `requests` status/refund fields). Requires `CRON_SECRET` in Vercel so the server can call `/api/payments/refund` with `x-auro-internal`.
+- [ ] **Submit review** completes the request and triggers `/api/payments/distribute-reviewer-payment` (watch logs for Connect errors on test accounts).
+- [ ] After applying Supabase migration `20260413120000_requests_rls_and_update_guard.sql`, repeat the above from the browser (RLS + column trigger should still allow these flows via API routes; direct client updates to money columns should fail).
+
+### Stripe webhook (staging dashboard)
+- [ ] Webhook endpoint receives `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed` (latter two if you test async payment methods).
+
 
 
 
