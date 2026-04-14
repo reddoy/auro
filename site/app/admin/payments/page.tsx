@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import AdminNav from '@/app/admin/components/AdminNav';
 
 interface PaymentStats {
   totalRequests: number;
@@ -339,6 +340,7 @@ export default function AdminPaymentsPage() {
       minHeight: '100vh',
       color: '#FFFFFF'
     }}>
+      <AdminNav current="payments" />
       <h1 style={{ fontSize: '32px', marginBottom: '10px', color: '#FFFFFF' }}>Pingle Pongle</h1>
       <p style={{ color: 'rgba(255,255,255,0.72)', marginBottom: '30px' }}>
         Payment management and distribution tools
