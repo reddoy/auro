@@ -4,6 +4,16 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 
+function getSafeRedirectPath(raw: string | null): string {
+  const candidate = raw || '/waitlist';
+  if (!candidate.startsWith('/') || candidate.startsWith('//')) return '/waitlist';
+  if (candidate === '/app' || candidate.startsWith('/app/')) return '/waitlist';
+  if ((candidate === '/request' || candidate.startsWith('/request/')) && !candidate.includes('internal=1')) {
+    return '/waitlist';
+  }
+  return candidate;
+}
+
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -153,7 +163,7 @@ function AuthCallbackContent() {
           }
           
           // Redirect to the intended destination or default page
-          const redirectTo = searchParams.get('redirect_to') || '/request';
+          const redirectTo = getSafeRedirectPath(searchParams.get('redirect_to'));
           console.log('[AuthCallback] Redirecting to:', redirectTo);
           
           // Give time for session to be properly established
@@ -199,7 +209,7 @@ function AuthCallbackContent() {
                 console.error('[AuthCallback] Failed to store user info:', e);
               }
               
-              const redirectTo = searchParams.get('redirect_to') || '/request';
+              const redirectTo = getSafeRedirectPath(searchParams.get('redirect_to'));
               setTimeout(() => {
                 router.push(redirectTo);
               }, 1000);
@@ -214,7 +224,7 @@ function AuthCallbackContent() {
               setStatus('error');
               setMessage('Authentication timed out. Please try again.');
               setTimeout(() => {
-                router.push('/request');
+                router.push('/waitlist');
               }, 3000);
             }
           }, 5000);
@@ -226,7 +236,7 @@ function AuthCallbackContent() {
         
         // Redirect to request page after showing error
         setTimeout(() => {
-          router.push('/request');
+          router.push('/waitlist');
         }, 3000);
       }
     };

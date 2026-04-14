@@ -231,10 +231,10 @@ export default function AppProfilePage() {
             )}
 
             <Link
-              href="/request"
+              href="/waitlist"
               className="block w-full rounded-2xl border border-white/[0.14] bg-white/[0.04] py-3.5 text-center text-[15px] font-semibold text-white transition hover:border-white/25 hover:bg-white/[0.07] active:scale-[0.99] motion-reduce:transform-none"
             >
-              Request a review
+              Join review waitlist
             </Link>
 
             <Link

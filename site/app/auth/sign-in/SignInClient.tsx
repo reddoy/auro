@@ -7,7 +7,11 @@ import AuthStep from '@/app/request/components/AuthStep';
 import { supabase } from '@/lib/supabase';
 
 function safeReturnPath(raw: string | null): string {
-  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/app';
+  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/waitlist';
+  if (raw === '/app' || raw.startsWith('/app/')) return '/waitlist';
+  if ((raw === '/request' || raw.startsWith('/request/')) && !raw.includes('internal=1')) {
+    return '/waitlist';
+  }
   return raw;
 }
 
@@ -43,6 +47,31 @@ function SignInInner() {
         return;
       }
       if (!row) {
+        try {
+          const ensureRes = await fetch('/api/auth/ensure-profile', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              userId: u.id,
+              email: u.email,
+              fullName: u.user_metadata?.full_name || u.user_metadata?.name,
+              avatarUrl: u.user_metadata?.avatar_url || u.user_metadata?.picture,
+            }),
+          });
+          if (ensureRes.ok) {
+            const { data: retry } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('id', u.id)
+              .maybeSingle();
+            if (retry) {
+              setIsAuthenticated(true);
+              return;
+            }
+          }
+        } catch (ensureError) {
+          console.warn('[SignInClient] ensure-profile failed:', ensureError);
+        }
         await supabase.auth.signOut();
         setIsAuthenticated(false);
         return;

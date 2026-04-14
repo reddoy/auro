@@ -18,7 +18,11 @@ export default function ConditionalNav() {
 
   const isOnApplyPage =
     pathname?.startsWith('/reviewers/apply') || pathname?.startsWith('/reviewers/thanks');
-  const isOnRequestFlow = pathname === '/request' || pathname?.startsWith('/request/');
+  const isOnRequestFlow =
+    pathname === '/request' ||
+    pathname?.startsWith('/request/') ||
+    pathname === '/waitlist' ||
+    pathname?.startsWith('/waitlist/');
 
   return (
     <div className="conditional-nav" style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -45,7 +49,7 @@ export default function ConditionalNav() {
         )}
 
         {!isOnRequestFlow && (
-          <Link className="cta-nav cta-nav--get-reviewed" href="/request">
+          <Link className="cta-nav cta-nav--get-reviewed" href="/waitlist">
             Get Reviewed
           </Link>
         )}

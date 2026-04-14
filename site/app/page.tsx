@@ -144,7 +144,7 @@ function HomePageContent() {
                 </Button>
                 <Button size="xl" variant="outline" className={LANDING_CTA_SECONDARY} asChild>
                   <a
-                    href="/request"
+                    href="/waitlist"
                     className="flex items-center justify-center gap-2"
                     aria-label="Request a profile review"
                   >
@@ -164,7 +164,7 @@ function HomePageContent() {
                 </div>
                 <div className="flex items-start justify-center gap-2 text-left text-base text-white/85">
                   <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                  <span className="font-medium leading-snug">Transparent pricing before you pay</span>
+                  <span className="font-medium leading-snug">Review requests currently in waitlist mode</span>
                 </div>
                 <div className="flex items-start justify-center gap-2 text-left text-base text-white/85">
                   <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
@@ -252,7 +252,7 @@ function HomePageContent() {
                     </a>
                   </Button>
                   <Button size="xl" variant="outline" className={LANDING_CTA_SECONDARY} asChild>
-                    <a href="/request" className="flex items-center justify-center gap-2">
+                    <a href="/waitlist" className="flex items-center justify-center gap-2">
                       <span className="mobile-button-text">Get Reviewed</span>
                       <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
                     </a>
@@ -334,10 +334,10 @@ function HomePageContent() {
                       FOR GUYS LEVELING UP
                     </Badge>
                     <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
-                      Request a review. Walk away with a to-do list for your profile.
+                      Join the waitlist now and be first when reviews reopen.
                     </h2>
                     <p className="text-lg leading-relaxed text-white/85">
-                      Upload what you are using on the apps, get line-by-line notes from real women, and know exactly what to change next—no vague pep talks.
+                      We are temporarily pausing new paid review requests while we fix active bugs. Join the waitlist and we will notify you the moment requests reopen.
                     </p>
                     <div className="flex flex-wrap gap-3 pt-2">
                       <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Dating profile feedback</Badge>
@@ -347,8 +347,8 @@ function HomePageContent() {
                   </div>
                   <div className="flex md:justify-end">
                     <Button size="xl" variant="gradient" className={LANDING_CTA_PRIMARY} asChild>
-                      <a href="/request" className="flex items-center justify-center gap-2" aria-label="Start your review request">
-                        <span>Request a Review</span>
+                      <a href="/waitlist" className="flex items-center justify-center gap-2" aria-label="Join the review waitlist">
+                        <span>Join Waitlist</span>
                         <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
                       </a>
                     </Button>
@@ -365,7 +365,7 @@ function HomePageContent() {
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center space-y-6">
             <Badge variant="gradient" className="text-sm px-4 py-2 font-semibold">
-              FULLY LAUNCHED
+              REVIEW REQUESTS PAUSED
             </Badge>
             <h2 className="text-3xl font-bold leading-tight tracking-tight text-white md:text-4xl lg:text-5xl">
               Straightforward payouts
@@ -590,13 +590,13 @@ function HomePageContent() {
                 className="mobile-text-reveal text-3xl font-bold tracking-tight text-white md:text-4xl lg:text-5xl"
                 style={{ animationDelay: '0.2s' }}
               >
-                Ready when you are
+              Join the waitlist
               </h2>
               <p
                 className="mobile-text-reveal text-xl leading-relaxed text-white/90 md:text-2xl"
                 style={{ animationDelay: '0.4s' }}
               >
-                Get reviewed if you want sharper photos and prompts—or become a reviewer and earn on your own terms.
+                We are pausing paid review requests while we ship fixes. Join the waitlist for review requests, or apply as a reviewer today.
               </p>
             </div>
             
@@ -611,14 +611,14 @@ function HomePageContent() {
                 </a>
               </Button>
               <Button size="xl" variant="outline" className={LANDING_CTA_SECONDARY} asChild>
-                <a href="/request" className="flex items-center justify-center gap-2">
-                  <span className="mobile-button-text">Get Reviewed</span>
+                <a href="/waitlist" className="flex items-center justify-center gap-2">
+                  <span className="mobile-button-text">Join Waitlist</span>
                   <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1 sm:h-6 sm:w-6" />
                 </a>
               </Button>
             </div>
             <p className="text-sm font-medium text-white/70 mobile-text-reveal" style={{ animationDelay: '0.65s' }}>
-              Fully live on web and mobile web
+              Reviewer onboarding is live. Review requests are waitlist-only.
             </p>
             
             <div

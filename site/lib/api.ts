@@ -17,6 +17,45 @@ function sb() {
   return supabase;
 }
 
+type ProfileBootstrapUser = {
+  id: string;
+  email?: string | null;
+  user_metadata?: Record<string, unknown> | null;
+};
+
+async function ensureProfileRowForUser(user: ProfileBootstrapUser): Promise<boolean> {
+  if (!user?.id) return false;
+  try {
+    const metadata = user.user_metadata || {};
+    const fullName =
+      (typeof metadata.full_name === 'string' && metadata.full_name) ||
+      (typeof metadata.name === 'string' && metadata.name) ||
+      undefined;
+    const avatarUrl =
+      (typeof metadata.avatar_url === 'string' && metadata.avatar_url) ||
+      (typeof metadata.picture === 'string' && metadata.picture) ||
+      undefined;
+
+    const res = await fetch(`${getSiteBaseUrl()}/api/auth/ensure-profile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.id,
+        email: user.email ?? undefined,
+        fullName,
+        avatarUrl,
+      }),
+    });
+    if (!res.ok) return false;
+
+    const { data: profile } = await sb().from('profiles').select('id').eq('id', user.id).maybeSingle();
+    return !!profile;
+  } catch (error) {
+    console.warn('[ensureProfileRowForUser] Failed to bootstrap profile:', error);
+    return false;
+  }
+}
+
 async function authenticatedJsonFetch<T>(path: string, body: unknown): Promise<T> {
   const { data: sessionData } = await sb().auth.getSession();
   const token = sessionData.session?.access_token;
@@ -152,15 +191,25 @@ export async function getUserProfile(): Promise<DbUserProfile | null> {
   const { data: sessionData } = await sb().auth.getUser();
   const user = sessionData.user;
   if (!user) return null;
-  const { data: profile, error } = await sb()
+  let { data: profile, error } = await sb()
     .from('profiles')
     .select('id, username, first_name, last_name, avatar_url, bio, is_reviewer')
     .eq('id', user.id)
     .maybeSingle();
   if (error) throw error;
   if (!profile) {
-    // No DB row (e.g. profile deleted while JWT still valid) — not a usable app identity.
-    return null;
+    // OAuth/profile creation can be eventually consistent. Try a server-side bootstrap once
+    // before treating the session as orphaned.
+    const repaired = await ensureProfileRowForUser(user as ProfileBootstrapUser);
+    if (!repaired) return null;
+    const retry = await sb()
+      .from('profiles')
+      .select('id, username, first_name, last_name, avatar_url, bio, is_reviewer')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (retry.error) throw retry.error;
+    profile = retry.data;
+    if (!profile) return null;
   }
   const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || null;
   return {
@@ -197,6 +246,8 @@ export async function signOutIfProfileRowMissing(): Promise<boolean> {
     return false;
   }
   if (!profile) {
+    const repaired = await ensureProfileRowForUser(user as ProfileBootstrapUser);
+    if (repaired) return false;
     await sb().auth.signOut();
     return true;
   }

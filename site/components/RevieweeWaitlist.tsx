@@ -3,7 +3,17 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
 
-export default function RevieweeWaitlist() {
+type Props = {
+  source?: string;
+  title?: string;
+  subtitle?: string;
+};
+
+export default function RevieweeWaitlist({
+  source = 'homepage_waitlist',
+  title = 'Join the review waitlist',
+  subtitle = 'Drop your number and we will text you when review requests and payments reopen.',
+}: Props) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
@@ -25,7 +35,7 @@ export default function RevieweeWaitlist() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           phoneNumber: phoneNumber.trim(),
-          source: 'homepage_footer'
+          source
         })
       });
 
@@ -49,10 +59,8 @@ export default function RevieweeWaitlist() {
     <div className="reviewee-waitlist-container">
       <div className="reviewee-waitlist-content">
         <div className="text-content">
-          <h3 className="waitlist-title">Want SMS tips on your profile?</h3>
-          <p className="waitlist-subtitle">
-            Optional. Drop your number for occasional Auro nudges—request a review anytime from the buttons above.
-          </p>
+          <h3 className="waitlist-title">{title}</h3>
+          <p className="waitlist-subtitle">{subtitle}</p>
         </div>
         
         {status === 'success' ? (

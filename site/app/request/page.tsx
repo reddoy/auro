@@ -165,6 +165,32 @@ export default function RequestPage() {
     }
   }, []);
 
+  const ensureProfileExists = useCallback(async (user: any): Promise<boolean> => {
+    if (!user?.id) return false;
+    try {
+      const res = await fetch('/api/auth/ensure-profile', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          email: user.email,
+          fullName: user.user_metadata?.full_name || user.user_metadata?.name,
+          avatarUrl: user.user_metadata?.avatar_url || user.user_metadata?.picture,
+        }),
+      });
+      if (!res.ok) return false;
+      const { data: profRow } = await supabaseClient
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+      return !!profRow;
+    } catch (error) {
+      console.warn('[RequestPage] ensureProfileExists failed:', error);
+      return false;
+    }
+  }, []);
+
   const clearFlowState = useCallback(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -465,8 +491,11 @@ export default function RequestPage() {
                             .eq('id', sessionData.session.user.id)
                             .maybeSingle();
                           if (!profRow) {
-                            await client.auth.signOut();
-                            isRealUser = false;
+                            const repaired = await ensureProfileExists(sessionData.session.user);
+                            if (!repaired) {
+                              await client.auth.signOut();
+                              isRealUser = false;
+                            }
                           }
                         }
                         setIsAuthenticated(isRealUser);
@@ -535,8 +564,11 @@ export default function RequestPage() {
                   .eq('id', session.user.id)
                   .maybeSingle();
                 if (!profRow) {
-                  await client.auth.signOut();
-                  isRealUser = false;
+                  const repaired = await ensureProfileExists(session.user);
+                  if (!repaired) {
+                    await client.auth.signOut();
+                    isRealUser = false;
+                  }
                 }
               }
               
@@ -634,8 +666,11 @@ export default function RequestPage() {
                 .eq('id', session.user.id)
                 .maybeSingle();
               if (!profRow) {
-                await client.auth.signOut();
-                isRealUser = false;
+                const repaired = await ensureProfileExists(session.user);
+                if (!repaired) {
+                  await client.auth.signOut();
+                  isRealUser = false;
+                }
               }
             }
             setIsAuthenticated(isRealUser);

@@ -1,12 +1,8 @@
-import React from 'react';
+import { redirect } from 'next/navigation';
 
-export default function CreatorRequestPage() {
-  return (
-    <div style={{ padding: 24 }}>
-      <h1>Request a review</h1>
-      <p>Form goes here. On submit we will create a Stripe Checkout session.</p>
-    </div>
-  );
+export default function CreatorRequestPage({ params }: { params: { slug: string } }) {
+  const slug = params?.slug || '';
+  redirect(`/waitlist${slug ? `?creatorSlug=${encodeURIComponent(slug)}` : ''}`);
 }
 
 

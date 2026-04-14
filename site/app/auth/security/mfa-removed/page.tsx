@@ -14,7 +14,7 @@ export default function MfaRemovedPage() {
           <p className="text-white/70 mb-6">
             A multi-factor authentication method has been removed from your account. If you didn't make this change, please contact support immediately.
           </p>
-          <Link href="/request" className="inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "#F26955" }}>
+          <Link href="/waitlist" className="inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "#F26955" }}>
             Continue to App
           </Link>
         </div>
