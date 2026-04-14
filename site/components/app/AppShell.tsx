@@ -1,7 +1,6 @@
 'use client';
 
 import { ListChecks, UserRound } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -30,15 +29,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         }}
       >
         <div className="mx-auto flex max-w-lg items-center px-4 pb-3">
-          <Link href="/app/requests" className="block py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0C0225] rounded-md">
-            <Image
-              src="/auro_font_logo.png"
-              alt="Auro"
-              width={96}
-              height={24}
-              priority
-              className="h-6 w-auto object-contain object-left"
+          <Link
+            href="/app/requests"
+            className="flex items-center gap-2 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0C0225] rounded-md"
+            aria-label="Auro — home"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- static mark; avoid /_next/image for crisp small asset */}
+            <img
+              src="/auro_aura_logo.png"
+              alt=""
+              width={40}
+              height={40}
+              decoding="async"
+              fetchPriority="high"
+              className="h-10 w-10 shrink-0 object-contain"
             />
+            <span className="sr-only">Auro</span>
           </Link>
         </div>
       </header>

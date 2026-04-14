@@ -110,8 +110,8 @@ function HomePageContent() {
                   className="text-4xl md:text-5xl font-extrabold leading-tight text-center tracking-tight px-4 max-w-lg mx-auto mobile-text-reveal hyphens-none text-balance text-white"
                   style={{ animationDelay: '0.4s' }}
                 >
-                  <span className="block">Get real feedback from women.</span>
-                  <span className="block">Level up your dating profile fast.</span>
+                  <span className="block">Get dating profile feedback</span>
+                  <span className="block">from real women</span>
                 </h1>
                 
                 <p className="text-lg text-white/90 max-w-lg mx-auto mobile-text-reveal leading-relaxed px-4 font-medium text-balance" style={{ animationDelay: '1s' }}>
@@ -228,8 +228,8 @@ function HomePageContent() {
                 {/* Main Headline — same two-line cadence as mobile for a stable block */}
                 <div className="space-y-4">
                   <h1 className="text-4xl xl:text-5xl 2xl:text-6xl font-extrabold leading-tight tracking-tight text-white max-w-2xl hyphens-none text-pretty">
-                    <span className="block">Get real feedback from women.</span>
-                    <span className="block">Level up your dating profile fast.</span>
+                    <span className="block">Get dating profile feedback</span>
+                    <span className="block">from real women</span>
                   </h1>
                   
                   <p className="text-lg xl:text-xl text-white/90 max-w-xl leading-relaxed font-medium text-pretty hyphens-none">
