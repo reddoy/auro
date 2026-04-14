@@ -1,5 +1,5 @@
-import AppGateClient from './app-gate-client';
+import AppHomeClient from './app-home-client';
 
 export default function AppRootPage() {
-  return <AppGateClient />;
+  return <AppHomeClient />;
 }

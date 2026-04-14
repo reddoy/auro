@@ -15,7 +15,7 @@ type Creator = {
   links?: any;
 };
 
-type SortKey = 'recommended' | 'rating' | 'price_low' | 'price_high' | 'name';
+type SortKey = 'recommended' | 'price_low' | 'price_high' | 'name';
 type PriceTier = 'under75' | '75to99' | '100plus';
 
 type Props = {
@@ -40,7 +40,6 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>('recommended');
   const [priceTier, setPriceTier] = useState<PriceTier | null>(null);
-  const [minRating4, setMinRating4] = useState(false);
   const [skillFilters, setSkillFilters] = useState<string[]>([]);
 
   useEffect(() => {
@@ -184,10 +183,9 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
         if (priceTier === '75to99' && (p < 75 || p >= 100)) return false;
         if (priceTier === '100plus' && p < 100) return false;
       }
-      if (minRating4 && (creator.rating_average ?? 0) < 4) return false;
       return true;
     });
-  }, [creators, searchTerm, skillFilters, priceTier, minRating4]);
+  }, [creators, searchTerm, skillFilters, priceTier]);
 
   const sortedCreators = useMemo(() => {
     const list = [...filteredCreators];
@@ -197,8 +195,6 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
 
     list.sort((a, b) => {
       switch (sortBy) {
-        case 'rating':
-          return rating(b) - rating(a) || rate(a) - rate(b) || nameKey(a).localeCompare(nameKey(b));
         case 'price_low':
           return rate(a) - rate(b) || rating(b) - rating(a) || nameKey(a).localeCompare(nameKey(b));
         case 'price_high':
@@ -242,12 +238,11 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
     setSearchTerm('');
     setSkillFilters([]);
     setPriceTier(null);
-    setMinRating4(false);
     setSortBy('recommended');
   }, []);
 
   const hasActiveFilters =
-    searchTerm.trim().length > 0 || skillFilters.length > 0 || priceTier !== null || minRating4 || sortBy !== 'recommended';
+    searchTerm.trim().length > 0 || skillFilters.length > 0 || priceTier !== null || sortBy !== 'recommended';
 
   const pendingCreator = pendingId
     ? sortedCreators.find((c) => c.id === pendingId) ?? creators.find((c) => c.id === pendingId)
@@ -335,7 +330,6 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
               aria-label="Sort reviewers"
             >
               <option value="recommended">Recommended</option>
-              <option value="rating">Highest rated</option>
               <option value="price_low">Price: low to high</option>
               <option value="price_high">Price: high to low</option>
               <option value="name">Name A–Z</option>
@@ -381,25 +375,6 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
           ) : null}
         </div>
 
-        <div className="reviewer-chip-group" role="group" aria-label="Rating">
-          <span className="reviewer-chip-heading">Rating</span>
-          <button
-            type="button"
-            className={`reviewer-chip ${!minRating4 ? 'is-active' : ''}`}
-            onClick={() => setMinRating4(false)}
-          >
-            Any
-          </button>
-          <button
-            type="button"
-            className={`reviewer-chip ${minRating4 ? 'is-active' : ''}`}
-            onClick={() => setMinRating4((v) => !v)}
-            aria-pressed={minRating4}
-          >
-            4+ ★
-          </button>
-        </div>
-
         {allSkills.length > 0 ? (
           <div className="reviewer-skills-chips" role="group" aria-label="Filter by specialty">
             <span className="reviewer-chip-heading">Specialty</span>
@@ -420,7 +395,7 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
         ) : null}
       </div>
 
-      <div className="creators-grid creators-grid--list creators-grid-scroll">
+      <div className="creators-grid creators-grid--list">
         {sortedCreators.map((creator) => {
           const selected = isCardSelected(creator);
           return (

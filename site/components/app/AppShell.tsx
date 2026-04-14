@@ -1,23 +1,26 @@
 'use client';
 
-import { ListChecks, UserRound } from 'lucide-react';
+import { Home, ListChecks, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const nav = [
+  { href: '/app', label: 'Home', Icon: Home },
   { href: '/app/requests', label: 'My reviews', Icon: ListChecks },
   { href: '/app/profile', label: 'Account', Icon: UserRound },
 ] as const;
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  if (pathname === '/app' || pathname === '/app/intro' || pathname?.startsWith('/app/intro/')) {
+  if (pathname === '/app/intro' || pathname?.startsWith('/app/intro/')) {
     return <>{children}</>;
   }
-  const isActive = (href: string) =>
-    href === '/app/requests'
-      ? pathname === href || pathname?.startsWith('/app/requests/')
-      : pathname === href || pathname?.startsWith(href + '/');
+  const isActive = (href: string) => {
+    if (href === '/app') return pathname === '/app' || pathname === '/app/';
+    if (href === '/app/requests')
+      return pathname === href || pathname?.startsWith('/app/requests/');
+    return pathname === href || pathname?.startsWith(href + '/');
+  };
 
   return (
     <div className="flex min-h-[100dvh] flex-col pb-[calc(72px+env(safe-area-inset-bottom,0px))]">
@@ -28,10 +31,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           paddingTop: 'max(10px, env(safe-area-inset-top))',
         }}
       >
-        <div className="mx-auto flex max-w-lg items-center px-4 pb-3">
+        <div className="mx-auto flex max-w-lg items-center justify-center px-4 pb-3">
           <Link
-            href="/app/requests"
-            className="flex items-center gap-2 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0C0225] rounded-md"
+            href="/app"
+            className="flex items-center gap-2.5 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0C0225] rounded-md"
             aria-label="Auro — home"
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- static mark; avoid /_next/image for crisp small asset */}
@@ -43,8 +46,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               decoding="async"
               fetchPriority="high"
               className="h-10 w-10 shrink-0 object-contain"
+              aria-hidden
             />
-            <span className="sr-only">Auro</span>
+            <span className="text-lg font-semibold tracking-tight text-white">Auro</span>
           </Link>
         </div>
       </header>

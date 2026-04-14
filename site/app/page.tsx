@@ -101,43 +101,31 @@ function HomePageContent() {
         
         {/* Hero Content - Mobile Only */}
         <div className="container mx-auto px-4 relative z-10 pt-12 pb-8 lg:hidden">
-          <div className="text-center space-y-6 mobile-hero-content w-full">
+          <div className="text-center space-y-8 mobile-hero-content w-full">
               {/* Removed redundant badge to save space and reduce clutter */}
               
-              {/* Main Headline — controlled lines read cleaner than one ragged wrap */}
-              <div className="space-y-4">
+              {/* Headline + sub: generous leading so descenders never collide; CTAs before checklist to match desktop rhythm */}
+              <div className="space-y-6">
                 <h1
-                  className="text-4xl md:text-5xl font-extrabold leading-tight text-center tracking-tight px-4 max-w-lg mx-auto mobile-text-reveal hyphens-none text-balance text-white"
+                  className="text-4xl font-bold leading-[1.22] text-center tracking-[-0.02em] text-white [text-wrap:balance] hyphens-none max-w-lg px-4 mobile-text-reveal sm:text-5xl sm:leading-[1.2]"
                   style={{ animationDelay: '0.4s' }}
                 >
-                  <span className="block">Get dating profile feedback</span>
-                  <span className="block">from real women</span>
+                  <span className="block [text-wrap:balance]">Get dating profile feedback</span>
+                  <span className="mt-2 block text-white/95 [text-wrap:balance] sm:mt-2.5">from real women</span>
                 </h1>
-                
-                <p className="text-lg text-white/90 max-w-lg mx-auto mobile-text-reveal leading-relaxed px-4 font-medium text-balance" style={{ animationDelay: '1s' }}>
+
+                <p
+                  className="mx-auto max-w-lg px-4 text-lg font-medium leading-relaxed text-white/85 mobile-text-reveal text-pretty sm:text-xl"
+                  style={{ animationDelay: '1s' }}
+                >
                   Upload your photos and prompts, get specific notes, and improve faster—no fluff, no guesswork.
                 </p>
-                
-                <div className="mobile-text-reveal space-y-2 px-4" style={{ animationDelay: '1.1s' }}>
-                  <div className="flex items-center justify-center gap-2 text-base text-white/90">
-                    <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                    <span className="font-medium">Specific notes on photos and prompts</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2 text-base text-white/90">
-                    <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                    <span className="font-medium">Transparent pricing before you pay</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2 text-base text-white/90">
-                    <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                    <span className="font-medium">Built for web and mobile web</span>
-                  </div>
-                </div>
               </div>
 
               {/* CTA Buttons - both core paths */}
               <div
-                className="mx-auto mb-8 flex w-full max-w-sm flex-col items-stretch justify-center gap-3 px-4 mobile-text-reveal sm:max-w-none sm:flex-row sm:justify-center"
-                style={{ animationDelay: '1.2s' }}
+                className="mx-auto flex w-full max-w-sm flex-col items-stretch justify-center gap-3 px-4 mobile-text-reveal sm:max-w-none sm:flex-row sm:justify-center"
+                style={{ animationDelay: '1.1s' }}
               >
                 <Button size="xl" variant="gradient" className={LANDING_CTA_PRIMARY} asChild>
                   <a
@@ -167,8 +155,23 @@ function HomePageContent() {
                 </Button>
               </div>
 
+              <div className="mobile-text-reveal mx-auto max-w-lg space-y-2.5 px-4 pt-1" style={{ animationDelay: '1.15s' }}>
+                <div className="flex items-start justify-center gap-2 text-left text-base text-white/85">
+                  <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
+                  <span className="font-medium leading-snug">Specific notes on photos and prompts</span>
+                </div>
+                <div className="flex items-start justify-center gap-2 text-left text-base text-white/85">
+                  <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
+                  <span className="font-medium leading-snug">Transparent pricing before you pay</span>
+                </div>
+                <div className="flex items-start justify-center gap-2 text-left text-base text-white/85">
+                  <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
+                  <span className="font-medium leading-snug">Built for web and mobile web</span>
+                </div>
+              </div>
+
               {/* Mobile iPhone Video - Moved below CTA with proper spacing */}
-              <div className="flex justify-center mobile-text-reveal mt-4" style={{ animationDelay: '1.3s' }}>
+              <div className="flex justify-center mobile-text-reveal mt-6" style={{ animationDelay: '1.3s' }}>
                 <div className="mobile-iphone-container">
                   <div className="mobile-iphone-glow"></div>
                   <div className="mobile-iphone-shadow"></div>
@@ -222,23 +225,22 @@ function HomePageContent() {
           <div className="container mx-auto px-4 relative z-10">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               {/* Left Content — min-w-0 lets copy wrap inside the grid track instead of overflowing under the phone */}
-              <div className="text-left space-y-5 min-w-0 pr-2 xl:pr-6">
+              <div className="text-left space-y-8 min-w-0 pr-2 xl:pr-6">
                 {/* Removed redundant badge to save space and reduce clutter */}
                 
-                {/* Main Headline — same two-line cadence as mobile for a stable block */}
-                <div className="space-y-4">
-                  <h1 className="text-4xl xl:text-5xl 2xl:text-6xl font-extrabold leading-tight tracking-tight text-white max-w-2xl hyphens-none text-pretty">
-                    <span className="block">Get dating profile feedback</span>
-                    <span className="block">from real women</span>
+                <div className="space-y-6">
+                  <h1 className="max-w-2xl hyphens-none text-pretty text-4xl font-bold leading-[1.22] tracking-[-0.02em] text-white sm:text-5xl sm:leading-[1.2] xl:text-[2.75rem] xl:leading-[1.2] 2xl:text-5xl 2xl:leading-[1.18]">
+                    <span className="block [text-wrap:balance]">Get dating profile feedback</span>
+                    <span className="mt-2 block text-white/95 [text-wrap:balance] xl:mt-2.5">from real women</span>
                   </h1>
-                  
-                  <p className="text-lg xl:text-xl text-white/90 max-w-xl leading-relaxed font-medium text-pretty hyphens-none">
+
+                  <p className="max-w-xl text-lg font-medium leading-relaxed text-white/85 xl:text-xl text-pretty hyphens-none">
                     Upload your photos and prompts, get specific notes, and improve faster—no fluff, no guesswork.
                   </p>
                 </div>
                 
                 {/* CTA Buttons */}
-                <div className="flex flex-wrap gap-3 justify-start pt-1">
+                <div className="flex flex-wrap gap-3 justify-start">
                   <Button size="xl" variant="gradient" className={LANDING_CTA_PRIMARY} asChild>
                     <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
                       <span className="mobile-button-text">Become a Reviewer</span>
@@ -254,7 +256,7 @@ function HomePageContent() {
                 </div>
 
                 {/* Trust line — column layout aligns checks with headline (no ragged wrap grid) */}
-                <ul className="m-0 flex list-none flex-col gap-2.5 p-0 pt-1 text-sm text-white" aria-label="Key benefits">
+                <ul className="m-0 flex list-none flex-col gap-2.5 p-0 pt-2 text-sm text-white/90" aria-label="Key benefits">
                   <li className="flex items-start gap-2">
                     <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
                     <span>Specific notes on photos and prompts</span>

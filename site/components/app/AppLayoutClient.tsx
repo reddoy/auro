@@ -31,7 +31,7 @@ export default function AppLayoutClient({ children }: { children: React.ReactNod
       }
       const { data, error } = await supabase.auth.getSession();
       if (error || !data.session) {
-        const next = encodeURIComponent(pathname || '/app/requests');
+        const next = encodeURIComponent(pathname || '/app');
         router.replace(`/auth/sign-in?redirect_to=${next}`);
         return;
       }
