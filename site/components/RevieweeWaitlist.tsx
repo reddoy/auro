@@ -33,7 +33,7 @@ export default function RevieweeWaitlist() {
 
       if (response.ok) {
         setStatus('success');
-        setMessage('You\'re on the list! We\'ll text you when we launch.');
+        setMessage("You are in. Expect occasional SMS tips—no spam.");
         setPhoneNumber('');
       } else {
         setStatus('error');
@@ -49,8 +49,10 @@ export default function RevieweeWaitlist() {
     <div className="reviewee-waitlist-container">
       <div className="reviewee-waitlist-content">
         <div className="text-content">
-          <h3 className="waitlist-title">Want to get reviewed?</h3>
-          <p className="waitlist-subtitle">Join the waitlist and we'll text you when we launch</p>
+          <h3 className="waitlist-title">Want SMS tips on your profile?</h3>
+          <p className="waitlist-subtitle">
+            Optional. Drop your number for occasional Auro nudges—request a review anytime from the buttons above.
+          </p>
         </div>
         
         {status === 'success' ? (

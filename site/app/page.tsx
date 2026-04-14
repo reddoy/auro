@@ -10,6 +10,12 @@ import { ArrowRight, Sparkles, DollarSign, Clock, TrendingUp, CheckCircle } from
 
 export const dynamic = 'force-dynamic';
 
+/** Match gradient + glass-outline CTAs used in cards below (e.g. Request a Review). */
+const LANDING_CTA_PRIMARY =
+  'group w-full sm:w-auto text-lg px-8 py-4 font-semibold shadow-2xl hover:shadow-3xl transition-all duration-300';
+const LANDING_CTA_SECONDARY =
+  'group w-full sm:w-auto text-lg px-8 py-4 font-semibold border-white/20 bg-white/[0.06] text-white shadow-lg transition-all duration-300 hover:bg-white/[0.12] hover:text-white focus-visible:ring-white/30';
+
 function HomePageContent() {
   const desktopVideoRef = useRef<HTMLVideoElement>(null);
   const desktopOverlayRef = useRef<HTMLAnchorElement>(null);
@@ -104,26 +110,26 @@ function HomePageContent() {
                   className="text-4xl md:text-5xl font-extrabold leading-tight text-center tracking-tight px-4 max-w-lg mx-auto mobile-text-reveal hyphens-none text-balance text-white"
                   style={{ animationDelay: '0.4s' }}
                 >
-                  <span className="block">How you read in apps,</span>
-                  <span className="block">spelled out by reviewers.</span>
+                  <span className="block">Get real feedback from women.</span>
+                  <span className="block">Level up your dating profile fast.</span>
                 </h1>
                 
                 <p className="text-lg text-white/90 max-w-lg mx-auto mobile-text-reveal leading-relaxed px-4 font-medium text-balance" style={{ animationDelay: '1s' }}>
-                  Reviewers set their rates and answer paid requests. Guys get specific notes on photos and prompts—not a pep talk. Start in minutes on web or mobile web.
+                  Upload your photos and prompts, get specific notes, and improve faster—no fluff, no guesswork.
                 </p>
                 
                 <div className="mobile-text-reveal space-y-2 px-4" style={{ animationDelay: '1.1s' }}>
                   <div className="flex items-center justify-center gap-2 text-base text-white/90">
-                    <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
-                    <span className="font-medium">Set your own rates</span>
+                    <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
+                    <span className="font-medium">Specific notes on photos and prompts</span>
                   </div>
                   <div className="flex items-center justify-center gap-2 text-base text-white/90">
-                    <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
-                    <span className="font-medium">Work when you want</span>
+                    <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
+                    <span className="font-medium">Transparent pricing before you pay</span>
                   </div>
                   <div className="flex items-center justify-center gap-2 text-base text-white/90">
-                    <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
-                    <span className="font-medium">Paid when you complete a review</span>
+                    <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
+                    <span className="font-medium">Built for web and mobile web</span>
                   </div>
                 </div>
               </div>
@@ -133,34 +139,30 @@ function HomePageContent() {
                 className="mx-auto mb-8 flex w-full max-w-sm flex-col items-stretch justify-center gap-3 px-4 mobile-text-reveal sm:max-w-none sm:flex-row sm:justify-center"
                 style={{ animationDelay: '1.2s' }}
               >
-                <Button
-                  size="xl"
-                  variant="gradient"
-                  className="group w-full px-4 py-3 text-base font-semibold sm:w-auto sm:max-w-sm sm:px-6 sm:text-lg"
-                  asChild
-                >
+                <Button size="xl" variant="gradient" className={LANDING_CTA_PRIMARY} asChild>
                   <a
                     href="/reviewers/apply"
-                    className="flex items-center justify-center"
+                    className="flex items-center justify-center gap-2"
                     aria-label="Apply to become a reviewer"
                   >
                     <span className="truncate">Become a Reviewer</span>
-                    <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" aria-hidden="true" />
+                    <ArrowRight
+                      className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1"
+                      aria-hidden
+                    />
                   </a>
                 </Button>
-                <Button
-                  size="xl"
-                  variant="secondary"
-                  className="group w-full border-white/25 bg-white/5 px-4 py-3 text-base font-semibold text-white hover:bg-white/10 sm:w-auto sm:max-w-sm sm:px-6 sm:text-lg"
-                  asChild
-                >
+                <Button size="xl" variant="outline" className={LANDING_CTA_SECONDARY} asChild>
                   <a
                     href="/request"
-                    className="flex items-center justify-center"
+                    className="flex items-center justify-center gap-2"
                     aria-label="Request a profile review"
                   >
                     <span className="truncate">Get Reviewed</span>
-                    <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" aria-hidden="true" />
+                    <ArrowRight
+                      className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1"
+                      aria-hidden
+                    />
                   </a>
                 </Button>
               </div>
@@ -187,8 +189,8 @@ function HomePageContent() {
                       aria-label="Click to see the full review and get your personalized style review"
                     >
                       <div className="overlay-content">
-                        <h3>👆 Click here to see the full review</h3>
-                        <p>Get your personalized style review</p>
+                        <h3>Watch a full example review</h3>
+                        <p>Real feedback on photos and prompts</p>
                       </div>
                     </a>
                   </div>
@@ -197,18 +199,18 @@ function HomePageContent() {
 
               {/* Stats */}
               <div className="mobile-text-reveal mobile-stats px-6" style={{ animationDelay: '1.6s' }}>
-                <div className="flex flex-col gap-3 text-sm text-white">
+                <div className="flex flex-col gap-3 text-sm text-white/90">
                   <div className="flex items-center justify-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>No commitment required</span>
+                    <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
+                    <span>Reviewers keep 80% per completed review</span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>Clear payout breakdown in the app</span>
+                    <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
+                    <span>Fees and payouts visible in the product</span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>Built for web + mobile web</span>
+                    <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
+                    <span>No app store tax on your personal link</span>
                   </div>
                 </div>
               </div>
@@ -226,54 +228,44 @@ function HomePageContent() {
                 {/* Main Headline — same two-line cadence as mobile for a stable block */}
                 <div className="space-y-4">
                   <h1 className="text-4xl xl:text-5xl 2xl:text-6xl font-extrabold leading-tight tracking-tight text-white max-w-2xl hyphens-none text-pretty">
-                    <span className="block">How you read in apps,</span>
-                    <span className="block">spelled out by reviewers.</span>
+                    <span className="block">Get real feedback from women.</span>
+                    <span className="block">Level up your dating profile fast.</span>
                   </h1>
                   
                   <p className="text-lg xl:text-xl text-white/90 max-w-xl leading-relaxed font-medium text-pretty hyphens-none">
-                    Reviewers set their rates and answer paid requests. Guys get specific notes on photos and prompts—not a pep talk. Start in minutes on web or mobile web.
+                    Upload your photos and prompts, get specific notes, and improve faster—no fluff, no guesswork.
                   </p>
                 </div>
                 
                 {/* CTA Buttons */}
                 <div className="flex flex-wrap gap-3 justify-start pt-1">
-                  <Button
-                    size="xl"
-                    variant="gradient"
-                    className="group text-lg px-8 py-4 shadow-2xl hover:shadow-3xl transition-all duration-300"
-                    asChild
-                  >
+                  <Button size="xl" variant="gradient" className={LANDING_CTA_PRIMARY} asChild>
                     <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
                       <span className="mobile-button-text">Become a Reviewer</span>
-                      <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                      <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
                     </a>
                   </Button>
-                  <Button
-                    size="xl"
-                    variant="secondary"
-                    className="group border border-white/20 bg-white/[0.08] px-8 py-4 text-base font-medium text-white shadow-lg transition-all duration-300 hover:bg-white/[0.15]"
-                    asChild
-                  >
+                  <Button size="xl" variant="outline" className={LANDING_CTA_SECONDARY} asChild>
                     <a href="/request" className="flex items-center justify-center gap-2">
                       <span className="mobile-button-text">Get Reviewed</span>
-                      <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                      <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
                     </a>
                   </Button>
                 </div>
 
                 {/* Trust line — column layout aligns checks with headline (no ragged wrap grid) */}
-                <ul className="flex flex-col gap-2.5 text-sm text-white pt-1 list-none m-0 p-0" aria-label="Key benefits">
+                <ul className="m-0 flex list-none flex-col gap-2.5 p-0 pt-1 text-sm text-white" aria-label="Key benefits">
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0 mt-0.5" aria-hidden />
-                    <span>No commitment required</span>
+                    <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
+                    <span>Specific notes on photos and prompts</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0 mt-0.5" aria-hidden />
-                    <span>Paid when you complete a review</span>
+                    <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
+                    <span>Transparent pricing before you pay</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500 shrink-0 mt-0.5" aria-hidden />
-                    <span>Built for web + mobile web</span>
+                    <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
+                    <span>Built for web and mobile web</span>
                   </li>
                 </ul>
               </div>
@@ -297,8 +289,8 @@ function HomePageContent() {
                       className="desktop-iphone-overlay"
                     >
                       <div className="overlay-content">
-                        <h3>👆 Click here to see the full review</h3>
-                        <p>Get your personalized style review</p>
+                        <h3>Watch a full example review</h3>
+                        <p>Real feedback on photos and prompts</p>
                       </div>
                     </a>
                   </div>
@@ -306,15 +298,15 @@ function HomePageContent() {
                   {/* Floating Benefit Callouts */}
                   <div className="absolute right-2 top-2 glass rounded-lg p-2 shadow-lg hover-lift">
                     <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-green-500" />
-                      <span className="text-sm font-medium text-white">Set your own rates</span>
+                      <DollarSign className="h-4 w-4 text-green-500" aria-hidden />
+                      <span className="text-sm font-medium text-white">Pricing clear before checkout</span>
                     </div>
                   </div>
                   
                   <div className="absolute bottom-2 right-2 glass rounded-lg p-2 shadow-lg hover-lift">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-medium text-white">Specific, usable feedback</span>
+                      <Sparkles className="h-4 w-4 text-primary" aria-hidden />
+                      <span className="text-sm font-medium text-white">Notes you can act on fast</span>
                     </div>
                   </div>
                 </div>
@@ -333,13 +325,13 @@ function HomePageContent() {
                 <div className="grid gap-8 md:grid-cols-[1.2fr_1fr] md:items-center">
                   <div className="space-y-4">
                     <Badge variant="outline" className="border-primary/40 bg-primary/15 text-primary">
-                      FOR GUYS WHO WANT BETTER RESULTS
+                      FOR GUYS LEVELING UP
                     </Badge>
                     <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
-                      Request a review. Get honest, actionable feedback.
+                      Request a review. Walk away with a to-do list for your profile.
                     </h2>
                     <p className="text-lg leading-relaxed text-white/85">
-                      Submit your photos and profile details, get direct feedback from real women, and leave with clear next steps for better matches.
+                      Upload what you are using on the apps, get line-by-line notes from real women, and know exactly what to change next—no vague pep talks.
                     </p>
                     <div className="flex flex-wrap gap-3 pt-2">
                       <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Dating profile feedback</Badge>
@@ -348,15 +340,10 @@ function HomePageContent() {
                     </div>
                   </div>
                   <div className="flex md:justify-end">
-                    <Button
-                      size="xl"
-                      variant="gradient"
-                      className="group w-full md:w-auto text-lg px-8 py-4 shadow-2xl hover:shadow-3xl transition-all duration-300"
-                      asChild
-                    >
+                    <Button size="xl" variant="gradient" className={LANDING_CTA_PRIMARY} asChild>
                       <a href="/request" className="flex items-center justify-center gap-2" aria-label="Start your review request">
                         <span>Request a Review</span>
-                        <ArrowRight className="ml-1 w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                        <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
                       </a>
                     </Button>
                   </div>
@@ -378,7 +365,7 @@ function HomePageContent() {
               Straightforward payouts
             </h2>
             <p className="text-lg md:text-xl text-white/85 leading-relaxed">
-              Reviewers keep <span className="text-white font-semibold">80%</span> of each completed review. The rest is a platform fee that covers payments, support, and running Auro—you’ll see the exact breakdown when you set your rate or complete checkout.
+              Reviewers keep <span className="font-semibold text-white">80%</span> of each completed review. The rest covers payments, support, and running Auro. You will see the exact split when you set your rate or before you pay at checkout.
             </p>
           </div>
         </div>
@@ -389,8 +376,10 @@ function HomePageContent() {
         <div className="container mx-auto px-4">
           <div className="text-center space-y-16">
             <div className="space-y-4">
-              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">How It Works</h2>
-              <p className="text-lg leading-relaxed text-white/80 md:text-xl">Start earning on web in 3 simple steps</p>
+              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">How it works for reviewers</h2>
+              <p className="text-lg leading-relaxed text-white/80 md:text-xl">
+                Share your link, accept paid requests, and finish reviews on your schedule.
+              </p>
             </div>
             
             {/* Process Steps */}
@@ -403,8 +392,8 @@ function HomePageContent() {
                   <CardTitle className="text-xl font-semibold text-white md:text-2xl">Set Your Rate & Share Your Link</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <CardDescription className="text-center text-white/80 text-base leading-relaxed">
-                    Set your own price per review and share your Auro profile link on social media. Guys pay through your link and request reviews.
+                  <CardDescription className="text-center text-base leading-relaxed text-white/80">
+                    Name your price per review and drop your Auro link where your audience already is. Guys pay through your link and submit what they want reviewed.
                   </CardDescription>
                   <div className="flex flex-wrap gap-2 justify-center">
                     <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">You set your rates</Badge>
@@ -421,8 +410,8 @@ function HomePageContent() {
                   <CardTitle className="text-xl font-semibold text-white md:text-2xl">Rate & Give Advice</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <CardDescription className="text-center text-white/80 text-base leading-relaxed">
-                    Accept requests and rate men on attractiveness, style, and social profiles (Hinge/Tinder/Instagram) from 1-5. Give specific advice on what they could improve.
+                  <CardDescription className="text-center text-base leading-relaxed text-white/80">
+                    Open a request, skim their photos and prompts, then spell out what is helping or hurting them on a simple 1–5 scale—plus concrete fixes, not vibes.
                   </CardDescription>
                   <div className="flex flex-wrap gap-2 justify-center">
                     <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Rate 1-5 scale</Badge>
@@ -439,8 +428,8 @@ function HomePageContent() {
                   <CardTitle className="text-xl font-semibold text-white md:text-2xl">Get Paid & Build Your Brand</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <CardDescription className="text-center text-white/80 text-base leading-relaxed">
-                    Get paid instantly after your review. If the guy consents, you can post the review to social media to build your brand and attract more review requests.
+                  <CardDescription className="text-center text-base leading-relaxed text-white/80">
+                    Finish the review, get paid, and—if they opt in—clip the best moments to socials so more guys know you take requests.
                   </CardDescription>
                   <div className="flex flex-wrap gap-2 justify-center">
                     <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Instant payments</Badge>
@@ -460,8 +449,8 @@ function HomePageContent() {
                     </div>
                     <div>
                       <h4 className="mb-2 text-xl font-semibold text-white">Work Your Schedule</h4>
-                      <p className="text-white/80 text-base leading-relaxed">
-                        Review profiles whenever you want - mornings, evenings, weekends
+                      <p className="text-base leading-relaxed text-white/80">
+                        Review profiles whenever you want—mornings, evenings, or weekends.
                       </p>
                     </div>
                   </div>
@@ -476,8 +465,8 @@ function HomePageContent() {
                     </div>
                     <div>
                       <h4 className="mb-2 text-xl font-semibold text-white">Scale Your Income</h4>
-                      <p className="text-white/80 text-base leading-relaxed">
-                        Increase your rates as you build reputation and demand grows
+                      <p className="text-base leading-relaxed text-white/80">
+                        Raise your price as your queue fills up and your reviews speak for themselves.
                       </p>
                 </div>
               </div>
@@ -495,8 +484,10 @@ function HomePageContent() {
         <div className="container mx-auto px-4">
           <div className="text-center space-y-16">
             <div className="space-y-4">
-              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">What Reviewers Are Saying</h2>
-              <p className="text-lg leading-relaxed text-white/80 md:text-xl">A real web marketplace for profile feedback</p>
+              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">What reviewers are saying</h2>
+              <p className="text-lg leading-relaxed text-white/80 md:text-xl">
+                Honest notes, fast sessions, real payouts on the web.
+              </p>
             </div>
             
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -553,7 +544,7 @@ function HomePageContent() {
       <section className="bg-background py-16 lg:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-10">
-            <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Why I started Auro</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Why I built Auro</h2>
             
             <div className="flex flex-col md:flex-row items-center gap-8">
               <div className="flex-shrink-0 w-40 h-40 rounded-2xl overflow-hidden shadow-lg">
@@ -568,16 +559,14 @@ function HomePageContent() {
           </div>
           
               <div className="space-y-5 text-left">
-                <p className="text-xl text-white/90 leading-relaxed">
-                  Look, I know us guys struggle on dating apps. We could definitely use a woman's opinion on our photos, style, and how we come across.
+                <p className="text-xl leading-relaxed text-white/90">
+                  Most guys are guessing on dating apps—photos, prompts, and how they read in the feed. A clear woman&apos;s-eye view cuts through that noise fast.
                 </p>
-                <p className="text-xl text-white/90 leading-relaxed">
-                  So I built Auro to connect guys who need help with women who can give it. This way women get paid for their expertise and guys get a leg up in the tough dating scene. Everyone wins.
+                <p className="text-xl leading-relaxed text-white/90">
+                  Auro pairs guys who want specifics with women who can deliver them. Reviewers get paid for their time; guys get a punch list instead of generic advice.
                 </p>
                 <p className="text-xl font-semibold leading-relaxed text-white">
-                  <span className="text-primary">
-                    Auro is now fully launched on web and mobile web.
-                  </span>
+                  <span className="text-primary">Live today on web and mobile web—no download required.</span>
                 </p>
               </div>
             </div>
@@ -591,48 +580,56 @@ function HomePageContent() {
         <div className="container mx-auto px-6 sm:px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-10">
             <div className="space-y-6">
-              <h2 className="text-3xl font-bold tracking-tight text-white mobile-text-reveal md:text-4xl lg:text-5xl" style={{ animationDelay: '0.2s' }}>
-                Ready to Start Earning?
+              <h2
+                className="mobile-text-reveal text-3xl font-bold tracking-tight text-white md:text-4xl lg:text-5xl"
+                style={{ animationDelay: '0.2s' }}
+              >
+                Ready when you are
               </h2>
-              <p className="text-xl md:text-2xl text-white/90 leading-relaxed mobile-text-reveal" style={{ animationDelay: '0.4s' }}>
-                Set your rate, share your link, and get paid when reviews finish.
+              <p
+                className="mobile-text-reveal text-xl leading-relaxed text-white/90 md:text-2xl"
+                style={{ animationDelay: '0.4s' }}
+              >
+                Get reviewed if you want sharper photos and prompts—or become a reviewer and earn on your own terms.
               </p>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mobile-text-reveal px-4" style={{ animationDelay: '0.6s' }}>
-              <Button 
-                size="xl" 
-                variant="gradient" 
-                className="group w-full max-w-sm px-6 py-4 text-base sm:max-w-none sm:px-8 sm:text-lg"
-                asChild
-              >
+            <div
+              className="mobile-text-reveal flex flex-col items-stretch justify-center gap-3 px-4 sm:flex-row sm:items-center"
+              style={{ animationDelay: '0.6s' }}
+            >
+              <Button size="xl" variant="gradient" className={LANDING_CTA_PRIMARY} asChild>
                 <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
-                  <span className="mobile-button-text">Start Earning Today</span>
-                  <ArrowRight className="ml-1 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform flex-shrink-0" />
+                  <span className="mobile-button-text">Become a Reviewer</span>
+                  <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1 sm:h-6 sm:w-6" />
                 </a>
               </Button>
-              
-              <div className="text-center sm:text-left">
-                <p className="text-sm text-white/80 font-semibold">Fully live on web and mobile web</p>
-              </div>
+              <Button size="xl" variant="outline" className={LANDING_CTA_SECONDARY} asChild>
+                <a href="/request" className="flex items-center justify-center gap-2">
+                  <span className="mobile-button-text">Get Reviewed</span>
+                  <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1 sm:h-6 sm:w-6" />
+                </a>
+              </Button>
             </div>
+            <p className="text-sm font-medium text-white/70 mobile-text-reveal" style={{ animationDelay: '0.65s' }}>
+              Fully live on web and mobile web
+            </p>
             
-            <div className="flex flex-wrap gap-6 justify-center text-sm text-white/80 mobile-text-reveal" style={{ animationDelay: '0.8s' }}>
+            <div
+              className="mobile-text-reveal flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm text-white/80"
+              style={{ animationDelay: '0.8s' }}
+            >
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>No commitment required</span>
+                <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
+                <span>No commitment to start</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>You set your rates</span>
+                <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
+                <span>Transparent fees for both sides</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
+                <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
                 <span>Web-first—no app store cut on your link</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Built for web + mobile web</span>
               </div>
             </div>
           </div>

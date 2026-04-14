@@ -58,6 +58,7 @@ export default function RequestsPageClient() {
   const [isReviewer, setIsReviewer] = useState(false);
   const [filter, setFilter] = useState<'active' | 'completed' | 'archived'>('active');
   const [initialLoad, setInitialLoad] = useState(true);
+  const [toast, setToast] = useState<string | null>(null);
   const loadingRef = useRef(loading);
 
   useEffect(() => {
@@ -243,23 +244,39 @@ export default function RequestsPageClient() {
     }
   };
 
+  const showToast = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(null), 2600);
+  };
+
   const copyProfileLink = async () => {
     if (!userProfile?.id) return;
     const slug = userProfile.username || userProfile.id;
     const profileUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/${slug}`;
     try {
       await navigator.clipboard.writeText(profileUrl);
-      alert('Profile link copied.');
+      showToast('Profile link copied');
     } catch {
-      alert('Could not copy. Your link is: ' + profileUrl);
+      showToast('Copy blocked — open Account to grab your link');
     }
   };
 
   return (
-    <div className="px-4 pb-4 pt-6">
+    <div className="px-4 pb-6 pt-5">
+      {toast ? (
+        <div
+          className="fixed left-1/2 z-[60] max-w-[min(92vw,24rem)] -translate-x-1/2 rounded-full border border-white/15 bg-[#1a0f2e]/95 px-4 py-2.5 text-center text-sm text-white shadow-lg backdrop-blur-md motion-reduce:transition-none"
+          style={{ bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))' }}
+          role="status"
+        >
+          {toast}
+        </div>
+      ) : null}
+
       <div className="mx-auto max-w-lg">
-        <h1 className="text-2xl font-bold text-white">My reviews</h1>
-        <p className="mt-1 text-sm text-white/70">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">Inbox</p>
+        <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">My reviews</h1>
+        <p className="mt-1 text-sm leading-relaxed text-white/60">
           {isReviewer ? 'Requests you give and receive' : 'Your review requests'}
         </p>
 
@@ -267,55 +284,71 @@ export default function RequestsPageClient() {
           <button
             type="button"
             onClick={copyProfileLink}
-            className="mt-4 w-full rounded-2xl bg-primary py-3 text-center text-base font-bold text-primary-foreground hover:bg-primary/90"
+            className="relative mt-5 w-full overflow-hidden rounded-2xl bg-primary py-3.5 text-center text-[15px] font-semibold text-primary-foreground shadow-[0_10px_28px_-6px_hsl(var(--primary)/0.55)] transition hover:bg-primary/92 active:scale-[0.99] motion-reduce:transform-none"
           >
             Copy profile link
           </button>
         )}
 
-        <div className="mt-6 flex gap-2">
-          {(
-            [
-              ['active', 'Active', activeCount],
-              ['completed', 'Done', completedCount],
-              ['archived', 'Archived', archivedCount],
-            ] as const
-          ).map(([key, label, count]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setFilter(key)}
-              className={`flex-1 rounded-xl px-2 py-2 text-center text-xs font-semibold sm:text-sm ${
-                filter === key ? 'bg-white/15 text-white' : 'bg-white/5 text-white/60'
-              }`}
-            >
-              {label}
-              <span className="ml-1 text-white/70">({count})</span>
-            </button>
-          ))}
+        <div className="mt-6 rounded-2xl border border-white/[0.1] bg-white/[0.03] p-1">
+          <div className="flex gap-0.5">
+            {(
+              [
+                ['active', 'Active', activeCount],
+                ['completed', 'Done', completedCount],
+                ['archived', 'Archived', archivedCount],
+              ] as const
+            ).map(([key, label, count]) => {
+              const on = filter === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setFilter(key)}
+                  className={`flex-1 rounded-[14px] px-1.5 py-2.5 text-center text-xs font-semibold transition sm:text-[13px] ${
+                    on
+                      ? 'bg-primary/20 text-white ring-1 ring-primary/35'
+                      : 'text-white/55 hover:bg-white/[0.06] hover:text-white/85'
+                  }`}
+                >
+                  {label}
+                  <span className={on ? 'ml-1 text-white/80' : 'ml-1 text-white/45'}>({count})</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => loadAll('refresh')}
-          disabled={refreshing}
-          className="mt-3 text-sm font-medium text-primary disabled:opacity-50"
-        >
-          {refreshing ? 'Refreshing…' : 'Refresh'}
-        </button>
+        <div className="mt-3 flex justify-end">
+          <button
+            type="button"
+            onClick={() => loadAll('refresh')}
+            disabled={refreshing}
+            className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/80 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white disabled:pointer-events-none disabled:opacity-45"
+          >
+            {refreshing ? 'Refreshing…' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
-      <div className="mx-auto mt-6 max-w-lg space-y-4">
+      <div className="mx-auto mt-6 max-w-lg space-y-3">
         {loading ? (
-          <p className="text-center text-white/70">Loading…</p>
+          <div className="flex flex-col items-center gap-3 py-16">
+            <div
+              className="h-9 w-9 animate-spin rounded-full border-2 border-primary/25 border-t-primary motion-reduce:animate-none"
+              aria-hidden
+            />
+            <p className="text-sm text-white/60">Loading requests…</p>
+          </div>
         ) : filtered.length === 0 ? (
-          <div
-            className="rounded-2xl border border-white/10 p-8 text-center"
-            style={{ background: 'rgba(36, 18, 59, 0.6)' }}
-          >
-            <p className="text-white/70">No requests here yet.</p>
-            <Link href="/request" className="mt-4 inline-block font-semibold text-primary">
-              Start a review →
+          <div className="glass rounded-2xl border border-white/[0.12] p-10 text-center">
+            <p className="text-[15px] text-white/75">No requests here yet.</p>
+            <p className="mt-2 text-sm text-white/50">When you send or receive a review, it shows up here.</p>
+            <Link
+              href="/request"
+              className="mt-6 inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_22px_-6px_hsl(var(--primary)/0.5)] transition hover:bg-primary/92"
+            >
+              Start a review
             </Link>
           </div>
         ) : (
@@ -342,15 +375,18 @@ export default function RequestsPageClient() {
                 key={item.id}
                 type="button"
                 onClick={() => openRequest(item)}
-                className="w-full rounded-2xl border border-white/10 p-4 text-left transition hover:border-white/20"
-                style={{ background: 'rgba(36, 18, 59, 0.85)' }}
+                className="glass w-full rounded-2xl border border-white/[0.1] p-4 text-left transition hover:border-white/[0.18] hover:bg-white/[0.05] active:scale-[0.99] motion-reduce:transform-none"
               >
                 <div className="flex gap-4">
                   <AvatarCircle src={avatarSrc} name={displayName} size={56} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-lg font-bold text-white">{displayName}</p>
-                    <p className="text-sm text-white/70">
-                      {new Date(item.createdAt).toLocaleDateString()}
+                    <p className="truncate text-[17px] font-semibold tracking-tight text-white">{displayName}</p>
+                    <p className="mt-0.5 text-sm text-white/55">
+                      {new Date(item.createdAt).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
                     </p>
                     <div className="mt-2">
                       <StatusBadge
