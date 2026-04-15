@@ -50,7 +50,7 @@ export default function ConditionalNav() {
 
         {!isOnRequestFlow && (
           <Link className="cta-nav cta-nav--get-reviewed" href="/waitlist">
-            Get Reviewed
+            Join Waitlist
           </Link>
         )}
       </div>

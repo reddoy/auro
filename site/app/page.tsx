@@ -10,7 +10,7 @@ import { ArrowRight, Sparkles, DollarSign, Clock, TrendingUp, CheckCircle } from
 
 export const dynamic = 'force-dynamic';
 
-/** Match gradient + glass-outline CTAs used in cards below (e.g. Request a Review). */
+/** Match gradient + glass-outline CTAs used in cards below (e.g. Join Waitlist). */
 const LANDING_CTA_PRIMARY =
   'group w-full sm:w-auto text-lg px-8 py-4 font-semibold shadow-2xl hover:shadow-3xl transition-all duration-300';
 const LANDING_CTA_SECONDARY =
@@ -120,7 +120,7 @@ function HomePageContent() {
                   className="mx-auto max-w-lg px-4 text-lg font-medium leading-relaxed text-white/85 mobile-text-reveal text-pretty sm:text-xl"
                   style={{ animationDelay: '1s' }}
                 >
-                  Upload your photos and prompts, get specific notes, and improve faster—no fluff, no guesswork.
+                  We are fixing a few things before taking new paid reviews. Join the waitlist to be first in line—or apply as a reviewer today.
                 </p>
               </div>
 
@@ -146,9 +146,9 @@ function HomePageContent() {
                   <a
                     href="/waitlist"
                     className="flex items-center justify-center gap-2"
-                    aria-label="Request a profile review"
+                    aria-label="Join the review waitlist"
                   >
-                    <span className="truncate">Get Reviewed</span>
+                    <span className="truncate">Join Waitlist</span>
                     <ArrowRight
                       className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1"
                       aria-hidden
@@ -164,7 +164,7 @@ function HomePageContent() {
                 </div>
                 <div className="flex items-start justify-center gap-2 text-left text-base text-white/85">
                   <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                  <span className="font-medium leading-snug">Review requests currently in waitlist mode</span>
+                  <span className="font-medium leading-snug">New review requests are waitlist-only while we ship fixes</span>
                 </div>
                 <div className="flex items-start justify-center gap-2 text-left text-base text-white/85">
                   <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
@@ -191,7 +191,7 @@ function HomePageContent() {
                       ref={mobileOverlayRef}
                       href="/reviewers/apply"
                       className="mobile-iphone-overlay"
-                      aria-label="Click to see the full review and get your personalized style review"
+                      aria-label="Watch a sample review in the product demo"
                     >
                       <div className="overlay-content">
                         <h3>Watch a full example review</h3>
@@ -211,7 +211,7 @@ function HomePageContent() {
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                    <span>Fees and payouts visible in the product</span>
+                    <span>Reviewer fee split stays clear—no surprises when paid reviews return</span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
@@ -239,7 +239,7 @@ function HomePageContent() {
                   </h1>
 
                   <p className="max-w-xl text-lg font-medium leading-relaxed text-white/85 xl:text-xl text-pretty hyphens-none">
-                    Upload your photos and prompts, get specific notes, and improve faster—no fluff, no guesswork.
+                    We are fixing a few things before taking new paid reviews. Join the waitlist to be first in line—or apply as a reviewer today.
                   </p>
                 </div>
                 
@@ -252,8 +252,8 @@ function HomePageContent() {
                     </a>
                   </Button>
                   <Button size="xl" variant="outline" className={LANDING_CTA_SECONDARY} asChild>
-                    <a href="/waitlist" className="flex items-center justify-center gap-2">
-                      <span className="mobile-button-text">Get Reviewed</span>
+                    <a href="/waitlist" className="flex items-center justify-center gap-2" aria-label="Join the review waitlist">
+                      <span className="mobile-button-text">Join Waitlist</span>
                       <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
                     </a>
                   </Button>
@@ -267,7 +267,7 @@ function HomePageContent() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                    <span>Transparent pricing before you pay</span>
+                    <span>New review requests are waitlist-only while we ship fixes</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
@@ -305,7 +305,7 @@ function HomePageContent() {
                   <div className="absolute right-2 top-2 glass rounded-lg p-2 shadow-lg hover-lift">
                     <div className="flex items-center gap-2">
                       <DollarSign className="h-4 w-4 text-green-500" aria-hidden />
-                      <span className="text-sm font-medium text-white">Pricing clear before checkout</span>
+                      <span className="text-sm font-medium text-white">Rates published before checkout returns</span>
                     </div>
                   </div>
                   
@@ -322,7 +322,7 @@ function HomePageContent() {
         </div>
       </section>
 
-      {/* Request a Review Path */}
+      {/* Review request waitlist */}
       <section className="bg-background py-16 lg:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
@@ -342,7 +342,7 @@ function HomePageContent() {
                     <div className="flex flex-wrap gap-3 pt-2">
                       <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Dating profile feedback</Badge>
                       <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Style + photo suggestions</Badge>
-                      <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Fast turnaround</Badge>
+                      <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">First to know when we reopen</Badge>
                     </div>
                   </div>
                   <div className="flex md:justify-end">
@@ -368,10 +368,10 @@ function HomePageContent() {
               REVIEW REQUESTS PAUSED
             </Badge>
             <h2 className="text-3xl font-bold leading-tight tracking-tight text-white md:text-4xl lg:text-5xl">
-              Straightforward payouts
+              Straightforward payouts for reviewers
             </h2>
             <p className="text-lg md:text-xl text-white/85 leading-relaxed">
-              Reviewers keep <span className="font-semibold text-white">80%</span> of each completed review. The rest covers payments, support, and running Auro. You will see the exact split when you set your rate or before you pay at checkout.
+              Reviewers keep <span className="font-semibold text-white">80%</span> of each completed paid review. The rest covers payments, support, and running Auro. When paid reviews are live again, you will see the exact split before anyone checks out.
             </p>
           </div>
         </div>
@@ -384,7 +384,7 @@ function HomePageContent() {
             <div className="space-y-4">
               <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">How it works for reviewers</h2>
               <p className="text-lg leading-relaxed text-white/80 md:text-xl">
-                Share your link, accept paid requests, and finish reviews on your schedule.
+                Apply and set up your reviewer profile now. When paid review requests reopen, you can share your link and accept work on your schedule.
               </p>
             </div>
             
@@ -399,7 +399,7 @@ function HomePageContent() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <CardDescription className="text-center text-base leading-relaxed text-white/80">
-                    Name your price per review and drop your Auro link where your audience already is. Guys pay through your link and submit what they want reviewed.
+                    Name your price per review and drop your Auro link where your audience already is. New paid bookings are paused for now; when requests reopen, guys will book through your link like before.
                   </CardDescription>
                   <div className="flex flex-wrap gap-2 justify-center">
                     <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">You set your rates</Badge>
@@ -438,7 +438,7 @@ function HomePageContent() {
                     Finish the review, get paid, and—if they opt in—clip the best moments to socials so more guys know you take requests.
                   </CardDescription>
                   <div className="flex flex-wrap gap-2 justify-center">
-                    <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Instant payments</Badge>
+                    <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Stripe payouts</Badge>
                     <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Build your brand</Badge>
               </div>
                 </CardContent>
@@ -492,7 +492,7 @@ function HomePageContent() {
             <div className="space-y-4">
               <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">What reviewers are saying</h2>
               <p className="text-lg leading-relaxed text-white/80 md:text-xl">
-                Honest notes, fast sessions, real payouts on the web.
+                Honest notes, flexible sessions, built for the web.
               </p>
             </div>
             
@@ -569,10 +569,10 @@ function HomePageContent() {
                   Most guys are guessing on dating apps—photos, prompts, and how they read in the feed. A clear woman&apos;s-eye view cuts through that noise fast.
                 </p>
                 <p className="text-xl leading-relaxed text-white/90">
-                  Auro pairs guys who want specifics with women who can deliver them. Reviewers get paid for their time; guys get a punch list instead of generic advice.
+                  Auro pairs guys who want specifics with women who can deliver them. Reviewers earn for completed reviews; guys get a punch list instead of generic advice. New paid review requests are on the waitlist while we ship fixes.
                 </p>
                 <p className="text-xl font-semibold leading-relaxed text-white">
-                  <span className="text-primary">Live today on web and mobile web—no download required.</span>
+                  <span className="text-primary">Reviewer applications are open on web—new review requests are waitlist-only until we ship fixes.</span>
                 </p>
               </div>
             </div>
@@ -631,7 +631,7 @@ function HomePageContent() {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                <span>Transparent fees for both sides</span>
+                <span>Reviewer economics stay transparent when paid reviews return</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
@@ -645,7 +645,11 @@ function HomePageContent() {
       {/* Reviewee Waitlist Section - Small and subtle */}
       <section className="bg-background py-12">
         <div className="container mx-auto px-4">
-          <RevieweeWaitlist />
+          <RevieweeWaitlist
+            source="homepage_footer"
+            title="SMS when review spots reopen"
+            subtitle="Optional. We will only text you about the waitlist and launch timing—no spam."
+          />
         </div>
       </section>
 
