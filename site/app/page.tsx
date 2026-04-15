@@ -107,12 +107,12 @@ function HomePageContent() {
               {/* Headline + sub: generous leading so descenders never collide; CTAs before checklist to match desktop rhythm */}
               <div className="space-y-6">
                 <h1
-                  className="text-4xl font-bold leading-[1.24] text-center tracking-[-0.02em] text-white [text-wrap:balance] hyphens-none max-w-lg px-4 mobile-text-reveal sm:text-5xl sm:leading-[1.26]"
+                  className="text-4xl font-bold leading-tight text-center tracking-[-0.02em] text-white [text-wrap:balance] hyphens-none max-w-lg px-4 mobile-text-reveal sm:text-5xl sm:leading-tight"
                   style={{ animationDelay: '0.4s' }}
                 >
-                  <span className="block [text-wrap:balance]">Get dating profile feedback</span>
-                  <span className="mt-[0.32em] block text-white/95 [text-wrap:balance] sm:mt-[0.36em]">
-                    from real women
+                  <span className="[text-wrap:balance]">
+                    Get dating profile feedback{' '}
+                    <span className="text-white/95">from real women</span>
                   </span>
                 </h1>
 
@@ -120,7 +120,7 @@ function HomePageContent() {
                   className="mx-auto max-w-lg px-4 text-lg font-medium leading-relaxed text-white/85 mobile-text-reveal text-pretty sm:text-xl"
                   style={{ animationDelay: '1s' }}
                 >
-                  We are fixing a few things before taking new paid reviews. Join the waitlist to be first in line—or apply as a reviewer today.
+                  Join the waitlist to be the first to know when reviewers are open for business—or apply as a reviewer today.
                 </p>
               </div>
 
@@ -164,7 +164,7 @@ function HomePageContent() {
                 </div>
                 <div className="flex items-start justify-center gap-2 text-left text-base text-white/85">
                   <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                  <span className="font-medium leading-snug">New review requests are waitlist-only while we ship fixes</span>
+                  <span className="font-medium leading-snug">Waitlist gets you first access when reviewers start taking bookings</span>
                 </div>
                 <div className="flex items-start justify-center gap-2 text-left text-base text-white/85">
                   <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
@@ -231,15 +231,15 @@ function HomePageContent() {
                 {/* Removed redundant badge to save space and reduce clutter */}
                 
                 <div className="space-y-6">
-                  <h1 className="max-w-2xl hyphens-none text-pretty text-4xl font-bold leading-[1.22] tracking-[-0.02em] text-white sm:text-5xl sm:leading-[1.24] xl:text-[2.75rem] xl:leading-[1.26] 2xl:text-5xl 2xl:leading-[1.24]">
-                    <span className="block [text-wrap:balance]">Get dating profile feedback</span>
-                    <span className="mt-[0.34em] block text-white/95 [text-wrap:balance] xl:mt-[0.38em]">
-                      from real women
+                  <h1 className="max-w-2xl hyphens-none text-pretty text-4xl font-bold leading-tight tracking-[-0.02em] text-white sm:text-5xl sm:leading-tight xl:text-[2.75rem] xl:leading-tight 2xl:text-5xl 2xl:leading-tight">
+                    <span className="[text-wrap:balance]">
+                      Get dating profile feedback{' '}
+                      <span className="text-white/95">from real women</span>
                     </span>
                   </h1>
 
                   <p className="max-w-xl text-lg font-medium leading-relaxed text-white/85 xl:text-xl text-pretty hyphens-none">
-                    We are fixing a few things before taking new paid reviews. Join the waitlist to be first in line—or apply as a reviewer today.
+                    Join the waitlist to be the first to know when reviewers are open for business—or apply as a reviewer today.
                   </p>
                 </div>
                 
@@ -267,7 +267,7 @@ function HomePageContent() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                    <span>New review requests are waitlist-only while we ship fixes</span>
+                    <span>Waitlist gets you first access when reviewers start taking bookings</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
@@ -305,7 +305,7 @@ function HomePageContent() {
                   <div className="absolute right-2 top-2 glass rounded-lg p-2 shadow-lg hover-lift">
                     <div className="flex items-center gap-2">
                       <DollarSign className="h-4 w-4 text-green-500" aria-hidden />
-                      <span className="text-sm font-medium text-white">Rates published before checkout returns</span>
+                      <span className="text-sm font-medium text-white">Clear rates before checkout</span>
                     </div>
                   </div>
                   
