@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { AUTH_EMAIL_RATE_LIMIT_MESSAGE, isAuthEmailRateLimitError } from "@/lib/auth-messages";
 
 export default function ResendConfirmationClient() {
   const searchParams = useSearchParams();
@@ -36,7 +37,11 @@ export default function ResendConfirmationClient() {
 
       setSent(true);
     } catch (err: any) {
-      setError(err.message || "Something went wrong. Please try again.");
+      if (isAuthEmailRateLimitError(err)) {
+        setError(AUTH_EMAIL_RATE_LIMIT_MESSAGE);
+      } else {
+        setError(err.message || "Something went wrong. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

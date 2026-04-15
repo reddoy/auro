@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AUTH_EMAIL_RATE_LIMIT_MESSAGE, isAuthEmailRateLimitError } from '../../../lib/auth-messages';
 import { supabase } from '../../../lib/supabase';
 import { useRouter } from 'next/navigation';
 import ReviewerCounter from '../../../components/ReviewerCounter';
@@ -671,7 +672,9 @@ export default function ReviewerApplyPage() {
         }
       } catch (e: any) {
         console.error('[ReviewerApply] Sign up error:', e);
-        if (e?.message?.includes('already registered')) {
+        if (isAuthEmailRateLimitError(e)) {
+          setError(AUTH_EMAIL_RATE_LIMIT_MESSAGE);
+        } else if (e?.message?.includes('already registered')) {
           setError('An account with this email already exists. Please sign in instead or use a different email address.');
         } else if (e?.message?.includes('invalid email')) {
           setError('Please enter a valid email address.');

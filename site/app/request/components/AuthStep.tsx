@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { AUTH_EMAIL_RATE_LIMIT_MESSAGE, isAuthEmailRateLimitError } from '@/lib/auth-messages';
 import type { RequestData } from '../page';
 
 type Props = {
@@ -207,12 +208,12 @@ export default function AuthStep({
           // Keep the error message visible even after switching tabs
           setError(errorMessage);
         }, 100);
+      } else if (isAuthEmailRateLimitError(error)) {
+        errorMessage = AUTH_EMAIL_RATE_LIMIT_MESSAGE;
       } else if (error?.message) {
         errorMessage = error.message;
       } else if (error?.status === 400) {
         errorMessage = 'Invalid sign-up information. Please check your email and password.';
-      } else if (error?.status === 429) {
-        errorMessage = 'Too many sign-up attempts. Please wait a moment and try again.';
       } else if (error?.code === 'PGRST301' || error?.message?.includes('network')) {
         errorMessage = 'Network error. Please check your connection and try again.';
       } else if (error?.message?.includes('signup')) {
@@ -264,7 +265,9 @@ export default function AuthStep({
       }
     } catch (error: any) {
       const raw = String(error?.message || '').toLowerCase();
-      if (
+      if (isAuthEmailRateLimitError(error)) {
+        setError(AUTH_EMAIL_RATE_LIMIT_MESSAGE);
+      } else if (
         raw.includes('invalid login credentials') ||
         raw.includes('invalid credentials') ||
         raw.includes('email not confirmed')
