@@ -21,6 +21,8 @@ function Inner() {
   const params = useSearchParams();
   const router = useRouter();
   const tokenHash = params.get("token_hash");
+  /** PKCE email / magic links often arrive with `code` instead of `token_hash`. */
+  const code = params.get("code");
   const type = params.get("type");
   const email = params.get("email");
 
@@ -38,7 +40,7 @@ function Inner() {
 
   useEffect(() => {
     const run = async () => {
-      if (!tokenHash) return;
+      if (!code && !tokenHash) return;
       if (!supabase) {
         setStatus("error");
         setMessage("Supabase client not configured.");
@@ -46,6 +48,20 @@ function Inner() {
       }
       setIsConfirming(true);
       try {
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            setStatus("error");
+            setMessage(error.message || "Unable to verify your email.");
+          } else if (isSignup || isInvite) {
+            router.replace("/auth/thank-you");
+            return;
+          } else {
+            setStatus("success");
+          }
+          return;
+        }
+
         let verifyType: any = "signup";
         if (isSignup || isInvite) verifyType = "signup";
         else if (isMagicLink) verifyType = "magiclink";
@@ -57,7 +73,7 @@ function Inner() {
           return;
         }
 
-        const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: verifyType });
+        const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash!, type: verifyType });
         if (error) {
           setStatus("error");
           setMessage(error.message || "Unable to verify your email.");
@@ -78,7 +94,7 @@ function Inner() {
       }
     };
     run();
-  }, [tokenHash, isSignup, isInvite, isMagicLink, isEmailChange, isReauthentication, isRecovery, router]);
+  }, [code, tokenHash, isSignup, isInvite, isMagicLink, isEmailChange, isReauthentication, isRecovery, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#1A0B2E] px-4">

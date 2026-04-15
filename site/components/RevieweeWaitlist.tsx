@@ -2,17 +2,26 @@
 
 import { useState } from 'react';
 import { Button } from './ui/button';
+import { cn } from '@/lib/utils';
 
 type Props = {
   source?: string;
   title?: string;
   subtitle?: string;
+  /** `card` = self-contained panel (e.g. homepage). `flat` = no outer shell (e.g. inside /waitlist hero). */
+  appearance?: 'card' | 'flat';
+  className?: string;
+  /** Omit the title line (parent already provides the page heading). */
+  hideHeading?: boolean;
 };
 
 export default function RevieweeWaitlist({
   source = 'homepage_waitlist',
   title = 'Join the review waitlist',
-  subtitle = 'Drop your number and we will text you when review requests and payments reopen.',
+  subtitle = 'Drop your number and we will text you when reviewers are taking new paid requests.',
+  appearance = 'card',
+  className,
+  hideHeading = false,
 }: Props) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -20,7 +29,7 @@ export default function RevieweeWaitlist({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!phoneNumber.trim()) {
       setStatus('error');
       setMessage('Please enter your phone number');
@@ -28,189 +37,111 @@ export default function RevieweeWaitlist({
     }
 
     setStatus('loading');
-    
+
     try {
       const response = await fetch('/api/waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           phoneNumber: phoneNumber.trim(),
-          source
-        })
+          source,
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         setStatus('success');
-        setMessage("You are in. Expect occasional SMS tips—no spam.");
+        setMessage('You are in. Expect occasional SMS—no spam.');
         setPhoneNumber('');
       } else {
         setStatus('error');
         setMessage(data.error || 'Something went wrong');
       }
-    } catch (error) {
+    } catch {
       setStatus('error');
       setMessage('Failed to join waitlist. Please try again.');
     }
   };
 
+  const isFlat = appearance === 'flat';
+
   return (
-    <div className="reviewee-waitlist-container">
-      <div className="reviewee-waitlist-content">
-        <div className="text-content">
-          <h3 className="waitlist-title">{title}</h3>
-          <p className="waitlist-subtitle">{subtitle}</p>
+    <div
+      className={cn(
+        !isFlat &&
+          'rounded-2xl border border-white/10 bg-gradient-to-br from-primary/[0.14] via-white/[0.04] to-transparent p-6 shadow-lg shadow-black/25 backdrop-blur-md md:p-8',
+        isFlat && 'w-full',
+        className
+      )}
+    >
+      <div className={cn('mx-auto max-w-xl', !isFlat && 'text-center')}>
+        <div className={cn('mb-5', isFlat && 'mb-6 text-left')}>
+          {!hideHeading ? (
+            <h3 className="text-xl font-semibold tracking-tight text-white md:text-2xl">{title}</h3>
+          ) : null}
+          <p
+            className={cn(
+              'leading-relaxed text-white/70 md:text-base',
+              hideHeading ? 'text-base text-white/75 md:text-lg' : 'mt-2 text-sm',
+              !isFlat && !hideHeading && 'mx-auto max-w-md',
+              !isFlat && hideHeading && 'mx-auto max-w-md'
+            )}
+          >
+            {subtitle}
+          </p>
         </div>
-        
+
         {status === 'success' ? (
-          <div className="success-message">
-            <span className="success-icon">✓</span>
-            <span>{message}</span>
+          <div
+            className={cn(
+              'flex items-center gap-3 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-4 text-emerald-100',
+              !isFlat && 'justify-center'
+            )}
+            role="status"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-lg font-bold text-emerald-200">
+              ✓
+            </span>
+            <span className="text-left text-sm font-medium leading-snug md:text-base">{message}</span>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="waitlist-form">
+          <form
+            onSubmit={handleSubmit}
+            className={cn('flex flex-col gap-3 sm:flex-row sm:items-stretch', !isFlat && 'sm:justify-center')}
+          >
             <input
               type="tel"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               placeholder="(555) 123-4567"
-              className="phone-input"
+              className={cn(
+                'min-h-[48px] flex-1 rounded-xl border border-white/15 bg-white/[0.06] px-4 py-3 text-sm text-white shadow-inner placeholder:text-white/40 transition',
+                'focus:border-primary/45 focus:outline-none focus:ring-2 focus:ring-primary/25',
+                'disabled:cursor-not-allowed disabled:opacity-60'
+              )}
               disabled={status === 'loading'}
+              autoComplete="tel"
+              aria-label="Phone number"
             />
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={status === 'loading'}
-              className="submit-button"
               variant="gradient"
+              size="lg"
+              className="h-12 shrink-0 rounded-xl px-8 font-semibold sm:h-auto sm:min-w-[160px]"
             >
-              {status === 'loading' ? 'Joining...' : 'Join Waitlist'}
+              {status === 'loading' ? 'Joining…' : 'Join waitlist'}
             </Button>
           </form>
         )}
-        
-        {status === 'error' && (
-          <p className="error-message">{message}</p>
-        )}
+
+        {status === 'error' ? (
+          <p className="mt-3 text-center text-sm font-medium text-red-300 sm:text-left" role="alert">
+            {message}
+          </p>
+        ) : null}
       </div>
-
-      <style jsx>{`
-        .reviewee-waitlist-container {
-          background: rgba(242, 105, 85, 0.12);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 12px;
-          padding: 24px;
-          backdrop-filter: blur(10px);
-        }
-
-        .reviewee-waitlist-content {
-          max-width: 600px;
-          margin: 0 auto;
-        }
-
-        .text-content {
-          text-align: center;
-          margin-bottom: 20px;
-        }
-
-        .waitlist-title {
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: white;
-          margin-bottom: 8px;
-        }
-
-        .waitlist-subtitle {
-          font-size: 0.95rem;
-          color: rgba(255, 255, 255, 0.8);
-        }
-
-        .waitlist-form {
-          display: flex;
-          gap: 12px;
-          flex-wrap: wrap;
-          justify-content: center;
-        }
-
-        .phone-input {
-          flex: 1;
-          min-width: 200px;
-          padding: 12px 16px;
-          border: 2px solid rgba(255, 255, 255, 0.2);
-          border-radius: 8px;
-          background: rgba(255, 255, 255, 0.1);
-          color: white;
-          font-size: 1rem;
-          transition: all 0.3s ease;
-        }
-
-        .phone-input::placeholder {
-          color: rgba(255, 255, 255, 0.5);
-        }
-
-        .phone-input:focus {
-          outline: none;
-          border-color: rgba(108, 99, 255, 0.6);
-          background: rgba(255, 255, 255, 0.15);
-        }
-
-        .phone-input:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .submit-button {
-          /* Custom styling handled by Button component gradient variant */
-        }
-
-
-        .success-message {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          padding: 16px;
-          background: rgba(34, 197, 94, 0.2);
-          border: 2px solid rgba(34, 197, 94, 0.4);
-          border-radius: 8px;
-          color: #4ade80;
-          font-weight: 600;
-        }
-
-        .success-icon {
-          font-size: 1.5rem;
-        }
-
-        .error-message {
-          text-align: center;
-          color: #ff6b6b;
-          font-size: 0.9rem;
-          margin-top: 8px;
-        }
-
-        @media (max-width: 640px) {
-          .reviewee-waitlist-container {
-            padding: 20px 16px;
-          }
-
-          .waitlist-title {
-            font-size: 1.25rem;
-          }
-
-          .waitlist-form {
-            flex-direction: column;
-          }
-
-          .phone-input {
-            width: 100%;
-          }
-
-          .submit-button {
-            width: 100%;
-          }
-        }
-      `}</style>
     </div>
   );
 }
-

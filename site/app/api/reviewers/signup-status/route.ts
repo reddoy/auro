@@ -32,7 +32,9 @@ export async function GET(req: Request) {
     // Get user's reviewer signup status
     const { data: profile, error: profileError } = await admin
       .from('profiles')
-      .select('reviewer_signup_status, is_reviewer, email, full_name, avatar_url, hourly_rate, links, preferences')
+      .select(
+        'reviewer_signup_status, is_reviewer, email, full_name, username, avatar_url, hourly_rate, links, preferences'
+      )
       .eq('id', userId)
       .single();
 
@@ -42,19 +44,31 @@ export async function GET(req: Request) {
 
     // Determine the status
     const signupStatus = profile.reviewer_signup_status || 'not_started';
-    
-    return new Response(JSON.stringify({ 
-      status: signupStatus,
-      isReviewer: profile.is_reviewer || false,
-      profile: {
-        email: profile.email,
-        full_name: profile.full_name,
-        avatar_url: profile.avatar_url,
-        hourly_rate: profile.hourly_rate,
-        links: profile.links,
-        preferences: profile.preferences,
-      }
-    }), { status: 200 });
+    const rawReviewer = profile.is_reviewer as string | boolean | null | undefined;
+    const reviewerApproval =
+      typeof rawReviewer === 'string'
+        ? rawReviewer
+        : rawReviewer === true
+          ? 'approved'
+          : null;
+
+    return new Response(
+      JSON.stringify({
+        status: signupStatus,
+        isReviewer: reviewerApproval === 'approved',
+        reviewerApproval,
+        profile: {
+          email: profile.email,
+          full_name: profile.full_name,
+          username: profile.username,
+          avatar_url: profile.avatar_url,
+          hourly_rate: profile.hourly_rate,
+          links: profile.links,
+          preferences: profile.preferences,
+        },
+      }),
+      { status: 200 }
+    );
 
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e?.message || 'Unknown error' }), { status: 500 });

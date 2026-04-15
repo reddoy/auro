@@ -19,11 +19,21 @@ export default function ThankYouClient() {
     <div className="min-h-screen flex items-center justify-center bg-[#1A0B2E] px-4">
       <div className="w-full max-w-md rounded-2xl p-8" style={{ backgroundColor: "#24123B", boxShadow: "0 12px 32px rgba(0,0,0,0.3)" }}>
         <div className="flex flex-col items-center text-center">
-          <div className="text-6xl mb-6">🎉</div>
-          
-          <h1 className="text-white text-2xl font-semibold mb-3">Email Confirmed! 🎉</h1>
+          <img
+            src="/rohan%20headshot%20backyard-min.jpg"
+            alt="RJ, founder of Auro"
+            width={88}
+            height={88}
+            className="mb-5 h-[88px] w-[88px] rounded-full object-cover ring-2 ring-white/10"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/rohan-headshot.jpg";
+            }}
+          />
+          <div className="text-4xl mb-4">🎉</div>
+
+          <h1 className="text-white text-2xl font-semibold mb-3">Thank you for confirming</h1>
           <p className="text-white/70 mt-2 mb-6">
-            Thank you for confirming your email. You're all set! Continue on Auro web or mobile web.
+            Your email is confirmed and you&apos;re all set. Continue on Auro web or mobile web.
           </p>
 
           <RequestLink>Request a review</RequestLink>

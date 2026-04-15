@@ -227,7 +227,7 @@ export default function AppHomeClient() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold text-white">Join review waitlist</span>
-                  <span className="block text-xs text-white/55">Get notified when requests reopen</span>
+                  <span className="block text-xs text-white/55">Get notified when new requests open</span>
                 </span>
                 <ArrowRight className="h-4 w-4 shrink-0 text-white/40" aria-hidden />
               </Link>

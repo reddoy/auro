@@ -334,15 +334,16 @@ function HomePageContent() {
                       FOR GUYS LEVELING UP
                     </Badge>
                     <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
-                      Join the waitlist now and be first when reviews reopen.
+                      Join the waitlist and be first when review requests open.
                     </h2>
                     <p className="text-lg leading-relaxed text-white/85">
-                      We are temporarily pausing new paid review requests while we fix active bugs. Join the waitlist and we will notify you the moment requests reopen.
+                      We are ramping up paid review requests in a measured way. Join the waitlist and we will notify you as soon
+                      as reviewers are ready for your booking.
                     </p>
                     <div className="flex flex-wrap gap-3 pt-2">
                       <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Dating profile feedback</Badge>
                       <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Style + photo suggestions</Badge>
-                      <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">First to know when we reopen</Badge>
+                      <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">First to know when spots open</Badge>
                     </div>
                   </div>
                   <div className="flex md:justify-end">
@@ -365,7 +366,7 @@ function HomePageContent() {
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center space-y-6">
             <Badge variant="gradient" className="text-sm px-4 py-2 font-semibold">
-              REVIEW REQUESTS PAUSED
+              REVIEW REQUESTS — WAITLIST
             </Badge>
             <h2 className="text-3xl font-bold leading-tight tracking-tight text-white md:text-4xl lg:text-5xl">
               Straightforward payouts for reviewers
@@ -384,7 +385,7 @@ function HomePageContent() {
             <div className="space-y-4">
               <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">How it works for reviewers</h2>
               <p className="text-lg leading-relaxed text-white/80 md:text-xl">
-                Apply and set up your reviewer profile now. When paid review requests reopen, you can share your link and accept work on your schedule.
+                Apply and set up your reviewer profile now. When paid review requests are live for everyone, you can share your link and accept work on your schedule.
               </p>
             </div>
             
@@ -399,7 +400,7 @@ function HomePageContent() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <CardDescription className="text-center text-base leading-relaxed text-white/80">
-                    Name your price per review and drop your Auro link where your audience already is. New paid bookings are paused for now; when requests reopen, guys will book through your link like before.
+                    Name your price per review and drop your Auro link where your audience already is. New paid bookings are waitlist-first right now; when requests open broadly, guys will book through your link the same way.
                   </CardDescription>
                   <div className="flex flex-wrap gap-2 justify-center">
                     <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">You set your rates</Badge>
@@ -569,10 +570,10 @@ function HomePageContent() {
                   Most guys are guessing on dating apps—photos, prompts, and how they read in the feed. A clear woman&apos;s-eye view cuts through that noise fast.
                 </p>
                 <p className="text-xl leading-relaxed text-white/90">
-                  Auro pairs guys who want specifics with women who can deliver them. Reviewers earn for completed reviews; guys get a punch list instead of generic advice. New paid review requests are on the waitlist while we ship fixes.
+                  Auro pairs guys who want specifics with women who can deliver them. Reviewers earn for completed reviews; guys get a punch list instead of generic advice. New paid review requests are on the waitlist while we scale up thoughtfully.
                 </p>
                 <p className="text-xl font-semibold leading-relaxed text-white">
-                  <span className="text-primary">Reviewer applications are open on web—new review requests are waitlist-only until we ship fixes.</span>
+                  <span className="text-primary">Reviewer applications are open on the web—new review requests are waitlist-first while we ramp up.</span>
                 </p>
               </div>
             </div>
@@ -596,7 +597,7 @@ function HomePageContent() {
                 className="mobile-text-reveal text-xl leading-relaxed text-white/90 md:text-2xl"
                 style={{ animationDelay: '0.4s' }}
               >
-                We are pausing paid review requests while we ship fixes. Join the waitlist for review requests, or apply as a reviewer today.
+                We are ramping up paid review requests. Join the waitlist to hear when bookings open for everyone, or apply as a reviewer today.
               </p>
             </div>
             
@@ -618,7 +619,7 @@ function HomePageContent() {
               </Button>
             </div>
             <p className="text-sm font-medium text-white/70 mobile-text-reveal" style={{ animationDelay: '0.65s' }}>
-              Reviewer onboarding is live. Review requests are waitlist-only.
+              Reviewer onboarding is live; new review requests are waitlist-first while we ramp up.
             </p>
             
             <div
@@ -631,7 +632,7 @@ function HomePageContent() {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                <span>Reviewer economics stay transparent when paid reviews return</span>
+                <span>Reviewer economics stay transparent when paid reviews are live for everyone</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
@@ -647,7 +648,7 @@ function HomePageContent() {
         <div className="container mx-auto px-4">
           <RevieweeWaitlist
             source="homepage_footer"
-            title="SMS when review spots reopen"
+            title="SMS when review spots open"
             subtitle="Optional. We will only text you about the waitlist and launch timing—no spam."
           />
         </div>
