@@ -3648,6 +3648,8 @@ footer {
 
   .nav.nav--home .mobile-brand-centered {
     align-self: center;
+    /* Beat @layer `.mobile-brand-centered { justify-self: center }` so the mark sits in the first column, not centered in the fr track */
+    justify-self: start;
   }
 
   .nav.nav--home .nav-cta-section {
