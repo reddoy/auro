@@ -3504,6 +3504,22 @@ footer {
   text-align: center;
 }
 
+/*
+ * Marketing home (/) — hide duplicate CTAs in the header below lg.
+ * Tailwind utilities like max-lg:hidden lose to `.conditional-nav .nav-ribbon-ctas { display:flex }`
+ * (higher specificity), so we hide with a stronger selector.
+ */
+@media (max-width: 1023px) {
+  .nav.nav--home .conditional-nav .nav-ribbon-ctas {
+    display: none !important;
+  }
+
+  /* Avoid CTA glows/shadows painting a sliver past the viewport edge */
+  .nav.nav--home {
+    overflow-x: hidden;
+  }
+}
+
 .nav .reviewer-counter {
   gap: 4px;
   padding: 8px 12px;

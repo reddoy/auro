@@ -42,7 +42,7 @@ export default function ConditionalChrome({ children }: Props) {
               <span className="brand__name">Auro</span>
             </a>
             <nav className="nav-cta-section">
-              <ConditionalNav isMarketingHome={isMarketingHome} />
+              <ConditionalNav />
             </nav>
           </div>
         </div>

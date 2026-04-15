@@ -13,12 +13,7 @@ const signInLinkStyle: React.CSSProperties = {
   opacity: 0.9,
 };
 
-type Props = {
-  /** When true, duplicate hero CTAs are hidden below `lg` on `/` only. */
-  isMarketingHome?: boolean;
-};
-
-export default function ConditionalNav({ isMarketingHome = false }: Props) {
+export default function ConditionalNav() {
   const pathname = usePathname();
 
   const isOnApplyPage =
@@ -48,10 +43,7 @@ export default function ConditionalNav({ isMarketingHome = false }: Props) {
         Sign In
       </Link>
 
-      <div
-        className={`nav-ribbon-ctas${isMarketingHome ? ' max-lg:hidden' : ''}`}
-        aria-label="Primary actions"
-      >
+      <div className="nav-ribbon-ctas" aria-label="Primary actions">
         {!isOnApplyPage && (
           <Link className="cta-nav-integrated" href="/reviewers/apply">
             <div className="cta-text-section">
