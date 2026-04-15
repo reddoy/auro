@@ -107,7 +107,7 @@ function HomePageContent() {
               {/* Headline + sub: generous leading so descenders never collide; CTAs before checklist to match desktop rhythm */}
               <div className="space-y-6">
                 <h1
-                  className="text-4xl font-bold leading-tight text-center tracking-[-0.02em] text-white [text-wrap:balance] hyphens-none max-w-lg px-4 mobile-text-reveal sm:text-5xl sm:leading-tight"
+                  className="text-3xl font-bold leading-tight text-center tracking-[-0.02em] text-white [text-wrap:balance] hyphens-none max-w-lg px-3 mobile-text-reveal min-[400px]:text-4xl sm:text-5xl sm:leading-tight"
                   style={{ animationDelay: '0.4s' }}
                 >
                   <span className="[text-wrap:balance]">

@@ -25,9 +25,13 @@ export default function ConditionalNav() {
     pathname?.startsWith('/waitlist/');
 
   return (
-    <div className="conditional-nav" style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+    <div
+      className="conditional-nav"
+      style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap', justifyContent: 'flex-end' }}
+    >
       <Link
         href="/auth/sign-in"
+        className="nav-signin-link"
         style={signInLinkStyle}
         onMouseOver={(e) => {
           e.currentTarget.style.opacity = '1';

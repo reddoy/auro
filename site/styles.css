@@ -243,8 +243,9 @@
   /* Mobile iPhone video styles */
   .mobile-iphone-frame {
     position: relative;
-    width: 260px;
-    height: 520px;
+    width: min(260px, calc(100vw - 32px));
+    height: min(520px, calc((100vw - 32px) * 2));
+    max-height: 70vh;
     background: #1a1a1a;
     border-radius: 32px;
     overflow: hidden;
@@ -992,12 +993,12 @@ body {
 
 @media (max-width: 640px) {
   :root {
-    --nav-h: 60px;
+    --nav-h: 104px;
   }
-  
+
   .nav {
     padding: 12px 0;
-    min-height: 60px;
+    min-height: 0;
   }
 
   .nav-content {
@@ -1073,9 +1074,9 @@ body {
 
 @media (max-width: 480px) {
   :root {
-    --nav-h: 50px;
+    --nav-h: 100px;
   }
-  
+
   .nav-content {
     gap: 8px;
   }
@@ -3523,31 +3524,58 @@ footer {
   max-width: 100px;
 }
 
-/* Mobile responsive */
+/* Mobile responsive — stacked header: brand row, then sign-in + CTAs full width (no overlap) */
 @media (max-width: 768px) {
-  /* Center the brand on mobile */
+  :root {
+    --nav-h: 108px;
+  }
+
+  .nav {
+    min-height: 0;
+  }
+
   .nav-content {
-    justify-content: flex-end;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 10px;
     position: relative;
   }
-  
+
   .mobile-brand-centered {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    position: static;
+    left: auto;
+    transform: none;
     display: flex;
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
+    align-self: flex-start;
   }
-  
+
   .nav-cta-section {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 8px;
-    max-width: min(100% - 120px, 50%);
-    margin-left: auto;
+    flex-wrap: nowrap;
+    justify-content: stretch;
+    gap: 0;
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+  }
+
+  .conditional-nav {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    width: 100%;
+  }
+
+  .conditional-nav .nav-signin-link {
+    align-self: flex-end;
+    padding: 4px 2px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
   }
 
   .conditional-nav .cta-sub-text {
@@ -3555,36 +3583,37 @@ footer {
   }
 
   .conditional-nav .nav-ribbon-ctas {
+    width: 100%;
     gap: 8px;
-    justify-content: flex-end;
+    justify-content: stretch;
+    flex-wrap: nowrap;
   }
 
   .conditional-nav .nav-ribbon-ctas:has(> :nth-child(2)) {
-    width: auto;
+    width: 100%;
     max-width: 100%;
-    justify-content: flex-end;
+    justify-content: stretch;
   }
 
   .conditional-nav .nav-ribbon-ctas > .cta-nav-integrated,
   .conditional-nav .nav-ribbon-ctas > .cta-nav.cta-nav--get-reviewed {
-    flex: 0 1 auto;
+    flex: 1 1 0;
     min-width: 0;
-    max-width: 100%;
+    max-width: none;
+    justify-content: center;
   }
 
   .conditional-nav .nav-ribbon-ctas > .cta-nav-integrated:only-child,
   .conditional-nav .nav-ribbon-ctas > .cta-nav.cta-nav--get-reviewed:only-child {
-    flex: 0 1 auto;
-    min-width: 0;
-    max-width: 100%;
+    flex: 1 1 auto;
   }
 
   .conditional-nav .nav-ribbon-ctas > .cta-nav-integrated {
-    padding: 9px 12px;
+    padding: 10px 10px;
   }
 
   .conditional-nav .nav-ribbon-ctas > .cta-nav.cta-nav--get-reviewed {
-    padding: 9px 12px;
+    padding: 10px 10px;
     font-size: 13px;
     white-space: nowrap;
   }
