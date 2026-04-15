@@ -3617,6 +3617,42 @@ footer {
     font-size: 13px;
     white-space: nowrap;
   }
+
+  /* Homepage: single compact header row (logo + Sign In); hero holds primary CTAs */
+  body.marketing-home {
+    --nav-h: 70px;
+  }
+
+  .nav.nav--home .nav-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .nav.nav--home .mobile-brand-centered {
+    align-self: center;
+  }
+
+  .nav.nav--home .nav-cta-section {
+    width: auto;
+    max-width: none;
+    justify-content: flex-end;
+    flex: 0 0 auto;
+  }
+
+  .nav.nav--home .conditional-nav {
+    flex-direction: row !important;
+    align-items: center !important;
+    width: auto;
+    gap: 0 !important;
+  }
+
+  .nav.nav--home .conditional-nav .nav-signin-link {
+    align-self: center;
+    padding: 6px 10px;
+    min-height: 44px;
+  }
   
   .nav-countdown-section {
     gap: 8px;

@@ -91,7 +91,11 @@ function HomePageContent() {
   return (
     <div className="min-h-screen bg-background text-foreground mobile-smooth-scroll">
       {/* Hero Section */}
-      <section className="relative min-h-screen overflow-hidden pt-16 lg:pt-0" role="banner" aria-label="Hero section">
+      <section
+        className="relative min-h-screen overflow-x-hidden overflow-y-visible pt-16 lg:overflow-hidden lg:pt-0"
+        role="banner"
+        aria-label="Hero section"
+      >
         {/* Clean Background */}
         <div className="absolute inset-0 bg-background" />
         
@@ -100,8 +104,8 @@ function HomePageContent() {
         
         
         {/* Hero Content - Mobile Only */}
-        <div className="container mx-auto px-4 relative z-10 pt-12 pb-8 lg:hidden">
-          <div className="text-center space-y-8 mobile-hero-content w-full">
+        <div className="container mx-auto px-4 relative z-10 pt-8 pb-14 sm:pt-10 lg:hidden">
+          <div className="text-center space-y-7 mobile-hero-content w-full sm:space-y-8">
               {/* Removed redundant badge to save space and reduce clutter */}
               
               {/* Headline + sub: generous leading so descenders never collide; CTAs before checklist to match desktop rhythm */}
@@ -157,20 +161,25 @@ function HomePageContent() {
                 </Button>
               </div>
 
-              <div className="mobile-text-reveal mx-auto max-w-lg space-y-2.5 px-4 pt-1" style={{ animationDelay: '1.15s' }}>
-                <div className="flex items-start justify-center gap-2 text-left text-base text-white/85">
+              <ul
+                className="mobile-text-reveal mx-auto w-full max-w-lg list-none space-y-2.5 px-4 pt-1 text-left sm:px-5"
+                style={{ animationDelay: '1.15s' }}
+              >
+                <li className="flex items-start gap-2.5 text-base text-white/85">
                   <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                  <span className="font-medium leading-snug">Specific notes on photos and prompts</span>
-                </div>
-                <div className="flex items-start justify-center gap-2 text-left text-base text-white/85">
+                  <span className="min-w-0 font-medium leading-snug">Specific notes on photos and prompts</span>
+                </li>
+                <li className="flex items-start gap-2.5 text-base text-white/85">
                   <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                  <span className="font-medium leading-snug">Waitlist gets you first access when reviewers start taking bookings</span>
-                </div>
-                <div className="flex items-start justify-center gap-2 text-left text-base text-white/85">
+                  <span className="min-w-0 font-medium leading-snug">
+                    Waitlist gets you first access when reviewers start taking bookings
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5 text-base text-white/85">
                   <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                  <span className="font-medium leading-snug">Built for web and mobile web</span>
-                </div>
-              </div>
+                  <span className="min-w-0 font-medium leading-snug">Built for web and mobile web</span>
+                </li>
+              </ul>
 
               {/* Mobile iPhone Video - Moved below CTA with proper spacing */}
               <div className="flex justify-center mobile-text-reveal mt-6" style={{ animationDelay: '1.3s' }}>

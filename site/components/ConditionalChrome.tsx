@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import ConditionalNav from './ConditionalNav';
 
@@ -13,6 +14,13 @@ type Props = {
 export default function ConditionalChrome({ children }: Props) {
   const pathname = usePathname();
   const isWebApp = pathname === '/app' || pathname?.startsWith('/app/');
+  const isMarketingHome = pathname === '/';
+
+  useEffect(() => {
+    if (!isMarketingHome || isWebApp) return;
+    document.body.classList.add('marketing-home');
+    return () => document.body.classList.remove('marketing-home');
+  }, [isMarketingHome, isWebApp]);
 
   if (isWebApp) {
     return <>{children}</>;
@@ -20,7 +28,7 @@ export default function ConditionalChrome({ children }: Props) {
 
   return (
     <>
-      <header className="nav">
+      <header className={`nav${isMarketingHome ? ' nav--home' : ''}`}>
         <div className="container">
           <div className="nav-content">
             <a href="/" className="brand mobile-brand-centered" aria-label="Auro Home">
@@ -34,7 +42,7 @@ export default function ConditionalChrome({ children }: Props) {
               <span className="brand__name">Auro</span>
             </a>
             <nav className="nav-cta-section">
-              <ConditionalNav />
+              <ConditionalNav isMarketingHome={isMarketingHome} />
             </nav>
           </div>
         </div>
