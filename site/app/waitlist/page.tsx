@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -75,31 +74,6 @@ function WaitlistInner() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0c0325] via-background to-[#12081f] text-white">
-      <header className="sticky top-0 z-10 border-b border-white/[0.07] bg-black/30 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-3.5 sm:px-5">
-          <Link href="/" className="flex min-w-0 items-center gap-2 text-sm font-semibold text-white/90 transition hover:text-white">
-            <span className="relative block h-9 w-9 shrink-0 overflow-hidden rounded-lg ring-1 ring-white/15">
-              <Image src="/auro_aura_logo.png" alt="" fill className="object-cover" sizes="36px" priority />
-            </span>
-            <span>Auro</span>
-          </Link>
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <Link
-              href="/auth/sign-in"
-              className="rounded-full border border-white/15 bg-white/[0.05] px-3.5 py-2 text-xs font-semibold text-white/90 transition hover:border-white/25 hover:bg-white/[0.1] sm:px-4"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/reviewers/apply"
-              className="rounded-full bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 sm:px-4"
-            >
-              Become a reviewer
-            </Link>
-          </div>
-        </div>
-      </header>
-
       <main className="mx-auto w-full max-w-2xl px-4 py-10 md:py-14">
         {gate === 'loading' ? (
           <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-12 text-center">
