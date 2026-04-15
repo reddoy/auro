@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import RevieweeWaitlist from '@/components/RevieweeWaitlist';
 
-export default function WaitlistPage() {
+function WaitlistInner() {
   const searchParams = useSearchParams();
   const fromApp = searchParams.get('from') === 'app';
   const creatorSlug = searchParams.get('creatorSlug');
@@ -53,5 +54,19 @@ export default function WaitlistPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function WaitlistPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-card to-background text-white/70">
+          Loading…
+        </div>
+      }
+    >
+      <WaitlistInner />
+    </Suspense>
   );
 }
