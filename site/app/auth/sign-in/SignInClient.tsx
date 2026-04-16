@@ -7,10 +7,10 @@ import AuthStep from '@/app/request/components/AuthStep';
 import { supabase } from '@/lib/supabase';
 
 function safeReturnPath(raw: string | null): string {
-  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/waitlist';
-  if (raw === '/app' || raw.startsWith('/app/')) return '/waitlist';
+  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/auth/post-sign-in';
+  if (raw === '/app' || raw.startsWith('/app/')) return '/auth/post-sign-in';
   if ((raw === '/request' || raw.startsWith('/request/')) && !raw.includes('internal=1')) {
-    return '/waitlist';
+    return '/auth/post-sign-in';
   }
   return raw;
 }
