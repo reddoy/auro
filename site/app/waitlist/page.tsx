@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import RevieweeWaitlist from '@/components/RevieweeWaitlist';
+import WaitlistAccountSignup from '@/components/WaitlistAccountSignup';
 import { supabase } from '@/lib/supabase';
 
 type ReviewerGate = 'loading' | 'guest' | 'reviewer_pending' | 'reviewer_approved';
@@ -204,13 +205,17 @@ function WaitlistInner() {
 
             {showRevieweeForm ? (
               <div className="px-6 py-8 md:px-10 md:py-9">
-                <RevieweeWaitlist
-                  appearance="flat"
-                  hideHeading
-                  source="waitlist_page"
-                  title="Phone signup"
-                  subtitle="Add your US number. We will send one concise text when review spots open—no drip campaign."
-                />
+                {isSignedIn ? (
+                  <RevieweeWaitlist
+                    appearance="flat"
+                    hideHeading
+                    source="waitlist_page"
+                    title="Phone signup"
+                    subtitle="Add your US number. We will send one concise text when review spots open—no drip campaign."
+                  />
+                ) : (
+                  <WaitlistAccountSignup source="waitlist_page_auth" />
+                )}
               </div>
             ) : null}
 

@@ -6,6 +6,7 @@ import { RefreshCw, Search } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import AdminNav from '@/app/admin/components/AdminNav';
 import { cn } from '@/lib/utils';
+import { getDisplayAvatarUrl } from '@/lib/avatar';
 
 type ReviewerTab = 'pending' | 'approved' | 'rejected' | 'users';
 
@@ -25,12 +26,6 @@ type ProfileRow = {
   stripe_connect_account_id: string | null;
   is_admin?: boolean | null;
 };
-
-function profileAvatarViewUrl(avatar_url: string | null | undefined): string | undefined {
-  if (!avatar_url) return undefined;
-  if (/^https?:\/\//i.test(avatar_url)) return avatar_url;
-  return `/api/storage/signed-view?path=${encodeURIComponent(avatar_url)}&bucket=avatars`;
-}
 
 function formatDisplayName(p: ProfileRow): string {
   const parts = [p.first_name?.trim(), p.last_name?.trim()].filter(Boolean) as string[];
@@ -52,6 +47,10 @@ function initials(p: ProfileRow): string {
 
 function ProfileAvatar({ p, src }: { p: ProfileRow; src?: string }) {
   const [broken, setBroken] = useState(false);
+  useEffect(() => {
+    setBroken(false);
+  }, [src]);
+
   if (!src || broken) {
     return (
       <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-white/[0.12] to-white/[0.04] text-sm font-semibold tracking-tight text-white ring-1 ring-white/10 sm:h-[72px] sm:w-[72px] sm:text-base">
@@ -153,6 +152,7 @@ export default function AdminReviewersPage() {
   const [actingId, setActingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [listLoading, setListLoading] = useState(false);
+  const [avatarSrcById, setAvatarSrcById] = useState<Record<string, string>>({});
 
   const authHeader = useCallback(async (): Promise<string | null> => {
     if (!supabase?.auth) return null;
@@ -236,6 +236,34 @@ export default function AdminReviewersPage() {
     if (isAuthorized !== true) return;
     void loadList();
   }, [isAuthorized, loadList]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setAvatarSrcById({});
+
+    if (profiles.length === 0) return;
+
+    (async () => {
+      const pairs = await Promise.all(
+        profiles.map(async (p): Promise<[string, string]> => {
+          const fallback = /^https?:\/\//i.test(p.avatar_url || '') ? (p.avatar_url as string) : '';
+          if (!p.avatar_url) return [p.id, ''];
+          try {
+            const resolved = await getDisplayAvatarUrl(p.avatar_url);
+            return [p.id, resolved || fallback || ''];
+          } catch {
+            return [p.id, fallback || ''];
+          }
+        })
+      );
+      if (cancelled) return;
+      setAvatarSrcById(Object.fromEntries(pairs));
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [profiles]);
 
   const filteredProfiles = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -397,7 +425,7 @@ export default function AdminReviewersPage() {
 
       <ul className="mt-6 flex flex-col gap-3">
         {filteredProfiles.map((p) => {
-          const av = profileAvatarViewUrl(p.avatar_url || undefined);
+          const av = avatarSrcById[p.id] || undefined;
           const name = formatDisplayName(p);
           const busy = actingId === p.id;
           const showActions = tab === 'pending' && p.is_reviewer === 'pending';

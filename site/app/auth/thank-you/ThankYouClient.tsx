@@ -3,12 +3,12 @@
 import Link from "next/link";
 
 const requestLinkStyle = {
-  backgroundImage: "#F26955",
+  backgroundColor: "#F26955",
 };
 
 function RequestLink({ children }: { children: React.ReactNode }) {
   return (
-    <Link href="/waitlist" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={requestLinkStyle}>
+    <Link href="/" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={requestLinkStyle}>
       {children}
     </Link>
   );
@@ -29,22 +29,20 @@ export default function ThankYouClient() {
               (e.target as HTMLImageElement).src = "/rohan-headshot.jpg";
             }}
           />
-          <div className="text-4xl mb-4">🎉</div>
-
-          <h1 className="text-white text-2xl font-semibold mb-3">Thank you for confirming</h1>
-          <p className="text-white/70 mt-2 mb-6">
-            Your email is confirmed and you&apos;re all set. Continue on Auro web or mobile web.
+          <h1 className="text-white text-2xl font-semibold mb-3">You are on the list</h1>
+          <p className="text-white/70 mt-2 mb-6 leading-relaxed">
+            Thanks for signing up. I will notify you once reviewers are open for business.
           </p>
 
-          <RequestLink>Request a review</RequestLink>
-          
+          <RequestLink>Back to home</RequestLink>
+
           <div className="mt-6 grid grid-cols-1 gap-3 w-full">
             <Link 
-              href="/waitlist" 
+              href="/reviewers/apply" 
               className="block w-full rounded-2xl px-5 py-3 text-center font-semibold" 
               style={{ color: "#EDE8F7", backgroundColor: "#2C1746", border: "1px solid rgba(255,255,255,0.08)" }}
             >
-              Join review waitlist
+              Interested in becoming a reviewer? Apply now
             </Link>
           </div>
         </div>
