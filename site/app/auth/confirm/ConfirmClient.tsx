@@ -6,7 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 const requestLinkStyle = {
-  backgroundImage: "#F26955",
+  backgroundColor: "#F26955",
 };
 
 function RequestLink({ children }: { children: React.ReactNode }) {
@@ -25,22 +25,75 @@ function Inner() {
   const code = params.get("code");
   const type = params.get("type");
   const email = params.get("email");
+  const [hashParams, setHashParams] = useState<{
+    code: string | null;
+    tokenHash: string | null;
+    type: string | null;
+    accessToken: string | null;
+    refreshToken: string | null;
+    errorDescription: string | null;
+  } | null>(null);
+  const [hashParsed, setHashParsed] = useState(false);
 
   const [isConfirming, setIsConfirming] = useState(false);
   const [status, setStatus] = useState<"pending" | "success" | "error">("pending");
   const [message, setMessage] = useState<string>("");
 
-  const isSignup = useMemo(() => type === "signup", [type]);
-  const isInvite = useMemo(() => type === "invite", [type]);
+  const effectiveType = type ?? hashParams?.type ?? null;
+  const effectiveCode = code ?? hashParams?.code ?? null;
+  const effectiveTokenHash = tokenHash ?? hashParams?.tokenHash ?? null;
+  const accessToken = hashParams?.accessToken ?? null;
+  const refreshToken = hashParams?.refreshToken ?? null;
+
+  const isSignup = useMemo(() => effectiveType === "signup", [effectiveType]);
+  const isInvite = useMemo(() => effectiveType === "invite", [effectiveType]);
   /** Legacy email links may still use type=magiclink in the URL; we verify but do not expose that name in the UI. */
-  const isMagicLink = useMemo(() => type === "magiclink", [type]);
-  const isEmailChange = useMemo(() => type === "email_change", [type]);
-  const isReauthentication = useMemo(() => type === "reauthentication", [type]);
-  const isRecovery = useMemo(() => type === "recovery", [type]);
+  const isMagicLink = useMemo(() => effectiveType === "magiclink", [effectiveType]);
+  const isEmailChange = useMemo(() => effectiveType === "email_change", [effectiveType]);
+  const isReauthentication = useMemo(() => effectiveType === "reauthentication", [effectiveType]);
+  const isRecovery = useMemo(() => effectiveType === "recovery", [effectiveType]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const hash = window.location.hash?.startsWith("#")
+      ? window.location.hash.slice(1)
+      : window.location.hash;
+
+    if (!hash) {
+      setHashParsed(true);
+      return;
+    }
+
+    const hashSearchParams = new URLSearchParams(hash);
+    const parsed = {
+      code: hashSearchParams.get("code"),
+      tokenHash: hashSearchParams.get("token_hash"),
+      type: hashSearchParams.get("type"),
+      accessToken: hashSearchParams.get("access_token"),
+      refreshToken: hashSearchParams.get("refresh_token"),
+      errorDescription: hashSearchParams.get("error_description") ?? hashSearchParams.get("error"),
+    };
+
+    setHashParams(parsed);
+    if (parsed.errorDescription) {
+      setStatus("error");
+      setMessage(parsed.errorDescription);
+    }
+    setHashParsed(true);
+  }, []);
 
   useEffect(() => {
     const run = async () => {
-      if (!code && !tokenHash) return;
+      if (!hashParsed) return;
+
+      if (!effectiveCode && !effectiveTokenHash && !(accessToken && refreshToken)) {
+        if (effectiveType) {
+          setStatus("error");
+          setMessage("This confirmation link is incomplete or expired. Please request a new confirmation email.");
+        }
+        return;
+      }
       if (!supabase) {
         setStatus("error");
         setMessage("Supabase client not configured.");
@@ -48,8 +101,25 @@ function Inner() {
       }
       setIsConfirming(true);
       try {
-        if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (effectiveCode) {
+          const { error } = await supabase.auth.exchangeCodeForSession(effectiveCode);
+          if (error) {
+            setStatus("error");
+            setMessage(error.message || "Unable to verify your email.");
+          } else if (isSignup || isInvite) {
+            router.replace("/auth/thank-you");
+            return;
+          } else {
+            setStatus("success");
+          }
+          return;
+        }
+
+        if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
           if (error) {
             setStatus("error");
             setMessage(error.message || "Unable to verify your email.");
@@ -69,11 +139,11 @@ function Inner() {
         else if (isReauthentication) verifyType = "reauthentication";
         else if (isRecovery) {
           // For recovery, redirect to reset password page
-          router.push(`/auth/reset-password?token_hash=${tokenHash}&type=recovery`);
+          router.push(`/auth/reset-password?token_hash=${effectiveTokenHash}&type=recovery`);
           return;
         }
 
-        const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash!, type: verifyType });
+        const { error } = await supabase.auth.verifyOtp({ token_hash: effectiveTokenHash!, type: verifyType });
         if (error) {
           setStatus("error");
           setMessage(error.message || "Unable to verify your email.");
@@ -94,7 +164,7 @@ function Inner() {
       }
     };
     run();
-  }, [code, tokenHash, isSignup, isInvite, isMagicLink, isEmailChange, isReauthentication, isRecovery, router]);
+  }, [effectiveCode, effectiveTokenHash, accessToken, refreshToken, effectiveType, hashParsed, isSignup, isInvite, isMagicLink, isEmailChange, isReauthentication, isRecovery, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#1A0B2E] px-4">
@@ -157,7 +227,16 @@ function Inner() {
             <>
               <h1 className="text-white text-2xl font-semibold">We couldn't confirm your email</h1>
               <p className="text-white/70 mt-2">{message || "The link may have expired or been used already."}</p>
-              <Link href="/" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "#F26955" }}>
+              {(isSignup || isInvite) && (
+                <Link
+                  href={`/auth/resend-confirmation${email ? `?email=${encodeURIComponent(email)}` : ""}`}
+                  className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold"
+                  style={requestLinkStyle}
+                >
+                  Resend confirmation email
+                </Link>
+              )}
+              <Link href="/" className="mt-3 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={requestLinkStyle}>
                 Back to home
               </Link>
             </>
@@ -167,7 +246,7 @@ function Inner() {
             <>
               <h1 className="text-white text-2xl font-semibold">Confirm your email</h1>
               <p className="text-white/70 mt-2">We sent a verification link{email ? ` to ${email}` : ""}. Click it to continue.</p>
-              <Link href="/waitlist" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "#F26955" }}>
+              <Link href="/waitlist" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={requestLinkStyle}>
                 Join review waitlist
               </Link>
             </>

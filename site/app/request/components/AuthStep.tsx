@@ -158,6 +158,22 @@ export default function AuthStep({
           console.error('[AuthStep] ensure-profile error:', err?.message);
         }
 
+        // Auto-enroll account signups in the reviewee waitlist (email notifications).
+        try {
+          await fetch('/api/waitlist', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              userId: data.user.id,
+              email,
+              fullName,
+              source: 'auth_sign_in_signup',
+            }),
+          });
+        } catch (waitlistError: any) {
+          console.error('[AuthStep] waitlist auto-enroll error:', waitlistError?.message);
+        }
+
         if (data.session) {
           // Email confirmation disabled or already confirmed — session exists
           try {

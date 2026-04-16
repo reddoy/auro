@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
 type Props = {
   source?: string;
@@ -26,6 +27,34 @@ export default function RevieweeWaitlist({
   const [phoneNumber, setPhoneNumber] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const [waitlistIdentity, setWaitlistIdentity] = useState<{ userId: string | null; email: string | null }>({
+    userId: null,
+    email: null,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      if (!supabase?.auth) return;
+      try {
+        const { data } = await supabase.auth.getUser();
+        if (cancelled) return;
+        setWaitlistIdentity({
+          userId: data.user?.id ?? null,
+          email: data.user?.email?.toLowerCase() ?? null,
+        });
+      } catch {
+        if (!cancelled) {
+          setWaitlistIdentity({ userId: null, email: null });
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +74,8 @@ export default function RevieweeWaitlist({
         body: JSON.stringify({
           phoneNumber: phoneNumber.trim(),
           source,
+          userId: waitlistIdentity.userId,
+          email: waitlistIdentity.email,
         }),
       });
 

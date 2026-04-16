@@ -15,6 +15,7 @@ function WaitlistInner() {
 
   const [gate, setGate] = useState<ReviewerGate>('loading');
   const [publicUsername, setPublicUsername] = useState<string | null>(null);
+  const [isSignedIn, setIsSignedIn] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -30,9 +31,12 @@ function WaitlistInner() {
       } = await supabase.auth.getSession();
 
       if (!session?.access_token) {
+        if (!cancelled) setIsSignedIn(false);
         if (!cancelled) setGate('guest');
         return;
       }
+
+      if (!cancelled) setIsSignedIn(true);
 
       try {
         const res = await fetch('/api/reviewers/signup-status', {
@@ -178,6 +182,11 @@ function WaitlistInner() {
                 We are onboarding reviewers and opening paid requests in waves. Add your number for a short SMS when spots
                 open—nothing salesy, easy opt-out.
               </p>
+              {isSignedIn ? (
+                <p className="mt-4 rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-4 py-3 text-sm leading-relaxed text-emerald-100/95">
+                  Your account email is already on the waitlist. Add your number below only if you also want a text message.
+                </p>
+              ) : null}
               {fromApp ? (
                 <p className="mt-5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm leading-relaxed text-white/68">
                   You tried the in-app flow—we are rolling the dashboard out in phases. This waitlist is the fastest way to hear
