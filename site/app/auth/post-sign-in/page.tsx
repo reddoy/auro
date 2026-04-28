@@ -1,13 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 type PostSignInState = 'loading' | 'reviewer_approved' | 'reviewer_pending' | 'reviewer_rejected' | 'reviewee';
 
-export default function PostSignInPage() {
+function PostSignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [state, setState] = useState<PostSignInState>('loading');
@@ -174,5 +174,26 @@ export default function PostSignInPage() {
         ) : null}
       </div>
     </div>
+  );
+}
+
+function PostSignInFallback() {
+  return (
+    <div className="min-h-screen bg-[#1A0B2E] px-4 py-8 text-white">
+      <div className="mx-auto flex min-h-[80vh] max-w-3xl items-center justify-center">
+        <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#24123B] p-8 text-center shadow-[0_12px_32px_rgba(0,0,0,0.3)]">
+          <div className="mx-auto mb-4 h-6 w-6 animate-spin rounded-full border-2 border-[#F26955] border-t-transparent" />
+          <p className="text-white/70">Loading your account status…</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function PostSignInPage() {
+  return (
+    <Suspense fallback={<PostSignInFallback />}>
+      <PostSignInContent />
+    </Suspense>
   );
 }
