@@ -30,12 +30,12 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  // Legacy request URLs should now route to waitlist while preserving reviewer slug.
+  // Legacy request URLs now route to live request flow while preserving reviewer slug.
   if (pathname.startsWith('/reviewers/') && pathname.endsWith('/request')) {
     const parts = pathname.split('/').filter(Boolean);
     const slug = parts.length >= 3 ? parts[1] : '';
     const url = req.nextUrl.clone();
-    url.pathname = '/waitlist';
+    url.pathname = '/request';
     url.search = '';
     if (slug) url.searchParams.set('creatorSlug', slug);
     return NextResponse.redirect(url, 307);
@@ -44,7 +44,7 @@ export function middleware(req: NextRequest) {
     const parts = pathname.split('/').filter(Boolean);
     const slug = parts.length >= 3 ? parts[1] : '';
     const url = req.nextUrl.clone();
-    url.pathname = '/waitlist';
+    url.pathname = '/request';
     url.search = '';
     if (slug) url.searchParams.set('creatorSlug', slug);
     return NextResponse.redirect(url, 307);
@@ -53,7 +53,7 @@ export function middleware(req: NextRequest) {
     const parts = pathname.split('/').filter(Boolean);
     const slug = parts.length >= 3 ? parts[1] : '';
     const url = req.nextUrl.clone();
-    url.pathname = '/waitlist';
+    url.pathname = '/request';
     url.search = '';
     if (slug) url.searchParams.set('creatorSlug', slug);
     return NextResponse.redirect(url, 307);

@@ -4,7 +4,9 @@ type Status =
   | 'paid'
   | 'in_progress'
   | 'completed'
-  | 'rejected';
+  | 'rejected'
+  | 'timeout'
+  | 'refunded';
 
 const STYLES: Record<string, { bg: string; color: string }> = {
   pending: { bg: 'rgba(255, 193, 7, 0.2)', color: '#FFC107' },
@@ -13,6 +15,8 @@ const STYLES: Record<string, { bg: string; color: string }> = {
   in_progress: { bg: 'rgba(156, 39, 176, 0.2)', color: '#CE93D8' },
   completed: { bg: 'rgba(76, 175, 80, 0.25)', color: '#A5D6A7' },
   rejected: { bg: 'rgba(244, 67, 54, 0.2)', color: '#EF9A9A' },
+  timeout: { bg: 'rgba(255, 152, 0, 0.2)', color: '#FFCC80' },
+  refunded: { bg: 'rgba(96, 125, 139, 0.2)', color: '#B0BEC5' },
 };
 
 const LABELS: Record<string, string> = {
@@ -22,6 +26,8 @@ const LABELS: Record<string, string> = {
   in_progress: 'In progress',
   completed: 'Completed',
   rejected: 'Declined',
+  timeout: 'Timed out',
+  refunded: 'Refunded',
 };
 
 export default function StatusBadge({

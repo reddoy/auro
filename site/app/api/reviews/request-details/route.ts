@@ -10,6 +10,15 @@ export async function POST(req: Request) {
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
     if (!url || !key) return new Response(JSON.stringify({ error: 'Supabase not configured' }), { status: 500 });
     const admin = createClient(url, key);
+    const auth = req.headers.get('authorization') || '';
+    const token = auth.replace(/^Bearer\s+/i, '');
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+    }
+    const { data: authData, error: authErr } = await admin.auth.getUser(token);
+    if (authErr || !authData?.user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+    }
 
     const { data: reqRow, error: reqErr } = await admin
       .from('requests')
@@ -17,6 +26,10 @@ export async function POST(req: Request) {
       .eq('id', requestId)
       .maybeSingle();
     if (reqErr || !reqRow) return new Response(JSON.stringify({ error: reqErr?.message || 'Request not found' }), { status: 404 });
+    const actorId = authData.user.id;
+    if (reqRow.user_id !== actorId && reqRow.influencer_id !== actorId) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+    }
 
     const userId = (reqRow as any).user_id as string | undefined;
     const influencerId = (reqRow as any).influencer_id as string | undefined;

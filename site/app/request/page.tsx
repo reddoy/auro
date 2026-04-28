@@ -8,8 +8,6 @@ import { supabase as supabaseClient } from '../../lib/supabase';
 import IntroStep from './components/IntroStep';
 import CreatorSelection from './components/CreatorSelection';
 import PhotoUpload from './components/PhotoUpload';
-import PromptAnswers from './components/PromptAnswers';
-import ConsentForm from './components/ConsentForm';
 import AuthStep from './components/AuthStep';
 import PaymentStep from './components/PaymentStep';
 import DownloadApp from './components/DownloadApp';
@@ -32,12 +30,10 @@ export type RequestData = {
 const STEPS = [
   'intro',
   'creator-selection',
-  'photo-upload', 
-  'prompt-answers',
-  'consent',
+  'photo-upload',
   'auth',
   'payment',
-  'download-app'
+  'download-app',
 ] as const;
 
 type Step = typeof STEPS[number];
@@ -829,8 +825,6 @@ export default function RequestPage() {
       'intro': 'Welcome',
       'creator-selection': 'Choose Your Reviewer',
       'photo-upload': 'Upload Your Photos',
-      'prompt-answers': 'Tell Us About Yourself',
-      'consent': 'Review Terms & Consent',
       'auth': 'Create Your Account',
       'payment': 'Complete Payment',
       'download-app': 'Get the App'
@@ -936,27 +930,6 @@ export default function RequestPage() {
             uploadSessionId={requestData.uploadSessionId}
           />
         );
-      case 'prompt-answers':
-        return (
-          <PromptAnswers
-            message={requestData.message}
-            onMessageChange={(message) => updateRequestData({ message })}
-            onNext={nextStep}
-            onBack={previousStep}
-            creatorId={requestData.creatorId}
-            creatorSlug={requestData.creatorSlug}
-            supabase={supabase}
-          />
-        );
-      case 'consent':
-        return (
-          <ConsentForm
-            consent={requestData.consent}
-            onConsentChange={(consent) => updateRequestData({ consent })}
-            onNext={nextStep}
-            onBack={previousStep}
-          />
-        );
       case 'auth':
         return (
           <AuthStep
@@ -966,6 +939,7 @@ export default function RequestPage() {
             supabase={supabase}
             requestData={requestData}
             onSaveState={saveFlowState}
+            roleIntent="reviewee"
           />
         );
       case 'payment':
@@ -997,8 +971,6 @@ export default function RequestPage() {
       { id: 'intro', label: 'Intro', icon: '🎯' },
       { id: 'creator-selection', label: 'Reviewer', icon: '👤' },
       { id: 'photo-upload', label: 'Photos', icon: '📸' },
-      { id: 'prompt-answers', label: 'Details', icon: '✍️' },
-      { id: 'consent', label: 'Terms', icon: '📋' },
       { id: 'auth', label: 'Account', icon: '🔐' },
       { id: 'payment', label: 'Payment', icon: '💳' },
       { id: 'download-app', label: 'Done', icon: '✅' }

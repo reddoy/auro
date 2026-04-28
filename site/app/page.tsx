@@ -5,12 +5,11 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import RevieweeWaitlist from '../components/RevieweeWaitlist';
 import { ArrowRight, Sparkles, DollarSign, Clock, TrendingUp, CheckCircle } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-/** Match gradient + glass-outline CTAs used in cards below (e.g. Join Waitlist). */
+/** Match gradient + glass-outline CTAs used in cards below (e.g. Get Reviewed). */
 const LANDING_CTA_PRIMARY =
   'group w-full sm:w-auto text-lg px-8 py-4 font-semibold shadow-2xl hover:shadow-3xl transition-all duration-300';
 const LANDING_CTA_SECONDARY =
@@ -124,7 +123,7 @@ function HomePageContent() {
                   className="mx-auto max-w-lg px-4 text-lg font-medium leading-relaxed text-white/85 mobile-text-reveal text-pretty sm:text-xl"
                   style={{ animationDelay: '1s' }}
                 >
-                  Join the waitlist to be the first to know when reviewers are open for business—or apply as a reviewer today.
+                  Book profile feedback now or apply as a reviewer today.
                 </p>
               </div>
 
@@ -148,11 +147,11 @@ function HomePageContent() {
                 </Button>
                 <Button size="xl" variant="outline" className={LANDING_CTA_SECONDARY} asChild>
                   <a
-                    href="/waitlist"
+                    href="/request"
                     className="flex items-center justify-center gap-2"
-                    aria-label="Join the review waitlist"
+                    aria-label="Request a profile review"
                   >
-                    <span className="truncate">Join Waitlist</span>
+                    <span className="truncate">Get Reviewed</span>
                     <ArrowRight
                       className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1"
                       aria-hidden
@@ -172,7 +171,7 @@ function HomePageContent() {
                 <li className="flex items-start gap-2.5 text-base text-white/85">
                   <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
                   <span className="min-w-0 font-medium leading-snug">
-                    Waitlist gets you first access when reviewers start taking bookings
+                    Book directly with available reviewers
                   </span>
                 </li>
                 <li className="flex items-start gap-2.5 text-base text-white/85">
@@ -248,7 +247,7 @@ function HomePageContent() {
                   </h1>
 
                   <p className="max-w-xl text-lg font-medium leading-relaxed text-white/85 xl:text-xl text-pretty hyphens-none">
-                    Join the waitlist to be the first to know when reviewers are open for business—or apply as a reviewer today.
+                    Book profile feedback now or apply as a reviewer today.
                   </p>
                 </div>
                 
@@ -261,8 +260,8 @@ function HomePageContent() {
                     </a>
                   </Button>
                   <Button size="xl" variant="outline" className={LANDING_CTA_SECONDARY} asChild>
-                    <a href="/waitlist" className="flex items-center justify-center gap-2" aria-label="Join the review waitlist">
-                      <span className="mobile-button-text">Join Waitlist</span>
+                    <a href="/request" className="flex items-center justify-center gap-2" aria-label="Request a profile review">
+                      <span className="mobile-button-text">Get Reviewed</span>
                       <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
                     </a>
                   </Button>
@@ -276,7 +275,7 @@ function HomePageContent() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                    <span>Waitlist gets you first access when reviewers start taking bookings</span>
+                    <span>Book directly with available reviewers</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
@@ -331,7 +330,7 @@ function HomePageContent() {
         </div>
       </section>
 
-      {/* Review request waitlist */}
+      {/* Review request entry */}
       <section className="bg-background py-16 lg:py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
@@ -343,22 +342,21 @@ function HomePageContent() {
                       FOR GUYS LEVELING UP
                     </Badge>
                     <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
-                      Join the waitlist and be first when review requests open.
+                      Book your review directly with available reviewers.
                     </h2>
                     <p className="text-lg leading-relaxed text-white/85">
-                      We are ramping up paid review requests in a measured way. Join the waitlist and we will notify you as soon
-                      as reviewers are ready for your booking.
+                      Browse reviewer profiles and submit your request right away.
                     </p>
                     <div className="flex flex-wrap gap-3 pt-2">
                       <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Dating profile feedback</Badge>
                       <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Style + photo suggestions</Badge>
-                      <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">First to know when spots open</Badge>
+                      <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Book live reviewer spots</Badge>
                     </div>
                   </div>
                   <div className="flex md:justify-end">
                     <Button size="xl" variant="gradient" className={LANDING_CTA_PRIMARY} asChild>
-                      <a href="/waitlist" className="flex items-center justify-center gap-2" aria-label="Join the review waitlist">
-                        <span>Join Waitlist</span>
+                      <a href="/request" className="flex items-center justify-center gap-2" aria-label="Request a profile review">
+                        <span>Get Reviewed</span>
                         <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
                       </a>
                     </Button>
@@ -375,7 +373,7 @@ function HomePageContent() {
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center space-y-6">
             <Badge variant="gradient" className="text-sm px-4 py-2 font-semibold">
-              REVIEW REQUESTS — WAITLIST
+              REVIEW REQUESTS — LIVE
             </Badge>
             <h2 className="text-3xl font-bold leading-tight tracking-tight text-white md:text-4xl lg:text-5xl">
               Straightforward payouts for reviewers
@@ -409,7 +407,7 @@ function HomePageContent() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <CardDescription className="text-center text-base leading-relaxed text-white/80">
-                    Name your price per review and drop your Auro link where your audience already is. New paid bookings are waitlist-first right now; when requests open broadly, guys will book through your link the same way.
+                    Name your price per review and drop your Auro link where your audience already is. Guys can book review requests directly through your link.
                   </CardDescription>
                   <div className="flex flex-wrap gap-2 justify-center">
                     <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">You set your rates</Badge>
@@ -579,10 +577,10 @@ function HomePageContent() {
                   Most guys are guessing on dating apps—photos, prompts, and how they read in the feed. A clear woman&apos;s-eye view cuts through that noise fast.
                 </p>
                 <p className="text-xl leading-relaxed text-white/90">
-                  Auro pairs guys who want specifics with women who can deliver them. Reviewers earn for completed reviews; guys get a punch list instead of generic advice. New paid review requests are on the waitlist while we scale up thoughtfully.
+                  Auro pairs guys who want specifics with women who can deliver them. Reviewers earn for completed reviews; guys get a punch list instead of generic advice.
                 </p>
                 <p className="text-xl font-semibold leading-relaxed text-white">
-                  <span className="text-primary">Reviewer applications are open on the web—new review requests are waitlist-first while we ramp up.</span>
+                  <span className="text-primary">Reviewer applications are open and review requests are live.</span>
                 </p>
               </div>
             </div>
@@ -600,13 +598,13 @@ function HomePageContent() {
                 className="mobile-text-reveal text-3xl font-bold tracking-tight text-white md:text-4xl lg:text-5xl"
                 style={{ animationDelay: '0.2s' }}
               >
-              Join the waitlist
+              Get reviewed now
               </h2>
               <p
                 className="mobile-text-reveal text-xl leading-relaxed text-white/90 md:text-2xl"
                 style={{ animationDelay: '0.4s' }}
               >
-                We are ramping up paid review requests. Join the waitlist to hear when bookings open for everyone, or apply as a reviewer today.
+                We are ramping up paid review requests. Get reviewed now to hear when bookings open for everyone, or apply as a reviewer today.
               </p>
             </div>
             
@@ -621,14 +619,14 @@ function HomePageContent() {
                 </a>
               </Button>
               <Button size="xl" variant="outline" className={LANDING_CTA_SECONDARY} asChild>
-                <a href="/waitlist" className="flex items-center justify-center gap-2">
-                  <span className="mobile-button-text">Join Waitlist</span>
+                <a href="/request" className="flex items-center justify-center gap-2">
+                  <span className="mobile-button-text">Get Reviewed</span>
                   <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1 sm:h-6 sm:w-6" />
                 </a>
               </Button>
             </div>
             <p className="text-sm font-medium text-white/70 mobile-text-reveal" style={{ animationDelay: '0.65s' }}>
-              Reviewer onboarding is live; new review requests are waitlist-first while we ramp up.
+              Reviewer onboarding is live and review requests are open.
             </p>
             
             <div
@@ -649,17 +647,6 @@ function HomePageContent() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Reviewee Waitlist Section - Small and subtle */}
-      <section className="bg-background py-12">
-        <div className="container mx-auto px-4">
-          <RevieweeWaitlist
-            source="homepage_footer"
-            title="SMS when review spots open"
-            subtitle="Optional. We will only text you about the waitlist and launch timing—no spam."
-          />
         </div>
       </section>
 

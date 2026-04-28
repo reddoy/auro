@@ -18,6 +18,8 @@ type Props = {
   continueCtaLabel?: string;
   /** Default tab on first render. */
   initialAuthTab?: 'signin' | 'signup';
+  /** Optional post-auth intent used for role-based routing. */
+  roleIntent?: 'reviewer' | 'reviewee' | null;
 };
 
 export default function AuthStep({
@@ -30,6 +32,7 @@ export default function AuthStep({
   oauthReturnPath,
   continueCtaLabel = 'Continue to Payment',
   initialAuthTab = 'signup',
+  roleIntent = null,
 }: Props) {
   const [isSignUp, setIsSignUp] = useState(() => initialAuthTab !== 'signin');
   const [email, setEmail] = useState('');
@@ -90,7 +93,12 @@ export default function AuthStep({
       const siteUrl = typeof window !== 'undefined' && window.location?.origin
         ? window.location.origin
         : process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com';
-      const redirectTo = `${siteUrl}/auth/confirm?type=signup`;
+      const confirmUrl = new URL(`${siteUrl}/auth/confirm`);
+      confirmUrl.searchParams.set('type', 'signup');
+      if (roleIntent) {
+        confirmUrl.searchParams.set('role_intent', roleIntent);
+      }
+      const redirectTo = confirmUrl.toString();
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -156,22 +164,6 @@ export default function AuthStep({
           });
         } catch (err: any) {
           console.error('[AuthStep] ensure-profile error:', err?.message);
-        }
-
-        // Auto-enroll account signups in the reviewee waitlist (email notifications).
-        try {
-          await fetch('/api/waitlist', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              userId: data.user.id,
-              email,
-              fullName,
-              source: 'auth_sign_in_signup',
-            }),
-          });
-        } catch (waitlistError: any) {
-          console.error('[AuthStep] waitlist auto-enroll error:', waitlistError?.message);
         }
 
         if (data.session) {
@@ -356,11 +348,16 @@ export default function AuthStep({
       const oauthReturn =
         oauthReturnPath ??
         `${window.location.pathname}${window.location.search}`;
+      const callbackUrl = new URL(`${window.location.origin}/auth/callback`);
+      callbackUrl.searchParams.set('redirect_to', oauthReturn);
+      if (roleIntent) {
+        callbackUrl.searchParams.set('role_intent', roleIntent);
+      }
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?redirect_to=${encodeURIComponent(oauthReturn)}`,
+          redirectTo: callbackUrl.toString(),
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

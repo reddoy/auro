@@ -22,6 +22,10 @@ function SignInInner() {
     () => safeReturnPath(searchParams.get('redirect_to')),
     [searchParams]
   );
+  const roleIntent = useMemo(() => {
+    const intent = searchParams.get('role_intent');
+    return intent === 'reviewer' || intent === 'reviewee' ? intent : null;
+  }, [searchParams]);
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -108,6 +112,7 @@ function SignInInner() {
           oauthReturnPath={returnTo}
           continueCtaLabel="Continue"
           initialAuthTab="signin"
+          roleIntent={roleIntent}
         />
         </div>
       </div>

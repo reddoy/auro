@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 type PostSignInState = 'loading' | 'reviewer_approved' | 'reviewer_pending' | 'reviewer_rejected' | 'reviewee';
 
 export default function PostSignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [state, setState] = useState<PostSignInState>('loading');
 
   useEffect(() => {
@@ -24,8 +25,14 @@ export default function PostSignInPage() {
         data: { session },
       } = await supabase.auth.getSession();
 
+      const roleIntent = searchParams.get('role_intent');
+
       if (!session?.access_token) {
-        router.replace('/auth/sign-in');
+        const signInHref =
+          roleIntent === 'reviewer' || roleIntent === 'reviewee'
+            ? `/auth/sign-in?role_intent=${encodeURIComponent(roleIntent)}`
+            : '/auth/sign-in';
+        router.replace(signInHref);
         return;
       }
 
@@ -53,8 +60,26 @@ export default function PostSignInPage() {
           return;
         }
 
+        if (roleIntent === 'reviewer') {
+          router.replace('/reviewers/apply');
+          return;
+        }
+        if (roleIntent === 'reviewee') {
+          router.replace('/request');
+          return;
+        }
+
         if (!cancelled) router.replace('/app');
       } catch {
+        const roleIntent = searchParams.get('role_intent');
+        if (roleIntent === 'reviewer') {
+          router.replace('/reviewers/apply');
+          return;
+        }
+        if (roleIntent === 'reviewee') {
+          router.replace('/request');
+          return;
+        }
         if (!cancelled) router.replace('/app');
       }
     };
@@ -63,7 +88,7 @@ export default function PostSignInPage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, searchParams]);
 
   const cardClass =
     'w-full max-w-lg rounded-2xl border border-white/10 bg-[#24123B] p-8 text-center shadow-[0_12px_32px_rgba(0,0,0,0.3)]';

@@ -33,7 +33,7 @@ export async function GET(req: Request) {
     const { data: profile, error: profileError } = await admin
       .from('profiles')
       .select(
-        'reviewer_signup_status, is_reviewer, email, full_name, username, avatar_url, hourly_rate, links, preferences'
+        'is_reviewer, email, first_name, last_name, username, avatar_url, hourly_rate, links, preferences'
       )
       .eq('id', userId)
       .single();
@@ -42,15 +42,10 @@ export async function GET(req: Request) {
       return new Response(JSON.stringify({ error: 'Profile not found' }), { status: 404 });
     }
 
-    // Determine the status
-    const signupStatus = profile.reviewer_signup_status || 'not_started';
-    const rawReviewer = profile.is_reviewer as string | boolean | null | undefined;
-    const reviewerApproval =
-      typeof rawReviewer === 'string'
-        ? rawReviewer
-        : rawReviewer === true
-          ? 'approved'
-          : null;
+    const reviewerApproval = profile.is_reviewer ?? null;
+    const signupStatus =
+      reviewerApproval === 'approved' || reviewerApproval === 'pending' ? 'completed' : 'not_started';
+    const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
 
     return new Response(
       JSON.stringify({
@@ -59,7 +54,7 @@ export async function GET(req: Request) {
         reviewerApproval,
         profile: {
           email: profile.email,
-          full_name: profile.full_name,
+          full_name: fullName || null,
           username: profile.username,
           avatar_url: profile.avatar_url,
           hourly_rate: profile.hourly_rate,
@@ -107,16 +102,9 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'Authentication failed' }), { status: 401 });
     }
 
-    // Validate status
-    if (!['pending', 'completed'].includes(status)) {
-      return new Response(JSON.stringify({ error: 'Invalid status' }), { status: 400 });
-    }
-
-    // Update the signup status
-    const { error: updateError } = await admin
-      .from('profiles')
-      .update({ reviewer_signup_status: status })
-      .eq('id', userId);
+    // Legacy endpoint: map status updates to canonical reviewer state.
+    const targetState = status === 'completed' ? 'pending' : null;
+    const { error: updateError } = await admin.from('profiles').update({ is_reviewer: targetState }).eq('id', userId);
 
     if (updateError) {
       return new Response(JSON.stringify({ error: updateError.message }), { status: 400 });

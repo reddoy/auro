@@ -171,10 +171,8 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
           fallbackFullName,
           fallbackUserId,
           reviewPayload: {
-            message: requestData.message,
             photos: requestData.photos,
-            consent: requestData.consent
-          }
+          },
         }),
       });
 
@@ -315,11 +313,10 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
             <div className="review-includes">
               <h4>Your review includes:</h4>
               <ul>
-                <li>✅ Detailed attractiveness rating (1-10)</li>
-                <li>✅ Wardrobe and style feedback</li>
-                <li>✅ Dating profile optimization</li>
-                <li>✅ Personalized improvement suggestions</li>
-                <li>✅ Honest, constructive feedback</li>
+                <li>✅ One personalized video review</li>
+                <li>✅ Direct, honest feedback on your photos</li>
+                <li>✅ Clear suggestions you can apply right away</li>
+                <li>✅ Delivery tracked inside your Requests tab</li>
               </ul>
             </div>
           </div>

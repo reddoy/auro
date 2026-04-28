@@ -21,8 +21,8 @@ export default function OnboardingMigrationStubPage({ params }: Props) {
           </Link>
         </li>
         <li>
-          <Link href="/waitlist" style={{ color: '#F26955' }}>
-            Join review waitlist
+          <Link href="/request" style={{ color: '#F26955' }}>
+            Request a review
           </Link>
         </li>
       </ul>

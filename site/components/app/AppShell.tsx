@@ -6,8 +6,8 @@ import { usePathname } from 'next/navigation';
 
 const nav = [
   { href: '/app', label: 'Home', Icon: Home },
-  { href: '/app/requests?tab=active', label: 'My reviews', Icon: ListChecks },
-  { href: '/app/profile', label: 'Account', Icon: UserRound },
+  { href: '/app/requests', label: 'Requests', Icon: ListChecks },
+  { href: '/app/profile', label: 'Profile', Icon: UserRound },
 ] as const;
 
 export default function AppShell({ children }: { children: React.ReactNode }) {

@@ -30,7 +30,15 @@ export interface ReviewRequest {
   userId: string;
   influencerId: string;
   photos: string[];
-  status: 'pending' | 'accepted' | 'paid' | 'in_progress' | 'completed' | 'rejected';
+  status:
+    | 'pending'
+    | 'accepted'
+    | 'paid'
+    | 'in_progress'
+    | 'completed'
+    | 'rejected'
+    | 'timeout'
+    | 'refunded';
   createdAt: Date;
   completedAt?: Date;
   review?: Review;
@@ -87,7 +95,15 @@ export interface DbRequestSummary {
   userId?: string;
   createdAt: string;
   created_at?: string;
-  status: 'pending' | 'accepted' | 'paid' | 'in_progress' | 'completed' | 'rejected';
+  status:
+    | 'pending'
+    | 'accepted'
+    | 'paid'
+    | 'in_progress'
+    | 'completed'
+    | 'rejected'
+    | 'timeout'
+    | 'refunded';
   photos: string[];
   notes?: string | null;
   review?: {
@@ -109,6 +125,7 @@ export interface DbRequestSummary {
       videoUrl?: string | null;
       imageUrl?: string | null;
     };
+    draft_video_uploaded_at?: string;
     createdAt?: string;
   } | null;
   // New fields mirrored from DB
@@ -141,7 +158,7 @@ export interface DbUserProfile {
   bio?: string | null;
   avatarUrl?: string | null;
   // Optional flag surfaced for app logic
-  is_reviewer?: boolean;
+  is_reviewer?: 'pending' | 'approved' | 'rejected' | null;
 }
 
 // Reviewers sourced from profiles (users who opted-in)

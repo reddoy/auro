@@ -37,26 +37,33 @@ function AvatarCircle({
   );
 }
 
-function isInboxTab(v: string | null): v is 'active' | 'completed' | 'archived' {
-  return v === 'active' || v === 'completed' || v === 'archived';
+function isInboxTab(v: string | null): v is 'active' | 'pending' | 'in_progress' | 'completed' {
+  return v === 'active' || v === 'pending' || v === 'in_progress' || v === 'completed';
 }
 
 function emptyInboxCopy(
-  tab: 'active' | 'completed' | 'archived',
+  tab: 'active' | 'pending' | 'in_progress' | 'completed',
   isReviewer: boolean
 ): { title: string; body: string; showRequestCta: boolean } {
+  if (tab === 'pending') {
+    return {
+      title: 'No pending requests',
+      body: 'Paid requests waiting for your accept or decline decision show up here.',
+      showRequestCta: false,
+    };
+  }
+  if (tab === 'in_progress') {
+    return {
+      title: 'No reviews in progress',
+      body: 'Accepted requests move here while you prepare and upload your review video.',
+      showRequestCta: false,
+    };
+  }
   if (tab === 'completed') {
     return {
       title: 'No completed reviews yet',
       body: 'When a review is finished, it shows up here so you can revisit feedback anytime.',
       showRequestCta: true,
-    };
-  }
-  if (tab === 'archived') {
-    return {
-      title: 'Nothing archived',
-      body: 'Archive finished reviews from the Done tab to keep your active list focused.',
-      showRequestCta: false,
     };
   }
   return {
@@ -77,7 +84,7 @@ export default function RequestsPageClient() {
 
   const { data, isPending, isFetching, error, refetch } = useAppInboxQuery();
 
-  const [filter, setFilter] = useState<'active' | 'completed' | 'archived'>('active');
+  const [filter, setFilter] = useState<'active' | 'pending' | 'in_progress' | 'completed'>('active');
 
   useEffect(() => {
     if (isInboxTab(tabFromUrl)) {
@@ -94,7 +101,7 @@ export default function RequestsPageClient() {
   }, [error, router]);
 
   const setFilterAndUrl = useCallback(
-    (key: 'active' | 'completed' | 'archived') => {
+    (key: 'active' | 'pending' | 'in_progress' | 'completed') => {
       setFilter(key);
       router.replace(`/app/requests?tab=${key}`, { scroll: false });
     },
@@ -111,8 +118,10 @@ export default function RequestsPageClient() {
   const avatarResolved = data?.avatarResolved ?? {};
 
   const filtered = requests.filter((r) => {
-    if (filter === 'archived') return !!r.archived_at;
     if (filter === 'completed') return r.status === 'completed' && !r.archived_at;
+    if (isReviewer && filter === 'pending') return r.influencerId === userProfile?.id && r.status === 'paid' && !r.archived_at;
+    if (isReviewer && filter === 'in_progress')
+      return r.influencerId === userProfile?.id && r.status === 'in_progress' && !r.archived_at;
     return (
       (r.status === 'pending' ||
         r.status === 'accepted' ||
@@ -133,7 +142,12 @@ export default function RequestsPageClient() {
       !r.archived_at
   ).length;
   const completedCount = requests.filter((r) => r.status === 'completed' && !r.archived_at).length;
-  const archivedCount = requests.filter((r) => !!r.archived_at).length;
+  const pendingCount = requests.filter(
+    (r) => r.influencerId === userProfile?.id && r.status === 'paid' && !r.archived_at
+  ).length;
+  const inProgressCount = requests.filter(
+    (r) => r.influencerId === userProfile?.id && r.status === 'in_progress' && !r.archived_at
+  ).length;
 
   const openRequest = (item: DbRequestSummary) => {
     if (!userProfile?.id) return;
@@ -191,13 +205,25 @@ export default function RequestsPageClient() {
   }
 
   const empty = emptyInboxCopy(filter, isReviewer);
+  const tabOptions: Array<[typeof filter, string, number]> = isReviewer
+    ? [
+        ['pending', 'Pending', pendingCount],
+        ['in_progress', 'In progress', inProgressCount],
+        ['completed', 'Completed', completedCount],
+      ]
+    : [
+        ['active', 'Active', activeCount],
+        ['completed', 'Done', completedCount],
+      ];
 
   return (
     <div className="px-4 pb-6 pt-5">
       <AppMountReveal ready={!!data}>
         <div className="mx-auto max-w-lg">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">Inbox</p>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">My reviews</h1>
+          <h1 className="mt-1 text-xl font-semibold tracking-tight text-white">
+            {isReviewer ? 'Reviewer queue' : 'My requests'}
+          </h1>
           <p className="mt-1 text-sm leading-relaxed text-white/60">
             {isReviewer ? 'Requests you give and receive' : 'Your review requests'}
           </p>
@@ -214,13 +240,7 @@ export default function RequestsPageClient() {
 
           <div className="mt-6 rounded-2xl border border-white/[0.1] bg-white/[0.03] p-1">
             <div className="flex gap-0.5">
-              {(
-                [
-                  ['active', 'Active', activeCount],
-                  ['completed', 'Done', completedCount],
-                  ['archived', 'Archived', archivedCount],
-                ] as const
-              ).map(([key, label, count]) => {
+              {tabOptions.map(([key, label, count]) => {
                 const on = filter === key;
                 return (
                   <button
@@ -275,13 +295,6 @@ export default function RequestsPageClient() {
                     </Link>
                   ) : null}
                 </div>
-              ) : filter === 'archived' ? (
-                <Link
-                  href="/app/requests?tab=completed"
-                  className="mt-6 inline-block text-sm font-semibold text-primary"
-                >
-                  View completed →
-                </Link>
               ) : null}
             </div>
           ) : (
@@ -340,6 +353,13 @@ export default function RequestsPageClient() {
                           {userIsReviewer
                             ? 'Waiting for the requester to finish payment (48h window).'
                             : 'Finish payment from your email — you have 48 hours.'}
+                        </p>
+                      )}
+                      {userIsReviewer && item.status === 'in_progress' && (
+                        <p className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/70">
+                          {(item.review as { media?: { videoUrl?: string | null } } | null)?.media?.videoUrl
+                            ? 'Draft video uploaded. Finalize and submit when ready.'
+                            : 'Not started yet. Upload your draft or final video to continue.'}
                         </p>
                       )}
                       {item.status === 'completed' && (

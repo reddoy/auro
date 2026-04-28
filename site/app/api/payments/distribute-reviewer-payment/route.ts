@@ -1,6 +1,9 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
+const REVIEWER_SHARE_BPS = 8000;
+const PLATFORM_SHARE_BPS = 2000;
+
 export async function POST(req: Request) {
   try {
     const { requestId } = await req.json();
@@ -266,11 +269,8 @@ export async function POST(req: Request) {
     // SIMPLE MODEL: Customer pays X, Reviewer gets 80%, Auro absorbs Stripe fee
     // Standard fee: 20% for all reviewers
     const totalAmount = request.amount_cents || 0;
-    const auroFee = request.application_fee_cents || 0;
-    
-    // Reviewer receives: total amount minus Auro's platform fee (80% of total)
-    // Auro absorbs Stripe fee from their platform fee
-    const reviewerAmount = totalAmount - auroFee;
+    const reviewerAmount = Math.floor((totalAmount * REVIEWER_SHARE_BPS) / 10000);
+    const auroFee = totalAmount - reviewerAmount;
 
     if (reviewerAmount <= 0) {
       return new Response(JSON.stringify({ 
@@ -418,6 +418,7 @@ export async function POST(req: Request) {
           payment_distributed_at: new Date().toISOString(),
           stripe_transfer_id: transfer.id,
           reviewer_amount_cents: reviewerAmount,
+          application_fee_cents: auroFee,
           payment_distribution_error: null, // Clear any previous errors
           payment_distribution_failed_at: null,
           payment_status: 'paid'

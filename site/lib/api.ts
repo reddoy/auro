@@ -530,6 +530,13 @@ export async function submitRequestReview(params: {
   return mapRequestRow(json.request);
 }
 
+export async function saveRequestReviewDraft(params: {
+  requestId: string;
+  videoUrl: string;
+}): Promise<void> {
+  await authenticatedJsonFetch<{ ok: boolean }>('/api/reviews/save-draft', params);
+}
+
 // Reviewer decisions (server-verified via API routes + service role)
 export async function acceptRequest(id: string): Promise<DbRequestSummary> {
   const json = await authenticatedJsonFetch<{ request: Record<string, unknown> }>('/api/reviews/accept', { requestId: id });

@@ -122,6 +122,7 @@ export default function AppProfilePage() {
   const masked = maskEmail(userEmail);
   const reviewerish = profile?.is_reviewer === 'approved' || profile?.is_reviewer === 'pending';
   const stripeConnected = !!profile?.stripe_connect_account_id?.trim();
+  const reviewerStatus = profile?.is_reviewer ?? null;
 
   if (loading) {
     return <AccountPageSkeleton />;
@@ -184,6 +185,18 @@ export default function AppProfilePage() {
             </section>
           ) : null}
 
+          {!reviewerish ? (
+            <section className="glass mt-4 rounded-2xl border border-white/[0.12] px-4 py-4" aria-label="Reviewer application">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">Become a reviewer</p>
+              <p className="mt-2 text-sm text-white/75">
+                Want to get paid for reviews? Apply once, set your rate, and receive requests in your reviewer queue.
+              </p>
+              <Link href="/reviewers/apply" className="mt-3 inline-flex text-sm font-semibold text-primary">
+                Apply to review →
+              </Link>
+            </section>
+          ) : null}
+
           {reviewerish ? (
             <section
               className="glass mt-4 rounded-2xl border border-white/[0.12] px-4 py-4"
@@ -216,6 +229,42 @@ export default function AppProfilePage() {
                   Open reviewer setup →
                 </Link>
               ) : null}
+              <p className="mt-3 text-xs text-white/50">
+                Reviewer status: <span className="font-medium text-white/80">{reviewerStatus}</span>
+              </p>
+            </section>
+          ) : null}
+
+          {profile?.is_reviewer === 'approved' ? (
+            <section className="glass mt-4 rounded-2xl border border-white/[0.12] px-4 py-4" aria-label="Reviewer earnings">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">Reviewer earnings</p>
+              <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                  <p className="text-white/55">Lifetime earned</p>
+                  <p className="mt-1 font-semibold text-white">
+                    ${(((profile.completed_paid_total_cents || 0) as number) / 100).toFixed(2)}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                  <p className="text-white/55">Pending payout</p>
+                  <p className="mt-1 font-semibold text-white">
+                    ${(((profile.pending_payout_balance_cents || 0) as number) / 100).toFixed(2)}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                  <p className="text-white/55">Awaiting payout</p>
+                  <p className="mt-1 font-semibold text-white">
+                    ${(((profile.awaiting_payout_balance_cents || 0) as number) / 100).toFixed(2)}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3">
+                  <p className="text-white/55">Current rate</p>
+                  <p className="mt-1 font-semibold text-white">${Number(profile.hourly_rate || 0).toFixed(0)}</p>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-white/50">
+                Rate updates only apply to future requests. Existing requests keep the rate they were booked at.
+              </p>
             </section>
           ) : null}
 
@@ -231,18 +280,20 @@ export default function AppProfilePage() {
             )}
 
             <Link
-              href="/waitlist"
+              href="/request"
               className="block w-full rounded-2xl border border-white/[0.14] bg-white/[0.04] py-3.5 text-center text-[15px] font-semibold text-white transition hover:border-white/25 hover:bg-white/[0.07] active:scale-[0.99] motion-reduce:transform-none"
             >
-              Join review waitlist
+              Request a review
             </Link>
 
-            <Link
-              href="/reviewers/apply"
-              className="block w-full rounded-2xl border border-white/[0.14] bg-white/[0.04] py-3.5 text-center text-[15px] font-semibold text-white transition hover:border-white/25 hover:bg-white/[0.07] active:scale-[0.99] motion-reduce:transform-none"
-            >
-              Reviewer application
-            </Link>
+            {!reviewerish ? (
+              <Link
+                href="/reviewers/apply"
+                className="block w-full rounded-2xl border border-white/[0.14] bg-white/[0.04] py-3.5 text-center text-[15px] font-semibold text-white transition hover:border-white/25 hover:bg-white/[0.07] active:scale-[0.99] motion-reduce:transform-none"
+              >
+                Reviewer application
+              </Link>
+            ) : null}
 
             <Link
               href="/auth/sign-in"

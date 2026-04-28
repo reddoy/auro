@@ -11,7 +11,7 @@ export default function RequestButton({ slug, reviewerId }: { slug: string; revi
     try {
       // Redirect to the request flow instead of checking authentication
       // This allows anonymous users to start the process
-      window.location.href = `/waitlist?creatorSlug=${encodeURIComponent(slug)}`;
+      window.location.href = `/request?creatorSlug=${encodeURIComponent(slug)}`;
     } catch (e: any) {
       alert(e?.message || 'Something went wrong');
     } finally {
@@ -74,7 +74,7 @@ export default function RequestButton({ slug, reviewerId }: { slug: string; revi
       ) : (
         <>
           <span style={{ fontSize: '20px' }}>🎯</span>
-          Join Waitlist
+          Request Review
         </>
       )}
     </button>

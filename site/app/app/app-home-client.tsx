@@ -46,7 +46,7 @@ export default function AppHomeClient() {
   useEffect(() => {
     if (!error) return;
     if (error instanceof Error && error.message === 'SIGNED_OUT') {
-      router.replace(`/auth/sign-in?redirect_to=${encodeURIComponent('/waitlist')}`);
+      router.replace(`/auth/sign-in?redirect_to=${encodeURIComponent('/auth/post-sign-in?role_intent=reviewee')}`);
     }
   }, [error, router]);
 
@@ -63,6 +63,15 @@ export default function AppHomeClient() {
   const isReviewer = data?.isReviewer ?? false;
   const avatarUrl = data?.userAvatarDisplayUrl ?? null;
   const needsAttention = data ? computeNeedsAttention(data) : [];
+  const reviewerQueue = useMemo(() => {
+    if (!data || !userId) return { pending: 0, inProgress: 0, completed: 0 };
+    const mine = data.requests.filter((r) => r.influencerId === userId && !r.archived_at);
+    return {
+      pending: mine.filter((r) => r.status === 'paid').length,
+      inProgress: mine.filter((r) => r.status === 'in_progress').length,
+      completed: mine.filter((r) => r.status === 'completed').length,
+    };
+  }, [data, userId]);
 
   const profileHref = username || userId ? `/${username || userId}` : null;
 
@@ -110,7 +119,11 @@ export default function AppHomeClient() {
                 {greeting}
                 {firstName ? `, ${firstName.split(' ')[0]}` : ''}
               </h1>
-              <p className="text-sm text-white/60">Pick up reviews, request feedback, or manage your account.</p>
+              <p className="text-sm text-white/60">
+                {isReviewer
+                  ? 'Accept requests, deliver reviews, and manage your reviewer business.'
+                  : 'Request a review in minutes and track every step.'}
+              </p>
             </div>
             <button
               type="button"
@@ -182,33 +195,45 @@ export default function AppHomeClient() {
             </h2>
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <Link
-                href="/app/requests?tab=active"
+                href={isReviewer ? '/app/requests?tab=pending' : '/app/requests?tab=active'}
                 className="glass flex flex-col rounded-2xl border border-white/[0.1] p-3 transition hover:border-white/[0.18] hover:bg-white/[0.04] active:scale-[0.98] motion-reduce:transform-none sm:p-4"
               >
-                <span className="text-2xl font-semibold tabular-nums text-white sm:text-3xl">{stats.active}</span>
-                <span className="mt-1 text-[11px] font-medium leading-tight text-white/55 sm:text-xs">Active</span>
+                <span className="text-2xl font-semibold tabular-nums text-white sm:text-3xl">
+                  {isReviewer ? reviewerQueue.pending : stats.active}
+                </span>
+                <span className="mt-1 text-[11px] font-medium leading-tight text-white/55 sm:text-xs">
+                  {isReviewer ? 'Pending' : 'Active'}
+                </span>
+              </Link>
+              <Link
+                href={isReviewer ? '/app/requests?tab=in_progress' : '/app/requests?tab=completed'}
+                className="glass flex flex-col rounded-2xl border border-white/[0.1] p-3 transition hover:border-white/[0.18] hover:bg-white/[0.04] active:scale-[0.98] motion-reduce:transform-none sm:p-4"
+              >
+                <span className="text-2xl font-semibold tabular-nums text-white sm:text-3xl">
+                  {isReviewer ? reviewerQueue.inProgress : stats.completed}
+                </span>
+                <span className="mt-1 text-[11px] font-medium leading-tight text-white/55 sm:text-xs">
+                  {isReviewer ? 'In progress' : 'Done'}
+                </span>
               </Link>
               <Link
                 href="/app/requests?tab=completed"
                 className="glass flex flex-col rounded-2xl border border-white/[0.1] p-3 transition hover:border-white/[0.18] hover:bg-white/[0.04] active:scale-[0.98] motion-reduce:transform-none sm:p-4"
               >
-                <span className="text-2xl font-semibold tabular-nums text-white sm:text-3xl">{stats.completed}</span>
-                <span className="mt-1 text-[11px] font-medium leading-tight text-white/55 sm:text-xs">Done</span>
-              </Link>
-              <Link
-                href="/app/requests?tab=archived"
-                className="glass flex flex-col rounded-2xl border border-white/[0.1] p-3 transition hover:border-white/[0.18] hover:bg-white/[0.04] active:scale-[0.98] motion-reduce:transform-none sm:p-4"
-              >
-                <span className="text-2xl font-semibold tabular-nums text-white/70 sm:text-3xl">{stats.archived}</span>
-                <span className="mt-1 text-[11px] font-medium leading-tight text-white/50 sm:text-xs">Archived</span>
+                <span className="text-2xl font-semibold tabular-nums text-white/70 sm:text-3xl">
+                  {isReviewer ? reviewerQueue.completed : stats.archived}
+                </span>
+                <span className="mt-1 text-[11px] font-medium leading-tight text-white/50 sm:text-xs">
+                  {isReviewer ? 'Completed' : 'Archived'}
+                </span>
               </Link>
             </div>
             <Link
-              href="/app/requests?tab=active"
+              href={isReviewer ? '/app/requests?tab=pending' : '/reviewers'}
               className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 text-[15px] font-semibold text-primary-foreground shadow-[0_10px_28px_-6px_hsl(var(--primary)/0.55)] transition hover:bg-primary/92 active:scale-[0.99] motion-reduce:transform-none"
             >
               <ClipboardList className="h-5 w-5 shrink-0 opacity-90" aria-hidden />
-              Open my reviews
+              {isReviewer ? 'Open reviewer queue' : 'Get reviewed'}
               <ArrowRight className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
             </Link>
           </section>
@@ -246,19 +271,21 @@ export default function AppHomeClient() {
                 <ArrowRight className="h-4 w-4 shrink-0 text-white/40" aria-hidden />
               </Link>
 
-              <Link
-                href="/reviewers/apply"
-                className="flex items-center gap-3 rounded-2xl border border-white/[0.12] bg-white/[0.04] px-4 py-3.5 transition hover:border-white/20 hover:bg-white/[0.07]"
-              >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.08] text-white/90">
-                  <UserPlus className="h-5 w-5" aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-semibold text-white">Become a reviewer</span>
-                  <span className="block text-xs text-white/55">Apply and set your rate</span>
-                </span>
-                <ArrowRight className="h-4 w-4 shrink-0 text-white/40" aria-hidden />
-              </Link>
+              {!isReviewer ? (
+                <Link
+                  href="/reviewers/apply"
+                  className="flex items-center gap-3 rounded-2xl border border-white/[0.12] bg-white/[0.04] px-4 py-3.5 transition hover:border-white/20 hover:bg-white/[0.07]"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.08] text-white/90">
+                    <UserPlus className="h-5 w-5" aria-hidden />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold text-white">Become a reviewer</span>
+                    <span className="block text-xs text-white/55">Apply and set your rate</span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-white/40" aria-hidden />
+                </Link>
+              ) : null}
 
               {isReviewer && (
                 <>

@@ -10,7 +10,7 @@ export default function RequestButton({ slug }: { slug: string }) {
     try {
       // Redirect to the request flow instead of calling API directly
       // This allows anonymous users to start the process
-      window.location.href = `/waitlist?creatorSlug=${encodeURIComponent(slug)}`;
+      window.location.href = `/request?creatorSlug=${encodeURIComponent(slug)}`;
     } catch (e: any) {
       alert(e?.message || 'Something went wrong');
     } finally {
@@ -20,7 +20,7 @@ export default function RequestButton({ slug }: { slug: string }) {
 
   return (
     <button onClick={onClick} disabled={loading} style={{ padding: '12px 16px', borderRadius: 8, background: '#A100FF', color: '#fff', fontWeight: 700 }}>
-      {loading ? 'Redirecting…' : 'Join waitlist'}
+      {loading ? 'Redirecting…' : 'Request review'}
     </button>
   );
 }

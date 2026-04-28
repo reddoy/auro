@@ -12,6 +12,7 @@ import {
   acceptRequest,
   denyRequest,
   getRequestById,
+  saveRequestReviewDraft,
   submitRequestReview,
 } from '@/lib/api';
 import { uploadRequestMediaWeb } from '@/lib/request-media-web';
@@ -26,9 +27,9 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [overall, setOverall] = useState(7);
-  const [feedback, setFeedback] = useState('');
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [draftSaving, setDraftSaving] = useState(false);
+  const [draftVideoUrl, setDraftVideoUrl] = useState<string | null>(null);
   const [requesterName, setRequesterName] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
@@ -57,6 +58,8 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
         return;
       }
       setRequest(row);
+      const rowDraftVideo = (row.review as { media?: { videoUrl?: string | null } } | null)?.media?.videoUrl;
+      setDraftVideoUrl(rowDraftVideo || null);
       const name =
         row.requester_name ||
         (row as { requester_username?: string }).requester_username ||
@@ -121,13 +124,13 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
 
   const onSubmitReview = async () => {
     if (!request) return;
-    if (overall < 1 || overall > 10) {
-      showToast('Overall rating must be 1–10');
+    if (!videoFile && !draftVideoUrl) {
+      showToast('Upload a final video before submitting');
       return;
     }
     setBusy(true);
     try {
-      let videoUrl: string | null = null;
+      let videoUrl: string | null = draftVideoUrl;
       if (videoFile) {
         const up = await uploadRequestMediaWeb(videoFile, {});
         videoUrl = up.publicUrl || null;
@@ -135,9 +138,9 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
       const updated = await submitRequestReview({
         requestId: request.id,
         review: {
-          ratings: { overall },
+          ratings: { overall: 8 },
           feedback: {
-            generalFeedback: feedback.trim() || undefined,
+            generalFeedback: undefined,
             strengths: [],
             improvements: [],
           },
@@ -152,6 +155,24 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
       showToast(e instanceof Error ? e.message : 'Submit failed');
     } finally {
       setBusy(false);
+    }
+  };
+
+  const onSaveDraftVideo = async () => {
+    if (!request || !videoFile) return;
+    setDraftSaving(true);
+    try {
+      const up = await uploadRequestMediaWeb(videoFile, {});
+      const videoUrl = up.publicUrl || null;
+      if (!videoUrl) throw new Error('Could not upload draft video');
+      await saveRequestReviewDraft({ requestId: request.id, videoUrl });
+      setDraftVideoUrl(videoUrl);
+      showToast('Draft video saved');
+      await load();
+    } catch (e: unknown) {
+      showToast(e instanceof Error ? e.message : 'Could not save draft');
+    } finally {
+      setDraftSaving(false);
     }
   };
 
@@ -224,30 +245,18 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
 
         {request.status === 'in_progress' && (
           <div className="mt-8 space-y-4">
-            <h2 className="text-lg font-semibold text-white">Submit review</h2>
+            <h2 className="text-lg font-semibold text-white">Record your video review</h2>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/75">
+              <p className="font-medium text-white">Best workflow (recommended)</p>
+              <p className="mt-1 text-white/70">
+                Use TikTok green screen, record your feedback over their photos, download the video, then upload it here.
+              </p>
+              <p className="mt-2 text-white/65">
+                Fallback: save photos to camera roll, screen-record while talking, and verify your microphone is enabled.
+              </p>
+            </div>
             <label className="block text-sm text-white/70">
-              Overall (1–10)
-              <input
-                type="number"
-                min={1}
-                max={10}
-                value={overall}
-                onChange={(e) => setOverall(Number(e.target.value))}
-                className="mt-1 w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-white"
-              />
-            </label>
-            <label className="block text-sm text-white/70">
-              Written feedback (optional)
-              <textarea
-                value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
-                rows={4}
-                className="mt-1 w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-white placeholder:text-white/30"
-                placeholder="What went well, what to improve…"
-              />
-            </label>
-            <label className="block text-sm text-white/70">
-              Video review (optional)
+              Video review
               <input
                 type="file"
                 accept="video/*"
@@ -255,6 +264,19 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
                 className="mt-1 w-full text-sm text-white/80"
               />
             </label>
+            {draftVideoUrl ? (
+              <div className="rounded-xl border border-emerald-400/25 bg-emerald-500/10 p-3 text-xs text-emerald-100">
+                Draft uploaded. You can still replace it before final submit.
+              </div>
+            ) : null}
+            <button
+              type="button"
+              disabled={draftSaving || !videoFile}
+              onClick={onSaveDraftVideo}
+              className="w-full rounded-2xl border border-white/20 py-3 font-semibold text-white disabled:opacity-50"
+            >
+              {draftSaving ? 'Saving draft…' : 'Save draft video'}
+            </button>
             <button
               type="button"
               disabled={busy}

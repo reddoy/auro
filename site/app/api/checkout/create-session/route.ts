@@ -230,10 +230,8 @@ export async function POST(req: Request) {
             ...((reviewPayload?.photos?.datingProfileScreenshots as string[]) || []),
           ];
           const notes = {
-            message: reviewPayload?.message,
             media: reviewPayload?.photos,
-            consent: reviewPayload?.consent,
-            // No longer using selfieUrl - profile picture will be used instead
+            submission_type: 'photos_only',
           };
           const insertPayload: any = {
             user_id: fallbackUserId || null,
@@ -241,8 +239,8 @@ export async function POST(req: Request) {
             photos: allPhotos,
             notes: JSON.stringify(notes),
             status: 'pending',
-            // Persist consent flag explicitly for app logic
-            consent_social: !!(reviewPayload?.consent?.shareOnSocial),
+            // Photo-only review requests default to private content usage.
+            consent_social: false,
           };
           let inserted: any = null;
           let insertError: any = null;
@@ -256,7 +254,7 @@ export async function POST(req: Request) {
           } catch (e: any) {
             insertError = e;
           }
-          if (insertError && String(insertError?.message || '').includes("consent_social")) {
+          if (insertError && String(insertError?.message || '').includes('consent_social')) {
             // Retry without consent_social for older schemas
             try {
               const retryPayload = { ...insertPayload } as any;

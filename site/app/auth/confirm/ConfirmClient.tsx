@@ -9,9 +9,9 @@ const requestLinkStyle = {
   backgroundColor: "#F26955",
 };
 
-function RequestLink({ children }: { children: React.ReactNode }) {
+function RequestLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href="/waitlist" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={requestLinkStyle}>
+    <Link href={href} className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={requestLinkStyle}>
       {children}
     </Link>
   );
@@ -25,6 +25,7 @@ function Inner() {
   const code = params.get("code");
   const type = params.get("type");
   const email = params.get("email");
+  const roleIntent = params.get("role_intent");
   const [hashParams, setHashParams] = useState<{
     code: string | null;
     tokenHash: string | null;
@@ -52,6 +53,12 @@ function Inner() {
   const isEmailChange = useMemo(() => effectiveType === "email_change", [effectiveType]);
   const isReauthentication = useMemo(() => effectiveType === "reauthentication", [effectiveType]);
   const isRecovery = useMemo(() => effectiveType === "recovery", [effectiveType]);
+  const postSignInHref = useMemo(() => {
+    if (roleIntent === 'reviewer' || roleIntent === 'reviewee') {
+      return `/auth/post-sign-in?role_intent=${encodeURIComponent(roleIntent)}`;
+    }
+    return '/auth/post-sign-in';
+  }, [roleIntent]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -107,7 +114,7 @@ function Inner() {
             setStatus("error");
             setMessage(error.message || "Unable to verify your email.");
           } else if (isSignup || isInvite) {
-            router.replace("/auth/thank-you");
+            router.replace(postSignInHref);
             return;
           } else {
             setStatus("success");
@@ -124,7 +131,7 @@ function Inner() {
             setStatus("error");
             setMessage(error.message || "Unable to verify your email.");
           } else if (isSignup || isInvite) {
-            router.replace("/auth/thank-you");
+            router.replace(postSignInHref);
             return;
           } else {
             setStatus("success");
@@ -151,7 +158,7 @@ function Inner() {
           // For signup confirmations, always redirect to thank you page
           // verifyType defaults to "signup" if no type is specified, so this catches all signups
           if (isSignup || isInvite || verifyType === "signup") {
-            router.replace("/auth/thank-you");
+            router.replace(postSignInHref);
             return;
           }
           setStatus("success");
@@ -164,7 +171,7 @@ function Inner() {
       }
     };
     run();
-  }, [effectiveCode, effectiveTokenHash, accessToken, refreshToken, effectiveType, hashParsed, isSignup, isInvite, isMagicLink, isEmailChange, isReauthentication, isRecovery, router]);
+  }, [effectiveCode, effectiveTokenHash, accessToken, refreshToken, effectiveType, hashParsed, isSignup, isInvite, isMagicLink, isEmailChange, isReauthentication, isRecovery, postSignInHref, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#1A0B2E] px-4">
@@ -186,9 +193,9 @@ function Inner() {
                 <>
                   <h1 className="text-white text-2xl font-semibold">Email confirmed! 🎉</h1>
                   <p className="text-white/70 mt-2">{email ? `Verified ${email}.` : "You're all set."} Choose a next step below.</p>
-                  <RequestLink>Request a review</RequestLink>
+                  <RequestLink href={postSignInHref}>Continue to app</RequestLink>
                   <div className="mt-3 grid grid-cols-1 gap-3 w-full">
-                    <Link href="/waitlist" className="block w-full rounded-2xl px-5 py-3 text-center font-semibold" style={{ color: "#EDE8F7", backgroundColor: "#2C1746", border: "1px solid rgba(255,255,255,0.08)" }}>Join review waitlist</Link>
+                    <Link href="/request" className="block w-full rounded-2xl px-5 py-3 text-center font-semibold" style={{ color: "#EDE8F7", backgroundColor: "#2C1746", border: "1px solid rgba(255,255,255,0.08)" }}>Request a review</Link>
                   </div>
                 </>
               )}
@@ -196,28 +203,28 @@ function Inner() {
                 <>
                   <h1 className="text-white text-2xl font-semibold">Welcome to Auro! 🎉</h1>
                   <p className="text-white/70 mt-2">Your invitation has been confirmed. You can now sign up for an account.</p>
-                <RequestLink>Get Started</RequestLink>
+                <RequestLink href={postSignInHref}>Get Started</RequestLink>
                 </>
               )}
               {isMagicLink && (
                 <>
                   <h1 className="text-white text-2xl font-semibold">Signed in successfully! ✅</h1>
                   <p className="text-white/70 mt-2">You&apos;re all set.</p>
-                  <RequestLink>Continue to App</RequestLink>
+                  <RequestLink href={postSignInHref}>Continue to App</RequestLink>
                 </>
               )}
               {isEmailChange && (
                 <>
                   <h1 className="text-white text-2xl font-semibold">Email address updated! ✅</h1>
                   <p className="text-white/70 mt-2">{email ? `Your email has been changed to ${email}.` : "Your email address has been successfully updated."}</p>
-                  <RequestLink>Continue to App</RequestLink>
+                  <RequestLink href={postSignInHref}>Continue to App</RequestLink>
                 </>
               )}
               {isReauthentication && (
                 <>
                   <h1 className="text-white text-2xl font-semibold">Re-authentication successful! ✅</h1>
                   <p className="text-white/70 mt-2">You've successfully verified your identity. You can now proceed with the action.</p>
-                  <RequestLink>Continue to App</RequestLink>
+                  <RequestLink href={postSignInHref}>Continue to App</RequestLink>
                 </>
               )}
             </>
@@ -246,8 +253,8 @@ function Inner() {
             <>
               <h1 className="text-white text-2xl font-semibold">Confirm your email</h1>
               <p className="text-white/70 mt-2">We sent a verification link{email ? ` to ${email}` : ""}. Click it to continue.</p>
-              <Link href="/waitlist" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={requestLinkStyle}>
-                Join review waitlist
+              <Link href="/request" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={requestLinkStyle}>
+                Request a review
               </Link>
             </>
           )}

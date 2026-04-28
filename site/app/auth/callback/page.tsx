@@ -5,12 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 
 function getSafeRedirectPath(raw: string | null): string {
-  const candidate = raw || '/waitlist';
-  if (!candidate.startsWith('/') || candidate.startsWith('//')) return '/waitlist';
-  if (candidate === '/app' || candidate.startsWith('/app/')) return '/waitlist';
-  if ((candidate === '/request' || candidate.startsWith('/request/')) && !candidate.includes('internal=1')) {
-    return '/waitlist';
-  }
+  const candidate = raw || '/auth/post-sign-in';
+  if (!candidate.startsWith('/') || candidate.startsWith('//')) return '/auth/post-sign-in';
   return candidate;
 }
 
@@ -164,11 +160,16 @@ function AuthCallbackContent() {
           
           // Redirect to the intended destination or default page
           const redirectTo = getSafeRedirectPath(searchParams.get('redirect_to'));
+          const roleIntent = searchParams.get('role_intent');
+          const finalRedirect =
+            roleIntent && redirectTo.startsWith('/auth/post-sign-in')
+              ? `${redirectTo}${redirectTo.includes('?') ? '&' : '?'}role_intent=${encodeURIComponent(roleIntent)}`
+              : redirectTo;
           console.log('[AuthCallback] Redirecting to:', redirectTo);
           
           // Give time for session to be properly established
           setTimeout(() => {
-            router.push(redirectTo);
+            router.push(finalRedirect);
           }, 1000);
         } else {
           // No session yet - set up auth state listener to wait for it
@@ -210,8 +211,13 @@ function AuthCallbackContent() {
               }
               
               const redirectTo = getSafeRedirectPath(searchParams.get('redirect_to'));
+              const roleIntent = searchParams.get('role_intent');
+              const finalRedirect =
+                roleIntent && redirectTo.startsWith('/auth/post-sign-in')
+                  ? `${redirectTo}${redirectTo.includes('?') ? '&' : '?'}role_intent=${encodeURIComponent(roleIntent)}`
+                  : redirectTo;
               setTimeout(() => {
-                router.push(redirectTo);
+                router.push(finalRedirect);
               }, 1000);
             }
           });
@@ -224,7 +230,7 @@ function AuthCallbackContent() {
               setStatus('error');
               setMessage('Authentication timed out. Please try again.');
               setTimeout(() => {
-                router.push('/waitlist');
+                router.push('/auth/sign-in');
               }, 3000);
             }
           }, 5000);
@@ -236,7 +242,7 @@ function AuthCallbackContent() {
         
         // Redirect to request page after showing error
         setTimeout(() => {
-          router.push('/waitlist');
+          router.push('/auth/sign-in');
         }, 3000);
       }
     };

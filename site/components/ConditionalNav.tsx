@@ -21,8 +21,7 @@ export default function ConditionalNav() {
   const isOnRequestFlow =
     pathname === '/request' ||
     pathname?.startsWith('/request/') ||
-    pathname === '/waitlist' ||
-    pathname?.startsWith('/waitlist/');
+    false;
 
   return (
     <div
@@ -53,8 +52,8 @@ export default function ConditionalNav() {
         )}
 
         {!isOnRequestFlow && (
-          <Link className="cta-nav cta-nav--get-reviewed" href="/waitlist">
-            Join Waitlist
+          <Link className="cta-nav cta-nav--get-reviewed" href="/request">
+            Get Reviewed
           </Link>
         )}
       </div>

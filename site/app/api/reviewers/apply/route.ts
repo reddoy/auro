@@ -81,7 +81,8 @@ export async function POST(req: Request) {
         const { error: createErr } = await admin.from('profiles').insert({
           id: userId,
           email: userEmail,
-          full_name: userFullName || '',
+          first_name: userFullName?.split(' ')[0] || null,
+          last_name: userFullName?.split(' ').slice(1).join(' ') || null,
           username: userEmail?.split('@')[0] || `user_${userId.slice(0, 8)}`,
         });
         if (createErr) {
@@ -96,11 +97,11 @@ export async function POST(req: Request) {
     // Check if user can complete reviewer signup (prevent duplicates)
     const { data: existingProfile } = await admin
       .from('profiles')
-      .select('reviewer_signup_status, is_reviewer, first_name, last_name, email')
+      .select('is_reviewer, first_name, last_name, email')
       .eq('id', userId)
       .single();
     
-    if (existingProfile?.reviewer_signup_status === 'completed') {
+    if (existingProfile?.is_reviewer === 'pending' || existingProfile?.is_reviewer === 'approved') {
       return new Response(JSON.stringify({ 
         error: 'You have already completed the reviewer application. An account with this email is already associated with our platform.' 
       }), { status: 400 });
@@ -109,11 +110,10 @@ export async function POST(req: Request) {
     // Now update ONLY reviewer-specific fields - don't touch core profile data
     // IMPORTANT: Only update fields that were explicitly provided to avoid overwriting existing data
     const reviewerUpdates: any = {
-      is_reviewer: true, // Always set this - CRITICAL: This makes them a reviewer
-      reviewer_signup_status: 'completed', // Mark as completed when they submit
+      is_reviewer: 'pending',
     };
-    
-    console.log(`[Apply] Setting is_reviewer=true for user ${userId}`);
+
+    console.log(`[Apply] Setting is_reviewer='pending' for user ${userId}`);
     
     // Only update bio if provided (empty string counts as intentional)
     if (typeof bio === 'string') reviewerUpdates.bio = bio;
@@ -194,7 +194,7 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: upErr.message }), { status: 400 });
     }
     
-    console.log(`[Apply] Successfully updated profile for user ${userId} with is_reviewer=true`);
+    console.log(`[Apply] Successfully updated profile for user ${userId} with is_reviewer='pending'`);
 
     // Store socials if provided
     if (Array.isArray(socials) && socials.length) {

@@ -174,7 +174,9 @@ export default function ReviewRequestClient({ id }: { id: string }) {
         )}
 
         {request.status === 'in_progress' && (
-          <p className="mt-8 text-white/70">Your reviewer is working on this request.</p>
+          <p className="mt-8 text-white/70">
+            Your reviewer is working on this request. Once they upload and submit the final video, it will appear here.
+          </p>
         )}
 
         {request.status === 'completed' && review && (

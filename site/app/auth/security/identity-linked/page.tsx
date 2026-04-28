@@ -14,7 +14,7 @@ export default function IdentityLinkedPage() {
           <p className="text-white/70 mb-6">
             A new identity has been linked to your account. If you didn't make this change, please contact support immediately.
           </p>
-          <Link href="/waitlist" className="inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "#F26955" }}>
+          <Link href="/app" className="inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={{ backgroundImage: "#F26955" }}>
             Continue to App
           </Link>
         </div>
