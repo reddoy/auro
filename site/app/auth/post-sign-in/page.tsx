@@ -16,7 +16,7 @@ export default function PostSignInPage() {
 
     const run = async () => {
       if (!supabase?.auth) {
-        if (!cancelled) setState('reviewee');
+        if (!cancelled) router.replace('/app');
         return;
       }
 
@@ -34,14 +34,14 @@ export default function PostSignInPage() {
           headers: { authorization: `Bearer ${session.access_token}` },
         });
         if (!res.ok) {
-          if (!cancelled) setState('reviewee');
+          if (!cancelled) router.replace('/app');
           return;
         }
         const data = await res.json();
         const reviewerApproval = String(data?.reviewerApproval || '').toLowerCase();
 
         if (reviewerApproval === 'approved') {
-          if (!cancelled) setState('reviewer_approved');
+          router.replace('/app');
           return;
         }
         if (reviewerApproval === 'pending') {
@@ -53,9 +53,9 @@ export default function PostSignInPage() {
           return;
         }
 
-        if (!cancelled) setState('reviewee');
+        if (!cancelled) router.replace('/app');
       } catch {
-        if (!cancelled) setState('reviewee');
+        if (!cancelled) router.replace('/app');
       }
     };
 
@@ -84,14 +84,14 @@ export default function PostSignInPage() {
 
         {state === 'reviewer_approved' ? (
           <section className={cardClass}>
-            <h1 className="text-2xl font-semibold">You have been accepted as a reviewer</h1>
+            <h1 className="text-2xl font-semibold">Welcome back, reviewer</h1>
             <p className="mt-3 text-white/75">
-              We are almost launched. I will notify you as soon as we go live. Thank you for signing
-              up, and congrats on becoming a reviewer. We are happy to have you in the community.
+              You&apos;re approved and ready to go. Head to your dashboard to manage requests, copy
+              your profile link, and get started.
             </p>
             <div className="mt-6 space-y-3">
-              <Link href="/" className={primaryButtonClass} style={{ backgroundColor: '#F26955' }}>
-                Back to home
+              <Link href="/app" className={primaryButtonClass} style={{ backgroundColor: '#F26955' }}>
+                Go to my dashboard
               </Link>
             </div>
           </section>
@@ -131,23 +131,14 @@ export default function PostSignInPage() {
         {state === 'reviewee' ? (
           <section className={cardClass}>
             <div className="flex flex-col items-center">
-              <img
-                src="/rohan%20headshot%20backyard-min.jpg"
-                alt="RJ, founder of Auro"
-                width={88}
-                height={88}
-                className="mb-5 h-[88px] w-[88px] rounded-full object-cover ring-2 ring-white/10"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/rohan-headshot.jpg';
-                }}
-              />
-              <h1 className="text-2xl font-semibold">You are on the list</h1>
+              <h1 className="text-2xl font-semibold">You&apos;re in</h1>
               <p className="mt-3 text-white/75">
-                Thanks for signing in. I will notify you once reviewers are open for business.
+                Your account is ready. Browse reviewers, submit a request, and get honest feedback
+                on your dating profile.
               </p>
               <div className="mt-6 w-full space-y-3">
-                <Link href="/" className={primaryButtonClass} style={{ backgroundColor: '#F26955' }}>
-                  Back to home
+                <Link href="/app" className={primaryButtonClass} style={{ backgroundColor: '#F26955' }}>
+                  Go to my dashboard
                 </Link>
                 <Link href="/reviewers/apply" className={secondaryButtonClass}>
                   Interested in becoming a reviewer? Apply now

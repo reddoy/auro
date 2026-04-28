@@ -219,15 +219,15 @@ export default function AppHomeClient() {
             </h2>
             <div className="space-y-2">
               <Link
-                href="/waitlist"
+                href="/reviewers"
                 className="flex items-center gap-3 rounded-2xl border border-white/[0.12] bg-white/[0.04] px-4 py-3.5 transition hover:border-white/20 hover:bg-white/[0.07]"
               >
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
                   <Sparkles className="h-5 w-5" aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block font-semibold text-white">Join review waitlist</span>
-                  <span className="block text-xs text-white/55">Get notified when new requests open</span>
+                  <span className="block font-semibold text-white">Request a review</span>
+                  <span className="block text-xs text-white/55">Browse reviewers and submit your profile</span>
                 </span>
                 <ArrowRight className="h-4 w-4 shrink-0 text-white/40" aria-hidden />
               </Link>

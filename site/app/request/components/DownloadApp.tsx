@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 
 type Props = {
   requestId?: string;
@@ -8,6 +9,8 @@ type Props = {
 };
 
 export default function DownloadApp({ requestId, onBack }: Props) {
+  const router = useRouter();
+
   const handleEmailReminder = () => {
     const subject = encodeURIComponent('Auro Web Reminder');
     const body = encodeURIComponent(`Hi!
@@ -89,12 +92,12 @@ The Auro Team`);
 
           <div className="download-options">
             <button
-              onClick={() => window.open('/app', '_blank')}
+              onClick={() => router.push('/app/requests?tab=active')}
               className="download-button app-store"
             >
               <div className="download-text">
                 <span className="download-label">OPEN</span>
-                <span className="download-store">Auro Web App</span>
+                <span className="download-store">View my request</span>
               </div>
             </button>
           </div>
@@ -123,11 +126,8 @@ The Auro Team`);
       </div>
 
       <div className="step-actions">
-        <button type="button" onClick={() => window.location.href = '/'} className="btn-secondary">
-          Return to Home
-        </button>
-        <button type="button" onClick={onBack} className="btn-outline">
-          Back to Payment
+        <button type="button" onClick={() => router.push('/app/requests?tab=active')} className="btn-secondary">
+          Open my dashboard
         </button>
       </div>
 

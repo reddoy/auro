@@ -9,9 +9,7 @@ export default function RequestButton({ slug, reviewerId }: { slug: string; revi
     if (loading) return;
     setLoading(true);
     try {
-      // Redirect to the request flow instead of checking authentication
-      // This allows anonymous users to start the process
-      window.location.href = `/waitlist?creatorSlug=${encodeURIComponent(slug)}`;
+      window.location.href = `/request?creatorSlug=${encodeURIComponent(slug)}`;
     } catch (e: any) {
       alert(e?.message || 'Something went wrong');
     } finally {
@@ -54,7 +52,7 @@ export default function RequestButton({ slug, reviewerId }: { slug: string; revi
         }
       }}
     >
-      {loading ? '✨ Loading...' : '🎯 Join Waitlist'}
+      {loading ? 'Loading...' : 'Request a review'}
     </button>
   );
 }

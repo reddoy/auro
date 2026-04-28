@@ -1,58 +1,49 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function CheckoutSuccessPage() {
+  const router = useRouter();
   const [message, setMessage] = useState('');
   const [email, setEmail] = useState('');
   const [resendStatus, setResendStatus] = useState('');
+  const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
     try {
-      console.log('🎉 [SUCCESS] Payment success page loaded');
-      
       const url = new URL(window.location.href);
       const csId = url.searchParams.get('rid');
       
-      console.log('📋 [SUCCESS] URL params:', {
-        rid: csId,
-        fullUrl: window.location.href
-      });
-      
       if (csId) {
         setMessage('Payment confirmed. Your review request is being prepared.');
-        console.log('✅ [SUCCESS] Payment confirmed for session:', csId);
         
-        // Idempotent server-side confirmation in case webhook hasn't run yet
-        console.log('🔄 [SUCCESS] Calling checkout confirm API...');
         fetch('/api/checkout/confirm', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId: csId }),
-        })
-        .then(response => {
-          console.log('📡 [SUCCESS] Confirm API response status:', response.status);
-          return response.json();
-        })
-        .then(data => {
-          console.log('✅ [SUCCESS] Confirm API response:', data);
-        })
-        .catch(error => {
-          console.error('❌ [SUCCESS] Confirm API error:', error);
-        });
+        }).catch(() => {});
       } else {
         setMessage('Payment confirmed.');
-        console.log('⚠️ [SUCCESS] No session ID found in URL');
       }
       
       const storedEmail = localStorage.getItem('auro_signup_email') || '';
-      if (storedEmail) {
-        setEmail(storedEmail);
-        console.log('📧 [SUCCESS] Found stored email:', storedEmail);
-      }
-    } catch (error) {
-      console.error('❌ [SUCCESS] Error in success page:', error);
-    }
-  }, []);
+      if (storedEmail) setEmail(storedEmail);
+    } catch {}
+
+    // Auto-redirect to app/requests after 5 seconds
+    const timer = setInterval(() => {
+      setCountdown((c) => {
+        if (c <= 1) {
+          clearInterval(timer);
+          router.replace('/app/requests?tab=active');
+          return 0;
+        }
+        return c - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [router]);
 
   const handleResendVerification = async () => {
     setResendStatus('Sending...');
@@ -94,15 +85,18 @@ export default function CheckoutSuccessPage() {
           
           <div className="download-buttons">
             <button
-              onClick={() => window.open('/app', '_blank')}
+              onClick={() => router.push('/app/requests?tab=active')}
               className="download-btn web-btn"
             >
               <div className="btn-text">
                 <span className="btn-label">OPEN</span>
-                <span className="btn-name">Auro Web App</span>
+                <span className="btn-name">View my request</span>
               </div>
             </button>
           </div>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', marginTop: '12px' }}>
+            Redirecting automatically in {countdown}s…
+          </p>
         </div>
 
         {/* Escrow Protection Card */}

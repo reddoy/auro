@@ -15,7 +15,6 @@ function buildCorsHeaders(req: NextRequest): Headers {
 
 export function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname || '';
-  const isInternalRequestFlow = req.nextUrl.searchParams.get('internal') === '1';
 
   // Handle redirects from old /reviewers/[slug] URLs to new /[username] URLs
   if (
@@ -29,24 +28,6 @@ export function middleware(req: NextRequest) {
     const url = req.nextUrl.clone();
     url.pathname = `/${slug}`;
     return NextResponse.redirect(url, 301);
-  }
-
-  // Pause consumer app access while issues are being fixed.
-  // Keep reviewer onboarding routes available.
-  if (pathname === '/app' || pathname.startsWith('/app/')) {
-    const url = req.nextUrl.clone();
-    url.pathname = '/waitlist';
-    url.search = '';
-    url.searchParams.set('from', 'app');
-    return NextResponse.redirect(url, 307);
-  }
-
-  // Keep the old request flow reachable only through explicit internal links.
-  if ((pathname === '/request' || pathname.startsWith('/request/')) && !isInternalRequestFlow) {
-    const url = req.nextUrl.clone();
-    url.pathname = '/waitlist';
-    url.search = '';
-    return NextResponse.redirect(url, 307);
   }
 
   // Legacy request URLs should now route to waitlist while preserving reviewer slug.
