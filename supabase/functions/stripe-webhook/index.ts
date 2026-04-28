@@ -206,6 +206,13 @@ async function handleStripeEvent(event: Stripe.Event) {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  if (Deno.env.get("ENABLE_SUPABASE_STRIPE_WEBHOOK") !== "true") {
+    return json({
+      received: true,
+      skipped: true,
+      reason: "Supabase webhook disabled; Next.js /api/stripe/webhook is canonical",
+    });
+  }
 
   if (!supabaseAdmin) {
     console.error("[stripe-webhook] Missing Supabase configuration");
