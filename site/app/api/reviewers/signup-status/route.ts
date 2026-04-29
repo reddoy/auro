@@ -44,7 +44,13 @@ export async function GET(req: Request) {
 
     const reviewerApproval = profile.is_reviewer ?? null;
     const signupStatus =
-      reviewerApproval === 'approved' || reviewerApproval === 'pending' ? 'completed' : 'not_started';
+      reviewerApproval === 'approved'
+        ? 'completed'
+        : reviewerApproval === 'pending'
+          ? 'pending'
+          : reviewerApproval === 'rejected' || reviewerApproval === 'denied'
+            ? 'rejected'
+            : 'not_started';
     const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ');
 
     return new Response(
@@ -103,7 +109,9 @@ export async function POST(req: Request) {
     }
 
     // Legacy endpoint: map status updates to canonical reviewer state.
-    const targetState = status === 'completed' ? 'pending' : null;
+    const normalizedStatus = String(status || '').toLowerCase();
+    const targetState =
+      normalizedStatus === 'completed' || normalizedStatus === 'pending' ? 'pending' : null;
     const { error: updateError } = await admin.from('profiles').update({ is_reviewer: targetState }).eq('id', userId);
 
     if (updateError) {

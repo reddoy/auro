@@ -65,7 +65,7 @@ function PostSignInContent() {
           return;
         }
         if (roleIntent === 'reviewee') {
-          router.replace('/request');
+          if (!cancelled) setState('reviewee');
           return;
         }
 
@@ -77,7 +77,7 @@ function PostSignInContent() {
           return;
         }
         if (roleIntent === 'reviewee') {
-          router.replace('/request');
+          if (!cancelled) setState('reviewee');
           return;
         }
         if (!cancelled) router.replace('/app');
@@ -126,12 +126,18 @@ function PostSignInContent() {
           <section className={cardClass}>
             <h1 className="text-2xl font-semibold">Your reviewer application is still under review</h1>
             <p className="mt-3 text-white/75">
-              Thank you for your patience. We are still reviewing your application and we will email
-              you as soon as a decision is made.
+              Thank you for applying. We are still reviewing your application and we will email you
+              as soon as a decision is made. You can still request a review while you wait.
             </p>
             <div className="mt-6 space-y-3">
-              <Link href="/" className={primaryButtonClass} style={{ backgroundColor: '#F26955' }}>
-                Back to home
+              <Link href="/app" className={primaryButtonClass} style={{ backgroundColor: '#F26955' }}>
+                Go to app home
+              </Link>
+              <Link href="/request" className={secondaryButtonClass}>
+                Request a review
+              </Link>
+              <Link href="/reviewers/apply" className={secondaryButtonClass}>
+                Update reviewer application
               </Link>
             </div>
           </section>

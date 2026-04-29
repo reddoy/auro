@@ -15,6 +15,7 @@ export async function POST(req: Request) {
       tiktokHandle, 
       phone, 
       marketingConsent, 
+      reviewerAcknowledgments,
       userId: userIdFromBody,
       email,
       fullName,
@@ -249,10 +250,18 @@ export async function POST(req: Request) {
     }
     
     // Store contact/marketing consent in preferences JSON
-    reviewerUpdates.preferences = { 
-      marketing_consent: !!marketingConsent, 
-      phone: phone || null 
+    const nextPreferences: Record<string, unknown> = {
+      marketing_consent: !!marketingConsent,
+      phone: phone || null,
     };
+    if (
+      reviewerAcknowledgments &&
+      typeof reviewerAcknowledgments === 'object' &&
+      !Array.isArray(reviewerAcknowledgments)
+    ) {
+      nextPreferences.reviewer_acknowledgments = reviewerAcknowledgments;
+    }
+    reviewerUpdates.preferences = nextPreferences;
 
     const { error: upErr } = await admin.from('profiles').update(reviewerUpdates).eq('id', userId);
     if (upErr) {

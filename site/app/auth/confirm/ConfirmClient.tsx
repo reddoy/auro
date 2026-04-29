@@ -53,6 +53,12 @@ function Inner() {
   const isEmailChange = useMemo(() => effectiveType === "email_change", [effectiveType]);
   const isReauthentication = useMemo(() => effectiveType === "reauthentication", [effectiveType]);
   const isRecovery = useMemo(() => effectiveType === "recovery", [effectiveType]);
+  const postConfirmHref = useMemo(() => {
+    if (roleIntent === 'reviewer' || roleIntent === 'reviewee') {
+      return `/auth/post-confirm?role_intent=${encodeURIComponent(roleIntent)}`;
+    }
+    return '/auth/post-confirm';
+  }, [roleIntent]);
   const postSignInHref = useMemo(() => {
     if (roleIntent === 'reviewer' || roleIntent === 'reviewee') {
       return `/auth/post-sign-in?role_intent=${encodeURIComponent(roleIntent)}`;
@@ -114,7 +120,7 @@ function Inner() {
             setStatus("error");
             setMessage(error.message || "Unable to verify your email.");
           } else if (isSignup || isInvite) {
-            router.replace(postSignInHref);
+            router.replace(postConfirmHref);
             return;
           } else {
             setStatus("success");
@@ -131,7 +137,7 @@ function Inner() {
             setStatus("error");
             setMessage(error.message || "Unable to verify your email.");
           } else if (isSignup || isInvite) {
-            router.replace(postSignInHref);
+            router.replace(postConfirmHref);
             return;
           } else {
             setStatus("success");
@@ -158,7 +164,7 @@ function Inner() {
           // For signup confirmations, always redirect to thank you page
           // verifyType defaults to "signup" if no type is specified, so this catches all signups
           if (isSignup || isInvite || verifyType === "signup") {
-            router.replace(postSignInHref);
+            router.replace(postConfirmHref);
             return;
           }
           setStatus("success");
@@ -171,7 +177,7 @@ function Inner() {
       }
     };
     run();
-  }, [effectiveCode, effectiveTokenHash, accessToken, refreshToken, effectiveType, hashParsed, isSignup, isInvite, isMagicLink, isEmailChange, isReauthentication, isRecovery, postSignInHref, router]);
+  }, [effectiveCode, effectiveTokenHash, accessToken, refreshToken, effectiveType, hashParsed, isSignup, isInvite, isMagicLink, isEmailChange, isReauthentication, isRecovery, postConfirmHref, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#1A0B2E] px-4">
