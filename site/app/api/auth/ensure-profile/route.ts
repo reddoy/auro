@@ -37,9 +37,16 @@ async function buildUniqueUsername(admin: any, rawCandidate: string): Promise<st
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { userId, email, fullName, avatarUrl } = body || {};
+    const { userId, email, fullName, firstName, lastName, avatarUrl } = body || {};
     
-    console.log('[ensure-profile] Called with:', { userId, email, fullName, avatarUrl: !!avatarUrl });
+    console.log('[ensure-profile] Called with:', {
+      userId,
+      email,
+      fullName,
+      firstName,
+      lastName,
+      avatarUrl: !!avatarUrl,
+    });
     
     if (!userId) {
       console.log('[ensure-profile] ERROR: Missing userId');
@@ -58,9 +65,11 @@ export async function POST(req: Request) {
     const updates: any = { id: userId };
     // Add columns that exist in the profiles table
     if (email) updates.email = email;
-    const { firstName, lastName } = splitName(fullName);
-    if (firstName) updates.first_name = firstName;
-    if (lastName) updates.last_name = lastName;
+    const split = splitName(fullName);
+    const normalizedFirstName = typeof firstName === 'string' ? firstName.trim() : '';
+    const normalizedLastName = typeof lastName === 'string' ? lastName.trim() : '';
+    if (normalizedFirstName || split.firstName) updates.first_name = normalizedFirstName || split.firstName;
+    if (normalizedLastName || split.lastName) updates.last_name = normalizedLastName || split.lastName;
     if (avatarUrl) updates.avatar_url = avatarUrl;
     // Note: no updated_at column, but created_at exists and is auto-managed
 

@@ -37,7 +37,8 @@ export default function AuthStep({
   const [isSignUp, setIsSignUp] = useState(() => initialAuthTab !== 'signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
@@ -66,7 +67,11 @@ export default function AuthStep({
   }, [isAuthenticated, supabase]);
 
   const handleSignUp = async () => {
-    if (!email || !password || !fullName) {
+    const trimmedFirstName = firstName.trim();
+    const trimmedLastName = lastName.trim();
+    const fullName = [trimmedFirstName, trimmedLastName].filter(Boolean).join(' ');
+
+    if (!email || !password || !trimmedFirstName || !trimmedLastName) {
       setError('Please fill in all fields');
       return;
     }
@@ -105,6 +110,8 @@ export default function AuthStep({
         password,
         options: {
           data: {
+            first_name: trimmedFirstName,
+            last_name: trimmedLastName,
             full_name: fullName,
           },
           emailRedirectTo: redirectTo,
@@ -160,7 +167,13 @@ export default function AuthStep({
           await fetch('/api/auth/ensure-profile', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ userId: data.user.id, email, fullName })
+            body: JSON.stringify({
+              userId: data.user.id,
+              email,
+              fullName,
+              firstName: trimmedFirstName,
+              lastName: trimmedLastName,
+            })
           });
         } catch (err: any) {
           console.error('[AuthStep] ensure-profile error:', err?.message);
@@ -171,7 +184,16 @@ export default function AuthStep({
           try {
             await supabase
               .from('profiles')
-              .upsert({ id: data.user.id, full_name: fullName, email }, { onConflict: 'id' });
+              .upsert(
+                {
+                  id: data.user.id,
+                  first_name: trimmedFirstName,
+                  last_name: trimmedLastName,
+                  full_name: fullName,
+                  email,
+                },
+                { onConflict: 'id' }
+              );
           } catch {}
           onNext();
         } else {
@@ -450,7 +472,8 @@ export default function AuthStep({
                 setIsSignUp(false);
                 setEmail('');
                 setPassword('');
-                setFullName('');
+                setFirstName('');
+                setLastName('');
               } catch (signOutError: any) {
                 setError(signOutError?.message || 'Unable to switch accounts. Please try again.');
               } finally {
@@ -546,23 +569,47 @@ export default function AuthStep({
               
               {isSignUp && (
                 <div className="form-field">
-                  <label htmlFor="fullName">Full Name</label>
+                  <label htmlFor="firstName">First Name</label>
                   <input
-                    id="fullName"
+                    id="firstName"
                     type="text"
-                    value={fullName}
+                    value={firstName}
                     onChange={(e) => {
-                      setFullName(e.target.value);
+                      setFirstName(e.target.value);
                       if (error) setError('');
                     }}
-                    placeholder="Enter your full name"
+                    placeholder="Enter your first name"
                     required
-                    aria-describedby={error ? 'fullName-error' : undefined}
-                    aria-invalid={!!error && !fullName}
+                    aria-describedby={error ? 'firstName-error' : undefined}
+                    aria-invalid={!!error && !firstName.trim()}
                   />
-                  {error && !fullName && (
-                    <span id="fullName-error" className="field-error" role="alert">
-                      Full name is required
+                  {error && !firstName.trim() && (
+                    <span id="firstName-error" className="field-error" role="alert">
+                      First name is required
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {isSignUp && (
+                <div className="form-field">
+                  <label htmlFor="lastName">Last Name</label>
+                  <input
+                    id="lastName"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => {
+                      setLastName(e.target.value);
+                      if (error) setError('');
+                    }}
+                    placeholder="Enter your last name"
+                    required
+                    aria-describedby={error ? 'lastName-error' : undefined}
+                    aria-invalid={!!error && !lastName.trim()}
+                  />
+                  {error && !lastName.trim() && (
+                    <span id="lastName-error" className="field-error" role="alert">
+                      Last name is required
                     </span>
                   )}
                 </div>
