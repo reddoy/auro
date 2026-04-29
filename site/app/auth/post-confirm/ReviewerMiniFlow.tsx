@@ -34,6 +34,8 @@ export default function ReviewerMiniFlow({ returnHref }: Props) {
     () => [firstName.trim(), lastName.trim()].filter(Boolean).join(' '),
     [firstName, lastName]
   );
+  const primaryButtonClass = 'auth-flow-btn auth-flow-btn-primary w-full';
+  const secondaryButtonClass = 'auth-flow-btn auth-flow-btn-secondary w-full';
 
   useEffect(() => {
     const loadUser = async () => {
@@ -157,11 +159,7 @@ export default function ReviewerMiniFlow({ returnHref }: Props) {
             />
           </div>
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => router.push(returnHref)}
-              className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-3 font-semibold text-white"
-            >
+            <button type="button" onClick={() => router.push(returnHref)} className={secondaryButtonClass}>
               Skip for now
             </button>
             <button
@@ -174,7 +172,7 @@ export default function ReviewerMiniFlow({ returnHref }: Props) {
                 setError('');
                 setStep('rate');
               }}
-              className="w-full rounded-xl bg-[#F26955] px-4 py-3 font-semibold text-white"
+              className={primaryButtonClass}
             >
               Continue
             </button>
@@ -191,11 +189,7 @@ export default function ReviewerMiniFlow({ returnHref }: Props) {
           {error ? <p className="rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-200">{error}</p> : null}
           <PriceTierSelector value={hourlyRate} onChange={setHourlyRate} />
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => setStep('profile')}
-              className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-3 font-semibold text-white"
-            >
+            <button type="button" onClick={() => setStep('profile')} className={secondaryButtonClass}>
               Back
             </button>
             <button
@@ -208,7 +202,7 @@ export default function ReviewerMiniFlow({ returnHref }: Props) {
                 setError('');
                 setStep('photo');
               }}
-              className="w-full rounded-xl bg-[#F26955] px-4 py-3 font-semibold text-white"
+              className={primaryButtonClass}
             >
               Continue
             </button>
@@ -238,11 +232,7 @@ export default function ReviewerMiniFlow({ returnHref }: Props) {
             size={132}
           />
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => setStep('rate')}
-              className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-3 font-semibold text-white"
-            >
+            <button type="button" onClick={() => setStep('rate')} className={secondaryButtonClass}>
               Back
             </button>
             <button
@@ -255,7 +245,7 @@ export default function ReviewerMiniFlow({ returnHref }: Props) {
                 setError('');
                 setStep('acknowledgments');
               }}
-              className="w-full rounded-xl bg-[#F26955] px-4 py-3 font-semibold text-white"
+              className={primaryButtonClass}
             >
               Continue
             </button>
@@ -300,18 +290,14 @@ export default function ReviewerMiniFlow({ returnHref }: Props) {
             <span>I can respond reliably and keep my reviewer profile information accurate.</span>
           </label>
           <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => setStep('photo')}
-              className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-3 font-semibold text-white"
-            >
+            <button type="button" onClick={() => setStep('photo')} className={secondaryButtonClass}>
               Back
             </button>
             <button
               type="button"
               disabled={loading}
               onClick={submitReviewerApplication}
-              className="w-full rounded-xl bg-[#F26955] px-4 py-3 font-semibold text-white disabled:opacity-60"
+              className={`${primaryButtonClass} disabled:opacity-60`}
             >
               {loading ? 'Submitting...' : 'Submit Application'}
             </button>
@@ -322,14 +308,14 @@ export default function ReviewerMiniFlow({ returnHref }: Props) {
       {step === 'submitted' && (
         <div className="space-y-5 text-center">
           <h2 className="text-2xl font-semibold">Application submitted</h2>
-          <p className="text-white/75">
-            Hey, I&apos;m RJ. I personally review every application to keep Auro&apos;s reviewer
-            community high quality and trusted. We&apos;ll email you as soon as your application is approved or denied.
+          <p className="text-base text-white/72">
+            Thanks for completing your setup. Every reviewer application is reviewed carefully to keep
+            Auro&apos;s community high quality and trusted. We&apos;ll email you as soon as your application is approved or denied.
           </p>
           <button
             type="button"
             onClick={() => router.push(returnHref)}
-            className="w-full rounded-xl bg-[#F26955] px-4 py-3 font-semibold text-white"
+            className={primaryButtonClass}
           >
             Continue to account status
           </button>

@@ -93,9 +93,9 @@ function PostSignInContent() {
   const cardClass =
     'w-full max-w-lg rounded-2xl border border-white/10 bg-[#24123B] p-8 text-center shadow-[0_12px_32px_rgba(0,0,0,0.3)]';
   const primaryButtonClass =
-    'inline-flex w-full items-center justify-center rounded-2xl px-5 py-3 font-semibold text-white';
+    'auth-flow-btn auth-flow-btn-primary w-full';
   const secondaryButtonClass =
-    'inline-flex w-full items-center justify-center rounded-2xl border border-white/20 bg-white/[0.04] px-5 py-3 font-semibold text-white';
+    'auth-flow-btn auth-flow-btn-secondary w-full';
 
   return (
     <div className="min-h-screen bg-[#1A0B2E] px-4 py-8 text-white">
@@ -110,12 +110,12 @@ function PostSignInContent() {
         {state === 'reviewer_approved' ? (
           <section className={cardClass}>
             <h1 className="text-2xl font-semibold">Welcome back, reviewer</h1>
-            <p className="mt-3 text-white/75">
+            <p className="mt-3 text-base text-white/72">
               You&apos;re approved and ready to go. Head to your dashboard to manage requests, copy
               your profile link, and get started.
             </p>
             <div className="mt-6 space-y-3">
-              <Link href="/app" className={primaryButtonClass} style={{ backgroundColor: '#F26955' }}>
+              <Link href="/app" className={primaryButtonClass}>
                 Go to my dashboard
               </Link>
             </div>
@@ -125,12 +125,12 @@ function PostSignInContent() {
         {state === 'reviewer_pending' ? (
           <section className={cardClass}>
             <h1 className="text-2xl font-semibold">Your reviewer application is still under review</h1>
-            <p className="mt-3 text-white/75">
+            <p className="mt-3 text-base text-white/72">
               Thank you for applying. We are still reviewing your application and we will email you
               as soon as a decision is made. You can still request a review while you wait.
             </p>
             <div className="mt-6 space-y-3">
-              <Link href="/app" className={primaryButtonClass} style={{ backgroundColor: '#F26955' }}>
+              <Link href="/app" className={primaryButtonClass}>
                 Go to app home
               </Link>
               <Link href="/request" className={secondaryButtonClass}>
@@ -146,13 +146,13 @@ function PostSignInContent() {
         {state === 'reviewer_rejected' ? (
           <section className={cardClass}>
             <h1 className="text-2xl font-semibold">Application update</h1>
-            <p className="mt-3 text-white/75">
+            <p className="mt-3 text-base text-white/72">
               At this time, we are not able to move forward with your reviewer application. This
               decision is based on current fit and platform needs, and does not prevent you from
               applying again in the future.
             </p>
             <div className="mt-6 space-y-3">
-              <Link href="/" className={primaryButtonClass} style={{ backgroundColor: '#F26955' }}>
+              <Link href="/" className={primaryButtonClass}>
                 Back to home
               </Link>
             </div>
@@ -163,12 +163,12 @@ function PostSignInContent() {
           <section className={cardClass}>
             <div className="flex flex-col items-center">
               <h1 className="text-2xl font-semibold">You&apos;re in</h1>
-              <p className="mt-3 text-white/75">
+              <p className="mt-3 text-base text-white/72">
                 Your account is ready. Browse reviewers, submit a request, and get honest feedback
                 on your dating profile.
               </p>
               <div className="mt-6 w-full space-y-3">
-                <Link href="/app" className={primaryButtonClass} style={{ backgroundColor: '#F26955' }}>
+                <Link href="/app" className={primaryButtonClass}>
                   Go to my dashboard
                 </Link>
                 <Link href="/reviewers/apply" className={secondaryButtonClass}>

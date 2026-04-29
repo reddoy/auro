@@ -9,6 +9,23 @@ import { supabase } from '@/lib/supabase';
 
 type Screen = 'loading' | 'reviewee_thanks' | 'reviewer_thanks' | 'choose_role' | 'reviewer_flow';
 
+const postConfirmCopy = {
+  founderNoteLabel: 'Founder note',
+  founderThankYouTitle: 'Thanks for confirming your email',
+  founderThankYouBody:
+    "Thanks for signing up for Auro. We're building a high-trust community with clear, honest feedback, and your next choice helps us tailor the right path.",
+  chooserQuestion:
+    'Quick question so we can set up your account properly: do you want to get reviewed, or do you want to become a reviewer?',
+  reviewee: {
+    title: 'You are all set',
+    body: 'Thanks for signing up. Your account is ready, and you can submit your first review request whenever you want.',
+  },
+  reviewer: {
+    title: 'Thanks for signing up to be a reviewer',
+    body: 'Great to have you here. Next, set your rate, upload your profile photo, and confirm reviewer expectations.',
+  },
+};
+
 function PostConfirmContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -75,9 +92,10 @@ function PostConfirmContent() {
   const cardClass =
     'w-full max-w-2xl rounded-2xl border border-white/10 bg-[#24123B] p-8 text-white shadow-[0_12px_32px_rgba(0,0,0,0.3)]';
   const primaryButtonClass =
-    'inline-flex w-full items-center justify-center rounded-2xl px-5 py-3 font-semibold text-white';
+    'auth-flow-btn auth-flow-btn-primary w-full';
   const secondaryButtonClass =
-    'inline-flex w-full items-center justify-center rounded-2xl border border-white/20 bg-white/[0.04] px-5 py-3 font-semibold text-white';
+    'auth-flow-btn auth-flow-btn-secondary w-full';
+  const tertiaryButtonClass = 'auth-flow-btn auth-flow-btn-tertiary w-full';
 
   return (
     <div className="min-h-screen bg-[#1A0B2E] px-4 py-8 text-white">
@@ -91,13 +109,10 @@ function PostConfirmContent() {
 
         {screen === 'reviewee_thanks' ? (
           <section className={cardClass}>
-            <h1 className="text-2xl font-semibold">Thanks for confirming your email</h1>
-            <p className="mt-3 text-white/75">
-              You&apos;re officially in. Welcome to Auro. Your account is ready to request your first
-              review whenever you are.
-            </p>
+            <h1 className="text-2xl font-semibold">{postConfirmCopy.reviewee.title}</h1>
+            <p className="mt-3 text-base text-white/72">{postConfirmCopy.reviewee.body}</p>
             <div className="mt-6 grid gap-3">
-              <Link href="/request" className={primaryButtonClass} style={{ backgroundColor: '#F26955' }}>
+              <Link href="/request" className={primaryButtonClass}>
                 Get reviewed
               </Link>
               <Link href={postSignInHref} className={secondaryButtonClass}>
@@ -120,20 +135,13 @@ function PostConfirmContent() {
                 />
               </div>
               <div>
-                <h1 className="text-2xl font-semibold">Thanks for signing up</h1>
-                <p className="mt-3 text-white/75">
-                  I&apos;m RJ, founder of Auro. I appreciate you raising your hand to be a reviewer.
-                  We&apos;re building a curated, high-quality community, and your application helps us do that right.
-                </p>
-                <p className="mt-3 text-white/70">
-                  Next, set your rate, add your profile photo, and confirm reviewer expectations.
-                </p>
+                <h1 className="text-2xl font-semibold">{postConfirmCopy.reviewer.title}</h1>
+                <p className="mt-3 text-base text-white/72">{postConfirmCopy.reviewer.body}</p>
                 <div className="mt-6 grid gap-3">
                   <button
                     type="button"
                     onClick={() => setScreen('reviewer_flow')}
                     className={primaryButtonClass}
-                    style={{ backgroundColor: '#F26955' }}
                   >
                     Continue reviewer setup
                   </button>
@@ -160,36 +168,32 @@ function PostConfirmContent() {
                   />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/55">Founder note</p>
-                  <h1 className="mt-1 text-2xl font-semibold">Thanks for confirming your email</h1>
-                  <p className="mt-2 text-white/75">
-                    I&apos;m RJ, founder of Auro. Thanks for signing up. Choose your path below and
-                    we&apos;ll tailor your next steps right away.
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/55">
+                    {postConfirmCopy.founderNoteLabel}
                   </p>
+                  <h1 className="mt-1 text-2xl font-semibold">{postConfirmCopy.founderThankYouTitle}</h1>
+                  <p className="mt-2 text-base text-white/72">{postConfirmCopy.founderThankYouBody}</p>
                 </div>
               </div>
             </div>
 
-            <p className="mt-5 text-left text-sm text-white/70">
-              Quick question so we can set up your account properly: do you want to get reviewed, or
-              do you want to become a reviewer?
-            </p>
+            <p className="mt-5 text-left text-base text-white/70">{postConfirmCopy.chooserQuestion}</p>
 
             <div className="mt-4 grid gap-3">
               <button
                 type="button"
                 onClick={() => setScreen('reviewee_thanks')}
-                className="rounded-2xl border border-[#F26955]/40 bg-gradient-to-r from-[#F26955] to-[#DF5A47] px-5 py-4 text-left text-white transition hover:brightness-105"
+                className="auth-flow-choice auth-flow-choice-primary"
               >
                 <p className="text-base font-semibold">I want to get reviewed</p>
-                <p className="mt-1 text-sm text-white/85">
+                <p className="mt-1 text-sm text-white/90">
                   Submit your profile and get clear, honest feedback fast.
                 </p>
               </button>
               <button
                 type="button"
                 onClick={() => setScreen('reviewer_thanks')}
-                className="rounded-2xl border border-white/20 bg-white/[0.04] px-5 py-4 text-left text-white transition hover:bg-white/[0.07]"
+                className="auth-flow-choice auth-flow-choice-secondary"
               >
                 <p className="text-base font-semibold">I want to be a reviewer</p>
                 <p className="mt-1 text-sm text-white/75">
@@ -198,7 +202,7 @@ function PostConfirmContent() {
               </button>
               <Link
                 href="/auth/post-sign-in"
-                className="rounded-2xl border border-white/15 bg-transparent px-5 py-3 text-center text-sm font-semibold text-white/80 transition hover:border-white/25 hover:text-white"
+                className={tertiaryButtonClass}
               >
                 I&apos;m not sure yet
               </Link>

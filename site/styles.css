@@ -4841,6 +4841,91 @@ footer {
   border-color: var(--divider);
 }
 
+/* Auth flow CTA system (post-confirm / post-sign-in) */
+.auth-flow-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border-radius: 16px;
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.2;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+  text-decoration: none;
+  text-align: center;
+}
+
+.auth-flow-btn-primary {
+  color: #fff;
+  background: linear-gradient(135deg, var(--grad-start), var(--grad-end));
+  border: 1px solid color-mix(in srgb, var(--grad-start) 45%, transparent);
+  box-shadow: 0 6px 18px rgba(236, 76, 95, 0.24);
+}
+
+.auth-flow-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(236, 76, 95, 0.3);
+}
+
+.auth-flow-btn-secondary {
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(6px);
+}
+
+.auth-flow-btn-secondary:hover {
+  transform: translateY(-1px);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+.auth-flow-btn-tertiary {
+  color: rgba(255, 255, 255, 0.82);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.auth-flow-btn-tertiary:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.auth-flow-choice {
+  border-radius: 16px;
+  padding: 16px 20px;
+  text-align: left;
+  color: #fff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.auth-flow-choice:hover {
+  transform: translateY(-1px);
+}
+
+.auth-flow-choice-primary {
+  border: 1px solid color-mix(in srgb, var(--grad-start) 50%, transparent);
+  background: linear-gradient(135deg, var(--grad-start), var(--grad-end));
+  box-shadow: 0 8px 22px rgba(236, 76, 95, 0.24);
+}
+
+.auth-flow-choice-primary:hover {
+  box-shadow: 0 12px 28px rgba(236, 76, 95, 0.3);
+}
+
+.auth-flow-choice-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.auth-flow-choice-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.09);
+}
+
 /* Loading Container */
 .loading-container {
   display: flex;
