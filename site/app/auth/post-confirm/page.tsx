@@ -148,28 +148,58 @@ function PostConfirmContent() {
 
         {screen === 'choose_role' ? (
           <section className={cardClass}>
-            <h1 className="text-2xl font-semibold">Thanks for confirming your email</h1>
-            <p className="mt-3 text-white/75">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-left">
+              <div className="flex items-start gap-4">
+                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-white/20 bg-white/5">
+                  <Image
+                    src="/rohan%20headshot%20backyard-min.jpg"
+                    alt="RJ founder portrait"
+                    width={64}
+                    height={64}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/55">Founder note</p>
+                  <h1 className="mt-1 text-2xl font-semibold">Thanks for confirming your email</h1>
+                  <p className="mt-2 text-white/75">
+                    I&apos;m RJ, founder of Auro. Thanks for signing up. Choose your path below and
+                    we&apos;ll tailor your next steps right away.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <p className="mt-5 text-left text-sm text-white/70">
               Quick question so we can set up your account properly: do you want to get reviewed, or
               do you want to become a reviewer?
             </p>
-            <div className="mt-6 grid gap-3">
+
+            <div className="mt-4 grid gap-3">
               <button
                 type="button"
                 onClick={() => setScreen('reviewee_thanks')}
-                className={primaryButtonClass}
-                style={{ backgroundColor: '#F26955' }}
+                className="rounded-2xl border border-[#F26955]/40 bg-gradient-to-r from-[#F26955] to-[#DF5A47] px-5 py-4 text-left text-white transition hover:brightness-105"
               >
-                I want to get reviewed
+                <p className="text-base font-semibold">I want to get reviewed</p>
+                <p className="mt-1 text-sm text-white/85">
+                  Submit your profile and get clear, honest feedback fast.
+                </p>
               </button>
               <button
                 type="button"
                 onClick={() => setScreen('reviewer_thanks')}
-                className={secondaryButtonClass}
+                className="rounded-2xl border border-white/20 bg-white/[0.04] px-5 py-4 text-left text-white transition hover:bg-white/[0.07]"
               >
-                I want to be a reviewer
+                <p className="text-base font-semibold">I want to be a reviewer</p>
+                <p className="mt-1 text-sm text-white/75">
+                  Set your rate, complete setup, and apply to join the reviewer community.
+                </p>
               </button>
-              <Link href="/auth/post-sign-in" className={secondaryButtonClass}>
+              <Link
+                href="/auth/post-sign-in"
+                className="rounded-2xl border border-white/15 bg-transparent px-5 py-3 text-center text-sm font-semibold text-white/80 transition hover:border-white/25 hover:text-white"
+              >
                 I&apos;m not sure yet
               </Link>
             </div>
