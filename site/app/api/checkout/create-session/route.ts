@@ -22,11 +22,17 @@ export async function POST(req: Request) {
       console.error('❌ [CHECKOUT] Missing creatorId or creatorSlug');
       return new Response(JSON.stringify({ error: 'Missing creatorId or creatorSlug' }), { status: 400 });
     }
+    if (!fallbackUserId || typeof fallbackUserId !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'You must be signed in to request a review. Please sign in and try again.' }),
+        { status: 401 }
+      );
+    }
 
     // Check if user is trying to buy from themselves (prevent self-purchase)
     if (fallbackUserId) {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-      const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
       if (url && key) {
         const admin = createClient(url, key);
         
@@ -70,7 +76,7 @@ export async function POST(req: Request) {
     let resolvedCreatorId = creatorId as string | undefined;
     if (!resolvedCreatorId && creatorSlug) {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-      const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
       if (url && key) {
         const admin = createClient(url, key);
         const { data } = await admin
@@ -98,7 +104,7 @@ export async function POST(req: Request) {
     const auroFeeBps = 2000;
     try {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-      const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
       if (url && key) {
         const admin = createClient(url, key);
         // Try profiles table by slug first, and fetch connect account id
@@ -161,7 +167,7 @@ export async function POST(req: Request) {
     // Ensure resolvedCreatorId is a valid reviewer with completed profile
     try {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-      const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
       if (url && key) {
         const admin = createClient(url, key);
         const { data: reviewerRow } = await admin
@@ -208,7 +214,7 @@ export async function POST(req: Request) {
     try {
       if (!ensuredRequestId) {
         const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-        const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
         if (url && key) {
           const admin = createClient(url, key);
           // Ensure user profile exists and set basic fields
@@ -234,7 +240,7 @@ export async function POST(req: Request) {
             submission_type: 'photos_only',
           };
           const insertPayload: any = {
-            user_id: fallbackUserId || null,
+            user_id: fallbackUserId,
             influencer_id: resolvedCreatorId || null,
             photos: allPhotos,
             notes: JSON.stringify(notes),
@@ -465,7 +471,7 @@ export async function POST(req: Request) {
     // Store computed financial fields on the request for later UI
     try {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-      const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
+      const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
       if (url && key && ensuredRequestId) {
         const admin = createClient(url, key);
         await admin

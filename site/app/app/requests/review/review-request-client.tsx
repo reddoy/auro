@@ -161,7 +161,7 @@ export default function ReviewRequestClient({ id }: { id: string }) {
           </div>
         )}
 
-        {(request.status === 'pending' || request.status === 'accepted') && (
+        {request.status === 'pending' && (
           <p className="mt-8 rounded-xl border border-white/10 bg-white/5 p-4 text-white/70">
             Payment is still pending. Check your email to complete checkout.
           </p>

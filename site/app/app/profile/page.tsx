@@ -25,6 +25,7 @@ export default function AppProfilePage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingAvatar, setSavingAvatar] = useState(false);
+  const [stripeBusy, setStripeBusy] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -123,6 +124,44 @@ export default function AppProfilePage() {
   const reviewerish = profile?.is_reviewer === 'approved' || profile?.is_reviewer === 'pending';
   const stripeConnected = !!profile?.stripe_connect_account_id?.trim();
   const reviewerStatus = profile?.is_reviewer ?? null;
+  const approvedReviewerNeedsStripe = profile?.is_reviewer === 'approved' && !stripeConnected;
+
+  const openStripeRoute = useCallback(async (route: string) => {
+    if (!supabase) return;
+    setStripeBusy(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        showToast('Sign in again to manage Stripe payouts', 3200);
+        return;
+      }
+
+      const res = await fetch(route, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          returnUrl: `${window.location.origin}/auth/stripe-connect-success`,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error((data as { error?: string }).error || 'Unable to open Stripe');
+      }
+      const redirectUrl = (data as { url?: string }).url;
+      if (!redirectUrl) throw new Error('Stripe link was not returned');
+      window.location.assign(redirectUrl);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Unable to open Stripe', 3200);
+    } finally {
+      setStripeBusy(false);
+    }
+  }, [showToast]);
 
   if (loading) {
     return <AccountPageSkeleton />;
@@ -222,15 +261,45 @@ export default function AppProfilePage() {
                 )}
               </p>
               {!stripeConnected ? (
-                <Link
-                  href="/reviewers/apply"
-                  className="mt-3 inline-flex text-sm font-semibold text-primary"
-                >
-                  Open reviewer setup →
-                </Link>
-              ) : null}
+                <div className="mt-3 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    disabled={stripeBusy}
+                    onClick={() => void openStripeRoute('/api/stripe/express-onboarding')}
+                    className="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-60"
+                  >
+                    {stripeBusy ? 'Opening Stripe…' : 'Connect Stripe'}
+                  </button>
+                  <Link href="/reviewers/apply" className="inline-flex items-center text-sm font-semibold text-primary">
+                    Open reviewer setup →
+                  </Link>
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    disabled={stripeBusy}
+                    onClick={() => void openStripeRoute('/api/stripe/express-login')}
+                    className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                  >
+                    {stripeBusy ? 'Opening Stripe…' : 'Manage payout account'}
+                  </button>
+                </div>
+              )}
               <p className="mt-3 text-xs text-white/50">
                 Reviewer status: <span className="font-medium text-white/80">{reviewerStatus}</span>
+              </p>
+            </section>
+          ) : null}
+
+          {approvedReviewerNeedsStripe ? (
+            <section
+              className="mt-4 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-4"
+              aria-label="Payout setup required"
+            >
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-100/80">Action required</p>
+              <p className="mt-2 text-sm text-amber-50">
+                Your reviewer profile is approved, but payouts are locked until Stripe Connect is finished.
               </p>
             </section>
           ) : null}

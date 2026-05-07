@@ -1,9 +1,18 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { requireAuthenticatedUser } from '@/lib/require-authenticated-user';
 
 export async function POST(req: Request) {
   console.log('[checkout-confirm] ===== CHECKOUT CONFIRMATION REQUEST =====');
   try {
+    const gate = await requireAuthenticatedUser(req);
+    if (!gate.ok) {
+      return new Response(JSON.stringify(gate.body), {
+        status: gate.status,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const { sessionId } = await req.json();
     console.log('[checkout-confirm] Session ID received:', sessionId);
     
@@ -45,7 +54,7 @@ export async function POST(req: Request) {
     }
 
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON || '';
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
     console.log('[checkout-confirm] Supabase URL present:', !!url);
     console.log('[checkout-confirm] Supabase key present:', !!key);
     
@@ -60,11 +69,23 @@ export async function POST(req: Request) {
     console.log('[checkout-confirm] Payment intent ID:', paymentIntentId);
     console.log('[checkout-confirm] Payment status:', session.payment_status);
     
+    const { data: ownedRequest, error: ownershipError } = await admin
+      .from('requests')
+      .select('id,user_id,status,payment_status')
+      .eq('id', requestId)
+      .maybeSingle();
+    if (ownershipError || !ownedRequest) {
+      return new Response(JSON.stringify({ error: 'Request not found' }), { status: 404 });
+    }
+    if (ownedRequest.user_id !== gate.user.userId) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+    }
+
     if (session.payment_status === 'paid') {
       console.log('[checkout-confirm] ===== UPDATING REQUEST TO PAID STATUS =====');
       console.log('[checkout-confirm] Updating request ID:', requestId);
       
-      const updateData = { 
+      const updateData = {
         status: 'paid', 
         payment_status: 'paid', 
         stripe_session_id: session.id, 

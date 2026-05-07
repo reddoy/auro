@@ -1,22 +1,31 @@
 import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
+import { requireAuthenticatedUser } from '@/lib/require-authenticated-user';
 
 export async function POST(req: Request) {
   try {
+    const gate = await requireAuthenticatedUser(req);
+    if (!gate.ok) {
+      return new Response(JSON.stringify(gate.body), {
+        status: gate.status,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const body = await req.json();
     const { reviewerId, returnUrl } = body || {};
-    if (!reviewerId) return new Response(JSON.stringify({ error: 'Missing reviewerId' }), { status: 400 });
+    const targetReviewerId =
+      typeof reviewerId === 'string' && reviewerId.trim().length > 0 ? reviewerId.trim() : gate.user.userId;
+    if (targetReviewerId !== gate.user.userId) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
+    }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-    if (!supabaseUrl || !serviceKey) return new Response(JSON.stringify({ error: 'Server misconfigured' }), { status: 500 });
-    const admin = createClient(supabaseUrl, serviceKey);
+    const admin = gate.admin;
 
     // Fetch profile for email/username
     const { data: profile } = await admin
       .from('profiles')
       .select('id, email, username')
-      .eq('id', reviewerId)
+      .eq('id', targetReviewerId)
       .maybeSingle();
 
     const secret = process.env.STRIPE_SECRET_KEY || '';
@@ -29,7 +38,7 @@ export async function POST(req: Request) {
       const existing = await admin
         .from('profiles')
         .select('id, username, stripe_connect_account_id, is_reviewer')
-        .eq('id', reviewerId)
+        .eq('id', targetReviewerId)
         .maybeSingle();
       profileRow = existing.data || null;
       if (!profileRow) {
@@ -62,7 +71,7 @@ export async function POST(req: Request) {
       await admin
         .from('profiles')
         .update({ stripe_connect_account_id: connectAccountId })
-        .eq('id', reviewerId);
+        .eq('id', targetReviewerId);
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com';

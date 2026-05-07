@@ -232,9 +232,18 @@ export async function serverSubmitReviewRequest(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ requestId }),
     });
+    const payoutBody = await res.json().catch(() => ({} as Record<string, unknown>));
     if (!res.ok) {
-      const errBody = await res.json().catch(() => ({}));
-      console.error('[serverSubmitReviewRequest] distribute failed', errBody);
+      console.error('[serverSubmitReviewRequest] distribute failed', {
+        status: res.status,
+        requestId,
+        payoutBody,
+      });
+    } else if ((payoutBody as { held?: boolean }).held) {
+      console.warn('[serverSubmitReviewRequest] payout held', {
+        requestId,
+        errorType: (payoutBody as { errorType?: string }).errorType || 'NO_CONNECT_ACCOUNT',
+      });
     }
   } catch (e) {
     console.error('[serverSubmitReviewRequest] distribute fetch error', e);

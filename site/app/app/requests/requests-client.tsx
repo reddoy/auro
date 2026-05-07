@@ -124,7 +124,6 @@ export default function RequestsPageClient() {
       return r.influencerId === userProfile?.id && r.status === 'in_progress' && !r.archived_at;
     return (
       (r.status === 'pending' ||
-        r.status === 'accepted' ||
         r.status === 'paid' ||
         r.status === 'in_progress' ||
         r.status === 'rejected') &&
@@ -135,7 +134,6 @@ export default function RequestsPageClient() {
   const activeCount = requests.filter(
     (r) =>
       (r.status === 'pending' ||
-        r.status === 'accepted' ||
         r.status === 'paid' ||
         r.status === 'in_progress' ||
         r.status === 'rejected') &&
@@ -348,11 +346,15 @@ export default function RequestsPageClient() {
                           {item.review?.media?.videoUrl ? ' · Video attached' : ''}
                         </p>
                       )}
-                      {(item.status === 'accepted' || item.status === 'pending') && (
+                      {(item.status === 'pending' || item.status === 'paid') && (
                         <p className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/70">
                           {userIsReviewer
-                            ? 'Waiting for the requester to finish payment (48h window).'
-                            : 'Finish payment from your email — you have 48 hours.'}
+                            ? item.status === 'paid'
+                              ? 'Payment received. Accept or decline to continue.'
+                              : 'Waiting for requester payment.'
+                            : item.status === 'paid'
+                              ? 'Payment confirmed. Reviewer can now accept your request.'
+                              : 'Finish payment from your email to continue.'}
                         </p>
                       )}
                       {userIsReviewer && item.status === 'in_progress' && (

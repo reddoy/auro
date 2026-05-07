@@ -304,7 +304,7 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
           </div>
         )}
 
-        {['pending', 'accepted', 'rejected'].includes(request.status) && (
+        {['pending', 'rejected'].includes(request.status) && (
           <p className="mt-8 text-white/70">
             {request.status === 'rejected'
               ? 'You declined this request.'

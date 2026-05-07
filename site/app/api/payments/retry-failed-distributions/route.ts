@@ -13,20 +13,22 @@ const DEFAULT_LIMIT = Number(process.env.RETRY_FAILED_DISTRIBUTIONS_LIMIT || 10)
 const DEFAULT_MAX_RETRIES = Number(process.env.RETRY_FAILED_DISTRIBUTIONS_MAX || 3);
 
 function buildStripeClient() {
-  const secret = process.env.STRIPE_SECRET_KEY || "";
-  if (!secret) {
-    throw new Error("Missing STRIPE_SECRET_KEY");
-  }
+  const secret = process.env.STRIPE_SECRET_KEY?.trim();
+  if (!secret) throw new Error("Missing STRIPE_SECRET_KEY");
   return new Stripe(secret);
 }
 
 function buildSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-  if (!url || !key) {
-    throw new Error("Server misconfigured");
-  }
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!url || !key) throw new Error("Server misconfigured");
   return createClient(url, key);
+}
+
+function requirePlatformAccountId() {
+  const value = process.env.STRIPE_PLATFORM_ACCOUNT_ID?.trim();
+  if (!value) throw new Error("Missing STRIPE_PLATFORM_ACCOUNT_ID");
+  return value;
 }
 
 function isAuthorizedCronRequest(req: Request) {
@@ -46,6 +48,7 @@ async function processRetryJob(
     const { retryAll = false, maxRetries = DEFAULT_MAX_RETRIES, limit = DEFAULT_LIMIT } = options;
     const stripe = buildStripeClient();
     const admin = buildSupabaseAdmin();
+    const platformAccountId = requirePlatformAccountId();
 
     // Query for failed distributions, held payments, and pending distributions
     // Includes:
@@ -112,6 +115,14 @@ async function processRetryJob(
         const connectAccountId = reviewer?.stripe_connect_account_id;
 
         if (!connectAccountId) {
+          await admin
+            .from("requests")
+            .update({
+              payment_distribution_error:
+                "Payment held: reviewer must complete Stripe Connect onboarding before payout.",
+              payment_status: "queued",
+            })
+            .eq("id", request.id);
           results.skipped++;
           results.errors.push({
             requestId: request.id,
@@ -141,11 +152,18 @@ async function processRetryJob(
           `[retry-distributions] Retrying distribution for request ${request.id}: $${(reviewerAmount / 100).toFixed(2)}`
         );
 
-        const auroAccountId = process.env.STRIPE_PLATFORM_ACCOUNT_ID || "acct_1S0FmFBCrjcqavov";
-        const balance = await stripe.balance.retrieve({}, { stripeAccount: auroAccountId });
+        const balance = await stripe.balance.retrieve({}, { stripeAccount: platformAccountId });
         const availableBalance = balance.available[0]?.amount || 0;
 
         if (availableBalance < reviewerAmount) {
+          await admin
+            .from("requests")
+            .update({
+              payment_distribution_error: `Insufficient funds: available=${availableBalance}, required=${reviewerAmount}`,
+              payment_distribution_failed_at: new Date().toISOString(),
+              payment_status: "queued",
+            })
+            .eq("id", request.id);
           results.failed++;
           results.errors.push({
             requestId: request.id,
@@ -156,20 +174,25 @@ async function processRetryJob(
           continue;
         }
 
-        const transfer = await stripe.transfers.create({
-          amount: reviewerAmount,
-          currency: "usd",
-          destination: connectAccountId,
-          transfer_group: `review_${request.id}`,
-          metadata: {
-            request_id: request.id,
-            reviewer_id: request.influencer_id,
-            auro_fee_cents: auroFee.toString(),
-            total_amount_cents: totalAmount.toString(),
-            source_account: auroAccountId,
-            retry_attempt: (request.payment_distribution_attempts || 0) + 1,
+        const transfer = await stripe.transfers.create(
+          {
+            amount: reviewerAmount,
+            currency: "usd",
+            destination: connectAccountId,
+            transfer_group: `review_${request.id}`,
+            metadata: {
+              request_id: request.id,
+              reviewer_id: request.influencer_id,
+              auro_fee_cents: auroFee.toString(),
+              total_amount_cents: totalAmount.toString(),
+              source_account: platformAccountId,
+              retry_attempt: String((request.payment_distribution_attempts || 0) + 1),
+            },
           },
-        });
+          {
+            idempotencyKey: `reviewer-payout-${request.id}-attempt-${(request.payment_distribution_attempts || 0) + 1}`,
+          }
+        );
 
         console.log(`[retry-distributions] Transfer created: ${transfer.id}`);
 

@@ -24,7 +24,7 @@ export function getReviewerOnboardingStartStep(profile: Profile | null | undefin
     return { route: '/onboarding/reviewer/profile-picture', step: 'reviewer_profile_picture' };
   }
   if (!hasStripe) {
-    return { route: '/onboarding/reviewer/stripe', step: 'reviewer_stripe' };
+    return { route: '/app/profile', step: 'reviewer_stripe' };
   }
 
   return { route: '/onboarding/reviewer/review-pending', step: 'reviewer_review_pending' };
@@ -67,7 +67,7 @@ export function resolveOnboardingDestination(profile: Profile | null | undefined
     case 'reviewer_profile_picture':
       return '/onboarding/reviewer/profile-picture';
     case 'reviewer_stripe':
-      return '/onboarding/reviewer/stripe';
+      return '/app/profile';
     case 'reviewer_share_link':
       return '/onboarding/reviewer/review-pending';
     case 'reviewee_profile_picture':

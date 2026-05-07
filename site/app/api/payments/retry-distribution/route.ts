@@ -3,6 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 
 const REVIEWER_SHARE_BPS = 8000;
 
+function requireEnv(name: string): string {
+  const value = process.env[name]?.trim();
+  if (!value) throw new Error(`Missing ${name}`);
+  return value;
+}
+
 export async function POST(req: Request) {
   try {
     const { requestId, maxRetries = 3 } = await req.json();
@@ -10,18 +16,10 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'Missing requestId' }), { status: 400 });
     }
 
-    const secret = process.env.STRIPE_SECRET_KEY || '';
-    if (!secret) {
-      return new Response(JSON.stringify({ error: 'Missing STRIPE_SECRET_KEY' }), { status: 500 });
-    }
-    const stripe = new Stripe(secret);
+    const stripe = new Stripe(requireEnv('STRIPE_SECRET_KEY'));
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-    if (!url || !key) {
-      return new Response(JSON.stringify({ error: 'Server misconfigured' }), { status: 500 });
-    }
-    const admin = createClient(url, key);
+    const admin = createClient(requireEnv('NEXT_PUBLIC_SUPABASE_URL'), requireEnv('SUPABASE_SERVICE_ROLE_KEY'));
+    const platformAccountId = requireEnv('STRIPE_PLATFORM_ACCOUNT_ID');
 
     // Get the request details
     const { data: request, error: requestError } = await admin
@@ -44,7 +42,8 @@ export async function POST(req: Request) {
           stripe_connect_account_id,
           is_reviewer,
           username,
-          full_name,
+          first_name,
+          last_name,
           email
         )
       `)
@@ -102,7 +101,7 @@ export async function POST(req: Request) {
         message: 'Payment is still being held. Reviewer needs to set up Stripe Connect account.',
         errorType: 'NO_CONNECT_ACCOUNT',
         reviewerId: request.influencer_id,
-        reviewerName: reviewer.full_name || reviewer.username,
+        reviewerName: [reviewer.first_name, reviewer.last_name].filter(Boolean).join(' ') || reviewer.username,
         reviewerEmail: reviewer.email,
         note: 'Once Stripe is connected, payment will be distributed automatically.'
       }), { status: 200 });
@@ -126,9 +125,7 @@ export async function POST(req: Request) {
 
     try {
       // Check account balance
-      // Use environment variable with fallback for backwards compatibility
-      const auroAccountId = process.env.STRIPE_PLATFORM_ACCOUNT_ID || 'acct_1S0FmFBCrjcqavov';
-      const balance = await stripe.balance.retrieve({}, { stripeAccount: auroAccountId });
+      const balance = await stripe.balance.retrieve({}, { stripeAccount: platformAccountId });
       const availableBalance = balance.available[0]?.amount || 0; // In cents
       const pendingBalance = balance.pending[0]?.amount || 0; // In cents
       
@@ -155,23 +152,24 @@ export async function POST(req: Request) {
       }
 
       // Create the transfer
-      const transfer = await stripe.transfers.create({
-        amount: reviewerAmount,
-        currency: 'usd',
-        destination: connectAccountId,
-        source_transaction: undefined, // Let Stripe use the account's available balance
-        transfer_group: `review_${requestId}`,
-        metadata: {
-          request_id: requestId,
-          reviewer_id: request.influencer_id,
-          auro_fee_cents: auroFee.toString(),
-          total_amount_cents: totalAmount.toString(),
-          retry_attempt: (attempts + 1).toString(),
-          source_account: auroAccountId,
+      const transfer = await stripe.transfers.create(
+        {
+          amount: reviewerAmount,
+          currency: 'usd',
+          destination: connectAccountId,
+          source_transaction: undefined,
+          transfer_group: `review_${requestId}`,
+          metadata: {
+            request_id: requestId,
+            reviewer_id: request.influencer_id,
+            auro_fee_cents: auroFee.toString(),
+            total_amount_cents: totalAmount.toString(),
+            retry_attempt: (attempts + 1).toString(),
+            source_account: platformAccountId,
+          },
         },
-      }, {
-        stripeAccount: auroAccountId // Use the Auro account as the source
-      });
+        { idempotencyKey: `reviewer-payout-${requestId}-attempt-${attempts + 1}` }
+      );
 
       // Update the request
       const { error: updateError } = await admin
@@ -183,7 +181,8 @@ export async function POST(req: Request) {
           reviewer_amount_cents: reviewerAmount,
           application_fee_cents: auroFee,
           payment_distribution_error: null,
-          payment_distribution_failed_at: null
+          payment_distribution_failed_at: null,
+          payment_status: 'paid'
         })
         .eq('id', requestId);
 
@@ -197,7 +196,7 @@ export async function POST(req: Request) {
         reviewerAmount: reviewerAmount,
         auroFee: auroFee,
         totalAmount: totalAmount,
-        reviewerName: reviewer.full_name || reviewer.username,
+        reviewerName: [reviewer.first_name, reviewer.last_name].filter(Boolean).join(' ') || reviewer.username,
         attempts: attempts + 1,
         message: 'Payment successfully distributed to reviewer'
       }), { status: 200 });
@@ -209,7 +208,8 @@ export async function POST(req: Request) {
         .update({ 
           payment_distribution_attempts: attempts + 1,
           payment_distribution_error: `STRIPE_ERROR: ${stripeError.message}`,
-          payment_distribution_failed_at: new Date().toISOString()
+          payment_distribution_failed_at: new Date().toISOString(),
+          payment_status: 'queued'
         })
         .eq('id', requestId);
 

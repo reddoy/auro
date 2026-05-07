@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 export default function CheckoutSuccessPage() {
   const router = useRouter();
@@ -16,12 +17,19 @@ export default function CheckoutSuccessPage() {
       
       if (csId) {
         setMessage('Payment confirmed. Your review request is being prepared.');
-        
-        fetch('/api/checkout/confirm', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId: csId }),
-        }).catch(() => {});
+        (async () => {
+          const { data: { session } = { session: null } } = (await supabase?.auth.getSession()) || {};
+          const token = session?.access_token;
+          if (!token) return;
+          await fetch('/api/checkout/confirm', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ sessionId: csId }),
+          }).catch(() => {});
+        })();
       } else {
         setMessage('Payment confirmed.');
       }
