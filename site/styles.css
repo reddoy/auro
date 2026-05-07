@@ -886,7 +886,8 @@ body {
   border-radius: 12px;
   text-decoration: none;
   cursor: pointer;
-  border: 0;
+  /* Reserve the same box as outline nav CTAs (e.g. Get Reviewed) so paired buttons match size */
+  border: 1px solid transparent;
   box-shadow: 0 2px 14px hsl(var(--primary) / 0.35);
   transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   display: flex;
@@ -1148,6 +1149,18 @@ body {
     padding: 10px 16px;
     font-size: 14px;
     border-radius: 6px;
+  }
+
+  /* Keep header CTAs matched (global .cta-nav padding above would skew Get Reviewed) */
+  .conditional-nav .nav-ribbon-ctas > .cta-nav.cta-nav--get-reviewed {
+    padding: 8px 10px;
+    font-size: 12px;
+    border-radius: 12px;
+    min-height: 36px;
+  }
+
+  .conditional-nav .nav-ribbon-ctas > .cta-nav-integrated {
+    min-height: 36px;
   }
 }
 
@@ -3485,6 +3498,9 @@ footer {
   box-sizing: border-box;
   justify-content: center;
   white-space: nowrap;
+  min-height: 40px;
+  align-items: center;
+  line-height: 1.2;
 }
 
 .conditional-nav .nav-ribbon-ctas > .cta-nav-integrated {
@@ -3502,6 +3518,7 @@ footer {
   align-items: center;
   justify-content: center;
   text-align: center;
+  border-radius: 12px;
 }
 
 /*
@@ -5096,8 +5113,9 @@ footer {
 /* Reviewer picker (request flow) */
 .creator-selection-toolbar {
   position: sticky;
-  top: 0;
-  z-index: 2;
+  /* Sit below funnel header (see FunnelTopBar --funnel-header-height) */
+  top: var(--funnel-header-height, calc(env(safe-area-inset-top) + 52px));
+  z-index: 25;
   padding-bottom: 12px;
   margin-bottom: 4px;
   background: linear-gradient(to bottom, rgba(18, 18, 22, 0.98) 0%, rgba(18, 18, 22, 0.92) 70%, transparent 100%);
@@ -5406,6 +5424,234 @@ footer {
 
 .creator-selection .no-creators .btn-secondary {
   margin-top: 12px;
+}
+
+/* Mobile accordion: filters + sort (desktop: always expanded via JS matchMedia + hidden summary) */
+.reviewer-filters-details {
+  margin: 0 0 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+
+.reviewer-filters-summary {
+  cursor: pointer;
+  list-style: none;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.92);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.reviewer-filters-summary::-webkit-details-marker {
+  display: none;
+}
+
+.reviewer-filters-summary-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.reviewer-filters-badge {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgba(255, 111, 0, 0.22);
+  color: #fdba74;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reviewer-filters-chevron {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+
+.reviewer-filters-chevron::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid rgba(255, 255, 255, 0.6);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.6);
+  transform: translate(-50%, -50%) rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.reviewer-filters-details[open] > .reviewer-filters-summary .reviewer-filters-chevron::after {
+  transform: translate(-50%, -15%) rotate(225deg);
+}
+
+.reviewer-filters-details-inner {
+  padding: 12px 14px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+@media (min-width: 768px) {
+  .reviewer-filters-details {
+    margin: 0;
+    border: none;
+    background: transparent;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  .reviewer-filters-summary {
+    display: none;
+  }
+
+  .reviewer-filters-details-inner {
+    display: block !important;
+    padding: 0;
+    border-top: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reviewer-filters-chevron::after {
+    transition: none;
+  }
+}
+
+.creator-price-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.creator-price-hint {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.creator-selection-cta-hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+}
+
+button.creator-card.creator-card--select.creator-card--row {
+  appearance: none;
+  margin: 0;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button.creator-card.creator-card--select:focus {
+  outline: none;
+}
+
+button.creator-card.creator-card--select:focus-visible {
+  outline: 2px solid #ff6f00;
+  outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+  .creator-selection {
+    padding-bottom: calc(132px + env(safe-area-inset-bottom));
+  }
+
+  .creator-selection-footer.creator-selection-footer--sticky-mobile {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 35;
+    padding-top: 0;
+    border-top: none;
+    pointer-events: none;
+    margin: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .creator-selection-footer--sticky-mobile .creator-selection-footer-inner {
+    pointer-events: auto;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-top: 14px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    background: linear-gradient(to top, rgba(26, 26, 31, 0.98) 0%, rgba(26, 26, 31, 0.92) 75%, transparent 100%);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .creator-selection .creator-bio {
+    display: none;
+  }
+
+  .creator-selection .creator-skills--left .skill-tag:nth-of-type(n + 3) {
+    display: none;
+  }
+
+  .creator-selection .creator-skills--left .skill-more {
+    display: none;
+  }
+
+  .creator-selection .creator-card--row .creator-avatar [role='img'] {
+    width: 56px !important;
+    height: 56px !important;
+    min-width: 56px !important;
+    min-height: 56px !important;
+  }
+
+  .reviewer-chip,
+  .reviewer-sort-select {
+    min-height: 44px;
+  }
+
+  .reviewer-sort-select {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .reviewer-skills-scroll {
+    max-height: 120px;
+  }
+}
+
+@media (min-width: 768px) {
+  .creator-price-hint {
+    font-size: 11px;
+  }
 }
 
 @media (max-width: 480px) {

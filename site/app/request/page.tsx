@@ -1009,9 +1009,16 @@ export default function RequestPage() {
 
     const currentIndex = STEPS.indexOf(currentStep);
     const connectorTop = 'top-[22px] sm:top-5';
+    const summaryLabel = stepConfigs[currentIndex]?.label ?? '';
 
     return (
-      <div className="w-full px-2 sm:px-4 pb-4 pt-2 md:pb-6 md:pt-4 bg-gradient-to-b from-background/55 to-transparent">
+      <nav
+        className="w-full px-2 sm:px-4 pb-4 pt-2 md:pb-6 md:pt-4 bg-gradient-to-b from-background/55 to-transparent"
+        aria-label="Checkout progress"
+      >
+        <p className="sm:hidden text-center text-[13px] font-semibold tracking-tight text-white/72 tabular-nums mb-3">
+          Step {currentIndex + 1} of {stepConfigs.length} · {summaryLabel}
+        </p>
         <div className="relative flex max-w-6xl mx-auto items-start justify-between gap-0.5 sm:gap-1">
           <div className={`absolute left-3 right-3 sm:left-10 sm:right-10 ${connectorTop} h-px bg-white/12`}>
             <div
@@ -1032,6 +1039,14 @@ export default function RequestPage() {
                 type="button"
                 disabled={!isClickable}
                 onClick={isClickable ? () => goToStep(stepItem.id as Step) : undefined}
+                aria-current={isCurrent ? 'step' : undefined}
+                aria-label={
+                  isCompleted
+                    ? `${stepItem.label}, completed. Return to this step`
+                    : isCurrent
+                      ? `${stepItem.label}, current step`
+                      : `${stepItem.label}, not started yet`
+                }
                 className={[
                   'relative z-10 flex flex-1 flex-col items-center gap-1 min-w-0',
                   'bg-transparent border-0 p-0',
@@ -1048,13 +1063,12 @@ export default function RequestPage() {
                         ? 'bg-primary text-white shadow-md shadow-black/35 ring-2 ring-primary/25'
                         : 'border border-white/15 bg-black/35 text-muted-foreground',
                   ].join(' ')}
-                  aria-current={isCurrent ? 'step' : undefined}
                 >
                   {isCompleted ? '\u2713' : stepItem.short}
                 </span>
                 <span
                   className={[
-                    'w-full px-0.5 text-xs font-medium text-center tabular-nums leading-snug tracking-normal hyphens-none',
+                    'hidden sm:block w-full px-0.5 text-xs font-medium text-center tabular-nums leading-snug tracking-normal hyphens-none',
                     'line-clamp-2 break-words',
                     isCurrent ? 'text-white' : isCompleted ? 'text-white/82' : 'text-muted-foreground/85',
                   ].join(' ')}
@@ -1065,7 +1079,7 @@ export default function RequestPage() {
             );
           })}
         </div>
-      </div>
+      </nav>
     );
   };
 

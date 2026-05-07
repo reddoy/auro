@@ -31,9 +31,16 @@ function displayName(c: Creator) {
   return (c.full_name || c.username || 'Reviewer').trim();
 }
 
-export default function CreatorSelection({ selectedCreator, onSelect, supabase, preselectedCreatorSlug, preselectedCreatorId, isInitializing }: Props) {
+export default function CreatorSelection({
+  selectedCreator,
+  onSelect,
+  supabase,
+  preselectedCreatorSlug,
+  preselectedCreatorId,
+  isInitializing,
+}: Props) {
   const [creators, setCreators] = useState<Creator[]>([]);
-  const [loading, setLoading] = useState(false); // Start as false, will be set to true when we start fetching
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string>('');
   const hasAutoSelectedRef = useRef(false);
@@ -41,6 +48,7 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
   const [sortBy, setSortBy] = useState<SortKey>('recommended');
   const [priceTier, setPriceTier] = useState<PriceTier | null>(null);
   const [skillFilters, setSkillFilters] = useState<string[]>([]);
+  const filterDetailsRef = useRef<HTMLDetailsElement>(null);
 
   useEffect(() => {
     const fetchCreators = async () => {
@@ -58,30 +66,32 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
         return;
       }
 
-      setLoading(true); // Start loading when we begin fetching
+      setLoading(true);
       try {
         setError('');
-        
-        // Get current user ID to filter out self
+
         let currentUser: any = null;
         try {
-          const { data: { user } } = await supabase.auth.getUser();
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
           currentUser = user;
-        } catch (authError) {
+        } catch (_authError) {
           console.log('No authenticated user, proceeding without filtering');
         }
 
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name, username, avatar_url, skills, hourly_rate, rating_average, bio, links, stripe_connect_account_id')
-          .eq('is_reviewer', 'approved') // Only show approved reviewers
-          .not('hourly_rate', 'is', null) // Only show reviewers who have set their rate
-          .gt('hourly_rate', 0) // Only show reviewers with positive rates
+          .select(
+            'id, first_name, last_name, username, avatar_url, skills, hourly_rate, rating_average, bio, links, stripe_connect_account_id',
+          )
+          .eq('is_reviewer', 'approved')
+          .not('hourly_rate', 'is', null)
+          .gt('hourly_rate', 0)
           .order('rating_average', { ascending: false, nullsFirst: false });
 
         if (error) throw error;
 
-        // Normalize data to ensure required fields exist
         const normalized: Creator[] = (data || []).map((c: any) => {
           const fullName = [c.first_name, c.last_name].filter(Boolean).join(' ') || null;
           return {
@@ -97,35 +107,31 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
           };
         });
 
-        // Filter out current user if they're a reviewer
-        const filteredCreators = currentUser?.id 
-          ? normalized.filter(creator => creator.id !== currentUser.id)
+        const filteredCreators = currentUser?.id
+          ? normalized.filter((creator) => creator.id !== currentUser.id)
           : normalized;
 
         setCreators(filteredCreators);
-        
-        // Auto-select and advance if preselectedCreatorSlug or preselectedCreatorId is provided
-        // This happens when user comes from the app with a preselected reviewer
+
         if (filteredCreators.length > 0 && !hasAutoSelectedRef.current) {
           let preselectedCreator: Creator | undefined;
-          
+
           if (preselectedCreatorSlug) {
-            preselectedCreator = filteredCreators.find(c => c.username === preselectedCreatorSlug);
+            preselectedCreator = filteredCreators.find((c) => c.username === preselectedCreatorSlug);
           } else if (preselectedCreatorId) {
-            preselectedCreator = filteredCreators.find(c => c.id === preselectedCreatorId);
+            preselectedCreator = filteredCreators.find((c) => c.id === preselectedCreatorId);
           }
-          
+
           if (preselectedCreator && onSelect) {
             hasAutoSelectedRef.current = true;
-            // Use setTimeout to ensure the component has fully rendered and all reviewers are visible before auto-selecting
             setTimeout(() => {
               onSelect(preselectedCreator!.id, preselectedCreator!.username);
             }, 300);
           }
         }
-      } catch (error: any) {
-        console.error('Error fetching creators:', error);
-        setError(error.message || 'Failed to fetch reviewers');
+      } catch (err: any) {
+        console.error('Error fetching creators:', err);
+        setError(err.message || 'Failed to fetch reviewers');
       } finally {
         setLoading(false);
       }
@@ -135,6 +141,18 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
       fetchCreators();
     }
   }, [supabase, preselectedCreatorSlug, preselectedCreatorId, onSelect, isInitializing]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(min-width: 768px)');
+    const syncOpen = () => {
+      const el = filterDetailsRef.current;
+      if (el) el.open = mq.matches;
+    };
+    syncOpen();
+    mq.addEventListener('change', syncOpen);
+    return () => mq.removeEventListener('change', syncOpen);
+  }, []);
 
   const allSkills = useMemo(() => {
     const set = new Set<string>();
@@ -215,7 +233,6 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
     if (match) setPendingId(match.id);
   }, [selectedCreator, creators]);
 
-  // Scroll highlighted / preselected card into view
   useEffect(() => {
     if (!creators.length || loading) return;
     const scrollTarget =
@@ -242,7 +259,15 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
   }, []);
 
   const hasActiveFilters =
-    searchTerm.trim().length > 0 || skillFilters.length > 0 || priceTier !== null || sortBy !== 'recommended';
+    searchTerm.trim().length > 0 ||
+    skillFilters.length > 0 ||
+    priceTier !== null ||
+    sortBy !== 'recommended';
+
+  const panelFilterBadgeCount =
+    (sortBy !== 'recommended' ? 1 : 0) +
+    (priceTier !== null ? 1 : 0) +
+    skillFilters.length;
 
   const pendingCreator = pendingId
     ? sortedCreators.find((c) => c.id === pendingId) ?? creators.find((c) => c.id === pendingId)
@@ -262,8 +287,9 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
   const isCardSelected = (creator: Creator) =>
     pendingId === creator.id || selectedCreator === creator.id || selectedCreator === creator.username;
 
-  // Show local loading only when fetching creators. Avoid duplicating the
-  // global page initialization spinner by not rendering here during init.
+  const emptyFilteredMessage =
+    priceTier !== null ? 'No reviewers in that price range right now.' : 'No reviewers match these filters.';
+
   if (loading) {
     return (
       <div className="creator-selection loading">
@@ -277,7 +303,7 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
     <div className="creator-selection">
       <div className="step-header">
         <h2>Choose your reviewer</h2>
-        <p>Use search and filters to narrow the list, tap someone to select them, then continue.</p>
+        <p>Pick who gives your feedback—you can change this before checkout.</p>
       </div>
 
       <div className="creator-selection-toolbar">
@@ -320,113 +346,118 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
           ) : null}
         </div>
 
-        <div className="reviewer-filter-row">
-          <label className="reviewer-sort-label">
-            <span className="sr-only">Sort by</span>
-            <select
-              className="reviewer-sort-select"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortKey)}
-              aria-label="Sort reviewers"
-            >
-              <option value="recommended">Recommended</option>
-              <option value="price_low">Price: low to high</option>
-              <option value="price_high">Price: high to low</option>
-              <option value="name">Name A–Z</option>
-            </select>
-          </label>
-        </div>
-
-        <div className="reviewer-chip-group" role="group" aria-label="Price">
-          <span className="reviewer-chip-heading">Price</span>
-          <button
-            type="button"
-            className={`reviewer-chip ${priceTier === null ? 'is-active' : ''}`}
-            onClick={() => setPriceTier(null)}
-          >
-            Any
-          </button>
-          {tierCounts.under75 > 0 ? (
-            <button
-              type="button"
-              className={`reviewer-chip ${priceTier === 'under75' ? 'is-active' : ''}`}
-              onClick={() => setPriceTier((p) => (p === 'under75' ? null : 'under75'))}
-            >
-              Under $75
-            </button>
-          ) : null}
-          {tierCounts.mid > 0 ? (
-            <button
-              type="button"
-              className={`reviewer-chip ${priceTier === '75to99' ? 'is-active' : ''}`}
-              onClick={() => setPriceTier((p) => (p === '75to99' ? null : '75to99'))}
-            >
-              $75–99
-            </button>
-          ) : null}
-          {tierCounts.high > 0 ? (
-            <button
-              type="button"
-              className={`reviewer-chip ${priceTier === '100plus' ? 'is-active' : ''}`}
-              onClick={() => setPriceTier((p) => (p === '100plus' ? null : '100plus'))}
-            >
-              $100+
-            </button>
-          ) : null}
-        </div>
-
-        {allSkills.length > 0 ? (
-          <div className="reviewer-skills-chips" role="group" aria-label="Filter by specialty">
-            <span className="reviewer-chip-heading">Specialty</span>
-            <div className="reviewer-skills-scroll">
-              {allSkills.map((skill) => (
-                <button
-                  key={skill}
-                  type="button"
-                  className={`reviewer-chip reviewer-chip-skill ${skillFilters.includes(skill) ? 'is-active' : ''}`}
-                  onClick={() => toggleSkill(skill)}
-                  aria-pressed={skillFilters.includes(skill)}
+        <details ref={filterDetailsRef} className="reviewer-filters-details">
+          <summary className="reviewer-filters-summary">
+            <span className="reviewer-filters-summary-label">
+              <span className="reviewer-filters-summary-title">Filters & sort</span>
+              {panelFilterBadgeCount > 0 ? (
+                <span className="reviewer-filters-badge">{panelFilterBadgeCount}</span>
+              ) : null}
+            </span>
+            <span className="reviewer-filters-chevron" aria-hidden />
+          </summary>
+          <div className="reviewer-filters-details-inner">
+            <div className="reviewer-filter-row">
+              <label className="reviewer-sort-label">
+                <span className="sr-only">Sort by</span>
+                <select
+                  className="reviewer-sort-select"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortKey)}
+                  aria-label="Sort reviewers"
                 >
-                  {skill}
-                </button>
-              ))}
+                  <option value="recommended">Recommended</option>
+                  <option value="price_low">Price: low to high</option>
+                  <option value="price_high">Price: high to low</option>
+                  <option value="name">Name A–Z</option>
+                </select>
+              </label>
             </div>
+
+            <div className="reviewer-chip-group" role="group" aria-label="Price">
+              <span className="reviewer-chip-heading">Price</span>
+              <button
+                type="button"
+                className={`reviewer-chip ${priceTier === null ? 'is-active' : ''}`}
+                onClick={() => setPriceTier(null)}
+              >
+                Any
+              </button>
+              {tierCounts.under75 > 0 ? (
+                <button
+                  type="button"
+                  className={`reviewer-chip ${priceTier === 'under75' ? 'is-active' : ''}`}
+                  onClick={() => setPriceTier((p) => (p === 'under75' ? null : 'under75'))}
+                >
+                  Under $75
+                </button>
+              ) : null}
+              {tierCounts.mid > 0 ? (
+                <button
+                  type="button"
+                  className={`reviewer-chip ${priceTier === '75to99' ? 'is-active' : ''}`}
+                  onClick={() => setPriceTier((p) => (p === '75to99' ? null : '75to99'))}
+                >
+                  $75–99
+                </button>
+              ) : null}
+              {tierCounts.high > 0 ? (
+                <button
+                  type="button"
+                  className={`reviewer-chip ${priceTier === '100plus' ? 'is-active' : ''}`}
+                  onClick={() => setPriceTier((p) => (p === '100plus' ? null : '100plus'))}
+                >
+                  $100+
+                </button>
+              ) : null}
+            </div>
+
+            {allSkills.length > 0 ? (
+              <div className="reviewer-skills-chips" role="group" aria-label="Filter by specialty">
+                <span className="reviewer-chip-heading">Specialty</span>
+                <div className="reviewer-skills-scroll">
+                  {allSkills.map((skill) => (
+                    <button
+                      key={skill}
+                      type="button"
+                      className={`reviewer-chip reviewer-chip-skill ${skillFilters.includes(skill) ? 'is-active' : ''}`}
+                      onClick={() => toggleSkill(skill)}
+                      aria-pressed={skillFilters.includes(skill)}
+                    >
+                      {skill}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
-        ) : null}
+        </details>
       </div>
 
       <div className="creators-grid creators-grid--list">
         {sortedCreators.map((creator) => {
           const selected = isCardSelected(creator);
           return (
-            <div
+            <button
               key={creator.id}
-              role="button"
-              tabIndex={0}
+              type="button"
               data-creator-id={creator.id}
-              className={`creator-card creator-card--row ${selected ? 'selected' : ''}`}
+              className={`creator-card creator-card--row creator-card--select ${selected ? 'selected' : ''}`}
               onClick={() => handleCardActivate(creator)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleCardActivate(creator);
-                }
-              }}
               aria-pressed={selected}
             >
               <div className="creator-avatar">
-                <AsyncAvatar
-                  avatarPathOrUrl={creator.avatar_url || null}
-                  alt={displayName(creator)}
-                  size={72}
-                />
+                <AsyncAvatar avatarPathOrUrl={creator.avatar_url || null} alt={displayName(creator)} size={72} />
               </div>
 
               <div className="creator-info">
                 <div className="creator-card-topline">
-                  <h3 className="creator-name">{displayName(creator)}</h3>
+                  <span className="creator-name">{displayName(creator)}</span>
                   {creator.hourly_rate != null ? (
-                    <span className="creator-price creator-price--badge">${creator.hourly_rate}</span>
+                    <span className="creator-price-wrap">
+                      <span className="creator-price creator-price--badge">${creator.hourly_rate}</span>
+                      <span className="creator-price-hint">per review</span>
+                    </span>
                   ) : null}
                 </div>
                 {creator.username ? <p className="creator-username">@{creator.username}</p> : null}
@@ -458,25 +489,27 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
               <div className="creator-card-check" aria-hidden>
                 {selected ? <span className="creator-card-check-mark">✓</span> : <span className="creator-card-check-ring" />}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
 
-      <div className="creator-selection-footer">
-        {pendingHiddenByFilters ? (
-          <p className="reviewer-offscreen-hint">
-            Your pick is hidden by the current filters. Clear filters to see their card, or continue anyway.
+      <div className="creator-selection-footer creator-selection-footer--sticky-mobile">
+        <div className="creator-selection-footer-inner">
+          {pendingHiddenByFilters ? (
+            <p className="reviewer-offscreen-hint">
+              Your pick is hidden by the current filters. Reset filters to see their card, or continue anyway.
+            </p>
+          ) : null}
+          <p className="creator-selection-cta-hint" aria-live="polite">
+            {pendingCreator
+              ? `Selected: ${displayName(pendingCreator)}. Tap continue when you're ready.`
+              : 'Pick a reviewer from the list, then continue.'}
           </p>
-        ) : null}
-        <button
-          type="button"
-          className="btn-primary creator-selection-continue"
-          disabled={!pendingCreator}
-          onClick={handleConfirm}
-        >
-          {pendingCreator ? `Continue with ${displayName(pendingCreator)}` : 'Select a reviewer to continue'}
-        </button>
+          <button type="button" className="btn-primary creator-selection-continue" disabled={!pendingCreator} onClick={handleConfirm}>
+            {pendingCreator ? `Continue with ${displayName(pendingCreator)}` : 'Select a reviewer to continue'}
+          </button>
+        </div>
       </div>
 
       {error ? (
@@ -488,7 +521,7 @@ export default function CreatorSelection({ selectedCreator, onSelect, supabase, 
 
       {sortedCreators.length === 0 && !loading && !error && creators.length > 0 ? (
         <div className="no-creators">
-          <p>No reviewers match these filters.</p>
+          <p>{emptyFilteredMessage}</p>
           <button type="button" className="btn-secondary" onClick={clearFilters}>
             Clear filters
           </button>
