@@ -263,7 +263,7 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
     <div className="photo-upload">
       <div className="step-header">
         <h2>Upload Your Dating Profile Photos</h2>
-        <p>Upload up to 10 photos from your dating profile (Hinge, Bumble, Tinder, etc.) for personalized feedback and recommendations.</p>
+        <p>Upload up to 10 photos from your dating profile (Hinge, Bumble, etc.) for personalized feedback and recommendations.</p>
       </div>
 
       <div className="upload-sections">

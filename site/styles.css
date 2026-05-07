@@ -5580,8 +5580,10 @@ button.creator-card.creator-card--select:focus-visible {
   outline-offset: 2px;
 }
 
-@media (max-width: 767px) {
+/* Mobile + touch viewports: keep picker Continue always reachable */
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
   .creator-selection {
+    /* Reserve space so the last card is never hidden behind the fixed CTA */
     padding-bottom: calc(132px + env(safe-area-inset-bottom));
   }
 

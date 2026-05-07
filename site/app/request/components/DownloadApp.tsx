@@ -137,8 +137,7 @@ The Auro Team`);
           <a href="mailto:support@appauro.com">support@appauro.com</a>
         </p>
         <p>
-          Follow us on social media for tips and updates:{' '}
-          <a href="#" target="_blank">@AuroApp</a>
+          Follow us on social media for tips and updates: <strong>@AuroApp</strong>
         </p>
       </div>
     </div>

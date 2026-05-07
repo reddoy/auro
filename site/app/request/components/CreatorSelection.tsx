@@ -49,6 +49,7 @@ export default function CreatorSelection({
   const [priceTier, setPriceTier] = useState<PriceTier | null>(null);
   const [skillFilters, setSkillFilters] = useState<string[]>([]);
   const filterDetailsRef = useRef<HTMLDetailsElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchCreators = async () => {
@@ -279,6 +280,21 @@ export default function CreatorSelection({
     setPendingId(creator.id);
   };
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!pendingId) return;
+    // On small/touch screens, ensure the fixed CTA area is visible after a selection.
+    // (Some browsers can keep focus/scroll on the tapped card, leaving the CTA visually crowded.)
+    const t = window.setTimeout(() => {
+      try {
+        footerRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' });
+      } catch {
+        /* ignore */
+      }
+    }, 50);
+    return () => window.clearTimeout(t);
+  }, [pendingId]);
+
   const handleConfirm = () => {
     if (!pendingCreator) return;
     onSelect(pendingCreator.id, pendingCreator.username);
@@ -494,7 +510,7 @@ export default function CreatorSelection({
         })}
       </div>
 
-      <div className="creator-selection-footer creator-selection-footer--sticky-mobile">
+      <div ref={footerRef} className="creator-selection-footer creator-selection-footer--sticky-mobile">
         <div className="creator-selection-footer-inner">
           {pendingHiddenByFilters ? (
             <p className="reviewer-offscreen-hint">

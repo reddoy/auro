@@ -40,43 +40,94 @@ export default function FunnelTopBar({ variant }: Props) {
       data-funnel-top-bar
       className="funnel-top-bar sticky top-0 z-30 border-b border-white/[0.08] bg-background/90 backdrop-blur-md pt-[max(0.65rem,env(safe-area-inset-top))]"
     >
-      <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
-        <Link
-          href="/"
-          className="flex min-w-0 items-center gap-2.5 shrink-0 text-white no-underline rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          aria-label="Auro Home"
-        >
-          <img
-            src="/auro_aura_logo.png"
-            alt=""
-            width={36}
-            height={36}
-            className="rounded-[11px]"
-          />
-          <span className="font-semibold text-[15px] tracking-tight">Auro</span>
-        </Link>
-        <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-4 gap-y-1 text-sm">
-          {variant === 'reviewer-apply' ? (
+      <div className="max-w-6xl mx-auto px-4 py-3">
+        {/* Mobile: single clean row + optional secondary link */}
+        <div className="sm:hidden">
+          <div className="flex items-center justify-between gap-3">
             <Link
-              href="/request"
-              className="text-white/72 hover:text-white transition-colors underline-offset-2 hover:underline whitespace-nowrap"
+              href="/"
+              className="flex min-w-0 items-center gap-2.5 shrink-0 text-white no-underline rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              aria-label="Auro Home"
             >
-              Get Reviewed
+              <img
+                src="/auro_aura_logo.png"
+                alt=""
+                width={34}
+                height={34}
+                className="rounded-[11px]"
+              />
+              <span className="font-semibold text-[15px] tracking-tight">Auro</span>
             </Link>
-          ) : (
+
             <Link
-              href="/reviewers/apply"
-              className="text-white/72 hover:text-white transition-colors underline-offset-2 hover:underline whitespace-nowrap"
+              href="/auth/sign-in"
+              className={[
+                'inline-flex items-center justify-center',
+                'h-11 px-4 rounded-full',
+                'bg-primary text-primary-foreground font-semibold text-[14px] tracking-tight',
+                'shadow-[0_10px_26px_-10px_hsl(var(--primary)/0.55)]',
+                'transition hover:brightness-105 active:scale-[0.99] motion-reduce:transform-none',
+                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+                'whitespace-nowrap',
+              ].join(' ')}
             >
-              Become a Reviewer
+              Sign in
             </Link>
-          )}
+          </div>
+
+          <div className="mt-2 flex items-center justify-end">
+            {variant === 'reviewer-apply' ? (
+              <Link
+                href="/request"
+                className="text-[13px] font-semibold text-white/70 hover:text-white transition-colors underline-offset-2 hover:underline whitespace-nowrap"
+              >
+                Get reviewed
+              </Link>
+            ) : (
+              <Link
+                href="/reviewers/apply"
+                className="text-[13px] font-semibold text-white/70 hover:text-white transition-colors underline-offset-2 hover:underline whitespace-nowrap"
+              >
+                Become a reviewer
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* Desktop: keep existing layout, but avoid odd wraps */}
+        <div className="hidden sm:flex items-center justify-between gap-6">
           <Link
-            href="/auth/sign-in"
-            className="font-semibold text-primary hover:brightness-110 transition-opacity whitespace-nowrap"
+            href="/"
+            className="flex min-w-0 items-center gap-2.5 shrink-0 text-white no-underline rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            aria-label="Auro Home"
           >
-            Sign In
+            <img src="/auro_aura_logo.png" alt="" width={36} height={36} className="rounded-[11px]" />
+            <span className="font-semibold text-[15px] tracking-tight">Auro</span>
           </Link>
+
+          <div className="flex min-w-0 items-center justify-end gap-5 text-sm">
+            {variant === 'reviewer-apply' ? (
+              <Link
+                href="/request"
+                className="text-white/72 hover:text-white transition-colors underline-offset-2 hover:underline whitespace-nowrap"
+              >
+                Get Reviewed
+              </Link>
+            ) : (
+              <Link
+                href="/reviewers/apply"
+                className="text-white/72 hover:text-white transition-colors underline-offset-2 hover:underline whitespace-nowrap"
+              >
+                Become a Reviewer
+              </Link>
+            )}
+            <Link
+              href="/auth/sign-in"
+              className="inline-flex items-center justify-center h-10 px-4 rounded-full bg-white/[0.06] border border-white/10 text-white font-semibold hover:bg-white/[0.1] transition whitespace-nowrap"
+            >
+              Sign In
+            </Link>
+          </div>
         </div>
       </div>
     </div>
