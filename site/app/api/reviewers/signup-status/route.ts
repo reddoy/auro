@@ -108,11 +108,38 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'Authentication failed' }), { status: 401 });
     }
 
+    const { data: row, error: readErr } = await admin
+      .from('profiles')
+      .select('is_reviewer')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (readErr) {
+      return new Response(JSON.stringify({ error: readErr.message }), { status: 400 });
+    }
+
+    // Never downgrade an approved reviewer from this legacy endpoint (handles race with admin approval,
+    // stray clients, or `completed`/`pending` payloads that should not reset production state).
+    if (row?.is_reviewer === 'approved') {
+      return new Response(JSON.stringify({ success: true, unchanged: true }), { status: 200 });
+    }
+
     // Legacy endpoint: map status updates to canonical reviewer state.
     const normalizedStatus = String(status || '').toLowerCase();
     const targetState =
       normalizedStatus === 'completed' || normalizedStatus === 'pending' ? 'pending' : null;
-    const { error: updateError } = await admin.from('profiles').update({ is_reviewer: targetState }).eq('id', userId);
+
+    if (targetState === null) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid status. Expected pending or completed.' }),
+        { status: 400 }
+      );
+    }
+
+    const { error: updateError } = await admin
+      .from('profiles')
+      .update({ is_reviewer: targetState })
+      .eq('id', userId);
 
     if (updateError) {
       return new Response(JSON.stringify({ error: updateError.message }), { status: 400 });

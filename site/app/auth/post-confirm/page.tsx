@@ -47,9 +47,15 @@ function PostConfirmContent() {
         return;
       }
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      let session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'] = null;
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session?.access_token) {
+          session = data.session;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 120));
+      }
       if (!session?.access_token) {
         router.replace('/auth/sign-in');
         return;

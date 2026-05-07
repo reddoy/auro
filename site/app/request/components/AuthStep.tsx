@@ -5,6 +5,18 @@ import Link from 'next/link';
 import { AUTH_EMAIL_RATE_LIMIT_MESSAGE, isAuthEmailRateLimitError } from '@/lib/auth-messages';
 import type { RequestData } from '../page';
 
+function clearSignupDraftKeys() {
+  try {
+    localStorage.removeItem('auro_signup_user_id');
+    localStorage.removeItem('auro_signup_email');
+    localStorage.removeItem('auro_signup_full_name');
+    localStorage.removeItem('auro_signup_first_name');
+    localStorage.removeItem('auro_signup_last_name');
+  } catch {
+    /* ignore */
+  }
+}
+
 type Props = {
   isAuthenticated: boolean;
   onNext: () => void;
@@ -20,6 +32,8 @@ type Props = {
   initialAuthTab?: 'signin' | 'signup';
   /** Optional post-auth intent used for role-based routing. */
   roleIntent?: 'reviewer' | 'reviewee' | null;
+  /** Informs parent before Google OAuth redirect (e.g. allow auto-advance back into the funnel). */
+  onOAuthStart?: () => void;
 };
 
 export default function AuthStep({
@@ -33,6 +47,7 @@ export default function AuthStep({
   continueCtaLabel = 'Continue to Payment',
   initialAuthTab = 'signup',
   roleIntent = null,
+  onOAuthStart,
 }: Props) {
   const [isSignUp, setIsSignUp] = useState(() => initialAuthTab !== 'signin');
   const [email, setEmail] = useState('');
@@ -195,9 +210,12 @@ export default function AuthStep({
                 { onConflict: 'id' }
               );
           } catch {}
+          clearSignupDraftKeys();
+          setPassword('');
           onNext();
         } else {
           // Typical production: confirm email before a session exists — do not redirect to /app
+          clearSignupDraftKeys();
           setAwaitingEmailConfirmation(true);
           setIsSignUp(false);
           setPassword('');
@@ -289,6 +307,8 @@ export default function AuthStep({
             body: JSON.stringify({ userId: (u!.user as any).id, email: (u!.user as any).email || email })
           });
         } catch {}
+        clearSignupDraftKeys();
+        setPassword('');
         onNext();
       } else {
         setError('Sign-in did not complete. Please try again.');
@@ -365,6 +385,7 @@ export default function AuthStep({
     setError('');
 
     try {
+      onOAuthStart?.();
       await saveOAuthState();
 
       const oauthReturn =
@@ -468,6 +489,7 @@ export default function AuthStep({
               setError('');
               try {
                 await supabase.auth.signOut();
+                clearSignupDraftKeys();
                 setCurrentUserEmail(null);
                 setIsSignUp(false);
                 setEmail('');
@@ -572,6 +594,7 @@ export default function AuthStep({
                   <label htmlFor="firstName">First Name</label>
                   <input
                     id="firstName"
+                    name="given-name"
                     type="text"
                     value={firstName}
                     onChange={(e) => {
@@ -580,6 +603,7 @@ export default function AuthStep({
                     }}
                     placeholder="Enter your first name"
                     required
+                    autoComplete="given-name"
                     aria-describedby={error ? 'firstName-error' : undefined}
                     aria-invalid={!!error && !firstName.trim()}
                   />
@@ -596,6 +620,7 @@ export default function AuthStep({
                   <label htmlFor="lastName">Last Name</label>
                   <input
                     id="lastName"
+                    name="family-name"
                     type="text"
                     value={lastName}
                     onChange={(e) => {
@@ -604,6 +629,7 @@ export default function AuthStep({
                     }}
                     placeholder="Enter your last name"
                     required
+                    autoComplete="family-name"
                     aria-describedby={error ? 'lastName-error' : undefined}
                     aria-invalid={!!error && !lastName.trim()}
                   />
@@ -619,6 +645,7 @@ export default function AuthStep({
                 <label htmlFor="email">Email</label>
                 <input
                   id="email"
+                  name="email"
                   type="email"
                   value={email}
                   onChange={(e) => {
@@ -628,6 +655,7 @@ export default function AuthStep({
                   }}
                   placeholder="Enter your email"
                   required
+                  autoComplete="email"
                   aria-describedby={error ? 'email-error' : undefined}
                   aria-invalid={!!error && !email}
                 />

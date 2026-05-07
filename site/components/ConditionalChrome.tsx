@@ -14,15 +14,20 @@ type Props = {
 export default function ConditionalChrome({ children }: Props) {
   const pathname = usePathname();
   const isWebApp = pathname === '/app' || pathname?.startsWith('/app/');
+  const isRequestFunnel =
+    pathname === '/request' || pathname?.startsWith('/request/');
+  const isReviewerApplyFunnel =
+    pathname === '/reviewers/apply' ||
+    pathname?.startsWith('/reviewers/apply/');
   const isMarketingHome = pathname === '/';
 
   useEffect(() => {
-    if (!isMarketingHome || isWebApp) return;
+    if (!isMarketingHome || isWebApp || isRequestFunnel || isReviewerApplyFunnel) return;
     document.body.classList.add('marketing-home');
     return () => document.body.classList.remove('marketing-home');
-  }, [isMarketingHome, isWebApp]);
+  }, [isMarketingHome, isWebApp, isRequestFunnel, isReviewerApplyFunnel]);
 
-  if (isWebApp) {
+  if (isWebApp || isRequestFunnel || isReviewerApplyFunnel) {
     return <>{children}</>;
   }
 

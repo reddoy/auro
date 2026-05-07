@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AUTH_EMAIL_RATE_LIMIT_MESSAGE, isAuthEmailRateLimitError } from '../../../lib/auth-messages';
 import { supabase } from '../../../lib/supabase';
 import { useRouter } from 'next/navigation';
+import FunnelTopBar from '../../../components/FunnelTopBar';
 import ReviewerCounter from '../../../components/ReviewerCounter';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
@@ -285,6 +286,16 @@ export default function ReviewerApplyPage() {
     let authListener: any = null;
 
     const checkAuthAndLoadProfile = async () => {
+      let watchdogHit = false;
+      const watchdog = window.setTimeout(() => {
+        watchdogHit = true;
+        if (!isMounted) return;
+        console.warn(
+          '[ReviewerApply] Initial account check exceeded 25s (likely stalled network); showing the application.'
+        );
+        setIsCheckingStatus(false);
+      }, 25_000);
+
       try {
         if (!supabase?.auth) {
           console.error('[ReviewerApply] Supabase client or auth is null');
@@ -336,11 +347,12 @@ export default function ReviewerApplyPage() {
             if (user.user_metadata?.family_name) setLastName(user.user_metadata.family_name);
           }
           
-          // Check signup status with retry
+          const signupFetchTimeoutMs = 12_000;
           try {
             const response = await withRetry(async () => {
               return fetch('/api/reviewers/signup-status', {
-                headers: { authorization: `Bearer ${session.access_token}` }
+                headers: { authorization: `Bearer ${session.access_token}` },
+                signal: AbortSignal.timeout(signupFetchTimeoutMs),
               });
             }, 2, 500);
             
@@ -352,7 +364,6 @@ export default function ReviewerApplyPage() {
                 // If they already completed signup, show completion message
                 if (data.status === 'completed') {
                   setError('You have already completed the reviewer application. An account with this email is already associated with our platform.');
-                  setIsCheckingStatus(false);
                   return;
                 }
                 
@@ -367,7 +378,6 @@ export default function ReviewerApplyPage() {
             }
           } catch (statusError) {
             console.error('[ReviewerApply] Failed to check signup status after retries:', statusError);
-            // Don't fail the entire flow for this - just log the error
           }
         } else {
           // No user/session - this is normal for new users starting the signup process
@@ -382,7 +392,8 @@ export default function ReviewerApplyPage() {
           setError('Failed to load your account information. Please refresh the page and try again.');
         }
       } finally {
-        if (isMounted) {
+        window.clearTimeout(watchdog);
+        if (isMounted && !watchdogHit) {
           setIsCheckingStatus(false);
         }
       }
@@ -447,9 +458,7 @@ export default function ReviewerApplyPage() {
     
     return () => {
       isMounted = false;
-      if (authListener?.subscription) {
-        authListener.subscription.unsubscribe();
-      }
+      authListener?.data?.subscription?.unsubscribe();
     };
   }, []);
 
@@ -895,7 +904,7 @@ export default function ReviewerApplyPage() {
       <div className="w-full px-2 py-3 md:px-4 md:py-6 bg-gradient-to-b from-background/50 to-transparent">
         <div className="flex items-center justify-between relative max-w-5xl mx-auto">
           {/* Progress line */}
-          <div className="absolute top-4 md:top-6 left-0 right-0 h-0.5 bg-white/10">
+          <div className="absolute top-3.5 sm:top-4 md:top-6 left-0 right-0 h-0.5 bg-white/10">
             <div 
               className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500 ease-out shadow-sm shadow-primary/50"
               style={{ width: `${progressPercent}%` }}
@@ -911,13 +920,13 @@ export default function ReviewerApplyPage() {
             return (
               <div
                 key={stepItem.id}
-                className="flex flex-col items-center relative z-10 flex-1"
+                className="flex min-w-0 flex-col items-center relative z-10 flex-1"
                 onClick={isClickable ? () => setStep(stepItem.id) : undefined}
                 style={{ cursor: isClickable ? 'pointer' : 'default' }}
               >
                 <div
                   className={`
-                    w-7 h-7 md:w-12 md:h-12 rounded-full flex items-center justify-center text-sm font-semibold
+                    w-7 h-7 md:w-12 md:h-12 shrink-0 rounded-full flex items-center justify-center text-sm font-semibold
                     transition-all duration-300 ease-out
                     ${isCompleted 
                       ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/30' 
@@ -933,11 +942,14 @@ export default function ReviewerApplyPage() {
                     <Icon className="w-3 h-3 md:w-5 md:h-5" />
                   )}
                 </div>
-                <span className={`
-                  mt-1 md:mt-2 text-[10px] md:text-xs font-medium text-center px-0.5
-                  hidden sm:block
-                  ${isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-white' : 'text-gray-500'}
-                `}>
+                <span
+                  className={[
+                    'mt-1 md:mt-2 max-w-[4.25rem] sm:max-w-[5rem] text-center text-[10px] md:text-xs font-medium leading-tight hyphens-none',
+                    'line-clamp-2 break-words',
+                    isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-white' : 'text-gray-500',
+                  ].join(' ')}
+                  title={stepItem.label}
+                >
                   {stepItem.shortLabel}
                 </span>
               </div>
@@ -951,10 +963,13 @@ export default function ReviewerApplyPage() {
   // Show loading state while checking signup status
   if (isCheckingStatus) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-white flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto"></div>
-          <p className="text-gray-300">Checking your account status...</p>
+      <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-white">
+        <FunnelTopBar variant="reviewer-apply" />
+        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
+          <div className="text-center space-y-4">
+            <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto" />
+            <p className="text-gray-300">Checking your account status...</p>
+          </div>
         </div>
       </div>
     );
@@ -963,64 +978,65 @@ export default function ReviewerApplyPage() {
   // Show completion message if they already completed signup
   if (signupStatus === 'completed') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-white flex items-center justify-center px-6">
-        <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
-          <CardContent className="py-12 text-center space-y-6">
-            <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto">
-              <Check className="w-10 h-10 text-white" />
-            </div>
-            
-            <div className="space-y-2">
-              <h3 className="text-2xl font-bold text-white">Already Signed Up!</h3>
-              <p className="text-gray-300">
-                You have already completed the reviewer application. An account with this email is already associated with our platform.
-              </p>
-            </div>
+      <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-white">
+        <FunnelTopBar variant="reviewer-apply" />
+        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-6">
+          <Card className="w-full max-w-md bg-white/10 backdrop-blur-sm border-white/20">
+            <CardContent className="py-12 text-center space-y-6">
+              <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto">
+                <Check className="w-10 h-10 text-white" />
+              </div>
 
-            <div className="flex gap-3">
-              <Button
-                asChild
-                className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white"
-              >
-                <a href="/">
-                  Back to Home
-                </a>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="space-y-2">
+                <h3 className="text-2xl font-bold text-white">Already Signed Up!</h3>
+                <p className="text-gray-300">
+                  You have already completed the reviewer application. An account with this email is already associated with our platform.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  asChild
+                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white"
+                >
+                  <a href="/">
+                    Back to Home
+                  </a>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-white">
+      <FunnelTopBar variant="reviewer-apply" />
       <div className="w-full">
         <Stepper />
       </div>
       
       {step === 1 && (
-        <div className="flex-1 flex items-center justify-center px-4 py-2 md:py-6 min-h-[calc(100vh-120px)] md:min-h-[calc(100vh-100px)]">
-          {/* Layout - Optimized for all screen sizes */}
+        <div className="flex-1 flex items-start md:items-center justify-center px-4 py-4 md:py-8 min-h-0 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="w-full max-w-2xl mx-auto">
-            <div className="flex flex-col justify-between h-[calc(100vh-140px)] max-h-[700px] md:max-h-[800px]">
-              {/* Top Section - Compact */}
-              <div className="text-center space-y-3 md:space-y-4 pt-2 md:pt-4">
-                <h1 className="text-3xl md:text-5xl font-bold leading-tight px-2">
-                  <span className="block text-white">Girls rate guys.</span>
-                  <span className="block text-white">Guys get advice.</span>
+            <div className="flex flex-col gap-6 md:gap-8">
+              <div className="text-center space-y-3 md:space-y-4 pt-1 md:pt-2 hyphens-none">
+                <h1 className="text-3xl md:text-5xl font-bold leading-tight px-2 text-balance">
+                  <span className="block text-white">Review profiles honestly.</span>
+                  <span className="block text-white">Men get actionable advice.</span>
                   <span className="block bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
-                    Girls get paid.
+                    You earn per review.
                   </span>
                 </h1>
                 
-                <p className="text-sm md:text-base text-gray-300 px-4 leading-relaxed max-w-xl mx-auto">
-                  Earn money giving honest feedback. Auro is live on web and mobile web.
+                <p className="text-sm md:text-base text-gray-300 px-4 leading-relaxed max-w-xl mx-auto text-pretty">
+                  Earn by giving straightforward dating-profile feedback—on web and mobile web.
                 </p>
               </div>
 
-              {/* Middle Section - Benefits Cards */}
-              <div className="px-4 space-y-2.5 md:space-y-4">
+              <div className="px-0 sm:px-4 space-y-2.5 md:space-y-4">
                 <div className="grid grid-cols-3 gap-2.5 md:gap-4">
                   <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-green-500/20">
                     <div className="flex flex-col items-center space-y-1 md:space-y-2">
@@ -1028,8 +1044,8 @@ export default function ReviewerApplyPage() {
                         <DollarSign className="w-4 h-4 md:w-6 md:h-6 text-green-400" />
                       </div>
                       <div className="text-center">
-                        <div className="text-sm md:text-lg font-bold text-white">$25-50</div>
-                        <div className="text-[10px] md:text-xs text-gray-300">per review</div>
+                        <div className="text-sm md:text-lg font-bold text-white tabular-nums">$25–50</div>
+                        <div className="text-xs text-gray-300 leading-snug">per review</div>
                       </div>
                     </div>
                   </div>
@@ -1039,9 +1055,9 @@ export default function ReviewerApplyPage() {
                       <div className="w-9 h-9 md:w-12 md:h-12 bg-gradient-to-br from-primary/30 to-primary/20 rounded-full flex items-center justify-center">
                         <Star className="w-4 h-4 md:w-6 md:h-6 text-primary" />
                       </div>
-                      <div className="text-center">
-                        <div className="text-sm md:text-lg font-bold text-white">You keep most</div>
-                        <div className="text-[10px] md:text-xs text-gray-300">of each review</div>
+                      <div className="text-center px-px">
+                        <div className="text-sm md:text-lg font-bold text-white leading-tight">You keep most</div>
+                        <div className="text-xs text-gray-300 leading-snug">of each review</div>
                       </div>
                     </div>
                   </div>
@@ -1053,15 +1069,14 @@ export default function ReviewerApplyPage() {
                       </div>
                       <div className="text-center">
                         <div className="text-sm md:text-lg font-bold text-white">Flexible</div>
-                        <div className="text-[10px] md:text-xs text-gray-300">schedule</div>
+                        <div className="text-xs text-gray-300 leading-snug">schedule</div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Bottom Section - CTA + Urgency */}
-              <div className="space-y-2.5 md:space-y-4 px-4 pb-4 md:pb-6">
+              <div className="space-y-2.5 md:space-y-4 px-0 sm:px-4 pb-2 md:pb-4">
                 {/* Live counter urgency bar */}
                 <div className="bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-primary/30">
                   <div className="flex items-center justify-between mb-1.5 md:mb-2">
@@ -1079,17 +1094,17 @@ export default function ReviewerApplyPage() {
                 {/* Main CTA */}
                 <Button 
                   size="xl" 
-                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white py-5 md:py-6 text-base md:text-lg font-bold rounded-2xl shadow-2xl shadow-primary/30 hover:shadow-primary/50 transition-all duration-300 border-2 border-white/10"
+                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white py-5 md:py-6 text-base md:text-lg font-bold rounded-2xl shadow-2xl shadow-primary/30 hover:shadow-primary/50 transition-all duration-300 border-2 border-white/10 whitespace-normal min-h-[3.25rem]"
                   onClick={() => setStep(2)}
                 >
-                  <div className="flex items-center justify-center gap-2 md:gap-3">
-                    <span>Start Your Reviewer Application</span>
-                    <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
+                  <div className="flex flex-col items-center justify-center gap-2 sm:flex-row sm:gap-3 px-2 text-center">
+                    <span className="leading-snug">Start your reviewer application</span>
+                    <ArrowRight className="w-5 h-5 md:w-6 md:h-6 shrink-0" aria-hidden />
                   </div>
                 </Button>
 
                 {/* Trust indicators */}
-                <div className="flex items-center justify-center gap-3 md:gap-4 text-[10px] md:text-xs text-gray-400">
+                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 md:gap-4 text-xs text-gray-400">
                   <div className="flex items-center gap-1 md:gap-1.5">
                     <Check className="w-3 h-3 md:w-4 md:h-4 text-green-400" />
                     <span>No commitment</span>
@@ -1519,17 +1534,17 @@ export default function ReviewerApplyPage() {
                     <div className="bg-gradient-to-br from-green-500/20 via-emerald-500/20 to-teal-500/20 border border-green-500/30 rounded-xl p-5">
                       <h3 className="text-sm font-semibold text-white mb-4 text-center">Your Take-Home Breakdown</h3>
                       <div className="bg-black/30 rounded-lg p-4 space-y-3">
-                        <div className="flex items-center justify-between whitespace-nowrap">
-                          <span className="text-sm text-gray-300">Rate:</span>
-                          <span className="text-lg font-semibold text-white">${rate.toFixed(0)}</span>
+                        <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                          <span className="text-sm text-gray-300">Rate</span>
+                          <span className="text-lg font-semibold text-white tabular-nums">${rate.toFixed(0)}</span>
                         </div>
-                        <div className="flex items-center justify-between whitespace-nowrap text-xs text-gray-400">
-                          <span>Platform fee:</span>
-                          <span>-${platformFee.toFixed(2)}</span>
+                        <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 text-xs text-gray-400">
+                          <span>Platform fee</span>
+                          <span className="tabular-nums shrink-0">-${platformFee.toFixed(2)}</span>
                         </div>
-                        <div className="pt-3 border-t border-green-500/30 flex items-center justify-between whitespace-nowrap">
-                          <span className="text-sm font-semibold text-green-300">You take home:</span>
-                          <span className="text-2xl font-bold text-green-400">${takeHomeRate.toFixed(2)}</span>
+                        <div className="pt-3 border-t border-green-500/30 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+                          <span className="text-sm font-semibold text-green-300">You take home</span>
+                          <span className="text-2xl font-bold text-green-400 tabular-nums">${takeHomeRate.toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -1538,17 +1553,17 @@ export default function ReviewerApplyPage() {
                     <div className="bg-gradient-to-br from-blue-500/20 via-indigo-500/20 to-secondary/20 border border-blue-500/30 rounded-xl p-5">
                       <h3 className="text-sm font-semibold text-white mb-4 text-center">Projected Earnings</h3>
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between whitespace-nowrap">
-                          <span className="text-sm text-gray-300">Per review:</span>
-                          <span className="text-xl font-bold text-blue-400">${takeHomeRate.toFixed(2)}</span>
+                        <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                          <span className="text-sm text-gray-300">Per review</span>
+                          <span className="text-xl font-bold text-blue-400 tabular-nums">${takeHomeRate.toFixed(2)}</span>
                         </div>
-                        <div className="flex items-center justify-between whitespace-nowrap">
-                          <span className="text-sm text-gray-300">5/week:</span>
-                          <span className="text-lg font-semibold text-blue-300">${(takeHomeRate * 5).toFixed(2)}</span>
+                        <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                          <span className="text-sm text-gray-300">× 5 per week</span>
+                          <span className="text-lg font-semibold text-blue-300 tabular-nums">${(takeHomeRate * 5).toFixed(2)}</span>
                         </div>
-                        <div className="flex items-center justify-between whitespace-nowrap">
-                          <span className="text-sm text-gray-300">20/month:</span>
-                          <span className="text-lg font-semibold text-blue-300">${(takeHomeRate * 20).toFixed(2)}</span>
+                        <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                          <span className="text-sm text-gray-300">× 20 per month</span>
+                          <span className="text-lg font-semibold text-blue-300 tabular-nums">${(takeHomeRate * 20).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -1561,8 +1576,8 @@ export default function ReviewerApplyPage() {
                 <div className="bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20 border border-primary/30 rounded-xl p-5">
                   <div className="text-center space-y-2">
                     <p className="text-sm font-semibold text-white">Typical Rate</p>
-                    <p className="text-sm text-gray-300 whitespace-nowrap">
-                      Most reviewers: <span className="text-primary font-semibold">$25-50</span> per review
+                    <p className="text-sm text-gray-300 text-center leading-relaxed px-1">
+                      Most reviewers: <span className="text-primary font-semibold tabular-nums">$25–50</span> per review
                     </p>
                     <p className="text-xs text-gray-400">Set your rate above or we'll suggest one</p>
                   </div>

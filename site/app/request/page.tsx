@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabase as supabaseClient } from '../../lib/supabase';
+import FunnelTopBar from '../../components/FunnelTopBar';
 
 // Step components
 import IntroStep from './components/IntroStep';
@@ -38,13 +38,45 @@ const STEPS = [
 
 type Step = typeof STEPS[number];
 
+function emptyRequestData(): RequestData {
+  return {
+    photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
+    message: '',
+    consent: {
+      shareOnSocial: undefined,
+      agreedAt: ''
+    },
+  };
+}
+
+/** Full page reload clears saved funnel drafts (OAuth returns use navigate, not reload). */
+function shouldSkipRestoringSavedFlow(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const entries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+    const nav = entries[0];
+    return nav?.type === 'reload';
+  } catch {
+    return false;
+  }
+}
+
 export default function RequestPage() {
-  const router = useRouter();
+  const allowAutoAdvanceToPaymentRef = useRef(true);
   
   // Initialize currentStep from localStorage if available (for OAuth return)
   // Use lazy initializer to check localStorage only once on mount
   const [currentStep, setCurrentStep] = useState<Step>(() => {
     if (typeof window === 'undefined') return 'intro';
+    if (shouldSkipRestoringSavedFlow()) {
+      try {
+        localStorage.removeItem('auro_request_flow_state');
+        localStorage.removeItem('auro_upload_session_id');
+      } catch {
+        /* ignore */
+      }
+      return 'intro';
+    }
     try {
       const saved = localStorage.getItem('auro_request_flow_state');
       if (saved) {
@@ -68,14 +100,10 @@ export default function RequestPage() {
   // Initialize requestData from localStorage if available
   const [requestData, setRequestData] = useState<RequestData>(() => {
     if (typeof window === 'undefined') {
-      return {
-        photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
-        message: '',
-        consent: {
-          shareOnSocial: undefined,
-          agreedAt: ''
-        }
-      };
+      return emptyRequestData();
+    }
+    if (shouldSkipRestoringSavedFlow()) {
+      return emptyRequestData();
     }
     try {
       const saved = localStorage.getItem('auro_request_flow_state');
@@ -104,14 +132,7 @@ export default function RequestPage() {
     } catch (e) {
       console.warn('[RequestPage] Failed to read saved requestData on init:', e);
     }
-    return {
-      photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
-      message: '',
-      consent: {
-        shareOnSocial: undefined,
-        agreedAt: ''
-      }
-    };
+    return emptyRequestData();
   });
   
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -325,21 +346,17 @@ export default function RequestPage() {
             if (isDifferentCreator) {
               console.log('[RequestPage] New creator detected in URL, clearing old state. Old:', { savedCreatorSlug, savedCreatorId }, 'New:', { creatorSlug, creatorId });
               clearFlowState();
-              // Reset requestData to start fresh
-              setRequestData({
-                photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
-                message: '',
-                consent: {
-                  shareOnSocial: undefined,
-                  agreedAt: ''
-                }
-              });
+              // Reset requestData to start fresh (keep upload session grouping)
+              setRequestData(prev => ({
+                ...emptyRequestData(),
+                uploadSessionId: prev.uploadSessionId,
+              }));
               // Reset to intro step to start fresh
               setCurrentStep('intro');
             }
           }
-        } catch (e) {
-          console.warn('[RequestPage] Failed to check saved state for creator mismatch:', e);
+        } catch {
+          console.warn('[RequestPage] Failed to check saved state for creator mismatch');
         }
         
         // Try to restore flow state (for OAuth return) - but only if creators match
@@ -583,7 +600,11 @@ export default function RequestPage() {
                 
                 // If user is authenticated and we're on 'auth' step (either from init or restore),
                 // advance to payment immediately
-                if (isRealUser && currentStepRef.current === 'auth') {
+                if (
+                  allowAutoAdvanceToPaymentRef.current &&
+                  isRealUser &&
+                  currentStepRef.current === 'auth'
+                ) {
                   console.log('[RequestPage] User authenticated and on auth step, advancing to payment');
                   setTimeout(() => {
                     setCurrentStep('payment');
@@ -595,7 +616,10 @@ export default function RequestPage() {
                   // User is authenticated and state was restored
                   // If we restored to 'auth' step, immediately advance to payment since user is already authenticated
                   setTimeout(() => {
-                    if (currentStepRef.current === 'auth') {
+                    if (
+                      allowAutoAdvanceToPaymentRef.current &&
+                      currentStepRef.current === 'auth'
+                    ) {
                       console.log('[RequestPage] User authenticated and on auth step after restore, advancing to payment');
                       setCurrentStep('payment');
                       try {
@@ -610,7 +634,11 @@ export default function RequestPage() {
               } else if (!hasSavedState) {
                 // No saved state, but if user is authenticated and on 'auth' step, advance to payment
                 // This handles the case where state was cleared but user is still authenticated
-                if (isRealUser && currentStepRef.current === 'auth') {
+                if (
+                  allowAutoAdvanceToPaymentRef.current &&
+                  isRealUser &&
+                  currentStepRef.current === 'auth'
+                ) {
                   console.log('[RequestPage] User authenticated on auth step (no saved state), advancing to payment');
                   setTimeout(() => {
                     setCurrentStep('payment');
@@ -695,7 +723,10 @@ export default function RequestPage() {
                       setCurrentStep(stepToRestore);
                       
                       // If we restored to auth step but user is now authenticated, immediately advance to payment
-                      if (stepToRestore === 'auth') {
+                      if (
+                        stepToRestore === 'auth' &&
+                        allowAutoAdvanceToPaymentRef.current
+                      ) {
                         console.log('[RequestPage] Restored to auth step but user is authenticated, advancing to payment');
                         setTimeout(() => {
                           setCurrentStep('payment');
@@ -723,7 +754,10 @@ export default function RequestPage() {
               // If they were on another step and just authenticated, stay on that step
               // Use setTimeout to ensure we're checking the latest step value
               setTimeout(() => {
-                if (currentStepRef.current === 'auth') {
+                if (
+                  allowAutoAdvanceToPaymentRef.current &&
+                  currentStepRef.current === 'auth'
+                ) {
                   console.log('[RequestPage] Advancing from auth to payment after SIGNED_IN');
                   setCurrentStep('payment');
                   // Clear saved state since we're advancing
@@ -792,7 +826,10 @@ export default function RequestPage() {
     const currentIndex = STEPS.indexOf(currentStep);
     if (currentIndex < STEPS.length - 1) {
       const nextStepName = STEPS[currentIndex + 1];
-      
+      if (nextStepName === 'payment') {
+        allowAutoAdvanceToPaymentRef.current = true;
+      }
+
       // Require authentication before proceeding to payment step
       if (nextStepName === 'payment' && !isAuthenticated) {
         // Save current state and redirect to auth
@@ -806,30 +843,28 @@ export default function RequestPage() {
   };
 
   const previousStep = useCallback(() => {
-    // Use functional update to ensure we're using the latest state
+    const authIdx = STEPS.indexOf('auth');
     setCurrentStep(prevStep => {
       const prevIndex = STEPS.indexOf(prevStep);
       if (prevIndex > 0) {
-        return STEPS[prevIndex - 1];
+        const nextStepName = STEPS[prevIndex - 1];
+        if (nextStepName === 'auth' && prevIndex > authIdx) {
+          allowAutoAdvanceToPaymentRef.current = false;
+        }
+        return nextStepName;
       }
       return prevStep;
     });
   }, []);
 
   const goToStep = (step: Step) => {
+    const fromIdx = STEPS.indexOf(currentStepRef.current);
+    const authIdx = STEPS.indexOf('auth');
+    const toIdx = STEPS.indexOf(step);
+    if (step === 'auth' && fromIdx > authIdx && toIdx === authIdx) {
+      allowAutoAdvanceToPaymentRef.current = false;
+    }
     setCurrentStep(step);
-  };
-
-  const getStepTitle = (step: Step) => {
-    const titles = {
-      'intro': 'Welcome',
-      'creator-selection': 'Choose Your Reviewer',
-      'photo-upload': 'Upload Your Photos',
-      'auth': 'Create Your Account',
-      'payment': 'Complete Payment',
-      'download-app': 'Get the App'
-    };
-    return titles[step];
   };
 
   const renderStep = () => {
@@ -893,17 +928,11 @@ export default function RequestPage() {
                 console.log('[RequestPage] Different creator selected, clearing old form data. Old:', { creatorId: requestData.creatorId, creatorSlug: requestData.creatorSlug }, 'New:', { creatorId, creatorSlug });
                 // Clear old state and reset form data
                 clearFlowState();
-                // Update with new creator and reset form fields
                 setRequestData({
+                  ...emptyRequestData(),
                   creatorId,
                   creatorSlug,
-                  photos: { outfits: [], roomTourPhotos: [], datingProfileScreenshots: [] },
-                  message: '',
-                  consent: {
-                    shareOnSocial: undefined,
-                    agreedAt: ''
-                  },
-                  uploadSessionId: requestData.uploadSessionId, // Keep upload session
+                  uploadSessionId: requestData.uploadSessionId,
                 });
               } else {
                 // Same creator, just update the creator info
@@ -936,6 +965,9 @@ export default function RequestPage() {
             isAuthenticated={isAuthenticated}
             onNext={nextStep}
             onBack={previousStep}
+            onOAuthStart={() => {
+              allowAutoAdvanceToPaymentRef.current = true;
+            }}
             supabase={supabase}
             requestData={requestData}
             onSaveState={saveFlowState}
@@ -965,64 +997,71 @@ export default function RequestPage() {
     }
   };
 
-  // Modern Stepper Component
   const Stepper = () => {
     const stepConfigs = [
-      { id: 'intro', label: 'Intro', icon: '🎯' },
-      { id: 'creator-selection', label: 'Reviewer', icon: '👤' },
-      { id: 'photo-upload', label: 'Photos', icon: '📸' },
-      { id: 'auth', label: 'Account', icon: '🔐' },
-      { id: 'payment', label: 'Payment', icon: '💳' },
-      { id: 'download-app', label: 'Done', icon: '✅' }
-    ];
+      { id: 'intro', short: '1', label: 'Intro' },
+      { id: 'creator-selection', short: '2', label: 'Pick' },
+      { id: 'photo-upload', short: '3', label: 'Photos' },
+      { id: 'auth', short: '4', label: 'Account' },
+      { id: 'payment', short: '5', label: 'Pay' },
+      { id: 'download-app', short: '6', label: 'Done' },
+    ] as const;
 
     const currentIndex = STEPS.indexOf(currentStep);
+    const connectorTop = 'top-[22px] sm:top-5';
 
     return (
-      <div className="w-full px-2 py-3 md:px-4 md:py-6 bg-gradient-to-b from-background/50 to-transparent">
-        <div className="flex items-center justify-between relative max-w-6xl mx-auto">
-          {/* Progress line */}
-          <div className="absolute top-4 md:top-6 left-0 right-0 h-0.5 bg-white/10">
-            <div 
-              className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500 ease-out shadow-sm shadow-primary/50"
-              style={{ width: `${(currentIndex / (stepConfigs.length - 1)) * 100}%` }}
+      <div className="w-full px-2 sm:px-4 pb-4 pt-2 md:pb-6 md:pt-4 bg-gradient-to-b from-background/55 to-transparent">
+        <div className="relative flex max-w-6xl mx-auto items-start justify-between gap-0.5 sm:gap-1">
+          <div className={`absolute left-3 right-3 sm:left-10 sm:right-10 ${connectorTop} h-px bg-white/12`}>
+            <div
+              className="h-full bg-gradient-to-r from-primary to-orange-600/95 transition-[width] duration-500 ease-out"
+              style={{
+                width: `${stepConfigs.length > 1 ? (currentIndex / (stepConfigs.length - 1)) * 100 : 0}%`,
+              }}
             />
           </div>
-          
           {stepConfigs.map((stepItem, idx) => {
             const isCompleted = currentIndex > idx;
             const isCurrent = currentIndex === idx;
             const isClickable = currentIndex > idx;
-            
+
             return (
-              <div
+              <button
                 key={stepItem.id}
-                className="flex flex-col items-center relative z-10 flex-1"
+                type="button"
+                disabled={!isClickable}
                 onClick={isClickable ? () => goToStep(stepItem.id as Step) : undefined}
-                style={{ cursor: isClickable ? 'pointer' : 'default' }}
+                className={[
+                  'relative z-10 flex flex-1 flex-col items-center gap-1 min-w-0',
+                  'bg-transparent border-0 p-0',
+                  isClickable ? 'cursor-pointer' : 'cursor-default opacity-95',
+                  'touch-manipulation [-webkit-tap-highlight-color:transparent]',
+                ].join(' ')}
               >
-                <div
-                  className={`
-                    w-7 h-7 md:w-12 md:h-12 rounded-full flex items-center justify-center text-xs md:text-base font-semibold
-                    transition-all duration-300 ease-out
-                    ${isCompleted 
-                      ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/30' 
-                      : isCurrent 
-                        ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-xl shadow-primary/50 scale-110' 
-                        : 'bg-white/10 border border-white/20 text-gray-400'
-                    }
-                  `}
+                <span
+                  className={[
+                    'flex h-[34px] w-[34px] sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full text-xs sm:text-[13px] font-semibold tabular-nums transition-all duration-200',
+                    isCompleted
+                      ? 'bg-gradient-to-br from-primary to-orange-700 text-white ring-2 ring-black/35'
+                      : isCurrent
+                        ? 'bg-primary text-white shadow-md shadow-black/35 ring-2 ring-primary/25'
+                        : 'border border-white/15 bg-black/35 text-muted-foreground',
+                  ].join(' ')}
+                  aria-current={isCurrent ? 'step' : undefined}
                 >
-                  {isCompleted ? '✓' : stepItem.icon}
-                </div>
-                <span className={`
-                  mt-1 md:mt-2 text-[10px] md:text-xs font-medium text-center px-0.5
-                  hidden sm:block
-                  ${isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-white' : 'text-gray-500'}
-                `}>
+                  {isCompleted ? '\u2713' : stepItem.short}
+                </span>
+                <span
+                  className={[
+                    'w-full px-0.5 text-xs font-medium text-center tabular-nums leading-snug tracking-normal hyphens-none',
+                    'line-clamp-2 break-words',
+                    isCurrent ? 'text-white' : isCompleted ? 'text-white/82' : 'text-muted-foreground/85',
+                  ].join(' ')}
+                >
                   {stepItem.label}
                 </span>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -1086,9 +1125,9 @@ export default function RequestPage() {
 
     return (
       <div className="w-full px-4 py-3 bg-gradient-to-r from-background/80 to-card/80 border-b border-white/10">
-        <div className="max-w-6xl mx-auto flex items-center justify-center gap-3">
-          <div className="flex items-center gap-3 bg-white/5 rounded-full px-4 py-2.5 border border-white/10 shadow-lg shadow-green-500/10">
-            <div className="relative">
+        <div className="max-w-6xl mx-auto flex items-center justify-center gap-3 min-w-0 px-2">
+          <div className="flex min-w-0 max-w-full items-center gap-3 bg-white/5 rounded-full px-4 py-2.5 border border-white/10 shadow-lg shadow-green-500/10">
+            <div className="relative shrink-0">
               <AsyncAvatar 
                 avatarPathOrUrl={reviewerInfo.avatar_url} 
                 alt={reviewerInfo.full_name}
@@ -1098,8 +1137,11 @@ export default function RequestPage() {
                 ✓
               </div>
             </div>
-            <span className="text-white font-medium text-sm md:text-base">
-              Reviewing with <span className="font-semibold text-green-400">{reviewerInfo.full_name}</span>
+            <span className="min-w-0 text-white font-medium text-sm md:text-base text-left leading-snug">
+              Reviewing with{' '}
+              <span className="font-semibold text-green-400 inline-block max-w-[min(280px,calc(100vw-10rem))] truncate align-bottom" title={reviewerInfo.full_name}>
+                {reviewerInfo.full_name}
+              </span>
             </span>
           </div>
         </div>
@@ -1109,6 +1151,7 @@ export default function RequestPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-white">
+      <FunnelTopBar variant="request" />
       <div className="w-full">
         <Stepper />
         <SelectedReviewerIndicator />

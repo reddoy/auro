@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { ArrowRight, DollarSign, Star, Clock, CheckCircle } from 'lucide-react';
+import { ArrowRight, DollarSign, Star, Clock, CheckCircle, Users, Video, TrendingUp } from 'lucide-react';
 
 type Props = {
   onNext: () => void;
@@ -60,40 +60,46 @@ export default function IntroStep({ onNext }: Props) {
         <div className="mobile-intro-content">
           {/* Main Headline */}
           <div className="intro-headline">
-            <h1 className="intro-title mobile-text-reveal" style={{ animationDelay: '0.2s' }}>
+            <h1 className="intro-title mobile-text-reveal hyphens-none text-balance" style={{ animationDelay: '0.2s' }}>
               <span className="block text-white">
-                Get Expert <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">Dating Profile Feedback</span>
+                Get honest <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">feedback</span> on your dating profile.
               </span>
             </h1>
             
-            <p className="intro-subtitle mobile-text-reveal" style={{ animationDelay: '0.4s' }}>
-              Receive honest, personalized reviews from women on your dating profile to maximize your matches
+            <p className="intro-subtitle mobile-text-reveal text-pretty" style={{ animationDelay: '0.4s' }}>
+              Clear notes on photos, prompts, and overall vibe from real reviewers. Start in minutes.
             </p>
           </div>
 
           {/* Quick Benefits - Mobile */}
           <div className="mobile-quick-benefits mobile-text-reveal" style={{ animationDelay: '0.5s' }}>
             <div className="quick-benefit">
-              <div className="benefit-icon-sm">👩</div>
-              <span>Real women<br/>reviewers</span>
+              <div className="benefit-icon-sm" aria-hidden>
+                <Users className="h-7 w-7 text-primary" />
+              </div>
+              <span>Real<br />reviewers</span>
             </div>
             <div className="quick-benefit">
-              <div className="benefit-icon-sm">🎥</div>
-              <span>Video<br/>feedback</span>
+              <div className="benefit-icon-sm" aria-hidden>
+                <Video className="h-7 w-7 text-blue-400" />
+              </div>
+              <span>Video<br />when helpful</span>
             </div>
             <div className="quick-benefit">
-              <div className="benefit-icon-sm">💝</div>
-              <span>More<br/>matches</span>
+              <div className="benefit-icon-sm" aria-hidden>
+                <TrendingUp className="h-7 w-7 text-green-400" />
+              </div>
+              <span>Actionable<br />next steps</span>
             </div>
           </div>
 
           {/* CTA Button */}
           <div className="intro-cta mobile-text-reveal" style={{ animationDelay: '0.6s' }}>
-            <button 
+              <button 
               onClick={onNext}
               className="cta-button mobile-gradient-border mobile-touch-feedback mobile-optimized"
             >
-              <span>Get Started</span>
+              <span>Continue</span>
               <ArrowRight className="cta-arrow" />
             </button>
           </div>
@@ -106,16 +112,16 @@ export default function IntroStep({ onNext }: Props) {
           {/* Left Content */}
           <div className="desktop-left">
             <div className="intro-headline">
-              <h1 className="intro-title-desktop">
+              <h1 className="intro-title-desktop hyphens-none text-balance">
                 <span className="block text-white pb-2">
-                  Get Expert <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">Dating Profile Feedback</span>
+                  Get honest <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">feedback</span> on your dating profile.
                 </span>
               </h1>
               
-              <p className="intro-subtitle-desktop">
-                Receive honest, personalized reviews from women on your dating profile to maximize your matches.
-                <span className="block mt-3 text-lg text-white/80">
-                  Our expert reviewers will help you stand out and get more dates.
+              <p className="intro-subtitle-desktop text-pretty">
+                Specific guidance on photos, prompts, and how you come across—with video when reviewers offer it.
+                <span className="block mt-3 text-lg text-white/78">
+                  You pick your reviewer and pay securely when you&apos;re ready.
                 </span>
               </p>
             </div>
@@ -127,8 +133,8 @@ export default function IntroStep({ onNext }: Props) {
                   <Star className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="benefit-title">Real Feedback</h3>
-                  <p className="benefit-desc">Get honest reviews from women</p>
+                  <h3 className="benefit-title">Real humans</h3>
+                  <p className="benefit-desc">No generic AI scorecards—just straightforward, useful commentary</p>
                 </div>
               </div>
               
@@ -137,8 +143,8 @@ export default function IntroStep({ onNext }: Props) {
                   <Clock className="w-6 h-6 text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="benefit-title">Video Reviews</h3>
-                  <p className="benefit-desc">Personalized video feedback</p>
+                  <h3 className="benefit-title">Video when it helps</h3>
+                  <p className="benefit-desc">Walkthrough-style feedback when reviewers include it</p>
                 </div>
               </div>
               
@@ -147,8 +153,8 @@ export default function IntroStep({ onNext }: Props) {
                   <DollarSign className="w-6 h-6 text-green-400" />
                 </div>
                 <div>
-                  <h3 className="benefit-title">Better Results</h3>
-                  <p className="benefit-desc">Improve your match rate</p>
+                  <h3 className="benefit-title">Clear next edits</h3>
+                  <p className="benefit-desc">What to change first, backed by reviewer experience</p>
                 </div>
               </div>
             </div>
@@ -159,7 +165,7 @@ export default function IntroStep({ onNext }: Props) {
                 onClick={onNext}
                 className="cta-button-desktop"
               >
-                <span>🚀 Request a Review Now</span>
+                <span>Request a review</span>
                 <ArrowRight className="cta-arrow" />
               </button>
             </div>
@@ -181,8 +187,8 @@ export default function IntroStep({ onNext }: Props) {
                 />
                 <div ref={desktopOverlayRef} className="desktop-iphone-overlay">
                   <div className="overlay-content">
-                    <h3>Review & Get Paid</h3>
-                    <p>See how easy it is to earn money</p>
+                    <h3>Preview the experience</h3>
+                    <p>See what a profile review looks like inside Auro</p>
                   </div>
                 </div>
               </div>
@@ -190,12 +196,12 @@ export default function IntroStep({ onNext }: Props) {
               {/* Floating Benefit Callouts */}
               <div className="floating-callout floating-callout-top">
                 <Star className="w-4 h-4 text-primary" />
-                <span>Honest feedback from women</span>
+                <span>Structured, honest critique</span>
               </div>
               
               <div className="floating-callout floating-callout-bottom">
                 <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Video reviews included</span>
+                <span>Photos, prompts & tone</span>
               </div>
             </div>
           </div>
@@ -354,7 +360,6 @@ export default function IntroStep({ onNext }: Props) {
         }
 
         .benefit-icon-sm {
-          font-size: 2rem;
           margin-bottom: 0.5rem;
           background: rgba(255, 255, 255, 0.05);
           backdrop-filter: blur(8px);

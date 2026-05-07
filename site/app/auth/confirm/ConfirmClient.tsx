@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -9,7 +10,29 @@ const requestLinkStyle = {
   backgroundColor: "#F26955",
 };
 
-function RequestLink({ href, children }: { href: string; children: React.ReactNode }) {
+function parseHashFragment(raw: string) {
+  if (!raw?.trim()) return null;
+  const body = raw.startsWith("#") ? raw.slice(1) : raw;
+  if (!body) return null;
+  const searchParams = new URLSearchParams(body);
+  const code = searchParams.get("code");
+  const tokenHash = searchParams.get("token_hash");
+  const typeParam = searchParams.get("type");
+  const accessToken = searchParams.get("access_token");
+  const refreshToken = searchParams.get("refresh_token");
+  const errorDescription =
+    searchParams.get("error_description") ?? searchParams.get("error");
+  return {
+    code,
+    tokenHash,
+    type: typeParam,
+    accessToken,
+    refreshToken,
+    errorDescription,
+  };
+}
+
+function RequestLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link href={href} className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={requestLinkStyle}>
       {children}
@@ -20,10 +43,10 @@ function RequestLink({ href, children }: { href: string; children: React.ReactNo
 function Inner() {
   const params = useSearchParams();
   const router = useRouter();
-  const tokenHash = params.get("token_hash");
+  const tokenHashFromQuery = params.get("token_hash");
   /** PKCE email / magic links often arrive with `code` instead of `token_hash`. */
-  const code = params.get("code");
-  const type = params.get("type");
+  const codeFromQuery = params.get("code");
+  const typeFromQuery = params.get("type");
   const email = params.get("email");
   const roleIntent = params.get("role_intent");
   const [hashParams, setHashParams] = useState<{
@@ -40,11 +63,46 @@ function Inner() {
   const [status, setStatus] = useState<"pending" | "success" | "error">("pending");
   const [message, setMessage] = useState<string>("");
 
-  const effectiveType = type ?? hashParams?.type ?? null;
-  const effectiveCode = code ?? hashParams?.code ?? null;
-  const effectiveTokenHash = tokenHash ?? hashParams?.tokenHash ?? null;
+  const effectiveType = typeFromQuery ?? hashParams?.type ?? null;
+  const effectiveCode = codeFromQuery ?? hashParams?.code ?? null;
+  const effectiveTokenHash = tokenHashFromQuery ?? hashParams?.tokenHash ?? null;
   const accessToken = hashParams?.accessToken ?? null;
   const refreshToken = hashParams?.refreshToken ?? null;
+
+  const hasVerificationPayload =
+    !!(effectiveCode || effectiveTokenHash || (accessToken && refreshToken));
+
+  const verificationRanRef = useRef(false);
+
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") return;
+    const searchParams = new URLSearchParams(window.location.search);
+    const qErr =
+      searchParams.get("error_description") ?? searchParams.get("error");
+    const qCode = searchParams.get("code");
+    const qTokenHash = searchParams.get("token_hash");
+    if (qErr?.trim()) {
+      setStatus("error");
+      setMessage(qErr);
+    } else if (qCode?.trim() || qTokenHash?.trim()) {
+      setIsConfirming(true);
+    }
+
+    const parsed = parseHashFragment(window.location.hash || "");
+    if (
+      parsed &&
+      (parsed.code || parsed.tokenHash || parsed.accessToken || parsed.refreshToken || parsed.errorDescription)
+    ) {
+      setHashParams(parsed);
+      if (parsed.errorDescription) {
+        setStatus("error");
+        setMessage(parsed.errorDescription);
+      } else if (parsed.code || parsed.tokenHash || (parsed.accessToken && parsed.refreshToken)) {
+        setIsConfirming(true);
+      }
+    }
+    setHashParsed(true);
+  }, []);
 
   const isSignup = useMemo(() => effectiveType === "signup", [effectiveType]);
   const isInvite = useMemo(() => effectiveType === "invite", [effectiveType]);
@@ -67,38 +125,9 @@ function Inner() {
   }, [roleIntent]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const hash = window.location.hash?.startsWith("#")
-      ? window.location.hash.slice(1)
-      : window.location.hash;
-
-    if (!hash) {
-      setHashParsed(true);
-      return;
-    }
-
-    const hashSearchParams = new URLSearchParams(hash);
-    const parsed = {
-      code: hashSearchParams.get("code"),
-      tokenHash: hashSearchParams.get("token_hash"),
-      type: hashSearchParams.get("type"),
-      accessToken: hashSearchParams.get("access_token"),
-      refreshToken: hashSearchParams.get("refresh_token"),
-      errorDescription: hashSearchParams.get("error_description") ?? hashSearchParams.get("error"),
-    };
-
-    setHashParams(parsed);
-    if (parsed.errorDescription) {
-      setStatus("error");
-      setMessage(parsed.errorDescription);
-    }
-    setHashParsed(true);
-  }, []);
-
-  useEffect(() => {
     const run = async () => {
       if (!hashParsed) return;
+      if (verificationRanRef.current) return;
 
       if (!effectiveCode && !effectiveTokenHash && !(accessToken && refreshToken)) {
         if (effectiveType) {
@@ -112,6 +141,7 @@ function Inner() {
         setMessage("Supabase client not configured.");
         return;
       }
+      verificationRanRef.current = true;
       setIsConfirming(true);
       try {
         if (effectiveCode) {
@@ -177,7 +207,132 @@ function Inner() {
       }
     };
     run();
-  }, [effectiveCode, effectiveTokenHash, accessToken, refreshToken, effectiveType, hashParsed, isSignup, isInvite, isMagicLink, isEmailChange, isReauthentication, isRecovery, postConfirmHref, router]);
+  }, [
+    effectiveCode,
+    effectiveTokenHash,
+    accessToken,
+    refreshToken,
+    effectiveType,
+    hashParsed,
+    isSignup,
+    isInvite,
+    isMagicLink,
+    isEmailChange,
+    isReauthentication,
+    isRecovery,
+    postConfirmHref,
+    router,
+  ]);
+
+  const spinner = (
+    <>
+      <div className="animate-spin h-6 w-6 rounded-full border-2 border-[#F26955] border-t-transparent mb-3" />
+      <p className="text-white/70">Loading…</p>
+    </>
+  );
+
+  const confirmingBlock = (
+    <>
+      <div className="animate-spin h-6 w-6 rounded-full border-2 border-[#F26955] border-t-transparent mb-3" />
+      <h1 className="text-white text-xl font-semibold">Confirming your email…</h1>
+      <p className="text-white/70 mt-2">Please wait while we verify your address.</p>
+    </>
+  );
+
+  let panel: ReactNode;
+  if (!hashParsed) {
+    panel = spinner;
+  } else if (isConfirming) {
+    panel = confirmingBlock;
+  } else if (status === "success") {
+    panel = (
+      <>
+        {isSignup && (
+          <>
+            <h1 className="text-white text-2xl font-semibold">Email confirmed!</h1>
+            <p className="text-white/70 mt-2">
+              {email ? `Verified ${email}.` : "You're all set."} Choose a next step below.
+            </p>
+            <RequestLink href={postSignInHref}>Continue to app</RequestLink>
+            <div className="mt-3 grid grid-cols-1 gap-3 w-full">
+              <Link
+                href="/request"
+                className="block w-full rounded-2xl px-5 py-3 text-center font-semibold"
+                style={{ color: "#EDE8F7", backgroundColor: "#2C1746", border: "1px solid rgba(255,255,255,0.08)" }}
+              >
+                Request a review
+              </Link>
+            </div>
+          </>
+        )}
+        {isInvite && (
+          <>
+            <h1 className="text-white text-2xl font-semibold">Welcome to Auro</h1>
+            <p className="text-white/70 mt-2">Your invitation has been confirmed. You can now sign up for an account.</p>
+            <RequestLink href={postSignInHref}>Get Started</RequestLink>
+          </>
+        )}
+        {isMagicLink && (
+          <>
+            <h1 className="text-white text-2xl font-semibold">Signed in successfully</h1>
+            <p className="text-white/70 mt-2">You&apos;re all set.</p>
+            <RequestLink href={postSignInHref}>Continue to App</RequestLink>
+          </>
+        )}
+        {isEmailChange && (
+          <>
+            <h1 className="text-white text-2xl font-semibold">Email address updated</h1>
+            <p className="text-white/70 mt-2">
+              {email ? `Your email has been changed to ${email}.` : "Your email address has been successfully updated."}
+            </p>
+            <RequestLink href={postSignInHref}>Continue to App</RequestLink>
+          </>
+        )}
+        {isReauthentication && (
+          <>
+            <h1 className="text-white text-2xl font-semibold">Re-authentication successful</h1>
+            <p className="text-white/70 mt-2">
+              You&apos;ve successfully verified your identity. You can now proceed with the action.
+            </p>
+            <RequestLink href={postSignInHref}>Continue to App</RequestLink>
+          </>
+        )}
+      </>
+    );
+  } else if (status === "error") {
+    panel = (
+      <>
+        <h1 className="text-white text-2xl font-semibold">We couldn&apos;t confirm your email</h1>
+        <p className="text-white/70 mt-2">{message || "The link may have expired or been used already."}</p>
+        {(isSignup || isInvite) && (
+          <Link
+            href={`/auth/resend-confirmation${email ? `?email=${encodeURIComponent(email)}` : ""}`}
+            className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold"
+            style={requestLinkStyle}
+          >
+            Resend confirmation email
+          </Link>
+        )}
+        <Link href="/" className="mt-3 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={requestLinkStyle}>
+          Back to home
+        </Link>
+      </>
+    );
+  } else if (hasVerificationPayload) {
+    panel = confirmingBlock;
+  } else {
+    panel = (
+      <>
+        <h1 className="text-white text-2xl font-semibold">Confirm your email</h1>
+        <p className="text-white/70 mt-2">
+          We sent a verification link{email ? ` to ${email}` : ""}. Click it to continue.
+        </p>
+        <Link href="/request" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={requestLinkStyle}>
+          Request a review
+        </Link>
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#1A0B2E] px-4">
@@ -185,85 +340,7 @@ function Inner() {
         <div className="flex flex-col items-center text-center">
           <img src="/auro_aura_logo_nobg.png" alt="Auro" className="h-10 mb-3 opacity-90" style={{ display: "none" }} />
 
-          {isConfirming && (
-            <>
-              <div className="animate-spin h-6 w-6 rounded-full border-2 border-[#F26955] border-t-transparent mb-3" />
-              <h1 className="text-white text-xl font-semibold">Confirming your email…</h1>
-              <p className="text-white/70 mt-2">Please wait while we verify your address.</p>
-            </>
-          )}
-
-          {!isConfirming && status === "success" && (
-            <>
-              {isSignup && (
-                <>
-                  <h1 className="text-white text-2xl font-semibold">Email confirmed! 🎉</h1>
-                  <p className="text-white/70 mt-2">{email ? `Verified ${email}.` : "You're all set."} Choose a next step below.</p>
-                  <RequestLink href={postSignInHref}>Continue to app</RequestLink>
-                  <div className="mt-3 grid grid-cols-1 gap-3 w-full">
-                    <Link href="/request" className="block w-full rounded-2xl px-5 py-3 text-center font-semibold" style={{ color: "#EDE8F7", backgroundColor: "#2C1746", border: "1px solid rgba(255,255,255,0.08)" }}>Request a review</Link>
-                  </div>
-                </>
-              )}
-              {isInvite && (
-                <>
-                  <h1 className="text-white text-2xl font-semibold">Welcome to Auro! 🎉</h1>
-                  <p className="text-white/70 mt-2">Your invitation has been confirmed. You can now sign up for an account.</p>
-                <RequestLink href={postSignInHref}>Get Started</RequestLink>
-                </>
-              )}
-              {isMagicLink && (
-                <>
-                  <h1 className="text-white text-2xl font-semibold">Signed in successfully! ✅</h1>
-                  <p className="text-white/70 mt-2">You&apos;re all set.</p>
-                  <RequestLink href={postSignInHref}>Continue to App</RequestLink>
-                </>
-              )}
-              {isEmailChange && (
-                <>
-                  <h1 className="text-white text-2xl font-semibold">Email address updated! ✅</h1>
-                  <p className="text-white/70 mt-2">{email ? `Your email has been changed to ${email}.` : "Your email address has been successfully updated."}</p>
-                  <RequestLink href={postSignInHref}>Continue to App</RequestLink>
-                </>
-              )}
-              {isReauthentication && (
-                <>
-                  <h1 className="text-white text-2xl font-semibold">Re-authentication successful! ✅</h1>
-                  <p className="text-white/70 mt-2">You've successfully verified your identity. You can now proceed with the action.</p>
-                  <RequestLink href={postSignInHref}>Continue to App</RequestLink>
-                </>
-              )}
-            </>
-          )}
-
-          {!isConfirming && status === "error" && (
-            <>
-              <h1 className="text-white text-2xl font-semibold">We couldn't confirm your email</h1>
-              <p className="text-white/70 mt-2">{message || "The link may have expired or been used already."}</p>
-              {(isSignup || isInvite) && (
-                <Link
-                  href={`/auth/resend-confirmation${email ? `?email=${encodeURIComponent(email)}` : ""}`}
-                  className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold"
-                  style={requestLinkStyle}
-                >
-                  Resend confirmation email
-                </Link>
-              )}
-              <Link href="/" className="mt-3 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={requestLinkStyle}>
-                Back to home
-              </Link>
-            </>
-          )}
-
-          {!isConfirming && status === "pending" && (
-            <>
-              <h1 className="text-white text-2xl font-semibold">Confirm your email</h1>
-              <p className="text-white/70 mt-2">We sent a verification link{email ? ` to ${email}` : ""}. Click it to continue.</p>
-              <Link href="/request" className="mt-5 inline-block rounded-2xl px-5 py-3 text-white font-semibold" style={requestLinkStyle}>
-                Request a review
-              </Link>
-            </>
-          )}
+          {panel}
         </div>
       </div>
     </div>
