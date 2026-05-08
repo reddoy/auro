@@ -528,6 +528,22 @@ export default function ReviewerApplyPage() {
             })),
           );
 
+          // Warm image cache before first rotation to avoid avatar flicker/lag.
+          await Promise.all(
+            reviewersWithDisplayUrls.map(async (reviewer) => {
+              if (!reviewer.avatarUrl) return;
+              try {
+                const img = new Image();
+                img.src = reviewer.avatarUrl;
+                if (typeof img.decode === 'function') {
+                  await img.decode();
+                }
+              } catch {
+                // Ignore preload failures; UI fallback handles broken images.
+              }
+            }),
+          );
+
           setApprovedReviewers(reviewersWithDisplayUrls);
           setActiveReviewerNameIndex(0);
           setIsReviewerFading(false);
@@ -1068,9 +1084,9 @@ export default function ReviewerApplyPage() {
           <div className="w-full max-w-2xl mx-auto">
             <div className="flex flex-col gap-6 md:gap-8">
               <div className="pt-1 md:pt-2 hyphens-none mx-auto max-w-xl px-4">
-                <h1 className="text-center text-[2rem] sm:text-4xl md:text-5xl font-bold leading-tight tracking-tight text-balance">
-                  <span className="block text-white">Review profiles honestly.</span>
-                  <span className="block text-white">Men get actionable advice.</span>
+                <h1 className="text-center text-[clamp(1.95rem,7.2vw,3.8rem)] md:text-5xl font-bold leading-tight tracking-tight">
+                  <span className="block whitespace-nowrap text-white">Review profiles honestly.</span>
+                  <span className="block whitespace-nowrap text-white">Men get actionable advice.</span>
                   <span className="block bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
                     You earn per review.
                   </span>
@@ -1084,7 +1100,7 @@ export default function ReviewerApplyPage() {
                       <div className="w-9 h-9 md:w-12 md:h-12 bg-gradient-to-br from-green-500/30 to-green-600/20 rounded-full flex items-center justify-center">
                         <DollarSign className="w-4 h-4 md:w-6 md:h-6 text-green-400" />
                       </div>
-                      <div className="text-center px-0.5">
+                      <div className="text-center px-0.5 min-h-[3.5rem] md:min-h-[3.75rem] flex flex-col items-center justify-center">
                         <div className="text-sm md:text-lg font-bold text-white leading-tight">Your rate</div>
                         <div className="text-xs text-gray-300 leading-snug">$5–$1,000 tiers</div>
                       </div>
@@ -1096,7 +1112,7 @@ export default function ReviewerApplyPage() {
                       <div className="w-9 h-9 md:w-12 md:h-12 bg-gradient-to-br from-primary/30 to-primary/20 rounded-full flex items-center justify-center">
                         <UserCheck className="w-4 h-4 md:w-6 md:h-6 text-primary" />
                       </div>
-                      <div className="text-center px-0.5">
+                      <div className="text-center px-0.5 min-h-[3.5rem] md:min-h-[3.75rem] flex flex-col items-center justify-center">
                         <div className="text-sm md:text-lg font-bold text-white leading-tight">You choose</div>
                         <div className="text-xs text-gray-300 leading-snug">Who you review</div>
                       </div>
@@ -1108,7 +1124,7 @@ export default function ReviewerApplyPage() {
                       <div className="w-9 h-9 md:w-12 md:h-12 bg-gradient-to-br from-secondary/30 to-secondary/20 rounded-full flex items-center justify-center">
                         <Bell className="w-4 h-4 md:w-6 md:h-6 text-secondary" />
                       </div>
-                      <div className="text-center px-0.5">
+                      <div className="text-center px-0.5 min-h-[3.5rem] md:min-h-[3.75rem] flex flex-col items-center justify-center">
                         <div className="text-sm md:text-lg font-bold text-white leading-tight">Guys find you</div>
                         <div className="text-xs text-gray-300 leading-snug">Notified on each request</div>
                       </div>
@@ -1151,8 +1167,9 @@ export default function ReviewerApplyPage() {
                                   <img
                                     src={approvedReviewers[activeReviewerNameIndex].avatarUrl as string}
                                     alt={approvedReviewers[activeReviewerNameIndex].firstName}
-                                    className="h-9 w-9 md:h-10 md:w-10 rounded-full object-cover border border-white/20"
-                                    loading="lazy"
+                                    className="h-12 w-12 md:h-14 md:w-14 rounded-full object-cover border border-white/20"
+                                    loading="eager"
+                                    decoding="async"
                                     onError={() =>
                                       setFailedReviewerAvatars((prev) => ({
                                         ...prev,
@@ -1161,8 +1178,8 @@ export default function ReviewerApplyPage() {
                                     }
                                   />
                                 ) : (
-                                  <div className="h-9 w-9 md:h-10 md:w-10 rounded-full border border-white/20 bg-white/10 flex items-center justify-center">
-                                    <User className="h-4 w-4 md:h-5 md:w-5 text-white/70" />
+                                  <div className="h-12 w-12 md:h-14 md:w-14 rounded-full border border-white/20 bg-white/10 flex items-center justify-center">
+                                    <User className="h-5 w-5 md:h-6 md:w-6 text-white/70" />
                                   </div>
                                 )}
                                 <p className="max-w-[11rem] md:max-w-[16rem] truncate text-base md:text-xl font-semibold text-white">
