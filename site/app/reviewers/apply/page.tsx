@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import FunnelTopBar from '../../../components/FunnelTopBar';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
-import { ArrowLeft, ArrowRight, Check, DollarSign, SlidersHorizontal, Star, Users, Shield, Mail, Lock, User, FileText, Target, Phone, Instagram, Music } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bell, Check, DollarSign, Star, UserCheck, Shield, Mail, Lock, User, FileText, Target, Phone, Instagram, Music } from 'lucide-react';
 import WebAvatarUploader from '../../../components/WebAvatarUploader';
 import PriceTierSelector from '../../../components/PriceTierSelector';
 
@@ -1022,17 +1022,16 @@ export default function ReviewerApplyPage() {
         <div className="flex-1 flex items-start md:items-center justify-center px-4 py-4 md:py-8 min-h-0 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="w-full max-w-2xl mx-auto">
             <div className="flex flex-col gap-6 md:gap-8">
-              <div className="text-center space-y-3 md:space-y-4 pt-1 md:pt-2 hyphens-none px-3 sm:px-4 mx-auto max-w-xl">
-                <h1 className="text-3xl md:text-5xl font-bold leading-tight text-balance">
+              <div className="pt-1 md:pt-2 hyphens-none mx-auto max-w-xl px-4">
+                <h1 className="text-center text-3xl md:text-5xl font-bold leading-tight text-balance">
                   <span className="block text-white">Review profiles honestly.</span>
                   <span className="block text-white">Men get actionable advice.</span>
                   <span className="block bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
                     You earn per review.
                   </span>
                 </h1>
-                
-                <p className="text-sm md:text-base text-gray-300 leading-relaxed text-pretty">
-                  Earn by giving straightforward dating-profile feedback on web and mobile. You set your rate per review, work on your own time, and creators choose who they request.
+                <p className="mt-3 md:mt-4 w-full max-w-md mx-auto text-left text-sm md:text-base text-gray-300 leading-relaxed">
+                  Help guys level up their dating game with straightforward, supportive profile feedback. You choose who you review—when someone requests you, you get notified. Pick your rate from tiers between $5 and $1,000, finish the review, and get paid—on your own schedule.
                 </p>
               </div>
 
@@ -1043,9 +1042,9 @@ export default function ReviewerApplyPage() {
                       <div className="w-9 h-9 md:w-12 md:h-12 bg-gradient-to-br from-green-500/30 to-green-600/20 rounded-full flex items-center justify-center">
                         <DollarSign className="w-4 h-4 md:w-6 md:h-6 text-green-400" />
                       </div>
-                      <div className="text-center">
-                        <div className="text-sm md:text-lg font-bold text-white tabular-nums">$25–50</div>
-                        <div className="text-xs text-gray-300 leading-snug">per review</div>
+                      <div className="text-center px-0.5">
+                        <div className="text-sm md:text-lg font-bold text-white leading-tight">Your rate</div>
+                        <div className="text-xs text-gray-300 leading-snug">$5–$1,000 tiers</div>
                       </div>
                     </div>
                   </div>
@@ -1053,11 +1052,11 @@ export default function ReviewerApplyPage() {
                   <div className="bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-primary/20">
                     <div className="flex flex-col items-center space-y-1 md:space-y-2">
                       <div className="w-9 h-9 md:w-12 md:h-12 bg-gradient-to-br from-primary/30 to-primary/20 rounded-full flex items-center justify-center">
-                        <SlidersHorizontal className="w-4 h-4 md:w-6 md:h-6 text-primary" />
+                        <UserCheck className="w-4 h-4 md:w-6 md:h-6 text-primary" />
                       </div>
                       <div className="text-center px-0.5">
-                        <div className="text-sm md:text-lg font-bold text-white leading-tight">Your rate</div>
-                        <div className="text-xs text-gray-300 leading-snug">You set it per review</div>
+                        <div className="text-sm md:text-lg font-bold text-white leading-tight">You choose</div>
+                        <div className="text-xs text-gray-300 leading-snug">Who you review</div>
                       </div>
                     </div>
                   </div>
@@ -1065,11 +1064,11 @@ export default function ReviewerApplyPage() {
                   <div className="bg-gradient-to-br from-secondary/10 to-secondary/5 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-secondary/20">
                     <div className="flex flex-col items-center space-y-1 md:space-y-2">
                       <div className="w-9 h-9 md:w-12 md:h-12 bg-gradient-to-br from-secondary/30 to-secondary/20 rounded-full flex items-center justify-center">
-                        <Users className="w-4 h-4 md:w-6 md:h-6 text-secondary" />
+                        <Bell className="w-4 h-4 md:w-6 md:h-6 text-secondary" />
                       </div>
                       <div className="text-center px-0.5">
-                        <div className="text-sm md:text-lg font-bold text-white leading-tight">Reviews find you</div>
-                        <div className="text-xs text-gray-300 leading-snug">Creators pick their reviewer</div>
+                        <div className="text-sm md:text-lg font-bold text-white leading-tight">Guys find you</div>
+                        <div className="text-xs text-gray-300 leading-snug">Notified on each request</div>
                       </div>
                     </div>
                   </div>
