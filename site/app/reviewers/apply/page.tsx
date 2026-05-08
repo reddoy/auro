@@ -11,8 +11,6 @@ import { ArrowLeft, ArrowRight, Bell, Check, DollarSign, Star, UserCheck, Shield
 import WebAvatarUploader from '../../../components/WebAvatarUploader';
 import PriceTierSelector from '../../../components/PriceTierSelector';
 
-const REVIEWER_ROSTER_CAP = 35;
-
 export default function ReviewerApplyPage() {
   const [step, setStep] = useState<number>(1);
   const [email, setEmail] = useState('');
@@ -28,7 +26,9 @@ export default function ReviewerApplyPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
-  const [reviewerCount, setReviewerCount] = useState<number>(0);
+  const [approvedReviewerNames, setApprovedReviewerNames] = useState<string[]>([]);
+  const [activeReviewerNameIndex, setActiveReviewerNameIndex] = useState(0);
+  const [isReviewerNamesLoading, setIsReviewerNamesLoading] = useState(true);
   const [isGoogleAuthed, setIsGoogleAuthed] = useState(false);
   const [signupStatus, setSignupStatus] = useState<'not_started' | 'pending' | 'completed' | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
@@ -485,37 +485,57 @@ export default function ReviewerApplyPage() {
     }
   }, [step, isGoogleAuthed]);
 
-  // Fetch reviewer count - only count approved reviewers
+  // Fetch approved reviewer first names for intro ticker
   useEffect(() => {
-    const fetchReviewerCount = async () => {
+    const fetchApprovedReviewerNames = async () => {
       try {
         if (!supabase) {
           console.error('[ReviewerApply] Supabase client is not available');
-          return;
-        }
-        // Count only approved reviewers from profiles table
-        const { count, error: profileError } = await supabase
-          .from('profiles')
-          .select('*', { count: 'exact', head: true })
-          .eq('is_reviewer', 'approved');
-        
-        if (!profileError) {
-          setReviewerCount(count || 0);
+          setIsReviewerNamesLoading(false);
           return;
         }
 
-        // If profile query failed, just keep the current count
-        // No fallback needed - only profiles table exists
+        const { data, error: profileError } = await supabase
+          .from('profiles')
+          .select('first_name')
+          .eq('is_reviewer', 'approved');
+
+        if (!profileError && Array.isArray(data)) {
+          const uniqueNames = Array.from(
+            new Set(
+              data
+                .map((row) => String((row as { first_name?: string | null }).first_name ?? '').trim())
+                .filter(Boolean),
+            ),
+          );
+
+          setApprovedReviewerNames(uniqueNames);
+          setActiveReviewerNameIndex(0);
+          setIsReviewerNamesLoading(false);
+          return;
+        }
+
+        setIsReviewerNamesLoading(false);
       } catch (err) {
-        console.error('Error fetching reviewer count:', err);
-        // Silently fail - default to 0
+        console.error('Error fetching approved reviewer names:', err);
+        setIsReviewerNamesLoading(false);
       }
     };
 
-    fetchReviewerCount();
-    const interval = setInterval(fetchReviewerCount, 30000);
+    fetchApprovedReviewerNames();
+    const interval = setInterval(fetchApprovedReviewerNames, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (approvedReviewerNames.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setActiveReviewerNameIndex((prev) => (prev + 1) % approvedReviewerNames.length);
+    }, 3200);
+
+    return () => clearInterval(interval);
+  }, [approvedReviewerNames]);
 
   const passwordStrength = useMemo(() => {
     const val = password || '';
@@ -1023,16 +1043,13 @@ export default function ReviewerApplyPage() {
           <div className="w-full max-w-2xl mx-auto">
             <div className="flex flex-col gap-6 md:gap-8">
               <div className="pt-1 md:pt-2 hyphens-none mx-auto max-w-xl px-4">
-                <h1 className="text-center text-3xl md:text-5xl font-bold leading-tight text-balance">
-                  <span className="block text-white">Review profiles honestly.</span>
-                  <span className="block text-white">Men get actionable advice.</span>
+                <h1 className="text-center text-[2rem] sm:text-4xl md:text-5xl font-bold leading-tight tracking-tight">
+                  <span className="block whitespace-nowrap text-white">Review profiles honestly.</span>
+                  <span className="block whitespace-nowrap text-white">Men get actionable advice.</span>
                   <span className="block bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
                     You earn per review.
                   </span>
                 </h1>
-                <p className="mt-3 md:mt-4 w-full max-w-md mx-auto text-left text-sm md:text-base text-gray-300 leading-relaxed">
-                  Help guys level up their dating game with straightforward, supportive profile feedback. You choose who you review—when someone requests you, you get notified. Pick your rate from tiers between $5 and $1,000, finish the review, and get paid—on your own schedule.
-                </p>
               </div>
 
               <div className="px-0 sm:px-4 space-y-2.5 md:space-y-4">
@@ -1076,29 +1093,6 @@ export default function ReviewerApplyPage() {
               </div>
 
               <div className="space-y-2.5 md:space-y-4 px-0 sm:px-4 pb-2 md:pb-4">
-                {/* Roster fill — bar shows share of roster filled (active reviewers), not “spots left” */}
-                <div className="bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-primary/30">
-                  <div className="flex items-center justify-between gap-2 mb-1.5 md:mb-2">
-                    <span className="text-xs md:text-sm font-medium text-primary/85">Active reviewers</span>
-                    <span className="text-xs md:text-sm font-bold text-white tabular-nums text-right shrink-0">
-                      {reviewerCount > REVIEWER_ROSTER_CAP
-                        ? `${reviewerCount} on the platform`
-                        : `${reviewerCount} / ${REVIEWER_ROSTER_CAP} roster spots filled`}
-                    </span>
-                  </div>
-                  <div className="w-full bg-white/10 rounded-full h-2 md:h-3 overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500 rounded-full"
-                      style={{
-                        width: `${Math.min(
-                          100,
-                          (reviewerCount / REVIEWER_ROSTER_CAP) * 100,
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-
                 {/* Main CTA */}
                 <Button 
                   size="xl" 
@@ -1110,6 +1104,21 @@ export default function ReviewerApplyPage() {
                     <ArrowRight className="w-5 h-5 md:w-6 md:h-6 shrink-0" aria-hidden />
                   </div>
                 </Button>
+
+                <div className="bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 backdrop-blur-sm rounded-xl p-3 md:p-4 border border-primary/30">
+                  <div className="text-center">
+                    <p className="text-xs md:text-sm font-medium text-primary/85">Approved reviewers</p>
+                    <div className="mt-1 h-8 md:h-9 flex items-center justify-center">
+                      <p className="max-w-full truncate px-1 text-base md:text-xl font-semibold text-white transition-all duration-300">
+                        {isReviewerNamesLoading
+                          ? 'Loading approved reviewers...'
+                          : approvedReviewerNames.length > 0
+                            ? approvedReviewerNames[activeReviewerNameIndex]
+                            : 'Approved reviewers rotate here soon'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
                 {/* Trust indicators */}
                 <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 md:gap-4 text-xs text-gray-400">
