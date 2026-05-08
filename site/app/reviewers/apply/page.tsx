@@ -5,13 +5,13 @@ import { AUTH_EMAIL_RATE_LIMIT_MESSAGE, isAuthEmailRateLimitError } from '../../
 import { supabase } from '../../../lib/supabase';
 import { useRouter } from 'next/navigation';
 import FunnelTopBar from '../../../components/FunnelTopBar';
-import ReviewerCounter from '../../../components/ReviewerCounter';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
-import { ArrowLeft, ArrowRight, Check, Star, DollarSign, Clock, Shield, Mail, Lock, User, FileText, Target, Phone, Instagram, Music } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, DollarSign, SlidersHorizontal, Star, Users, Shield, Mail, Lock, User, FileText, Target, Phone, Instagram, Music } from 'lucide-react';
 import WebAvatarUploader from '../../../components/WebAvatarUploader';
 import PriceTierSelector from '../../../components/PriceTierSelector';
 
+const REVIEWER_ROSTER_CAP = 35;
 
 export default function ReviewerApplyPage() {
   const [step, setStep] = useState<number>(1);
@@ -1022,8 +1022,8 @@ export default function ReviewerApplyPage() {
         <div className="flex-1 flex items-start md:items-center justify-center px-4 py-4 md:py-8 min-h-0 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="w-full max-w-2xl mx-auto">
             <div className="flex flex-col gap-6 md:gap-8">
-              <div className="text-center space-y-3 md:space-y-4 pt-1 md:pt-2 hyphens-none">
-                <h1 className="text-3xl md:text-5xl font-bold leading-tight px-2 text-balance">
+              <div className="text-center space-y-3 md:space-y-4 pt-1 md:pt-2 hyphens-none px-3 sm:px-4 mx-auto max-w-xl">
+                <h1 className="text-3xl md:text-5xl font-bold leading-tight text-balance">
                   <span className="block text-white">Review profiles honestly.</span>
                   <span className="block text-white">Men get actionable advice.</span>
                   <span className="block bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
@@ -1031,8 +1031,8 @@ export default function ReviewerApplyPage() {
                   </span>
                 </h1>
                 
-                <p className="text-sm md:text-base text-gray-300 px-4 leading-relaxed max-w-xl mx-auto text-pretty">
-                  Earn by giving straightforward dating-profile feedback—on web and mobile web.
+                <p className="text-sm md:text-base text-gray-300 leading-relaxed text-pretty">
+                  Earn by giving straightforward dating-profile feedback on web and mobile. You set your rate per review, work on your own time, and creators choose who they request.
                 </p>
               </div>
 
@@ -1053,11 +1053,11 @@ export default function ReviewerApplyPage() {
                   <div className="bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-primary/20">
                     <div className="flex flex-col items-center space-y-1 md:space-y-2">
                       <div className="w-9 h-9 md:w-12 md:h-12 bg-gradient-to-br from-primary/30 to-primary/20 rounded-full flex items-center justify-center">
-                        <Star className="w-4 h-4 md:w-6 md:h-6 text-primary" />
+                        <SlidersHorizontal className="w-4 h-4 md:w-6 md:h-6 text-primary" />
                       </div>
-                      <div className="text-center px-px">
-                        <div className="text-sm md:text-lg font-bold text-white leading-tight">You keep most</div>
-                        <div className="text-xs text-gray-300 leading-snug">of each review</div>
+                      <div className="text-center px-0.5">
+                        <div className="text-sm md:text-lg font-bold text-white leading-tight">Your rate</div>
+                        <div className="text-xs text-gray-300 leading-snug">You set it per review</div>
                       </div>
                     </div>
                   </div>
@@ -1065,11 +1065,11 @@ export default function ReviewerApplyPage() {
                   <div className="bg-gradient-to-br from-secondary/10 to-secondary/5 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-secondary/20">
                     <div className="flex flex-col items-center space-y-1 md:space-y-2">
                       <div className="w-9 h-9 md:w-12 md:h-12 bg-gradient-to-br from-secondary/30 to-secondary/20 rounded-full flex items-center justify-center">
-                        <Clock className="w-4 h-4 md:w-6 md:h-6 text-secondary" />
+                        <Users className="w-4 h-4 md:w-6 md:h-6 text-secondary" />
                       </div>
-                      <div className="text-center">
-                        <div className="text-sm md:text-lg font-bold text-white">Flexible</div>
-                        <div className="text-xs text-gray-300 leading-snug">schedule</div>
+                      <div className="text-center px-0.5">
+                        <div className="text-sm md:text-lg font-bold text-white leading-tight">Reviews find you</div>
+                        <div className="text-xs text-gray-300 leading-snug">Creators pick their reviewer</div>
                       </div>
                     </div>
                   </div>
@@ -1077,16 +1077,25 @@ export default function ReviewerApplyPage() {
               </div>
 
               <div className="space-y-2.5 md:space-y-4 px-0 sm:px-4 pb-2 md:pb-4">
-                {/* Live counter urgency bar */}
+                {/* Roster fill — bar shows share of roster filled (active reviewers), not “spots left” */}
                 <div className="bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 backdrop-blur-sm rounded-xl p-2.5 md:p-4 border border-primary/30">
-                  <div className="flex items-center justify-between mb-1.5 md:mb-2">
-                    <span className="text-xs md:text-sm font-medium text-primary/85">Reviewer Capacity</span>
-                    <span className="text-xs md:text-sm font-bold text-white">{Math.max(0, 35 - reviewerCount)}/35 available</span>
+                  <div className="flex items-center justify-between gap-2 mb-1.5 md:mb-2">
+                    <span className="text-xs md:text-sm font-medium text-primary/85">Active reviewers</span>
+                    <span className="text-xs md:text-sm font-bold text-white tabular-nums text-right shrink-0">
+                      {reviewerCount > REVIEWER_ROSTER_CAP
+                        ? `${reviewerCount} on the platform`
+                        : `${reviewerCount} / ${REVIEWER_ROSTER_CAP} roster spots filled`}
+                    </span>
                   </div>
                   <div className="w-full bg-white/10 rounded-full h-2 md:h-3 overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500 rounded-full"
-                      style={{ width: `${Math.min(100, ((35 - reviewerCount) / 35) * 100)}%` }}
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          (reviewerCount / REVIEWER_ROSTER_CAP) * 100,
+                        )}%`,
+                      }}
                     />
                   </div>
                 </div>
