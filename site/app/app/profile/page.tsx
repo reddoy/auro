@@ -126,7 +126,8 @@ export default function AppProfilePage() {
   const reviewerStatus = profile?.is_reviewer ?? null;
   const approvedReviewerNeedsStripe = profile?.is_reviewer === 'approved' && !stripeConnected;
 
-  const openStripeRoute = useCallback(async (route: string) => {
+  const openStripeRoute = useCallback(
+    async (route: string, opts?: { reviewerId?: string }) => {
     if (!supabase) return;
     setStripeBusy(true);
     try {
@@ -139,19 +140,26 @@ export default function AppProfilePage() {
         return;
       }
 
+      const body: { returnUrl: string; reviewerId?: string } = {
+        returnUrl: `${window.location.origin}/auth/stripe-connect-success`,
+      };
+      if (opts?.reviewerId) {
+        body.reviewerId = opts.reviewerId;
+      }
+
       const res = await fetch(route, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          returnUrl: `${window.location.origin}/auth/stripe-connect-success`,
-        }),
+        body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error((data as { error?: string }).error || 'Unable to open Stripe');
+        const j = data as { error?: string; stripeCode?: string | null };
+        const suffix = j.stripeCode ? ` (${j.stripeCode})` : '';
+        throw new Error((j.error || 'Unable to open Stripe') + suffix);
       }
       const redirectUrl = (data as { url?: string }).url;
       if (!redirectUrl) throw new Error('Stripe link was not returned');
@@ -161,7 +169,9 @@ export default function AppProfilePage() {
     } finally {
       setStripeBusy(false);
     }
-  }, [showToast]);
+  },
+  [showToast],
+);
 
   if (loading) {
     return <AccountPageSkeleton />;
@@ -267,7 +277,7 @@ export default function AppProfilePage() {
                     <button
                       type="button"
                       disabled={stripeBusy}
-                      onClick={() => void openStripeRoute('/api/stripe/express-onboarding')}
+                      onClick={() => void openStripeRoute('/api/stripe/express-onboarding', { reviewerId: profile.id })}
                       className="inline-flex min-h-9 items-center justify-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-[0_8px_22px_-12px_hsl(var(--primary)/0.9)] transition hover:bg-primary/92 disabled:opacity-60"
                     >
                       {stripeBusy ? 'Opening Stripe...' : 'Connect Stripe'}
@@ -285,7 +295,9 @@ export default function AppProfilePage() {
                   <button
                     type="button"
                     disabled={stripeBusy}
-                    onClick={() => void openStripeRoute('/api/stripe/express-login')}
+                    onClick={() =>
+                      void openStripeRoute('/api/stripe/express-login', { reviewerId: profile.id })
+                    }
                     className="inline-flex min-h-9 items-center rounded-full border border-white/20 px-4 text-xs font-semibold text-white transition hover:border-white/30 hover:bg-white/[0.04] disabled:opacity-60"
                   >
                     {stripeBusy ? 'Opening Stripe...' : 'Manage payout account'}
