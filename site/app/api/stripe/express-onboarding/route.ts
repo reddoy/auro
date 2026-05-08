@@ -57,7 +57,6 @@ export async function POST(req: Request) {
         email: (profile as any)?.email || undefined,
         capabilities: {
           transfers: { requested: true },
-          card_payments: { requested: true },
         },
         settings: {
           payouts: {

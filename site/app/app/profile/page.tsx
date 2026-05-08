@@ -241,38 +241,44 @@ export default function AppProfilePage() {
               className="glass mt-4 rounded-2xl border border-white/[0.12] px-4 py-4"
               aria-label="Stripe Connect"
             >
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">
-                Stripe payouts
-              </p>
-              <p className="mt-2 text-sm text-white/80">
-                {stripeConnected ? (
-                  <>
-                    <span className="font-medium text-emerald-400/95">Connected</span>
-                    <span className="text-white/55"> — you can receive payouts for completed reviews.</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="font-medium text-amber-300/95">Not connected</span>
-                    <span className="text-white/55">
-                      {' '}
-                      — finish Stripe from your reviewer application flow to get paid.
-                    </span>
-                  </>
-                )}
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">
+                  Stripe payouts
+                </p>
+                <span
+                  className={[
+                    'inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold',
+                    stripeConnected
+                      ? 'border-emerald-300/40 bg-emerald-500/10 text-emerald-200'
+                      : 'border-amber-300/35 bg-amber-500/10 text-amber-100',
+                  ].join(' ')}
+                >
+                  {stripeConnected ? 'Connected' : 'Not connected'}
+                </span>
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-white/72">
+                {stripeConnected
+                  ? 'You can receive payouts for completed reviews.'
+                  : 'Finish Stripe from your reviewer application flow to get paid.'}
               </p>
               {!stripeConnected ? (
-                <div className="mt-3 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    disabled={stripeBusy}
-                    onClick={() => void openStripeRoute('/api/stripe/express-onboarding')}
-                    className="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-60"
-                  >
-                    {stripeBusy ? 'Opening Stripe…' : 'Connect Stripe'}
-                  </button>
-                  <Link href="/reviewers/apply" className="inline-flex items-center text-sm font-semibold text-primary">
-                    Open reviewer setup →
-                  </Link>
+                <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-2.5">
+                  <div className="flex flex-wrap gap-2.5">
+                    <button
+                      type="button"
+                      disabled={stripeBusy}
+                      onClick={() => void openStripeRoute('/api/stripe/express-onboarding')}
+                      className="inline-flex min-h-9 items-center justify-center rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground shadow-[0_8px_22px_-12px_hsl(var(--primary)/0.9)] transition hover:bg-primary/92 disabled:opacity-60"
+                    >
+                      {stripeBusy ? 'Opening Stripe...' : 'Connect Stripe'}
+                    </button>
+                    <Link
+                      href="/reviewers/apply"
+                      className="inline-flex min-h-9 items-center rounded-full border border-white/16 px-4 text-xs font-semibold text-white/86 transition hover:border-white/28 hover:text-white"
+                    >
+                      Open reviewer setup <span aria-hidden className="ml-1.5">→</span>
+                    </Link>
+                  </div>
                 </div>
               ) : (
                 <div className="mt-3">
@@ -280,14 +286,15 @@ export default function AppProfilePage() {
                     type="button"
                     disabled={stripeBusy}
                     onClick={() => void openStripeRoute('/api/stripe/express-login')}
-                    className="rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                    className="inline-flex min-h-9 items-center rounded-full border border-white/20 px-4 text-xs font-semibold text-white transition hover:border-white/30 hover:bg-white/[0.04] disabled:opacity-60"
                   >
-                    {stripeBusy ? 'Opening Stripe…' : 'Manage payout account'}
+                    {stripeBusy ? 'Opening Stripe...' : 'Manage payout account'}
                   </button>
                 </div>
               )}
-              <p className="mt-3 text-xs text-white/50">
-                Reviewer status: <span className="font-medium text-white/80">{reviewerStatus}</span>
+              <p className="mt-3 text-xs text-white/46">
+                Reviewer status:{' '}
+                <span className="font-medium uppercase tracking-[0.03em] text-white/82">{reviewerStatus}</span>
               </p>
             </section>
           ) : null}
