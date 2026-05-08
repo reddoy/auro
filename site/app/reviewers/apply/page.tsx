@@ -11,6 +11,17 @@ import { ArrowLeft, ArrowRight, Bell, Check, DollarSign, Star, UserCheck, Shield
 import WebAvatarUploader from '../../../components/WebAvatarUploader';
 import PriceTierSelector from '../../../components/PriceTierSelector';
 
+type RotatingReviewer = {
+  firstName: string;
+  avatarUrl: string | null;
+};
+
+function reviewerAvatarViewUrl(avatarUrl: string | null): string | null {
+  if (!avatarUrl) return null;
+  if (/^https?:\/\//i.test(avatarUrl)) return avatarUrl;
+  return `/api/storage/signed-view?path=${encodeURIComponent(avatarUrl)}&bucket=avatars`;
+}
+
 export default function ReviewerApplyPage() {
   const [step, setStep] = useState<number>(1);
   const [email, setEmail] = useState('');
@@ -26,9 +37,10 @@ export default function ReviewerApplyPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
-  const [approvedReviewerNames, setApprovedReviewerNames] = useState<string[]>([]);
+  const [approvedReviewers, setApprovedReviewers] = useState<RotatingReviewer[]>([]);
   const [activeReviewerNameIndex, setActiveReviewerNameIndex] = useState(0);
   const [isReviewerNamesLoading, setIsReviewerNamesLoading] = useState(true);
+  const [isReviewerFading, setIsReviewerFading] = useState(false);
   const [isGoogleAuthed, setIsGoogleAuthed] = useState(false);
   const [signupStatus, setSignupStatus] = useState<'not_started' | 'pending' | 'completed' | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
@@ -497,20 +509,25 @@ export default function ReviewerApplyPage() {
 
         const { data, error: profileError } = await supabase
           .from('profiles')
-          .select('first_name')
+          .select('first_name, avatar_url')
           .eq('is_reviewer', 'approved');
 
         if (!profileError && Array.isArray(data)) {
-          const uniqueNames = Array.from(
-            new Set(
+          const uniqueReviewers = Array.from(
+            new Map(
               data
-                .map((row) => String((row as { first_name?: string | null }).first_name ?? '').trim())
-                .filter(Boolean),
-            ),
+                .map((row) => ({
+                  firstName: String((row as { first_name?: string | null }).first_name ?? '').trim(),
+                  avatarUrl: reviewerAvatarViewUrl((row as { avatar_url?: string | null }).avatar_url ?? null),
+                }))
+                .filter((row) => row.firstName.length > 0)
+                .map((row) => [row.firstName.toLowerCase(), row]),
+            ).values(),
           );
 
-          setApprovedReviewerNames(uniqueNames);
+          setApprovedReviewers(uniqueReviewers);
           setActiveReviewerNameIndex(0);
+          setIsReviewerFading(false);
           setIsReviewerNamesLoading(false);
           return;
         }
@@ -528,14 +545,18 @@ export default function ReviewerApplyPage() {
   }, []);
 
   useEffect(() => {
-    if (approvedReviewerNames.length <= 1) return;
+    if (approvedReviewers.length <= 1) return;
 
     const interval = setInterval(() => {
-      setActiveReviewerNameIndex((prev) => (prev + 1) % approvedReviewerNames.length);
+      setIsReviewerFading(true);
+      setTimeout(() => {
+        setActiveReviewerNameIndex((prev) => (prev + 1) % approvedReviewers.length);
+        setIsReviewerFading(false);
+      }, 250);
     }, 3200);
 
     return () => clearInterval(interval);
-  }, [approvedReviewerNames]);
+  }, [approvedReviewers]);
 
   const passwordStrength = useMemo(() => {
     const val = password || '';
@@ -1107,15 +1128,41 @@ export default function ReviewerApplyPage() {
 
                 <div className="bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 backdrop-blur-sm rounded-xl p-3 md:p-4 border border-primary/30">
                   <div className="text-center">
-                    <p className="text-xs md:text-sm font-medium text-primary/85">Approved reviewers</p>
-                    <div className="mt-1 h-8 md:h-9 flex items-center justify-center">
-                      <p className="max-w-full truncate px-1 text-base md:text-xl font-semibold text-white transition-all duration-300">
+                    <p className="text-xs md:text-sm font-medium text-primary/85">Join our fantastic reviewer community!</p>
+                    <div className="mt-1 h-14 md:h-16 flex items-center justify-center">
+                      <div
+                        className={`flex items-center gap-3 max-w-full px-1 transition-all duration-300 ${
+                          isReviewerFading ? 'opacity-0 translate-y-1' : 'opacity-100 translate-y-0'
+                        }`}
+                      >
                         {isReviewerNamesLoading
-                          ? 'Loading approved reviewers...'
-                          : approvedReviewerNames.length > 0
-                            ? approvedReviewerNames[activeReviewerNameIndex]
-                            : 'Approved reviewers rotate here soon'}
-                      </p>
+                          ? (
+                            <p className="text-sm md:text-base text-white/80">Loading approved reviewers...</p>
+                          )
+                          : approvedReviewers.length > 0
+                            ? (
+                              <>
+                                {approvedReviewers[activeReviewerNameIndex]?.avatarUrl ? (
+                                  <img
+                                    src={approvedReviewers[activeReviewerNameIndex].avatarUrl as string}
+                                    alt={approvedReviewers[activeReviewerNameIndex].firstName}
+                                    className="h-9 w-9 md:h-10 md:w-10 rounded-full object-cover border border-white/20"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <div className="h-9 w-9 md:h-10 md:w-10 rounded-full border border-white/20 bg-white/10 flex items-center justify-center">
+                                    <User className="h-4 w-4 md:h-5 md:w-5 text-white/70" />
+                                  </div>
+                                )}
+                                <p className="max-w-[11rem] md:max-w-[16rem] truncate text-base md:text-xl font-semibold text-white">
+                                  {approvedReviewers[activeReviewerNameIndex].firstName}
+                                </p>
+                              </>
+                            )
+                            : (
+                              <p className="text-sm md:text-base text-white/80">Approved reviewers rotate here soon</p>
+                            )}
+                      </div>
                     </div>
                   </div>
                 </div>
