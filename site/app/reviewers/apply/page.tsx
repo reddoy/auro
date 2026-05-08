@@ -10,17 +10,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { ArrowLeft, ArrowRight, Bell, Check, DollarSign, Star, UserCheck, Shield, Mail, Lock, User, FileText, Target, Phone, Instagram, Music } from 'lucide-react';
 import WebAvatarUploader from '../../../components/WebAvatarUploader';
 import PriceTierSelector from '../../../components/PriceTierSelector';
+import { getDisplayAvatarUrl } from '../../../lib/avatar';
 
 type RotatingReviewer = {
   firstName: string;
   avatarUrl: string | null;
 };
-
-function reviewerAvatarViewUrl(avatarUrl: string | null): string | null {
-  if (!avatarUrl) return null;
-  if (/^https?:\/\//i.test(avatarUrl)) return avatarUrl;
-  return `/api/storage/signed-view?path=${encodeURIComponent(avatarUrl)}&bucket=avatars`;
-}
 
 export default function ReviewerApplyPage() {
   const [step, setStep] = useState<number>(1);
@@ -41,6 +36,7 @@ export default function ReviewerApplyPage() {
   const [activeReviewerNameIndex, setActiveReviewerNameIndex] = useState(0);
   const [isReviewerNamesLoading, setIsReviewerNamesLoading] = useState(true);
   const [isReviewerFading, setIsReviewerFading] = useState(false);
+  const [failedReviewerAvatars, setFailedReviewerAvatars] = useState<Record<string, boolean>>({});
   const [isGoogleAuthed, setIsGoogleAuthed] = useState(false);
   const [signupStatus, setSignupStatus] = useState<'not_started' | 'pending' | 'completed' | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
@@ -518,16 +514,24 @@ export default function ReviewerApplyPage() {
               data
                 .map((row) => ({
                   firstName: String((row as { first_name?: string | null }).first_name ?? '').trim(),
-                  avatarUrl: reviewerAvatarViewUrl((row as { avatar_url?: string | null }).avatar_url ?? null),
+                  avatarUrl: (row as { avatar_url?: string | null }).avatar_url ?? null,
                 }))
                 .filter((row) => row.firstName.length > 0)
                 .map((row) => [row.firstName.toLowerCase(), row]),
             ).values(),
           );
 
-          setApprovedReviewers(uniqueReviewers);
+          const reviewersWithDisplayUrls = await Promise.all(
+            uniqueReviewers.map(async (reviewer) => ({
+              ...reviewer,
+              avatarUrl: await getDisplayAvatarUrl(reviewer.avatarUrl),
+            })),
+          );
+
+          setApprovedReviewers(reviewersWithDisplayUrls);
           setActiveReviewerNameIndex(0);
           setIsReviewerFading(false);
+          setFailedReviewerAvatars({});
           setIsReviewerNamesLoading(false);
           return;
         }
@@ -1064,9 +1068,9 @@ export default function ReviewerApplyPage() {
           <div className="w-full max-w-2xl mx-auto">
             <div className="flex flex-col gap-6 md:gap-8">
               <div className="pt-1 md:pt-2 hyphens-none mx-auto max-w-xl px-4">
-                <h1 className="text-center text-[2rem] sm:text-4xl md:text-5xl font-bold leading-tight tracking-tight">
-                  <span className="block whitespace-nowrap text-white">Review profiles honestly.</span>
-                  <span className="block whitespace-nowrap text-white">Men get actionable advice.</span>
+                <h1 className="text-center text-[2rem] sm:text-4xl md:text-5xl font-bold leading-tight tracking-tight text-balance">
+                  <span className="block text-white">Review profiles honestly.</span>
+                  <span className="block text-white">Men get actionable advice.</span>
                   <span className="block bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
                     You earn per review.
                   </span>
@@ -1117,11 +1121,11 @@ export default function ReviewerApplyPage() {
                 {/* Main CTA */}
                 <Button 
                   size="xl" 
-                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white py-5 md:py-6 text-base md:text-lg font-bold rounded-2xl shadow-2xl shadow-primary/30 hover:shadow-primary/50 transition-all duration-300 border-2 border-white/10 whitespace-normal min-h-[3.25rem]"
+                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white py-4 md:py-6 text-sm md:text-lg font-bold rounded-2xl shadow-2xl shadow-primary/30 hover:shadow-primary/50 transition-all duration-300 border-2 border-white/10 min-h-[3.25rem]"
                   onClick={() => setStep(2)}
                 >
-                  <div className="flex flex-col items-center justify-center gap-2 sm:flex-row sm:gap-3 px-2 text-center">
-                    <span className="leading-snug">Start your reviewer application</span>
+                  <div className="flex items-center justify-center gap-2 sm:gap-3 px-2 text-center whitespace-nowrap">
+                    <span className="leading-none">Start your reviewer application</span>
                     <ArrowRight className="w-5 h-5 md:w-6 md:h-6 shrink-0" aria-hidden />
                   </div>
                 </Button>
@@ -1142,12 +1146,19 @@ export default function ReviewerApplyPage() {
                           : approvedReviewers.length > 0
                             ? (
                               <>
-                                {approvedReviewers[activeReviewerNameIndex]?.avatarUrl ? (
+                                {approvedReviewers[activeReviewerNameIndex]?.avatarUrl &&
+                                !failedReviewerAvatars[approvedReviewers[activeReviewerNameIndex].firstName] ? (
                                   <img
                                     src={approvedReviewers[activeReviewerNameIndex].avatarUrl as string}
                                     alt={approvedReviewers[activeReviewerNameIndex].firstName}
                                     className="h-9 w-9 md:h-10 md:w-10 rounded-full object-cover border border-white/20"
                                     loading="lazy"
+                                    onError={() =>
+                                      setFailedReviewerAvatars((prev) => ({
+                                        ...prev,
+                                        [approvedReviewers[activeReviewerNameIndex].firstName]: true,
+                                      }))
+                                    }
                                   />
                                 ) : (
                                   <div className="h-9 w-9 md:h-10 md:w-10 rounded-full border border-white/20 bg-white/10 flex items-center justify-center">
