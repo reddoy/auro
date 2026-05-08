@@ -1080,13 +1080,13 @@ export default function ReviewerApplyPage() {
       </div>
       
       {step === 1 && (
-        <div className="flex-1 flex items-start md:items-center justify-center px-4 py-4 md:py-8 min-h-0 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="flex-1 flex items-start md:items-center justify-center px-4 py-4 md:py-8 min-h-[calc(100dvh-var(--funnel-header-height,68px)-72px)] pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="w-full max-w-2xl mx-auto">
-            <div className="flex flex-col gap-6 md:gap-8">
+            <div className="flex flex-col gap-5 md:gap-8">
               <div className="pt-1 md:pt-2 hyphens-none mx-auto max-w-xl px-4">
-                <h1 className="text-center text-[clamp(1.95rem,7.2vw,3.8rem)] md:text-5xl font-bold leading-tight tracking-tight">
-                  <span className="block whitespace-nowrap text-white">Review profiles honestly.</span>
-                  <span className="block whitespace-nowrap text-white">Men get actionable advice.</span>
+                <h1 className="text-center text-[clamp(1.85rem,6.6vw,3.8rem)] md:text-5xl font-bold leading-[1.05] tracking-tight text-balance">
+                  <span className="block text-white sm:whitespace-nowrap">Review profiles honestly.</span>
+                  <span className="block text-white sm:whitespace-nowrap">Men get actionable advice.</span>
                   <span className="block bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
                     You earn per review.
                   </span>
@@ -1133,7 +1133,7 @@ export default function ReviewerApplyPage() {
                 </div>
               </div>
 
-              <div className="space-y-2.5 md:space-y-4 px-0 sm:px-4 pb-2 md:pb-4">
+              <div className="space-y-2.5 md:space-y-4 px-0 sm:px-4 pb-3 md:pb-4">
                 {/* Main CTA */}
                 <Button 
                   size="xl" 
@@ -1149,7 +1149,7 @@ export default function ReviewerApplyPage() {
                 <div className="bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 backdrop-blur-sm rounded-xl p-3 md:p-4 border border-primary/30">
                   <div className="text-center">
                     <p className="text-xs md:text-sm font-medium text-primary/85">Join our fantastic reviewer community!</p>
-                    <div className="mt-1 h-14 md:h-16 flex items-center justify-center">
+                    <div className="mt-1 h-16 md:h-16 flex items-center justify-center">
                       <div
                         className={`flex items-center gap-3 max-w-full px-1 transition-all duration-300 ${
                           isReviewerFading ? 'opacity-0 translate-y-1' : 'opacity-100 translate-y-0'
