@@ -1,9 +1,8 @@
-const Stripe = require('stripe');
+const path = require('path');
+const { createRequire } = require('module');
+const Stripe = createRequire(path.join(__dirname, '..', 'site', 'package.json'))('stripe');
 
-// Initialize Stripe with your secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
-
-async function checkAccountStatus(accountId) {
+async function checkAccountStatus(stripe, accountId) {
   try {
     console.log(`🔍 Checking Stripe Connect account: ${accountId}`);
     
@@ -99,7 +98,8 @@ async function main() {
   }
   
   try {
-    await checkAccountStatus(accountId);
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    await checkAccountStatus(stripe, accountId);
   } catch (error) {
     console.error('Failed to check account status:', error.message);
     process.exit(1);

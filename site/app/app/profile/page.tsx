@@ -157,7 +157,8 @@ export default function AppProfilePage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const j = data as { error?: string; stripeCode?: string | null };
+        const j = data as { error?: string; stripeCode?: string | null; stripeRequestId?: string | null };
+        console.warn('[stripe express-onboarding]', { status: res.status, ...j });
         const suffix = j.stripeCode ? ` (${j.stripeCode})` : '';
         throw new Error((j.error || 'Unable to open Stripe') + suffix);
       }

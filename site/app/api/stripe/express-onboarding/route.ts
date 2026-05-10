@@ -14,6 +14,40 @@ function canonicalSiteBase(): string {
   }
 }
 
+function protocolOkForStripeRedirect(u: URL): boolean {
+  if (u.protocol === 'https:') return true;
+  return u.protocol === 'http:' && u.hostname === 'localhost';
+}
+
+/** Stripe return URL after onboarding completes (must stay in sync with client `returnUrl`). */
+function validatedSuccessUrl(base: string, returnUrl: unknown): string {
+  let successUrl = `${base}/auth/stripe-connect-success`;
+  if (typeof returnUrl !== 'string' || returnUrl.trim().length === 0) {
+    return successUrl;
+  }
+  try {
+    const clientU = new URL(returnUrl.trim());
+    const baseU = new URL(base);
+    const norm = (h: string) => h.replace(/^www\./, '');
+    const samePrimary =
+      norm(clientU.hostname) === norm(baseU.hostname) || clientU.hostname === baseU.hostname;
+    if (
+      protocolOkForStripeRedirect(clientU) &&
+      samePrimary &&
+      clientU.pathname.startsWith('/auth/stripe-connect-success')
+    ) {
+      successUrl = clientU.toString();
+    }
+  } catch {
+    // keep canonical successUrl
+  }
+  return successUrl;
+}
+
+function stripeConnectRefreshUrl(base: string): string {
+  return `${base}/auth/stripe-connect-refresh`;
+}
+
 export async function POST(req: Request) {
   try {
     const gate = await requireAuthenticatedUser(req);
@@ -46,6 +80,7 @@ export async function POST(req: Request) {
 
     const profileRow = existing.data ?? null;
     if (existing.error) {
+      console.warn('[express-onboarding] profile query error', existing.error.message);
       return new Response(JSON.stringify({ error: existing.error.message }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -57,10 +92,13 @@ export async function POST(req: Request) {
 
     const reviewerState = String((profileRow as { is_reviewer?: string | null }).is_reviewer ?? '').trim();
     if (!(reviewerState === 'pending' || reviewerState === 'approved')) {
+      console.warn('[express-onboarding] reviewer gate failed', {
+        reviewerId: targetReviewerId,
+        is_reviewer: reviewerState || null,
+      });
       return new Response(JSON.stringify({ error: 'User is not a reviewer' }), { status: 400 });
     }
 
-    // Create Stripe Express account if missing
     let connectAccountId = profileRow?.stripe_connect_account_id as string | undefined;
     if (!connectAccountId) {
       const platformCountry =
@@ -69,9 +107,7 @@ export async function POST(req: Request) {
         type: 'express',
         country: platformCountry,
         email:
-          ((profileRow as { email?: string | null }).email ??
-            gate.user.email) ||
-          undefined,
+          ((profileRow as { email?: string | null }).email ?? gate.user.email) || undefined,
         capabilities: {
           transfers: { requested: true },
         },
@@ -82,6 +118,11 @@ export async function POST(req: Request) {
         .update({ stripe_connect_account_id: connectAccountId })
         .eq('id', targetReviewerId);
       if (updErr) {
+        console.error('[express-onboarding] DB update failed after accounts.create', {
+          reviewerId: targetReviewerId,
+          connectAccountId,
+          message: updErr.message,
+        });
         return new Response(JSON.stringify({ error: updErr.message }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
@@ -90,57 +131,34 @@ export async function POST(req: Request) {
     }
 
     const base = canonicalSiteBase();
-    let successUrl = `${base}/auth/stripe-connect-success`;
-    if (typeof returnUrl === 'string' && returnUrl.trim().length > 0) {
-      try {
-        const clientU = new URL(returnUrl.trim());
-        const baseU = new URL(base);
-        const norm = (h: string) => h.replace(/^www\./, '');
-        const samePrimary =
-          norm(clientU.hostname) === norm(baseU.hostname) || clientU.hostname === baseU.hostname;
-        if (
-          clientU.protocol === 'https:' &&
-          samePrimary &&
-          clientU.pathname.startsWith('/auth/stripe-connect-success')
-        ) {
-          successUrl = clientU.toString();
-        }
-      } catch {
-        // keep canonical successUrl
-      }
-    }
+    const successUrl = validatedSuccessUrl(base, returnUrl);
+    const refreshUrl = stripeConnectRefreshUrl(base);
 
     const accountLink = await stripe.accountLinks.create({
       account: connectAccountId!,
       type: 'account_onboarding',
       return_url: successUrl,
-      refresh_url: successUrl,
+      refresh_url: refreshUrl,
     });
-
-    // Note: Once the reviewer completes Stripe onboarding and payouts are enabled,
-    // the retry-failed-distributions cron job will automatically pick up and distribute any held payments
 
     return new Response(JSON.stringify({ url: accountLink.url, accountId: connectAccountId }), { status: 200 });
   } catch (e: unknown) {
     if (e instanceof Stripe.errors.StripeError) {
       const err = e;
-      return new Response(
-        JSON.stringify({
-          error: err.message,
-          stripeCode: err.code ?? null,
-          stripeType: err.type ?? null,
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        },
-      );
+      const payload = {
+        error: err.message,
+        stripeCode: err.code ?? null,
+        stripeType: err.type ?? null,
+        stripeRequestId: err.requestId ?? null,
+      };
+      console.error('[express-onboarding] Stripe error', JSON.stringify(payload));
+      return new Response(JSON.stringify(payload), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
     const msg = e instanceof Error ? e.message : 'Failed to create onboarding link';
+    console.error('[express-onboarding]', msg);
     return new Response(JSON.stringify({ error: msg }), { status: 400 });
   }
 }
-
-
-
-

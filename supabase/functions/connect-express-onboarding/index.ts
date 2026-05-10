@@ -13,8 +13,54 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function siteOrigin(): string {
+  const raw = (Deno.env.get("NEXT_PUBLIC_SITE_URL") || "https://www.appauro.com").trim().replace(/\/$/, "");
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== "https:" && u.hostname !== "localhost") {
+      u.protocol = "https:";
+    }
+    return u.origin;
+  } catch {
+    return "https://www.appauro.com";
+  }
+}
+
+function protocolOkForStripeRedirect(u: URL): boolean {
+  if (u.protocol === "https:") return true;
+  return u.protocol === "http:" && u.hostname === "localhost";
+}
+
+/** Match Next.js route `validatedSuccessUrl`. */
+function resolveStripeRedirectUrls(siteBase: string, returnUrl: unknown): { successUrl: string; refreshUrl: string } {
+  const refreshUrl = `${siteBase}/auth/stripe-connect-refresh`;
+  let successUrl = `${siteBase}/auth/stripe-connect-success`;
+  if (typeof returnUrl !== "string" || returnUrl.trim().length === 0) {
+    return { successUrl, refreshUrl };
+  }
+  try {
+    const clientU = new URL(returnUrl.trim());
+    const baseU = new URL(siteBase);
+    const norm = (h: string) => h.replace(/^www\./, "");
+    const samePrimary =
+      norm(clientU.hostname) === norm(baseU.hostname) || clientU.hostname === baseU.hostname;
+    if (
+      protocolOkForStripeRedirect(clientU) &&
+      samePrimary &&
+      clientU.pathname.startsWith("/auth/stripe-connect-success")
+    ) {
+      successUrl = clientU.toString();
+    }
+  } catch {
+    // keep canonical successUrl
+  }
+  return { successUrl, refreshUrl };
+}
+
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*" } });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*" } });
+  }
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
   try {
     const { reviewerId, returnUrl } = await req.json();
@@ -29,34 +75,33 @@ serve(async (req) => {
     if (!secret) return json({ error: "Missing STRIPE_SECRET_KEY" }, 500);
     const stripe = new Stripe(secret);
 
-    const { data: profile } = await admin
+    const existing = await admin
       .from("profiles")
-      .select("id, email, username")
+      .select("id, username, email, stripe_connect_account_id, is_reviewer")
       .eq("id", reviewerId)
       .maybeSingle();
 
-    // Check if profile exists and is a reviewer
-    let profileRow: any = null;
-    try {
-      const existing = await admin
-        .from("profiles")
-        .select("id, username, stripe_connect_account_id, is_reviewer")
-        .eq("id", reviewerId)
-        .maybeSingle();
-      profileRow = existing.data || null;
-      if (!profileRow) {
-        return json({ error: "Profile not found" }, 404);
-      }
-      if (!(profileRow as any)?.is_reviewer) {
-        return json({ error: "User is not a reviewer" }, 400);
-      }
-    } catch {}
+    if (existing.error) {
+      return json({ error: existing.error.message }, 400);
+    }
+    const profileRow = existing.data;
+    if (!profileRow) {
+      return json({ error: "Profile not found" }, 404);
+    }
 
-    let connectAccountId = profileRow?.stripe_connect_account_id as string | undefined;
+    const reviewerState = String((profileRow as { is_reviewer?: string | null }).is_reviewer ?? "").trim();
+    if (!(reviewerState === "pending" || reviewerState === "approved")) {
+      return json({ error: "User is not a reviewer" }, 400);
+    }
+
+    let connectAccountId = profileRow.stripe_connect_account_id as string | undefined;
     if (!connectAccountId) {
+      const platformCountry =
+        (Deno.env.get("STRIPE_CONNECT_DEFAULT_COUNTRY") || "US").trim().toUpperCase() || "US";
       const acct = await stripe.accounts.create({
         type: "express",
-        email: (profile as any)?.email || undefined,
+        country: platformCountry,
+        email: (profileRow as { email?: string | null }).email || undefined,
         capabilities: {
           transfers: { requested: true },
         },
@@ -69,16 +114,23 @@ serve(async (req) => {
         },
       });
       connectAccountId = acct.id;
-      await admin.from("profiles").update({ stripe_connect_account_id: connectAccountId }).eq("id", reviewerId);
+      const { error: updErr } = await admin
+        .from("profiles")
+        .update({ stripe_connect_account_id: connectAccountId })
+        .eq("id", reviewerId);
+      if (updErr) {
+        return json({ error: updErr.message }, 400);
+      }
     }
 
-    const siteUrl = Deno.env.get("NEXT_PUBLIC_SITE_URL") || "https://www.appauro.com";
-    const successUrl = returnUrl || `${siteUrl}/auth/stripe-connect-success`;
+    const siteBase = siteOrigin();
+    const { successUrl, refreshUrl } = resolveStripeRedirectUrls(siteBase, returnUrl);
+
     const link = await stripe.accountLinks.create({
       account: connectAccountId!,
       type: "account_onboarding",
       return_url: successUrl,
-      refresh_url: successUrl,
+      refresh_url: refreshUrl,
     });
     return json({ url: link.url, accountId: connectAccountId });
   } catch (e) {
@@ -86,7 +138,3 @@ serve(async (req) => {
     return json({ error: msg }, 400);
   }
 });
-
-
-
-
