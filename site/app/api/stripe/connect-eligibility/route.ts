@@ -1,3 +1,4 @@
+import Stripe from 'stripe';
 import { requireAuthenticatedUser } from '@/lib/require-authenticated-user';
 import { isReviewerApprovedForStripeConnect } from '@/lib/reviewer-connect-gate';
 
@@ -34,12 +35,44 @@ export async function GET(req: Request) {
       ? rawReviewer.trim()
       : String(rawReviewer ?? '').trim();
   const eligibleForOnboarding = isReviewerApprovedForStripeConnect(rawReviewer);
+  const connectIdRaw = (row as { stripe_connect_account_id?: string | null })?.stripe_connect_account_id;
+  const connectAccountId =
+    typeof connectIdRaw === 'string' && connectIdRaw.trim().length > 0 ? connectIdRaw.trim() : null;
+
+  let stripeDetailsSubmitted: boolean | null = null;
+  let stripeChargesEnabled: boolean | null = null;
+  let stripePayoutsEnabled: boolean | null = null;
+
+  if (eligibleForOnboarding && connectAccountId) {
+    const secret = process.env.STRIPE_SECRET_KEY || '';
+    if (secret) {
+      try {
+        const stripe = new Stripe(secret);
+        const acct = await stripe.accounts.retrieve(connectAccountId);
+        stripeDetailsSubmitted = !!acct.details_submitted;
+        stripeChargesEnabled = !!acct.charges_enabled;
+        stripePayoutsEnabled = !!acct.payouts_enabled;
+      } catch (e: unknown) {
+        if (e instanceof Stripe.errors.StripeError) {
+          console.warn('[connect-eligibility] Stripe retrieve failed', e.code, e.message);
+        } else {
+          console.warn('[connect-eligibility] Stripe retrieve failed', e);
+        }
+      }
+    }
+  }
+
+  const canOpenExpressDashboard = stripeDetailsSubmitted === true;
 
   return new Response(
     JSON.stringify({
       eligibleForOnboarding,
       is_reviewer: reviewerState || null,
-      hasStripeConnectAccountId: !!(row as { stripe_connect_account_id?: string | null })?.stripe_connect_account_id?.trim(),
+      hasStripeConnectAccountId: !!connectAccountId,
+      stripeDetailsSubmitted,
+      stripeChargesEnabled,
+      stripePayoutsEnabled,
+      canOpenExpressDashboard,
     }),
     { status: 200, headers: { 'Content-Type': 'application/json' } }
   );

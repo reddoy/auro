@@ -67,6 +67,18 @@ export async function POST(req: Request) {
     if (!secret) return new Response(JSON.stringify({ error: 'Missing STRIPE_SECRET_KEY' }), { status: 500 });
     const stripe = new Stripe(secret);
 
+    const acct = await stripe.accounts.retrieve(connectAccountId);
+    if (!acct.details_submitted) {
+      return new Response(
+        JSON.stringify({
+          error:
+            'Finish Stripe onboarding first — then you can open the Express payout dashboard.',
+          appCode: 'STRIPE_ONBOARDING_INCOMPLETE',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     const link = await stripe.accounts.createLoginLink(connectAccountId);
     return new Response(JSON.stringify({ url: link.url }), { status: 200 });
   } catch (e: unknown) {
