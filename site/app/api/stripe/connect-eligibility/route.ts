@@ -1,4 +1,5 @@
 import { requireAuthenticatedUser } from '@/lib/require-authenticated-user';
+import { isReviewerEligibleForStripeConnect } from '@/lib/reviewer-connect-gate';
 
 /**
  * Returns whether the signed-in user is allowed to start Stripe Express onboarding,
@@ -27,9 +28,12 @@ export async function GET(req: Request) {
   }
 
   const row = existing.data ?? null;
-  const reviewerState = String((row as { is_reviewer?: string | null })?.is_reviewer ?? '').trim();
-  const eligibleForOnboarding =
-    reviewerState === 'pending' || reviewerState === 'approved';
+  const rawReviewer = (row as { is_reviewer?: unknown })?.is_reviewer;
+  const reviewerState =
+    typeof rawReviewer === 'string'
+      ? rawReviewer.trim()
+      : String(rawReviewer ?? '').trim();
+  const eligibleForOnboarding = isReviewerEligibleForStripeConnect(rawReviewer);
 
   return new Response(
     JSON.stringify({

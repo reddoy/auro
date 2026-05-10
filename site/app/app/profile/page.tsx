@@ -155,12 +155,26 @@ export default function AppProfilePage() {
         },
         body: JSON.stringify(body),
       });
-      const data = await res.json().catch(() => ({}));
+      const ctype = res.headers.get('content-type') || '';
+      let data: Record<string, unknown> = {};
+      if (ctype.includes('application/json')) {
+        data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      } else {
+        const raw = await res.text();
+        console.warn('[stripe express-onboarding] non-JSON response', {
+          status: res.status,
+          contentType: ctype,
+          bodyPreview: raw.slice(0, 400),
+        });
+      }
       if (!res.ok) {
         const j = data as { error?: string; stripeCode?: string | null; stripeRequestId?: string | null };
         console.warn('[stripe express-onboarding]', { status: res.status, ...j });
         const suffix = j.stripeCode ? ` (${j.stripeCode})` : '';
-        throw new Error((j.error || 'Unable to open Stripe') + suffix);
+        const msg =
+          (typeof j.error === 'string' && j.error.length > 0 ? j.error : null) ||
+          (ctype.includes('application/json') ? null : `Server error (${res.status})`);
+        throw new Error((msg || 'Unable to open Stripe') + suffix);
       }
       const redirectUrl = (data as { url?: string }).url;
       if (!redirectUrl) throw new Error('Stripe link was not returned');

@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import { requireAuthenticatedUser } from '@/lib/require-authenticated-user';
+import { isReviewerEligibleForStripeConnect } from '@/lib/reviewer-connect-gate';
 
 function canonicalSiteBase(): string {
   const raw = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com').trim().replace(/\/$/, '');
@@ -16,7 +17,9 @@ function canonicalSiteBase(): string {
 
 function protocolOkForStripeRedirect(u: URL): boolean {
   if (u.protocol === 'https:') return true;
-  return u.protocol === 'http:' && u.hostname === 'localhost';
+  if (u.protocol !== 'http:') return false;
+  const h = u.hostname;
+  return h === 'localhost' || h === '127.0.0.1' || h === '[::1]';
 }
 
 /** Stripe return URL after onboarding completes (must stay in sync with client `returnUrl`). */
@@ -46,6 +49,15 @@ function validatedSuccessUrl(base: string, returnUrl: unknown): string {
 
 function stripeConnectRefreshUrl(base: string): string {
   return `${base}/auth/stripe-connect-refresh`;
+}
+
+function stripePayloadFrom(err: Stripe.errors.StripeError) {
+  return {
+    error: err.message,
+    stripeCode: err.code ?? null,
+    stripeType: err.type ?? null,
+    stripeRequestId: err.requestId ?? null,
+  };
 }
 
 export async function POST(req: Request) {
@@ -90,8 +102,9 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'Profile not found' }), { status: 404 });
     }
 
-    const reviewerState = String((profileRow as { is_reviewer?: string | null }).is_reviewer ?? '').trim();
-    if (!(reviewerState === 'pending' || reviewerState === 'approved')) {
+    const rawReviewer = (profileRow as { is_reviewer?: unknown }).is_reviewer;
+    if (!isReviewerEligibleForStripeConnect(rawReviewer)) {
+      const reviewerState = typeof rawReviewer === 'string' ? rawReviewer.trim() : String(rawReviewer ?? '').trim();
       console.warn('[express-onboarding] reviewer gate failed', {
         reviewerId: targetReviewerId,
         is_reviewer: reviewerState || null,
@@ -99,7 +112,49 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: 'User is not a reviewer' }), { status: 400 });
     }
 
-    let connectAccountId = profileRow?.stripe_connect_account_id as string | undefined;
+    const storedConnectId = (profileRow as { stripe_connect_account_id?: unknown }).stripe_connect_account_id;
+    let connectAccountId =
+      typeof storedConnectId === 'string' && storedConnectId.trim().length > 0
+        ? storedConnectId.trim()
+        : undefined;
+
+    // Stale IDs (e.g. test-mode acct persisted while prod keys run) break accountLinks.create.
+    if (connectAccountId) {
+      try {
+        await stripe.accounts.retrieve(connectAccountId);
+      } catch (e: unknown) {
+        if (
+          e instanceof Stripe.errors.StripeError &&
+          (e.code === 'resource_missing' || e.code === 'account_invalid')
+        ) {
+          console.warn('[express-onboarding] Clearing invalid Connect account id', {
+            reviewerId: targetReviewerId,
+            connectAccountId,
+            stripeCode: e.code,
+          });
+          const { error: clearErr } = await admin
+            .from('profiles')
+            .update({ stripe_connect_account_id: null })
+            .eq('id', targetReviewerId);
+          if (clearErr) {
+            return new Response(JSON.stringify({ error: clearErr.message }), {
+              status: 400,
+              headers: { 'Content-Type': 'application/json' },
+            });
+          }
+          connectAccountId = undefined;
+        } else if (e instanceof Stripe.errors.StripeError) {
+          console.error('[express-onboarding] Stripe error (retrieve)', JSON.stringify(stripePayloadFrom(e)));
+          return new Response(JSON.stringify(stripePayloadFrom(e)), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        } else {
+          throw e;
+        }
+      }
+    }
+
     if (!connectAccountId) {
       const platformCountry =
         (process.env.STRIPE_CONNECT_DEFAULT_COUNTRY || 'US').trim().toUpperCase() || 'US';
@@ -134,23 +189,73 @@ export async function POST(req: Request) {
     const successUrl = validatedSuccessUrl(base, returnUrl);
     const refreshUrl = stripeConnectRefreshUrl(base);
 
-    const accountLink = await stripe.accountLinks.create({
-      account: connectAccountId!,
-      type: 'account_onboarding',
-      return_url: successUrl,
-      refresh_url: refreshUrl,
-    });
+    let accountLink: Stripe.AccountLink;
+    try {
+      accountLink = await stripe.accountLinks.create({
+        account: connectAccountId!,
+        type: 'account_onboarding',
+        return_url: successUrl,
+        refresh_url: refreshUrl,
+      });
+    } catch (inner: unknown) {
+      // Cross-mode connected account IDs slipping through retrieve, or orphaned account rows.
+      if (
+        inner instanceof Stripe.errors.StripeError &&
+        (inner.code === 'resource_missing' || inner.code === 'account_invalid')
+      ) {
+        console.warn('[express-onboarding] Clearing invalid Connect account (link create)', {
+          reviewerId: targetReviewerId,
+          connectAccountId,
+          stripeCode: inner.code,
+        });
+        const { error: clearErr } = await admin
+          .from('profiles')
+          .update({ stripe_connect_account_id: null })
+          .eq('id', targetReviewerId);
+        if (clearErr) {
+          return new Response(JSON.stringify({ error: clearErr.message }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        const platformCountry =
+          (process.env.STRIPE_CONNECT_DEFAULT_COUNTRY || 'US').trim().toUpperCase() || 'US';
+        const acct = await stripe.accounts.create({
+          type: 'express',
+          country: platformCountry,
+          email:
+            ((profileRow as { email?: string | null }).email ?? gate.user.email) || undefined,
+          capabilities: {
+            transfers: { requested: true },
+          },
+        });
+        connectAccountId = acct.id;
+        const { error: updErr } = await admin
+          .from('profiles')
+          .update({ stripe_connect_account_id: connectAccountId })
+          .eq('id', targetReviewerId);
+        if (updErr) {
+          return new Response(JSON.stringify({ error: updErr.message }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        accountLink = await stripe.accountLinks.create({
+          account: connectAccountId!,
+          type: 'account_onboarding',
+          return_url: successUrl,
+          refresh_url: refreshUrl,
+        });
+      } else {
+        throw inner;
+      }
+    }
 
     return new Response(JSON.stringify({ url: accountLink.url, accountId: connectAccountId }), { status: 200 });
   } catch (e: unknown) {
     if (e instanceof Stripe.errors.StripeError) {
       const err = e;
-      const payload = {
-        error: err.message,
-        stripeCode: err.code ?? null,
-        stripeType: err.type ?? null,
-        stripeRequestId: err.requestId ?? null,
-      };
+      const payload = stripePayloadFrom(err);
       console.error('[express-onboarding] Stripe error', JSON.stringify(payload));
       return new Response(JSON.stringify(payload), {
         status: 400,
