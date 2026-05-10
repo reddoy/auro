@@ -259,7 +259,10 @@ export async function POST(req: Request) {
       }
     }
 
-    return new Response(JSON.stringify({ url: accountLink.url, accountId: connectAccountId }), { status: 200 });
+    return new Response(JSON.stringify({ url: accountLink.url, accountId: connectAccountId }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    });
   } catch (e: unknown) {
     if (e instanceof Stripe.errors.StripeError) {
       const err = e;

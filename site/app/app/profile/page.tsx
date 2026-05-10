@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { getCurrentProfileWeb } from '@/lib/profile-web';
+import { readJsonResponseBody } from '@/lib/read-json-response-body';
 import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/types';
 
@@ -75,7 +76,7 @@ export default function AppProfilePage() {
         const res = await fetch('/api/stripe/connect-eligibility', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const j = (await res.json().catch(() => ({}))) as {
+        const j = (await readJsonResponseBody(res)) as {
           stripeDetailsSubmitted?: boolean;
         };
         if (cancelled) return;
@@ -101,7 +102,7 @@ export default function AppProfilePage() {
           const res = await fetch('/api/stripe/connect-eligibility', {
             headers: { Authorization: `Bearer ${token}` },
           });
-          const j = (await res.json().catch(() => ({}))) as { stripeDetailsSubmitted?: boolean };
+          const j = (await readJsonResponseBody(res)) as { stripeDetailsSubmitted?: boolean };
           if (cancelled) return;
           setConnectStripeSummary({
             loading: false,
@@ -235,29 +236,22 @@ export default function AppProfilePage() {
         },
         body: JSON.stringify(body),
       });
-      const ctype = res.headers.get('content-type') || '';
-      let data: Record<string, unknown> = {};
-      if (ctype.includes('application/json')) {
-        data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-      } else {
-        const raw = await res.text();
-        console.warn('[stripe api] non-JSON response', {
-          status: res.status,
-          contentType: ctype,
-          bodyPreview: raw.slice(0, 400),
-        });
-      }
+      const data = await readJsonResponseBody(res);
       if (!res.ok) {
         const j = data as { error?: string; stripeCode?: string | null; stripeRequestId?: string | null };
         console.warn('[stripe api]', { status: res.status, ...j });
         const suffix = j.stripeCode ? ` (${j.stripeCode})` : '';
         const msg =
-          (typeof j.error === 'string' && j.error.length > 0 ? j.error : null) ||
-          (ctype.includes('application/json') ? null : `Server error (${res.status})`);
+          (typeof j.error === 'string' && j.error.length > 0 ? j.error : null) || `Server error (${res.status})`;
         throw new Error((msg || 'Unable to open Stripe') + suffix);
       }
-      const redirectUrl = (data as { url?: string }).url;
-      if (!redirectUrl) throw new Error('Stripe link was not returned');
+      const redirectUrl =
+        typeof data.url === 'string' && data.url.trim().length > 0 ? data.url.trim() : null;
+      if (!redirectUrl) {
+        const err = typeof data.error === 'string' && data.error.trim().length > 0 ? data.error.trim() : null;
+        console.warn('[stripe api] 200 without url', { keys: Object.keys(data) });
+        throw new Error(err || 'Stripe link was not returned — try again or contact support.');
+      }
       window.location.assign(redirectUrl);
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Unable to open Stripe', 3200);

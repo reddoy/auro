@@ -74,6 +74,6 @@ export async function GET(req: Request) {
       stripePayoutsEnabled,
       canOpenExpressDashboard,
     }),
-    { status: 200, headers: { 'Content-Type': 'application/json' } }
+    { status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8' } }
   );
 }

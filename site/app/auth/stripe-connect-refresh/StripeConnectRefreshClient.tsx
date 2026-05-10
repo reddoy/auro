@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { readJsonResponseBody } from '@/lib/read-json-response-body';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -45,7 +46,7 @@ export default function StripeConnectRefreshClient() {
             returnUrl: `${window.location.origin}/auth/stripe-connect-success`,
           }),
         });
-        const data = await res.json().catch(() => ({}));
+        const data = await readJsonResponseBody(res);
 
         if (!res.ok) {
           const errPayload = data as {
@@ -62,8 +63,13 @@ export default function StripeConnectRefreshClient() {
           throw new Error((errPayload.error || 'Unable to resume Stripe onboarding') + suffix);
         }
 
-        const redirectUrl = (data as { url?: string }).url;
-        if (!redirectUrl) throw new Error('Stripe link was not returned');
+        const redirectUrl =
+          typeof data.url === 'string' && data.url.trim().length > 0 ? data.url.trim() : null;
+        if (!redirectUrl) {
+          const err =
+            typeof data.error === 'string' && data.error.trim().length > 0 ? data.error.trim() : null;
+          throw new Error(err || 'Stripe link was not returned — try again.');
+        }
         window.location.assign(redirectUrl);
       } catch (e) {
         setStatus('error');
