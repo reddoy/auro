@@ -1,13 +1,14 @@
 /**
- * Stripe Connect onboarding mirrors product rules: only pending or approved applicants.
+ * Stripe Connect (onboarding + Express login) is only for **approved** reviewers.
+ * Pending applicants complete profile steps first; payouts setup happens after approval.
  */
-export function isReviewerEligibleForStripeConnect(raw: unknown): boolean {
+export function isReviewerApprovedForStripeConnect(raw: unknown): boolean {
   if (typeof raw === 'string') {
-    const s = raw.trim();
-    return s === 'pending' || s === 'approved';
+    return raw.trim() === 'approved';
   }
   const s = String(raw ?? '').trim();
-  if (s === 'pending' || s === 'approved') return true;
+  if (s === 'approved') return true;
+  // Legacy boolean column migrated to text sometimes surfaces as "true"
   if (s.toLowerCase() === 'true') return true;
   return false;
 }

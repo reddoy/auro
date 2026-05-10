@@ -161,7 +161,7 @@ export default function AppProfilePage() {
         data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
       } else {
         const raw = await res.text();
-        console.warn('[stripe express-onboarding] non-JSON response', {
+        console.warn('[stripe api] non-JSON response', {
           status: res.status,
           contentType: ctype,
           bodyPreview: raw.slice(0, 400),
@@ -169,7 +169,7 @@ export default function AppProfilePage() {
       }
       if (!res.ok) {
         const j = data as { error?: string; stripeCode?: string | null; stripeRequestId?: string | null };
-        console.warn('[stripe express-onboarding]', { status: res.status, ...j });
+        console.warn('[stripe api]', { status: res.status, ...j });
         const suffix = j.stripeCode ? ` (${j.stripeCode})` : '';
         const msg =
           (typeof j.error === 'string' && j.error.length > 0 ? j.error : null) ||
@@ -261,7 +261,24 @@ export default function AppProfilePage() {
             </section>
           ) : null}
 
-          {reviewerish ? (
+          {profile?.is_reviewer === 'pending' ? (
+            <section
+              className="glass mt-4 rounded-2xl border border-white/[0.12] px-4 py-4"
+              aria-label="Reviewer application status"
+            >
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/45">Stripe payouts</p>
+              <p className="mt-2 text-sm leading-relaxed text-white/72">
+                Your reviewer application is pending. After the team approves it, you&apos;ll connect Stripe here to
+                receive payouts.
+              </p>
+              <p className="mt-3 text-xs text-white/46">
+                Status:{' '}
+                <span className="font-medium uppercase tracking-[0.03em] text-amber-100/90">pending approval</span>
+              </p>
+            </section>
+          ) : null}
+
+          {profile?.is_reviewer === 'approved' ? (
             <section
               className="glass mt-4 rounded-2xl border border-white/[0.12] px-4 py-4"
               aria-label="Stripe Connect"
@@ -284,7 +301,7 @@ export default function AppProfilePage() {
               <p className="mt-2 text-sm leading-relaxed text-white/72">
                 {stripeConnected
                   ? 'You can receive payouts for completed reviews.'
-                  : 'Finish Stripe from your reviewer application flow to get paid.'}
+                  : 'Connect Stripe to receive payouts when reviews complete.'}
               </p>
               {!stripeConnected ? (
                 <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-2.5">
@@ -301,7 +318,7 @@ export default function AppProfilePage() {
                       href="/reviewers/apply"
                       className="inline-flex min-h-9 items-center rounded-full border border-white/16 px-4 text-xs font-semibold text-white/86 transition hover:border-white/28 hover:text-white"
                     >
-                      Open reviewer setup <span aria-hidden className="ml-1.5">→</span>
+                      Reviewer settings <span aria-hidden className="ml-1.5">→</span>
                     </Link>
                   </div>
                 </div>

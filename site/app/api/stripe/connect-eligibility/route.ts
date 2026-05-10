@@ -1,9 +1,9 @@
 import { requireAuthenticatedUser } from '@/lib/require-authenticated-user';
-import { isReviewerEligibleForStripeConnect } from '@/lib/reviewer-connect-gate';
+import { isReviewerApprovedForStripeConnect } from '@/lib/reviewer-connect-gate';
 
 /**
- * Returns whether the signed-in user is allowed to start Stripe Express onboarding,
- * mirroring gate logic in `/api/stripe/express-onboarding` (helps debug “before redirect”).
+ * Returns whether the signed-in user may use Stripe Connect APIs (`express-onboarding` / `express-login`).
+ * Only **approved** reviewers — same gate as those routes.
  */
 export async function GET(req: Request) {
   const gate = await requireAuthenticatedUser(req);
@@ -33,7 +33,7 @@ export async function GET(req: Request) {
     typeof rawReviewer === 'string'
       ? rawReviewer.trim()
       : String(rawReviewer ?? '').trim();
-  const eligibleForOnboarding = isReviewerEligibleForStripeConnect(rawReviewer);
+  const eligibleForOnboarding = isReviewerApprovedForStripeConnect(rawReviewer);
 
   return new Response(
     JSON.stringify({

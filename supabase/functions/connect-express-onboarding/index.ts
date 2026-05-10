@@ -28,7 +28,9 @@ function siteOrigin(): string {
 
 function protocolOkForStripeRedirect(u: URL): boolean {
   if (u.protocol === "https:") return true;
-  return u.protocol === "http:" && u.hostname === "localhost";
+  if (u.protocol !== "http:") return false;
+  const h = u.hostname;
+  return h === "localhost" || h === "127.0.0.1" || h === "[::1]";
 }
 
 /** Match Next.js route `validatedSuccessUrl`. */
@@ -90,8 +92,12 @@ serve(async (req) => {
     }
 
     const reviewerState = String((profileRow as { is_reviewer?: string | null }).is_reviewer ?? "").trim();
-    if (!(reviewerState === "pending" || reviewerState === "approved")) {
-      return json({ error: "User is not a reviewer" }, 400);
+    if (reviewerState !== "approved") {
+      const msg =
+        reviewerState === "pending"
+          ? "Stripe Connect opens after your reviewer application is approved."
+          : "Only approved reviewers can connect Stripe payouts.";
+      return json({ error: msg }, 400);
     }
 
     let connectAccountId = profileRow.stripe_connect_account_id as string | undefined;

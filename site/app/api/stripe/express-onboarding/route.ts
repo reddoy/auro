@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import { requireAuthenticatedUser } from '@/lib/require-authenticated-user';
-import { isReviewerEligibleForStripeConnect } from '@/lib/reviewer-connect-gate';
+import { isReviewerApprovedForStripeConnect } from '@/lib/reviewer-connect-gate';
 
 function canonicalSiteBase(): string {
   const raw = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com').trim().replace(/\/$/, '');
@@ -103,13 +103,21 @@ export async function POST(req: Request) {
     }
 
     const rawReviewer = (profileRow as { is_reviewer?: unknown }).is_reviewer;
-    if (!isReviewerEligibleForStripeConnect(rawReviewer)) {
+    if (!isReviewerApprovedForStripeConnect(rawReviewer)) {
       const reviewerState = typeof rawReviewer === 'string' ? rawReviewer.trim() : String(rawReviewer ?? '').trim();
-      console.warn('[express-onboarding] reviewer gate failed', {
+      console.warn('[express-onboarding] reviewer not approved for Stripe', {
         reviewerId: targetReviewerId,
         is_reviewer: reviewerState || null,
       });
-      return new Response(JSON.stringify({ error: 'User is not a reviewer' }), { status: 400 });
+      return new Response(
+        JSON.stringify({
+          error:
+            reviewerState === 'pending'
+              ? 'Stripe Connect opens after your reviewer application is approved.'
+              : 'Only approved reviewers can connect Stripe payouts.',
+        }),
+        { status: 400 }
+      );
     }
 
     const storedConnectId = (profileRow as { stripe_connect_account_id?: unknown }).stripe_connect_account_id;

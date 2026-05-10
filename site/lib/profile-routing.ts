@@ -23,8 +23,12 @@ export function getReviewerOnboardingStartStep(profile: Profile | null | undefin
   if (!hasAvatar) {
     return { route: '/onboarding/reviewer/profile-picture', step: 'reviewer_profile_picture' };
   }
+  // Stripe Connect is only after manual approval — do not send pending applicants to payout setup.
   if (!hasStripe) {
-    return { route: '/app/profile', step: 'reviewer_stripe' };
+    if (profile.is_reviewer === 'approved') {
+      return { route: '/app/profile', step: 'reviewer_stripe' };
+    }
+    return { route: '/onboarding/reviewer/review-pending', step: 'reviewer_review_pending' };
   }
 
   return { route: '/onboarding/reviewer/review-pending', step: 'reviewer_review_pending' };
