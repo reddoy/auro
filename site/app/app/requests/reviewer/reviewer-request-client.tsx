@@ -135,18 +135,12 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
         const up = await uploadRequestMediaWeb(videoFile, {});
         videoUrl = up.publicUrl || null;
       }
+      if (!videoUrl) {
+        throw new Error('Could not upload video');
+      }
       const updated = await submitRequestReview({
         requestId: request.id,
-        review: {
-          ratings: { overall: 8 },
-          feedback: {
-            generalFeedback: undefined,
-            strengths: [],
-            improvements: [],
-          },
-        },
         videoUrl,
-        imageUrl: null,
       });
       setRequest(updated);
       showToast('Review submitted');
@@ -246,29 +240,62 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
         {request.status === 'in_progress' && (
           <div className="mt-8 space-y-4">
             <h2 className="text-lg font-semibold text-white">Record your video review</h2>
-            <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/75">
-              <p className="font-medium text-white">Best workflow (recommended)</p>
-              <p className="mt-1 text-white/70">
-                Use TikTok green screen, record your feedback over their photos, download the video, then upload it here.
-              </p>
-              <p className="mt-2 text-white/65">
-                Fallback: save photos to camera roll, screen-record while talking, and verify your microphone is enabled.
+
+            <div className="rounded-2xl border border-primary/30 bg-primary/[0.06] p-4 text-sm text-white/80">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  Recommended
+                </span>
+                <p className="font-semibold text-white">TikTok green screen</p>
+              </div>
+              <p className="mt-2 text-white/75">
+                Use TikTok&apos;s green screen feature, record your feedback over their photos, then download
+                the video and upload it here. This is the most popular option.
               </p>
             </div>
-            <label className="block text-sm text-white/70">
+
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm text-white/75">
+              <p className="font-semibold text-white">Or: screen recording with mic</p>
+              <p className="mt-2 text-white/70">
+                Save the photos to your camera roll, screen-record while talking through them, and make
+                sure your microphone is enabled.
+              </p>
+            </div>
+
+            <p className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs text-white/65">
+              We always encourage you to have your face on camera — it makes feedback feel personal and
+              builds trust.
+            </p>
+
+            <label className="block text-sm font-medium text-white/80">
               Video review
               <input
                 type="file"
                 accept="video/*"
                 onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
-                className="mt-1 w-full text-sm text-white/80"
+                className="mt-2 w-full text-sm text-white/80 file:mr-3 file:rounded-full file:border-0 file:bg-white/10 file:px-4 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-white/15"
               />
             </label>
-            {draftVideoUrl ? (
-              <div className="rounded-xl border border-emerald-400/25 bg-emerald-500/10 p-3 text-xs text-emerald-100">
-                Draft uploaded. You can still replace it before final submit.
+
+            {videoFile ? (
+              <div className="flex items-center justify-between rounded-xl border border-white/15 bg-white/[0.04] px-3 py-2 text-xs text-white/75">
+                <span className="truncate pr-3">{videoFile.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setVideoFile(null)}
+                  className="shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold text-white/70 underline-offset-2 hover:text-white hover:underline"
+                >
+                  Remove
+                </button>
               </div>
             ) : null}
+
+            {draftVideoUrl ? (
+              <div className="rounded-xl border border-emerald-400/25 bg-emerald-500/10 p-3 text-xs text-emerald-100">
+                Draft uploaded. You can replace it before submitting.
+              </div>
+            ) : null}
+
             <button
               type="button"
               disabled={draftSaving || !videoFile}
@@ -279,7 +306,7 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
             </button>
             <button
               type="button"
-              disabled={busy}
+              disabled={busy || (!videoFile && !draftVideoUrl)}
               onClick={onSubmitReview}
               className="w-full rounded-2xl bg-primary py-3 font-bold text-primary-foreground disabled:opacity-50 hover:bg-primary/90"
             >
@@ -291,8 +318,10 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
         {request.status === 'completed' && request.review && (
           <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-4">
             <p className="font-semibold text-white">Submitted</p>
-            <p className="mt-2 text-white/70">
-              Overall: {(request.review as { ratings?: { overall?: number } }).ratings?.overall ?? '—'}/10
+            <p className="mt-2 text-sm text-white/65">
+              {request.review?.media?.videoUrl
+                ? 'Your video review has been delivered. The reviewee has been notified.'
+                : 'Review submitted.'}
             </p>
             {(request.review as { media?: { videoUrl?: string | null } }).media?.videoUrl && (
               <video

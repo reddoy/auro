@@ -4,15 +4,26 @@ import AppBackToInbox from '@/components/app/AppBackToInbox';
 import AppMountReveal from '@/components/app/AppMountReveal';
 import { RequestDetailSkeleton } from '@/components/app/app-skeletons';
 import StatusBadge from '@/components/app/StatusBadge';
+import { useAppToast } from '@/components/app/AppToastProvider';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import { getRequestById, markReviewAsViewed } from '@/lib/api';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  getRequestById,
+  getReviewerReviewByRequestId,
+  markReviewAsViewed,
+  submitReviewerReview,
+  type ReviewerReview,
+} from '@/lib/api';
+import { APP_INBOX_QUERY_KEY } from '@/hooks/useAppInboxQuery';
 import { getDisplayAvatarUrl } from '@/lib/avatar';
 import { getSignedStorageUrl } from '@/lib/storage-media-url';
 import { supabase } from '@/lib/supabase';
 import type { DbRequestSummary } from '@/types';
 
 export default function ReviewRequestClient({ id }: { id: string }) {
+  const { showToast } = useAppToast();
+  const queryClient = useQueryClient();
   const [request, setRequest] = useState<DbRequestSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,6 +31,11 @@ export default function ReviewRequestClient({ id }: { id: string }) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [videoSrc, setVideoSrc] = useState<string | null>(null);
+  const [reviewerReview, setReviewerReview] = useState<ReviewerReview | null>(null);
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [submittingRating, setSubmittingRating] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -80,6 +96,12 @@ export default function ReviewRequestClient({ id }: { id: string }) {
 
       if (row.status === 'completed' && row.review) {
         markReviewAsViewed(row.id).catch(() => {});
+        try {
+          const existing = await getReviewerReviewByRequestId(row.id);
+          setReviewerReview(existing);
+        } catch {
+          // non-blocking — card will show without prior rating
+        }
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to load');
@@ -91,6 +113,31 @@ export default function ReviewRequestClient({ id }: { id: string }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  const onSubmitRating = useCallback(async () => {
+    if (!request) return;
+    if (rating < 1 || rating > 5) {
+      showToast('Pick a star rating');
+      return;
+    }
+    setSubmittingRating(true);
+    try {
+      const trimmed = comment.trim();
+      const result = await submitReviewerReview({
+        requestId: request.id,
+        rating,
+        comment: trimmed ? trimmed : undefined,
+      });
+      setReviewerReview(result);
+      showToast('Thanks for rating your reviewer');
+      // Refresh inbox so the 'Rate your reviewer' pill clears from the list.
+      void queryClient.invalidateQueries({ queryKey: APP_INBOX_QUERY_KEY });
+    } catch (e: unknown) {
+      showToast(e instanceof Error ? e.message : 'Could not submit rating');
+    } finally {
+      setSubmittingRating(false);
+    }
+  }, [request, rating, comment, showToast, queryClient]);
 
   if (loading) {
     return <RequestDetailSkeleton />;
@@ -118,6 +165,8 @@ export default function ReviewRequestClient({ id }: { id: string }) {
       }
     | null
     | undefined;
+
+  const shownStars = hoverRating || rating;
 
   return (
     <div className="px-4 pb-8 pt-6">
@@ -181,20 +230,113 @@ export default function ReviewRequestClient({ id }: { id: string }) {
 
         {request.status === 'completed' && review && (
           <div className="mt-8 space-y-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p className="text-lg font-bold text-white">
-              Overall {(review.ratings?.overall ?? '—') as string | number}/10
+            <p className="text-lg font-semibold text-white">
+              {reviewerName}&apos;s review
             </p>
-            {review.feedback?.generalFeedback ? (
-              <p className="whitespace-pre-wrap text-white/70">{review.feedback.generalFeedback}</p>
-            ) : null}
-            {videoSrc && (
+            {videoSrc ? (
               <video src={videoSrc} controls className="w-full rounded-xl" />
+            ) : (
+              <p className="text-sm text-white/60">Your reviewer didn&apos;t attach a video.</p>
             )}
+            {review.feedback?.generalFeedback ? (
+              <p className="whitespace-pre-wrap text-sm text-white/75">{review.feedback.generalFeedback}</p>
+            ) : null}
           </div>
         )}
 
+        {request.status === 'completed' && videoSrc && (
+          reviewerReview ? (
+            <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-sm text-white/65">You rated {reviewerName}</p>
+              <div className="mt-1 flex items-center gap-2">
+                <div className="flex" aria-label={`Rated ${reviewerReview.rating} out of 5`}>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <span
+                      key={n}
+                      className={
+                        n <= reviewerReview.rating ? 'text-primary' : 'text-white/20'
+                      }
+                      style={{ fontSize: 20, lineHeight: 1 }}
+                      aria-hidden="true"
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+                <span className="text-sm font-semibold text-white">
+                  {reviewerReview.rating}/5
+                </span>
+              </div>
+              {reviewerReview.comment ? (
+                <p className="mt-3 whitespace-pre-wrap text-sm text-white/75">{reviewerReview.comment}</p>
+              ) : null}
+            </div>
+          ) : (
+            <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+              <p className="text-base font-semibold text-white">Rate {reviewerName}</p>
+              <p className="mt-1 text-sm text-white/60">
+                Honest ratings help other guys find the best reviewers. Takes ten seconds.
+              </p>
+
+              <div className="mt-4 flex items-center gap-1.5" role="radiogroup" aria-label="Star rating">
+                {[1, 2, 3, 4, 5].map((n) => {
+                  const active = n <= shownStars;
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      role="radio"
+                      aria-checked={rating === n}
+                      aria-label={`${n} ${n === 1 ? 'star' : 'stars'}`}
+                      onClick={() => setRating(n)}
+                      onMouseEnter={() => setHoverRating(n)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      onFocus={() => setHoverRating(n)}
+                      onBlur={() => setHoverRating(0)}
+                      className="rounded-md p-1 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                    >
+                      <span
+                        className={`block transition ${active ? 'text-primary' : 'text-white/25'}`}
+                        style={{ fontSize: 32, lineHeight: 1 }}
+                        aria-hidden="true"
+                      >
+                        ★
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <label className="mt-4 block text-sm font-medium text-white/75">
+                Note (optional)
+                <textarea
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Kept private to your reviewer."
+                  rows={3}
+                  maxLength={500}
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white placeholder-white/35 focus:border-primary/60 focus:outline-none"
+                />
+              </label>
+
+              <button
+                type="button"
+                disabled={submittingRating || rating < 1}
+                onClick={onSubmitRating}
+                className="mt-4 w-full rounded-2xl bg-primary py-3 font-semibold text-primary-foreground transition hover:bg-primary/92 disabled:opacity-50"
+              >
+                {submittingRating ? 'Submitting…' : 'Submit rating'}
+              </button>
+            </div>
+          )
+        )}
+
         {request.status === 'rejected' && (
-          <p className="mt-8 text-white/70">This request was declined. If you paid, a refund should process automatically.</p>
+          <p className="mt-8 text-white/70">This request was declined. A refund has been issued — it should appear on your card within a few business days.</p>
+        )}
+
+        {request.status === 'refunded' && (
+          <p className="mt-8 text-white/70">This request was refunded. The refund should appear on your card within a few business days.</p>
         )}
       </div>
       </AppMountReveal>

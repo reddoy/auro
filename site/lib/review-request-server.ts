@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { INTERNAL_AURO_HEADER, getInternalJobSecret } from '@/lib/internal-fetch-secret';
+import Stripe from 'stripe';
+import { processRefund } from '@/lib/refund-server';
 
 function serverOrigin(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL;
@@ -86,7 +87,7 @@ export async function serverAcceptReviewRequest(
 export async function serverDenyReviewRequest(admin: SupabaseClient, actorUserId: string, requestId: string) {
   const { data: row, error: readErr } = await admin
     .from('requests')
-    .select('id,status,influencer_id')
+    .select('id,status,influencer_id,user_id')
     .eq('id', requestId)
     .maybeSingle();
   if (readErr) throw readErr;
@@ -106,30 +107,50 @@ export async function serverDenyReviewRequest(admin: SupabaseClient, actorUserId
     .maybeSingle();
   if (updErr) throw updErr;
 
-  const secret = getInternalJobSecret();
-  if (secret) {
+  // Refund the reviewee directly (no internal HTTP hop, no secret dependency).
+  // The reviewer was never paid, so the platform balance funds the refund.
+  const stripeKey = process.env.STRIPE_SECRET_KEY || '';
+  if (stripeKey) {
     try {
-      const res = await fetch(`${serverOrigin()}/api/payments/refund`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          [INTERNAL_AURO_HEADER]: secret,
-        },
-        body: JSON.stringify({
-          requestId,
-          reason: 'requested_by_customer',
-          partial: false,
-        }),
+      const stripe = new Stripe(stripeKey);
+      const result = await processRefund(admin, stripe, {
+        requestId,
+        reason: 'requested_by_customer',
+        partial: false,
       });
-      if (!res.ok) {
-        const t = await res.text().catch(() => '');
-        console.error('[serverDenyReviewRequest] refund failed', res.status, t);
+      if (!result.ok) {
+        console.error('[serverDenyReviewRequest] refund failed', {
+          requestId,
+          error: result.error,
+          errorType: result.errorType,
+        });
       }
     } catch (e) {
-      console.error('[serverDenyReviewRequest] refund fetch error', e);
+      console.error('[serverDenyReviewRequest] refund error', e);
     }
   } else {
-    console.warn('[serverDenyReviewRequest] CRON_SECRET unset; skipping automatic refund call');
+    console.error(
+      '[serverDenyReviewRequest] STRIPE_SECRET_KEY missing; cannot auto-refund. Request marked rejected but reviewee refund must be issued manually.'
+    );
+  }
+
+  // Notify the reviewee that their request was declined and refund is processing.
+  const recipientId = (row as { user_id?: string }).user_id;
+  if (recipientId && recipientId !== actorUserId) {
+    try {
+      await fetch(`${serverOrigin()}/api/notifications/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: recipientId,
+          title: 'Request declined',
+          body: 'Your reviewer declined this request. Your refund is processing and should appear on your card within a few business days.',
+          data: { type: 'review_declined', requestId },
+        }),
+      }).catch((err) => console.error('[serverDenyReviewRequest] notification failed', err));
+    } catch (e) {
+      console.error('[serverDenyReviewRequest] notification error', e);
+    }
   }
 
   if (!updated) {
@@ -145,21 +166,16 @@ export async function serverSubmitReviewRequest(
   actorUserId: string,
   params: {
     requestId: string;
-    review: {
-      ratings: { overall: number; [key: string]: unknown };
-      feedback: { [key: string]: unknown };
-    };
-    videoUrl?: string | null;
-    imageUrl?: string | null;
+    videoUrl: string;
   }
 ) {
-  const { requestId, review, videoUrl, imageUrl } = params;
+  const { requestId, videoUrl } = params;
 
   if (!requestId || typeof requestId !== 'string' || requestId.length < 10) {
     throw new Error('Invalid request ID');
   }
-  if (!review?.ratings || typeof review.ratings.overall !== 'number' || review.ratings.overall < 1 || review.ratings.overall > 10) {
-    throw new Error('Overall rating must be between 1 and 10');
+  if (!videoUrl || typeof videoUrl !== 'string') {
+    throw new Error('Video review is required');
   }
 
   const { data: existingRequest, error: exErr } = await admin
@@ -187,14 +203,17 @@ export async function serverSubmitReviewRequest(
     throw new Error(`Cannot submit review for request with status: ${(existingRequest as { status: string }).status}`);
   }
 
-  const withMedia = {
-    ...review,
-    media: { videoUrl: videoUrl ?? null, imageUrl: imageUrl ?? null },
+  // Preserve any pre-existing review fields (e.g. draft metadata) and overwrite media.
+  const priorReview = (existingRequest as { review: Record<string, unknown> | null }).review || {};
+  const reviewPayload = {
+    ...priorReview,
+    media: { videoUrl, imageUrl: null },
+    submittedAt: new Date().toISOString(),
   };
 
   const { data, error } = await admin
     .from('requests')
-    .update({ review: withMedia, status: 'completed' })
+    .update({ review: reviewPayload, status: 'completed' })
     .eq('id', requestId)
     .in('status', ['in_progress', 'paid'])
     .select(REQUEST_SELECT)
@@ -209,16 +228,17 @@ export async function serverSubmitReviewRequest(
 
   const row = data as { influencer_id?: string; user_id?: string };
 
-  if (row.influencer_id && row.influencer_id !== row.user_id) {
+  // Notify the reviewee that their video review is ready to watch.
+  if (row.user_id && row.user_id !== row.influencer_id) {
     try {
       await fetch(`${serverOrigin()}/api/notifications/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: row.influencer_id,
-          title: 'Review Submitted! ✅',
-          body: 'Your review has been submitted! The reviewee can now see your feedback.',
-          data: { type: 'review_submitted', requestId },
+          userId: row.user_id,
+          title: 'Your review is ready',
+          body: 'Your reviewer just submitted your video review. Tap to watch it.',
+          data: { type: 'review_completed', requestId },
         }),
       }).catch((err) => console.error('[serverSubmitReviewRequest] notification failed', err));
     } catch (e) {

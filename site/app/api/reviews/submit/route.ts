@@ -14,9 +14,7 @@ export async function POST(req: Request) {
 
   let body: {
     requestId?: string;
-    review?: { ratings: { overall: number; [key: string]: unknown }; feedback: { [key: string]: unknown } };
     videoUrl?: string | null;
-    imageUrl?: string | null;
   };
   try {
     body = await req.json();
@@ -28,8 +26,15 @@ export async function POST(req: Request) {
   }
 
   const requestId = typeof body.requestId === 'string' ? body.requestId.trim() : '';
-  if (!requestId || !body.review) {
-    return new Response(JSON.stringify({ error: 'requestId and review are required' }), {
+  const videoUrl = typeof body.videoUrl === 'string' ? body.videoUrl.trim() : '';
+  if (!requestId) {
+    return new Response(JSON.stringify({ error: 'requestId is required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  if (!videoUrl) {
+    return new Response(JSON.stringify({ error: 'videoUrl is required' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -38,9 +43,7 @@ export async function POST(req: Request) {
   try {
     const request = await serverSubmitReviewRequest(gate.admin, gate.user.userId, {
       requestId,
-      review: body.review,
-      videoUrl: body.videoUrl,
-      imageUrl: body.imageUrl,
+      videoUrl,
     });
     return new Response(JSON.stringify({ ok: true, request }), {
       status: 200,

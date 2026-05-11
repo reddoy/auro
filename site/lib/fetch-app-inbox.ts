@@ -24,6 +24,8 @@ export type AppInboxData = {
   avatarResolved: Record<string, string>;
   /** Resolved display URL for the signed-in user's avatar (for Home). */
   userAvatarDisplayUrl: string | null;
+  /** request_ids the signed-in user has already rated their reviewer for. */
+  ratedRequestIds: Record<string, true>;
 };
 
 async function resolveAvatarBatch(
@@ -136,6 +138,26 @@ export async function fetchAppInboxData(): Promise<AppInboxData> {
     userAvatarDisplayUrl = (await getDisplayAvatarUrl(raw)) || null;
   }
 
+  // Batch-load reviewer-review rows for completed requests where the signed-in
+  // user is the reviewee, so the inbox can show a 'Rate your reviewer' pill.
+  const ratedRequestIds: Record<string, true> = {};
+  const completedRevieweeRequestIds = reqs
+    .filter((r) => r.userId === profile.id && r.status === 'completed' && !r.archived_at)
+    .map((r) => r.id);
+  if (completedRevieweeRequestIds.length > 0 && supabase) {
+    try {
+      const { data: rated } = await supabase
+        .from('reviewer_reviews')
+        .select('request_id')
+        .in('request_id', completedRevieweeRequestIds);
+      (rated || []).forEach((row: { request_id: string }) => {
+        ratedRequestIds[row.request_id] = true;
+      });
+    } catch {
+      // non-blocking — pill simply won't render on first paint
+    }
+  }
+
   return {
     profile: profile as DbUserProfile & { is_reviewer?: string | null },
     isReviewer,
@@ -144,6 +166,7 @@ export async function fetchAppInboxData(): Promise<AppInboxData> {
     userMap,
     avatarResolved: nextResolved,
     userAvatarDisplayUrl,
+    ratedRequestIds,
   };
 }
 

@@ -116,6 +116,7 @@ export default function RequestsPageClient() {
   const revMap = data?.revMap ?? {};
   const userMap = data?.userMap ?? {};
   const avatarResolved = data?.avatarResolved ?? {};
+  const ratedRequestIds = data?.ratedRequestIds ?? {};
 
   const filtered = requests.filter((r) => {
     if (filter === 'completed') return r.status === 'completed' && !r.archived_at;
@@ -340,12 +341,18 @@ export default function RequestsPageClient() {
                           }
                         />
                       </div>
-                      {item.status === 'completed' && item.review?.ratings?.overall != null && (
-                        <p className="mt-3 text-sm text-primary">
-                          Overall {(item.review as { ratings: { overall: number } }).ratings.overall}/10
-                          {item.review?.media?.videoUrl ? ' · Video attached' : ''}
-                        </p>
+                      {item.status === 'completed' && item.review?.media?.videoUrl && (
+                        <p className="mt-3 text-sm text-primary">Video review delivered</p>
                       )}
+                      {item.status === 'completed' &&
+                        !userIsReviewer &&
+                        item.review?.media?.videoUrl &&
+                        !ratedRequestIds[item.id] && (
+                          <p className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                            <span aria-hidden="true">★</span>
+                            Rate your reviewer
+                          </p>
+                        )}
                       {(item.status === 'pending' || item.status === 'paid') && (
                         <p className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white/70">
                           {userIsReviewer

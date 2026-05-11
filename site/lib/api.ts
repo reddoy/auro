@@ -496,36 +496,20 @@ export async function updateRequestStatus(requestId: string, status: string): Pr
 
 export async function submitRequestReview(params: {
   requestId: string;
-  review: {
-    ratings: { overall: number; attractiveness?: number; wardrobe?: number; room?: number; outfits?: number; roomTour?: number; socials?: number; [key: string]: any };
-    feedback: { strengths?: string[]; improvements?: string[]; generalFeedback?: string; sectionNotes?: { outfits?: string; room?: string; socials?: string }; photoNotes?: Record<string, string> };
-  };
-  videoUrl?: string | null;
-  imageUrl?: string | null;
+  videoUrl: string;
 }): Promise<DbRequestSummary> {
-  const { requestId, review, videoUrl, imageUrl } = params;
+  const { requestId, videoUrl } = params;
 
   if (!requestId || typeof requestId !== 'string' || requestId.length < 10) {
     throw new Error('Invalid request ID');
   }
-  if (!review || typeof review !== 'object') {
-    throw new Error('Invalid review data');
-  }
-  if (!review.ratings || typeof review.ratings.overall !== 'number' || review.ratings.overall < 1 || review.ratings.overall > 10) {
-    throw new Error('Overall rating must be between 1 and 10');
-  }
-  if (videoUrl && typeof videoUrl !== 'string') {
-    throw new Error('Invalid video URL');
-  }
-  if (imageUrl && typeof imageUrl !== 'string') {
-    throw new Error('Invalid image URL');
+  if (!videoUrl || typeof videoUrl !== 'string') {
+    throw new Error('Video review is required');
   }
 
   const json = await authenticatedJsonFetch<{ ok?: boolean; request: Record<string, unknown> }>('/api/reviews/submit', {
     requestId,
-    review,
-    videoUrl: videoUrl ?? null,
-    imageUrl: imageUrl ?? null,
+    videoUrl,
   });
   return mapRequestRow(json.request);
 }
