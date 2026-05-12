@@ -99,10 +99,44 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
     if (!request) return;
     setBusy(true);
     try {
-      const updated = await acceptRequest(request.id);
+      if (!supabase) {
+        showToast('Not configured');
+        return;
+      }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        showToast('Sign in required');
+        return;
+      }
+      const latest = await getRequestById(id);
+      if (!latest) {
+        showToast('Request not found');
+        return;
+      }
+      if (latest.influencerId !== user.id) {
+        showToast('You do not have access to this request');
+        return;
+      }
+      if (latest.status === 'in_progress') {
+        setRequest(latest);
+        showToast('Already accepted — you can record your review below.');
+        return;
+      }
+      if (latest.status !== 'paid') {
+        showToast(
+          latest.status === 'pending' || latest.status === 'accepted'
+            ? 'Payment is not complete yet. Ask the requester to finish checkout, then try again.'
+            : `This request cannot be accepted right now (status: ${latest.status}).`
+        );
+        return;
+      }
+      const updated = await acceptRequest(latest.id);
       setRequest(updated);
+      showToast('Accepted — you can start your review.');
     } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : 'Accept failed');
+      showToast(e instanceof Error ? e.message : 'Accept failed');
     } finally {
       setBusy(false);
     }

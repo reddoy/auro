@@ -60,8 +60,32 @@ export async function serverAcceptReviewRequest(
   if ((row as { influencer_id: string }).influencer_id !== actorUserId) {
     throw new Error('Forbidden');
   }
-  if ((row as { status: string }).status !== 'paid') {
-    throw new Error('Cannot accept until payment is completed');
+
+  const status = (row as { status: string }).status;
+  if (status === 'in_progress') {
+    const { data: full, error: refetchErr } = await admin
+      .from('requests')
+      .select(REQUEST_SELECT)
+      .eq('id', requestId)
+      .maybeSingle();
+    if (refetchErr) throw refetchErr;
+    if (!full) throw new Error('Request not found');
+    return mapRequestRow(full as Record<string, unknown>);
+  }
+
+  if (status !== 'paid') {
+    if (status === 'rejected') {
+      throw new Error('This request was declined and cannot be accepted');
+    }
+    if (status === 'completed') {
+      throw new Error('This request is already completed');
+    }
+    if (status === 'refunded' || status === 'timeout') {
+      throw new Error('This request is no longer available to accept');
+    }
+    throw new Error(
+      `Cannot accept while the request is "${status}". If you already accepted, refresh the page.`
+    );
   }
   const now = new Date();
   const updateData = {

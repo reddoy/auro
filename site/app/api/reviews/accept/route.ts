@@ -37,7 +37,15 @@ export async function POST(req: Request) {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Failed';
+    const msg =
+      e instanceof Error
+        ? e.message
+        : typeof e === 'object' &&
+            e !== null &&
+            'message' in e &&
+            typeof (e as { message: unknown }).message === 'string'
+          ? (e as { message: string }).message
+          : 'Failed';
     const status = msg === 'Forbidden' ? 403 : msg === 'Request not found' ? 404 : 400;
     return new Response(JSON.stringify({ error: msg }), {
       status,
