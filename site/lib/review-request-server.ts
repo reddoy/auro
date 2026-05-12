@@ -42,8 +42,9 @@ function mapRequestRow(row: Record<string, unknown>) {
   };
 }
 
+// Omit archived_at: older DBs may lack it; mapRequestRow derives it from archived_by_influencer.
 const REQUEST_SELECT =
-  'id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,archived_at,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps,payment_distributed,payment_distributed_at,stripe_transfer_id,reviewer_amount_cents,payment_distribution_error,payment_status,review_viewed_at';
+  'id,influencer_id,created_at,status,photos,review,user_id,notes,consent_social,archived_by_influencer,amount_cents,application_fee_cents,stripe_fee_cents,net_amount_cents,auro_fee_bps,payment_distributed,payment_distributed_at,stripe_transfer_id,reviewer_amount_cents,payment_distribution_error,payment_status,review_viewed_at';
 
 export async function serverAcceptReviewRequest(
   admin: SupabaseClient,
