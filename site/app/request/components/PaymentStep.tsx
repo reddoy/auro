@@ -3,9 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import type { RequestData } from '../page';
 import AsyncAvatar from './AsyncAvatar';
-// Note: This import will need to be adjusted based on your project structure
-// If the lib folder is shared, you may need to create a shared utilities file
-// For now, we'll calculate tiers inline
+import { findNearestCheckoutTierDollars } from '../../../lib/checkout-web-tier';
 
 type Props = {
   requestData: RequestData;
@@ -13,44 +11,6 @@ type Props = {
   onBack: () => void;
   supabase: any;
 };
-
-// Price tier system - rounds to nearest supported web tier
-// Tiers range from $5 to $10,000
-function findNearestTier(rate: number): number {
-  const tiers = [
-    // $5-$50: $5 increments
-    5, 10, 15, 20, 25, 30, 35, 40, 45, 50,
-    // $50-$100: $5 increments
-    55, 60, 65, 70, 75, 80, 85, 90, 95, 100,
-    // $100-$200: $10 increments
-    110, 120, 130, 140, 150, 160, 170, 180, 190, 200,
-    // $200-$500: $25 increments
-    225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500,
-    // $500-$1000: $50 increments
-    550, 600, 650, 700, 750, 800, 850, 900, 950, 1000,
-    // $1000-$2000: $100 increments
-    1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000,
-    // $2000-$5000: $250 increments
-    2250, 2500, 2750, 3000, 3250, 3500, 3750, 4000, 4250, 4500, 4750, 5000,
-    // $5000-$10000: $500 increments
-    5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000,
-  ];
-  if (rate <= tiers[0]) return tiers[0];
-  if (rate >= tiers[tiers.length - 1]) return tiers[tiers.length - 1];
-  
-  let nearestTier = tiers[0];
-  let minDiff = Math.abs(rate - nearestTier);
-  
-  for (const tier of tiers) {
-    const diff = Math.abs(rate - tier);
-    if (diff < minDiff) {
-      minDiff = diff;
-      nearestTier = tier;
-    }
-  }
-  
-  return nearestTier;
-}
 
 export default function PaymentStep({ requestData, onSuccess, onBack, supabase }: Props) {
   const [loading, setLoading] = useState(false);
@@ -207,7 +167,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
   };
 
   // Get tier info for the reviewer's rate
-  const tierWebPrice = findNearestTier(price); // The actual price used (may differ from reviewer's rate)
+  const tierWebPrice = findNearestCheckoutTierDollars(price);
   // Avatar URLs are resolved by AsyncAvatar
 
   return (
@@ -242,19 +202,23 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
             <div className="order-details">
               <div className="order-item">
                 <span>Personal Review</span>
-                <span>${price}</span>
+                <span>${tierWebPrice}</span>
               </div>
-              
+              {tierWebPrice !== price && (
+                <p className="order-rate-note">
+                  Nearest supported checkout amount to this reviewer&apos;s listed rate (${price}).
+                </p>
+              )}
               <div className="order-item">
                 <span>Processing Fee</span>
                 <span>$0</span>
               </div>
-              
+
               <div className="order-divider"></div>
-              
+
               <div className="order-total">
                 <span>Total</span>
-                <span>${price}</span>
+                <span>${tierWebPrice}</span>
               </div>
             </div>
 
@@ -283,9 +247,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
                     <div className="payment-option-price">
                       <span className="price-amount">${tierWebPrice}</span>
                       {tierWebPrice !== price && (
-                        <span className="price-note" style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', display: 'block', marginTop: '4px' }}>
-                          (rounded from ${price})
-                        </span>
+                        <span className="price-note">Rounded from ${price}</span>
                       )}
                     </div>
                   </div>
@@ -307,16 +269,36 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
                   <span className="spinner"></span>
                   Processing...
                 </span>
-              ) : `Continue on the Web - $${price}`}
+              ) : `Continue on the Web — $${tierWebPrice}`}
             </button>
 
             <div className="review-includes">
-              <h4>Your review includes:</h4>
+              <h4>Your review includes</h4>
               <ul>
-                <li>✅ One personalized video review</li>
-                <li>✅ Direct, honest feedback on your photos</li>
-                <li>✅ Clear suggestions you can apply right away</li>
-                <li>✅ Delivery tracked inside your Requests tab</li>
+                <li className="review-includes-item">
+                  <span className="review-includes-check" aria-hidden="true">
+                    ✓
+                  </span>
+                  <span className="review-includes-text">One personalized video review</span>
+                </li>
+                <li className="review-includes-item">
+                  <span className="review-includes-check" aria-hidden="true">
+                    ✓
+                  </span>
+                  <span className="review-includes-text">Direct, honest feedback on your photos</span>
+                </li>
+                <li className="review-includes-item">
+                  <span className="review-includes-check" aria-hidden="true">
+                    ✓
+                  </span>
+                  <span className="review-includes-text">Clear suggestions you can apply right away</span>
+                </li>
+                <li className="review-includes-item">
+                  <span className="review-includes-check" aria-hidden="true">
+                    ✓
+                  </span>
+                  <span className="review-includes-text">Delivery tracked inside your Requests tab</span>
+                </li>
               </ul>
             </div>
           </div>
@@ -360,13 +342,21 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
             )}
 
             <div className="payment-note">
-              <p>
-                <span className="payment-note-icon">🏦</span>
-                Your payment is processed securely by Stripe. We never store your payment information.
+              <p className="payment-note-row">
+                <span className="payment-note-icon" aria-hidden="true">
+                  🏦
+                </span>
+                <span className="payment-note-text">
+                  Your payment is processed securely by Stripe. We never store your payment information.
+                </span>
               </p>
-              <p>
-                <span className="payment-note-icon">📱</span>
-                After payment, track your request in the Auro web app on desktop or mobile browser.
+              <p className="payment-note-row">
+                <span className="payment-note-icon" aria-hidden="true">
+                  📱
+                </span>
+                <span className="payment-note-text">
+                  After payment, track your request in the Auro web app on desktop or mobile browser.
+                </span>
               </p>
             </div>
           </div>
