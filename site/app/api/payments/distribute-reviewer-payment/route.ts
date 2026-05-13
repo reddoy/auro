@@ -1,8 +1,23 @@
 import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 const REVIEWER_SHARE_BPS = 8000;
 const MAX_RETRIES = 3;
+
+type ErrorType =
+  | 'BAD_REQUEST'
+  | 'REQUEST_FETCH_FAILED'
+  | 'NOT_FOUND'
+  | 'INVALID_STATUS'
+  | 'MAX_RETRIES_EXCEEDED'
+  | 'INVALID_REVIEWER'
+  | 'NO_CONNECT_ACCOUNT'
+  | 'PAYOUTS_DISABLED'
+  | 'INVALID_AMOUNT'
+  | 'INSUFFICIENT_FUNDS'
+  | 'TRANSFER_FAILED'
+  | 'PLATFORM_ACCOUNT_MISMATCH'
+  | 'UNKNOWN_ERROR';
 
 function requireEnv(name: string): string {
   const value = process.env[name]?.trim();
@@ -10,13 +25,64 @@ function requireEnv(name: string): string {
   return value;
 }
 
-function paymentError(errorType: string, message: string, status = 400) {
-  return new Response(JSON.stringify({ errorType, error: message }), { status });
+type ExitContext = {
+  requestId?: string;
+  reviewerId?: string | null;
+  reviewerAmount?: number;
+  availableBalance?: number;
+  pendingBalance?: number;
+  platformAccountId?: string;
+  connectAccountId?: string | null;
+  stripeErrorCode?: string;
+  detail?: string;
+};
+
+function logExit(errorType: ErrorType, status: number, ctx: ExitContext): void {
+  // Single structured line so a Vercel log filter on errorType/requestId is sufficient.
+  console.error('[distribute-reviewer-payment] exit', {
+    errorType,
+    status,
+    ...ctx,
+  });
+}
+
+function paymentError(errorType: ErrorType, message: string, status = 400, ctx: ExitContext = {}) {
+  logExit(errorType, status, ctx);
+  return new Response(JSON.stringify({ errorType, error: message }), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+async function updateRequestSafe(
+  admin: SupabaseClient,
+  requestId: string,
+  patch: Record<string, unknown>,
+  context: string
+): Promise<void> {
+  const { error } = await admin
+    .from('requests')
+    .update(patch)
+    .eq('id', requestId)
+    .select('id');
+  if (error) {
+    // Surface silent failures (e.g. RLS / trigger rejections) so we can diagnose
+    // why a row stayed in a stuck state.
+    console.error('[distribute-reviewer-payment] db update failed', {
+      context,
+      requestId,
+      error: error.message,
+      details: (error as { details?: string }).details,
+      hint: (error as { hint?: string }).hint,
+    });
+  }
 }
 
 export async function POST(req: Request) {
+  let requestId = '';
   try {
-    const { requestId } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    requestId = typeof body?.requestId === 'string' ? body.requestId : '';
     if (!requestId) {
       return paymentError('BAD_REQUEST', 'Missing requestId');
     }
@@ -32,8 +98,10 @@ export async function POST(req: Request) {
         status,
         influencer_id,
         amount_cents,
+        application_fee_cents,
         payment_distributed,
         stripe_transfer_id,
+        stripe_payment_intent_id,
         payment_distribution_attempts,
         profiles!requests_influencer_id_fkey (
           id,
@@ -48,8 +116,15 @@ export async function POST(req: Request) {
       .eq('id', requestId)
       .maybeSingle();
 
-    if (requestError) return paymentError('REQUEST_FETCH_FAILED', 'Failed to fetch request', 500);
-    if (!request) return paymentError('NOT_FOUND', 'Request not found', 404);
+    if (requestError) {
+      return paymentError('REQUEST_FETCH_FAILED', 'Failed to fetch request', 500, {
+        requestId,
+        detail: requestError.message,
+      });
+    }
+    if (!request) {
+      return paymentError('NOT_FOUND', 'Request not found', 404, { requestId });
+    }
     if (request.payment_distributed) {
       return new Response(
         JSON.stringify({
@@ -57,16 +132,26 @@ export async function POST(req: Request) {
           alreadyDistributed: true,
           transferId: request.stripe_transfer_id || null,
         }),
-        { status: 200 }
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
     if (request.status !== 'completed') {
-      return paymentError('INVALID_STATUS', `Request is ${request.status}. Must be completed before payout.`);
+      return paymentError(
+        'INVALID_STATUS',
+        `Request is ${request.status}. Must be completed before payout.`,
+        400,
+        { requestId, detail: `status=${request.status}` }
+      );
     }
 
     const priorAttempts = request.payment_distribution_attempts || 0;
     if (priorAttempts >= MAX_RETRIES) {
-      return paymentError('MAX_RETRIES_EXCEEDED', `Reached max payout attempts (${MAX_RETRIES}).`);
+      return paymentError(
+        'MAX_RETRIES_EXCEEDED',
+        `Reached max payout attempts (${MAX_RETRIES}).`,
+        400,
+        { requestId, detail: `attempts=${priorAttempts}` }
+      );
     }
 
     const nextAttempt = priorAttempts + 1;
@@ -88,7 +173,7 @@ export async function POST(req: Request) {
           alreadyDistributed: true,
           message: 'Distribution is already in progress or completed.',
         }),
-        { status: 200 }
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
@@ -104,14 +189,19 @@ export async function POST(req: Request) {
     }
 
     if (!reviewer?.is_reviewer) {
-      await admin
-        .from('requests')
-        .update({
+      await updateRequestSafe(
+        admin,
+        requestId,
+        {
           payment_distribution_error: 'Invalid reviewer for payout',
           payment_distribution_failed_at: new Date().toISOString(),
-        })
-        .eq('id', requestId);
-      return paymentError('INVALID_REVIEWER', 'Invalid reviewer', 400);
+        },
+        'INVALID_REVIEWER'
+      );
+      return paymentError('INVALID_REVIEWER', 'Invalid reviewer', 400, {
+        requestId,
+        reviewerId: request.influencer_id,
+      });
     }
 
     const reviewerName =
@@ -120,14 +210,17 @@ export async function POST(req: Request) {
       'Reviewer';
     const connectAccountId = reviewer.stripe_connect_account_id?.trim() || null;
     if (!connectAccountId) {
-      await admin
-        .from('requests')
-        .update({
+      await updateRequestSafe(
+        admin,
+        requestId,
+        {
           payment_distribution_error:
             'Payment held: reviewer must complete Stripe Connect onboarding before payout.',
           payment_status: 'queued',
-        })
-        .eq('id', requestId);
+        },
+        'NO_CONNECT_ACCOUNT'
+      );
+      logExit('NO_CONNECT_ACCOUNT', 200, { requestId, reviewerId: request.influencer_id });
       return new Response(
         JSON.stringify({
           success: true,
@@ -137,49 +230,186 @@ export async function POST(req: Request) {
           reviewerName,
           reviewerEmail: reviewer.email || null,
         }),
-        { status: 200 }
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    const account = await stripe.accounts.retrieve(connectAccountId);
+    // Detect destination-charge mode. If the customer's checkout already routed
+    // funds to the reviewer's Connect account, doing a second platform->reviewer
+    // transfer here would either double-pay or fail with INSUFFICIENT_FUNDS
+    // (because the platform never held the full amount). In that case we mark
+    // the row paid in place, recording the original charge instead of a new
+    // transfer.
+    const piId =
+      typeof (request as { stripe_payment_intent_id?: string | null }).stripe_payment_intent_id === 'string'
+        ? (request as { stripe_payment_intent_id: string }).stripe_payment_intent_id
+        : null;
+    if (piId) {
+      try {
+        const pi = await stripe.paymentIntents.retrieve(piId);
+        const td = (pi as { transfer_data?: { destination?: string | null } | null }).transfer_data;
+        const tdDestination = td?.destination || null;
+        if (tdDestination && tdDestination === connectAccountId) {
+          await updateRequestSafe(
+            admin,
+            requestId,
+            {
+              payment_distributed: true,
+              payment_distributed_at: new Date().toISOString(),
+              // Use the existing PI as the payout marker — no new transfer was needed.
+              stripe_transfer_id: piId,
+              reviewer_amount_cents: Math.floor(((request.amount_cents || 0) * REVIEWER_SHARE_BPS) / 10000),
+              payment_distribution_error: null,
+              payment_distribution_failed_at: null,
+              payment_status: 'paid',
+            },
+            'DESTINATION_CHARGE_SETTLED'
+          );
+          console.log('[distribute-reviewer-payment] destination-charge settled', {
+            requestId,
+            reviewerId: request.influencer_id,
+            connectAccountId,
+            paymentIntentId: piId,
+          });
+          return new Response(
+            JSON.stringify({
+              success: true,
+              destinationCharge: true,
+              alreadyDistributed: true,
+              paymentIntentId: piId,
+              message: 'Funds already routed via destination charge at checkout; marked paid.',
+              reviewerName,
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+      } catch (piErr) {
+        // Non-fatal: if we can't introspect the PI (e.g. live key vs test PI),
+        // fall through to the normal transfer path.
+        console.warn('[distribute-reviewer-payment] paymentIntent introspect failed', {
+          requestId,
+          piId,
+          message: (piErr as { message?: string })?.message,
+          code: (piErr as { code?: string })?.code,
+        });
+      }
+    }
+
+    // Validate that the configured platform account matches the key in use.
+    // A mismatch silently yields a $0 balance and an unhelpful INSUFFICIENT_FUNDS,
+    // which is exactly the failure mode we just diagnosed.
+    let keyAccountId: string | null = null;
+    try {
+      const acct = await stripe.accounts.retrieve();
+      keyAccountId = acct.id || null;
+    } catch (acctErr) {
+      console.warn('[distribute-reviewer-payment] could not retrieve account for key', {
+        requestId,
+        message: (acctErr as { message?: string })?.message,
+        code: (acctErr as { code?: string })?.code,
+      });
+    }
+    if (keyAccountId && keyAccountId !== platformAccountId) {
+      await updateRequestSafe(
+        admin,
+        requestId,
+        {
+          payment_distribution_error: `PLATFORM_ACCOUNT_MISMATCH: STRIPE_SECRET_KEY belongs to ${keyAccountId}, STRIPE_PLATFORM_ACCOUNT_ID=${platformAccountId}.`,
+          payment_distribution_failed_at: new Date().toISOString(),
+          payment_status: 'queued',
+        },
+        'PLATFORM_ACCOUNT_MISMATCH'
+      );
+      return paymentError(
+        'PLATFORM_ACCOUNT_MISMATCH',
+        'Stripe configuration mismatch: secret key and platform account do not match.',
+        500,
+        {
+          requestId,
+          platformAccountId,
+          detail: `keyAccountId=${keyAccountId}`,
+        }
+      );
+    }
+
+    let account: Stripe.Account;
+    try {
+      account = await stripe.accounts.retrieve(connectAccountId);
+    } catch (acctErr: any) {
+      await updateRequestSafe(
+        admin,
+        requestId,
+        {
+          payment_distribution_error: `Failed to retrieve reviewer account: ${acctErr?.message || 'unknown'}`,
+          payment_distribution_failed_at: new Date().toISOString(),
+          payment_status: 'queued',
+        },
+        'PAYOUTS_DISABLED_RETRIEVE'
+      );
+      return paymentError('PAYOUTS_DISABLED', 'Reviewer account is not payout-ready.', 400, {
+        requestId,
+        connectAccountId,
+        stripeErrorCode: acctErr?.code,
+        detail: acctErr?.message,
+      });
+    }
     if (!account.payouts_enabled) {
-      await admin
-        .from('requests')
-        .update({
+      await updateRequestSafe(
+        admin,
+        requestId,
+        {
           payment_distribution_error: 'Reviewer payouts are not enabled in Stripe Connect.',
           payment_distribution_failed_at: new Date().toISOString(),
           payment_status: 'queued',
-        })
-        .eq('id', requestId);
-      return paymentError('PAYOUTS_DISABLED', 'Reviewer account is not payout-ready.');
+        },
+        'PAYOUTS_DISABLED'
+      );
+      return paymentError('PAYOUTS_DISABLED', 'Reviewer account is not payout-ready.', 400, {
+        requestId,
+        connectAccountId,
+      });
     }
 
     const totalAmount = request.amount_cents || 0;
     const reviewerAmount = Math.floor((totalAmount * REVIEWER_SHARE_BPS) / 10000);
     const auroFee = totalAmount - reviewerAmount;
     if (reviewerAmount <= 0) {
-      await admin
-        .from('requests')
-        .update({
+      await updateRequestSafe(
+        admin,
+        requestId,
+        {
           payment_distribution_error: `Invalid payout amount: ${reviewerAmount}`,
           payment_distribution_failed_at: new Date().toISOString(),
-        })
-        .eq('id', requestId);
-      return paymentError('INVALID_AMOUNT', 'Reviewer amount resolved to zero.');
+        },
+        'INVALID_AMOUNT'
+      );
+      return paymentError('INVALID_AMOUNT', 'Reviewer amount resolved to zero.', 400, {
+        requestId,
+        reviewerAmount,
+      });
     }
 
     const balance = await stripe.balance.retrieve({}, { stripeAccount: platformAccountId });
     const availableBalance = balance.available[0]?.amount || 0;
+    const pendingBalance = balance.pending[0]?.amount || 0;
     if (availableBalance < reviewerAmount) {
-      await admin
-        .from('requests')
-        .update({
-          payment_distribution_error: `Insufficient funds: available=${availableBalance}, required=${reviewerAmount}`,
+      await updateRequestSafe(
+        admin,
+        requestId,
+        {
+          payment_distribution_error: `Insufficient funds: available=${availableBalance}, pending=${pendingBalance}, required=${reviewerAmount}`,
           payment_distribution_failed_at: new Date().toISOString(),
           payment_status: 'queued',
-        })
-        .eq('id', requestId);
-      return paymentError('INSUFFICIENT_FUNDS', 'Insufficient available balance for payout.');
+        },
+        'INSUFFICIENT_FUNDS'
+      );
+      return paymentError('INSUFFICIENT_FUNDS', 'Insufficient available balance for payout.', 400, {
+        requestId,
+        reviewerAmount,
+        availableBalance,
+        pendingBalance,
+        platformAccountId,
+      });
     }
 
     let transfer: Stripe.Transfer;
@@ -205,27 +435,39 @@ export async function POST(req: Request) {
     } catch (error: any) {
       const isInsufficient = error?.code === 'insufficient_funds';
       const isAccount = error?.code === 'account_invalid' || error?.code === 'no_account';
-      const errorType = isInsufficient
+      const errorType: ErrorType = isInsufficient
         ? 'INSUFFICIENT_FUNDS'
         : isAccount
           ? 'TRANSFER_FAILED'
           : 'TRANSFER_FAILED';
 
-      await admin
-        .from('requests')
-        .update({
+      await updateRequestSafe(
+        admin,
+        requestId,
+        {
           payment_distribution_error: `${errorType}: ${error?.message || 'Unknown Stripe error'}`,
           payment_distribution_failed_at: new Date().toISOString(),
           payment_status: 'queued',
-        })
-        .eq('id', requestId);
+        },
+        errorType
+      );
 
-      return paymentError(errorType, error?.message || 'Stripe transfer failed');
+      return paymentError(errorType, error?.message || 'Stripe transfer failed', 400, {
+        requestId,
+        reviewerAmount,
+        availableBalance,
+        pendingBalance,
+        platformAccountId,
+        connectAccountId,
+        stripeErrorCode: error?.code,
+        detail: error?.message,
+      });
     }
 
-    await admin
-      .from('requests')
-      .update({
+    await updateRequestSafe(
+      admin,
+      requestId,
+      {
         payment_distributed: true,
         payment_distributed_at: new Date().toISOString(),
         stripe_transfer_id: transfer.id,
@@ -234,8 +476,9 @@ export async function POST(req: Request) {
         payment_distribution_error: null,
         payment_distribution_failed_at: null,
         payment_status: 'paid',
-      })
-      .eq('id', requestId);
+      },
+      'SUCCESS'
+    );
 
     return new Response(
       JSON.stringify({
@@ -246,10 +489,12 @@ export async function POST(req: Request) {
         reviewerAmount,
         auroFee,
       }),
-      { status: 200 }
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error: any) {
-    console.error('[distribute-reviewer-payment] fatal error', error);
-    return paymentError('UNKNOWN_ERROR', error?.message || 'Failed to distribute payment', 500);
+    return paymentError('UNKNOWN_ERROR', error?.message || 'Failed to distribute payment', 500, {
+      requestId,
+      detail: error?.stack || error?.message,
+    });
   }
 }

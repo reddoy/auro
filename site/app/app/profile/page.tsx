@@ -32,6 +32,13 @@ export default function AppProfilePage() {
     loading: boolean;
     detailsSubmitted: boolean | null;
   } | null>(null);
+  /** Per-request payouts that have failed (attempts > 0, not yet distributed, not refunded). */
+  const [failedPayouts, setFailedPayouts] = useState<{
+    loading: boolean;
+    count: number;
+    totalCents: number;
+    lastError: string | null;
+  }>({ loading: false, count: 0, totalCents: 0, lastError: null });
 
   useEffect(() => {
     (async () => {
@@ -120,6 +127,50 @@ export default function AppProfilePage() {
       document.removeEventListener('visibilitychange', onVisible);
     };
   }, [profile?.id, profile?.is_reviewer, profile?.stripe_connect_account_id]);
+
+  useEffect(() => {
+    if (!profile || profile.is_reviewer !== 'approved') return;
+    let cancelled = false;
+    setFailedPayouts((prev) => ({ ...prev, loading: true }));
+    (async () => {
+      if (!supabase) {
+        if (!cancelled) setFailedPayouts({ loading: false, count: 0, totalCents: 0, lastError: null });
+        return;
+      }
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        if (!cancelled) setFailedPayouts({ loading: false, count: 0, totalCents: 0, lastError: null });
+        return;
+      }
+      try {
+        const res = await fetch('/api/reviewers/failed-payouts', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const j = (await readJsonResponseBody(res)) as {
+          count?: number;
+          totalCents?: number;
+          items?: Array<{ lastError?: string | null }>;
+        };
+        if (cancelled) return;
+        const lastError = j.items?.find((i) => typeof i.lastError === 'string' && i.lastError.length > 0)
+          ?.lastError as string | null | undefined;
+        setFailedPayouts({
+          loading: false,
+          count: typeof j.count === 'number' ? j.count : 0,
+          totalCents: typeof j.totalCents === 'number' ? j.totalCents : 0,
+          lastError: lastError || null,
+        });
+      } catch {
+        if (!cancelled) setFailedPayouts({ loading: false, count: 0, totalCents: 0, lastError: null });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.id, profile?.is_reviewer]);
 
   const displayName =
     [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') ||
@@ -491,6 +542,27 @@ export default function AppProfilePage() {
                   <p className="mt-1 font-semibold text-white">${Number(profile.hourly_rate || 0).toFixed(0)}</p>
                 </div>
               </div>
+              {failedPayouts.count > 0 ? (
+                <div
+                  className="mt-3 rounded-xl border border-amber-300/30 bg-amber-500/[0.08] px-3 py-3"
+                  aria-label="Payout failed"
+                >
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-100/85">
+                    Payout {failedPayouts.count > 1 ? 'attempts failed' : 'attempt failed'}
+                  </p>
+                  <p className="mt-1 text-sm text-amber-50">
+                    ${(failedPayouts.totalCents / 100).toFixed(2)} couldn&apos;t be paid out yet
+                    {failedPayouts.count > 1 ? ` across ${failedPayouts.count} reviews` : ''}.
+                    {failedPayouts.lastError
+                      ? ` Reason: ${failedPayouts.lastError.split(':')[0].replace(/_/g, ' ').toLowerCase()}.`
+                      : ''}{' '}
+                    Our team is looking at it.
+                  </p>
+                  <p className="mt-1.5 text-xs text-amber-100/70">
+                    The amount stays under &ldquo;Awaiting payout&rdquo; until the retry succeeds.
+                  </p>
+                </div>
+              ) : null}
               <p className="mt-3 text-xs text-white/50">
                 Rate updates only apply to future requests. Existing requests keep the rate they were booked at.
               </p>
