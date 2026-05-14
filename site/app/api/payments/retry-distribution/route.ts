@@ -33,6 +33,7 @@ export async function POST(req: Request) {
         payment_distributed,
         reviewer_amount_cents,
         stripe_transfer_id,
+        stripe_payment_intent_id,
         payment_distributed_at,
         payment_distribution_attempts,
         payment_distribution_error,
@@ -124,40 +125,65 @@ export async function POST(req: Request) {
     }
 
     try {
-      // Check account balance
-      const balance = await stripe.balance.retrieve({}, { stripeAccount: platformAccountId });
-      const availableBalance = balance.available[0]?.amount || 0; // In cents
-      const pendingBalance = balance.pending[0]?.amount || 0; // In cents
-      
-      if (availableBalance < reviewerAmount) {
-        // Log insufficient funds error
-        await admin
-          .from('requests')
-          .update({ 
-            payment_distribution_attempts: attempts + 1,
-            payment_distribution_error: `Insufficient funds: Available ${availableBalance}, Required ${reviewerAmount}`,
-            payment_distribution_failed_at: new Date().toISOString()
-          })
-          .eq('id', requestId);
-
-        return new Response(JSON.stringify({ 
-          error: 'Insufficient funds in Auro account',
-          errorType: 'INSUFFICIENT_FUNDS',
-          availableBalance: availableBalance,
-          requiredAmount: reviewerAmount,
-          shortfall: reviewerAmount - availableBalance,
-          attempts: attempts + 1,
-          message: 'Please add funds to the Auro Stripe account'
-        }), { status: 400 });
+      // Resolve a source_transaction (the original charge) from the PaymentIntent.
+      // When set, Stripe links the transfer to that charge and releases funds
+      // when the charge becomes available — no platform balance required.
+      let sourceTransactionId: string | null = null;
+      const piId =
+        typeof (request as { stripe_payment_intent_id?: string | null }).stripe_payment_intent_id === 'string'
+          ? (request as { stripe_payment_intent_id: string }).stripe_payment_intent_id
+          : null;
+      if (piId) {
+        try {
+          const pi = await stripe.paymentIntents.retrieve(piId);
+          const latest = (pi as { latest_charge?: string | { id?: string } | null }).latest_charge;
+          if (typeof latest === 'string') sourceTransactionId = latest;
+          else if (latest && typeof latest === 'object' && typeof latest.id === 'string') sourceTransactionId = latest.id;
+        } catch (piErr) {
+          console.warn('[retry-distribution] paymentIntent introspect failed', {
+            requestId,
+            piId,
+            message: (piErr as { message?: string })?.message,
+          });
+        }
       }
 
-      // Create the transfer
+      // Only enforce a balance pre-check when we have no source_transaction to anchor to.
+      if (!sourceTransactionId) {
+        const balance = await stripe.balance.retrieve({}, { stripeAccount: platformAccountId });
+        const availableBalance = balance.available[0]?.amount || 0; // In cents
+        const pendingBalance = balance.pending[0]?.amount || 0; // In cents
+
+        if (availableBalance < reviewerAmount) {
+          await admin
+            .from('requests')
+            .update({
+              payment_distribution_attempts: attempts + 1,
+              payment_distribution_error: `Insufficient funds: Available ${availableBalance}, Pending ${pendingBalance}, Required ${reviewerAmount}`,
+              payment_distribution_failed_at: new Date().toISOString(),
+              payment_status: 'queued'
+            })
+            .eq('id', requestId);
+
+          return new Response(JSON.stringify({
+            error: 'Insufficient funds in Auro account',
+            errorType: 'INSUFFICIENT_FUNDS',
+            availableBalance: availableBalance,
+            requiredAmount: reviewerAmount,
+            shortfall: reviewerAmount - availableBalance,
+            attempts: attempts + 1,
+            message: 'No source charge available and platform balance is too low'
+          }), { status: 400 });
+        }
+      }
+
+      // Create the transfer (linked to the source charge when we have one)
       const transfer = await stripe.transfers.create(
         {
           amount: reviewerAmount,
           currency: 'usd',
           destination: connectAccountId,
-          source_transaction: undefined,
+          ...(sourceTransactionId ? { source_transaction: sourceTransactionId } : {}),
           transfer_group: `review_${requestId}`,
           metadata: {
             request_id: requestId,
@@ -166,6 +192,7 @@ export async function POST(req: Request) {
             total_amount_cents: totalAmount.toString(),
             retry_attempt: (attempts + 1).toString(),
             source_account: platformAccountId,
+            source_transaction: sourceTransactionId || 'none',
           },
         },
         { idempotencyKey: `reviewer-payout-${requestId}-attempt-${attempts + 1}` }

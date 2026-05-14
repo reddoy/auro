@@ -65,6 +65,7 @@ async function processRetryJob(
         influencer_id,
         amount_cents,
         application_fee_cents,
+        stripe_payment_intent_id,
         payment_distribution_attempts,
         payment_distribution_error,
         payment_distribution_failed_at,
@@ -152,26 +153,52 @@ async function processRetryJob(
           `[retry-distributions] Retrying distribution for request ${request.id}: $${(reviewerAmount / 100).toFixed(2)}`
         );
 
-        const balance = await stripe.balance.retrieve({}, { stripeAccount: platformAccountId });
-        const availableBalance = balance.available[0]?.amount || 0;
+        // Resolve a source_transaction (the original charge) so the transfer
+        // is anchored to the source charge — Stripe will release the funds
+        // when the charge becomes available without requiring the platform
+        // balance to currently hold them.
+        let sourceTransactionId: string | null = null;
+        const piId =
+          typeof (request as { stripe_payment_intent_id?: string | null }).stripe_payment_intent_id === "string"
+            ? (request as { stripe_payment_intent_id: string }).stripe_payment_intent_id
+            : null;
+        if (piId) {
+          try {
+            const pi = await stripe.paymentIntents.retrieve(piId);
+            const latest = (pi as { latest_charge?: string | { id?: string } | null }).latest_charge;
+            if (typeof latest === "string") sourceTransactionId = latest;
+            else if (latest && typeof latest === "object" && typeof latest.id === "string") sourceTransactionId = latest.id;
+          } catch (piErr) {
+            console.warn("[retry-distributions] paymentIntent introspect failed", {
+              requestId: request.id,
+              piId,
+              message: (piErr as { message?: string })?.message,
+            });
+          }
+        }
 
-        if (availableBalance < reviewerAmount) {
-          await admin
-            .from("requests")
-            .update({
-              payment_distribution_error: `Insufficient funds: available=${availableBalance}, required=${reviewerAmount}`,
-              payment_distribution_failed_at: new Date().toISOString(),
-              payment_status: "queued",
-            })
-            .eq("id", request.id);
-          results.failed++;
-          results.errors.push({
-            requestId: request.id,
-            error: "Insufficient funds",
-            availableBalance,
-            requiredAmount: reviewerAmount,
-          });
-          continue;
+        if (!sourceTransactionId) {
+          const balance = await stripe.balance.retrieve({}, { stripeAccount: platformAccountId });
+          const availableBalance = balance.available[0]?.amount || 0;
+
+          if (availableBalance < reviewerAmount) {
+            await admin
+              .from("requests")
+              .update({
+                payment_distribution_error: `Insufficient funds: available=${availableBalance}, required=${reviewerAmount}`,
+                payment_distribution_failed_at: new Date().toISOString(),
+                payment_status: "queued",
+              })
+              .eq("id", request.id);
+            results.failed++;
+            results.errors.push({
+              requestId: request.id,
+              error: "Insufficient funds",
+              availableBalance,
+              requiredAmount: reviewerAmount,
+            });
+            continue;
+          }
         }
 
         const transfer = await stripe.transfers.create(
@@ -179,6 +206,7 @@ async function processRetryJob(
             amount: reviewerAmount,
             currency: "usd",
             destination: connectAccountId,
+            ...(sourceTransactionId ? { source_transaction: sourceTransactionId } : {}),
             transfer_group: `review_${request.id}`,
             metadata: {
               request_id: request.id,
@@ -186,6 +214,7 @@ async function processRetryJob(
               auro_fee_cents: auroFee.toString(),
               total_amount_cents: totalAmount.toString(),
               source_account: platformAccountId,
+              source_transaction: sourceTransactionId || "none",
               retry_attempt: String((request.payment_distribution_attempts || 0) + 1),
             },
           },

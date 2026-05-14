@@ -234,21 +234,30 @@ export async function POST(req: Request) {
       );
     }
 
-    // Detect destination-charge mode. If the customer's checkout already routed
-    // funds to the reviewer's Connect account, doing a second platform->reviewer
-    // transfer here would either double-pay or fail with INSUFFICIENT_FUNDS
-    // (because the platform never held the full amount). In that case we mark
-    // the row paid in place, recording the original charge instead of a new
-    // transfer.
+    // Introspect the PaymentIntent once and reuse what we learn:
+    //   - transfer_data.destination → destination-charge fast path (no new transfer)
+    //   - latest_charge → source_transaction for the transfer below, so the
+    //     transfer is linked to the original charge and Stripe will release the
+    //     funds the moment that charge becomes available, even if the platform
+    //     balance is currently zero. This is the standard "separate charges and
+    //     transfers" pattern and removes the test-mode pending-vs-available
+    //     foot-gun entirely.
     const piId =
       typeof (request as { stripe_payment_intent_id?: string | null }).stripe_payment_intent_id === 'string'
         ? (request as { stripe_payment_intent_id: string }).stripe_payment_intent_id
         : null;
+    let sourceTransactionId: string | null = null;
     if (piId) {
       try {
         const pi = await stripe.paymentIntents.retrieve(piId);
         const td = (pi as { transfer_data?: { destination?: string | null } | null }).transfer_data;
         const tdDestination = td?.destination || null;
+        const latest = (pi as { latest_charge?: string | { id?: string } | null }).latest_charge;
+        if (typeof latest === 'string') {
+          sourceTransactionId = latest;
+        } else if (latest && typeof latest === 'object' && typeof latest.id === 'string') {
+          sourceTransactionId = latest.id;
+        }
         if (tdDestination && tdDestination === connectAccountId) {
           await updateRequestSafe(
             admin,
@@ -285,7 +294,7 @@ export async function POST(req: Request) {
         }
       } catch (piErr) {
         // Non-fatal: if we can't introspect the PI (e.g. live key vs test PI),
-        // fall through to the normal transfer path.
+        // fall through to the normal transfer path with no source_transaction.
         console.warn('[distribute-reviewer-payment] paymentIntent introspect failed', {
           requestId,
           piId,
@@ -389,27 +398,37 @@ export async function POST(req: Request) {
       });
     }
 
-    const balance = await stripe.balance.retrieve({}, { stripeAccount: platformAccountId });
-    const availableBalance = balance.available[0]?.amount || 0;
-    const pendingBalance = balance.pending[0]?.amount || 0;
-    if (availableBalance < reviewerAmount) {
-      await updateRequestSafe(
-        admin,
-        requestId,
-        {
-          payment_distribution_error: `Insufficient funds: available=${availableBalance}, pending=${pendingBalance}, required=${reviewerAmount}`,
-          payment_distribution_failed_at: new Date().toISOString(),
-          payment_status: 'queued',
-        },
-        'INSUFFICIENT_FUNDS'
-      );
-      return paymentError('INSUFFICIENT_FUNDS', 'Insufficient available balance for payout.', 400, {
-        requestId,
-        reviewerAmount,
-        availableBalance,
-        pendingBalance,
-        platformAccountId,
-      });
+    // When we have a source_transaction, Stripe links the transfer to the
+    // original charge and releases funds the moment that charge becomes
+    // available — no need for the platform balance to currently hold them.
+    // Skip the balance pre-check in that case; only fall back to the check
+    // when we have no source charge to anchor to (legacy rows / missing PI).
+    let availableBalance = 0;
+    let pendingBalance = 0;
+    if (!sourceTransactionId) {
+      const balance = await stripe.balance.retrieve({}, { stripeAccount: platformAccountId });
+      availableBalance = balance.available[0]?.amount || 0;
+      pendingBalance = balance.pending[0]?.amount || 0;
+      if (availableBalance < reviewerAmount) {
+        await updateRequestSafe(
+          admin,
+          requestId,
+          {
+            payment_distribution_error: `Insufficient funds: available=${availableBalance}, pending=${pendingBalance}, required=${reviewerAmount}`,
+            payment_distribution_failed_at: new Date().toISOString(),
+            payment_status: 'queued',
+          },
+          'INSUFFICIENT_FUNDS'
+        );
+        return paymentError('INSUFFICIENT_FUNDS', 'Insufficient available balance for payout.', 400, {
+          requestId,
+          reviewerAmount,
+          availableBalance,
+          pendingBalance,
+          platformAccountId,
+          detail: 'no source_transaction available; required balance not present',
+        });
+      }
     }
 
     let transfer: Stripe.Transfer;
@@ -419,6 +438,7 @@ export async function POST(req: Request) {
           amount: reviewerAmount,
           currency: 'usd',
           destination: connectAccountId,
+          ...(sourceTransactionId ? { source_transaction: sourceTransactionId } : {}),
           transfer_group: `review_${requestId}`,
           metadata: {
             request_id: requestId,
@@ -428,6 +448,7 @@ export async function POST(req: Request) {
             auro_fee_cents: String(auroFee),
             attempt: String(nextAttempt),
             source_account: platformAccountId,
+            source_transaction: sourceTransactionId || 'none',
           },
         },
         { idempotencyKey: `reviewer-payout-${requestId}-attempt-${nextAttempt}` }
