@@ -1,8 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
+import { isTrustedInternalRequest } from '@/lib/internal-fetch-secret';
 
 const EXPO_PUSH_API_URL = 'https://exp.host/--/api/v2/push/send';
 
 export async function POST(req: Request) {
+  if (!isTrustedInternalRequest(req)) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const { userId, title, body, data } = await req.json();
     

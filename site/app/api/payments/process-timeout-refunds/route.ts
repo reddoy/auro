@@ -28,12 +28,13 @@ function buildSupabaseAdmin() {
 }
 
 function isAuthorizedCronRequest(req: Request) {
-  if (req.method !== "GET") return true;
   if (req.headers.get(CRON_HEADER)) return true;
-  const token = new URL(req.url).searchParams.get("token");
   const expected = process.env.CRON_SECRET;
   if (!expected) return false;
-  return token === expected;
+  const token = new URL(req.url).searchParams.get("token");
+  if (token === expected) return true;
+  const headerToken = (req.headers.get("x-auro-internal") || "").trim();
+  return headerToken === expected;
 }
 
 async function processTimeoutRefunds(options: TimeoutOptions, triggeredByCron: boolean): Promise<Response> {
@@ -194,6 +195,9 @@ async function processTimeoutRefunds(options: TimeoutOptions, triggeredByCron: b
 }
 
 export async function POST(req: Request) {
+  if (!isAuthorizedCronRequest(req)) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+  }
   const body = await req.json().catch(() => ({}));
   return processTimeoutRefunds(body, false);
 }

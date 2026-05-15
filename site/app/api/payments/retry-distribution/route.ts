@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { requireAdmin } from '@/lib/admin-server';
 
 const REVIEWER_SHARE_BPS = 8000;
 
@@ -10,6 +11,11 @@ function requireEnv(name: string): string {
 }
 
 export async function POST(req: Request) {
+  const auth = await requireAdmin(req);
+  if (!auth.ok) {
+    return new Response(JSON.stringify(auth.body), { status: auth.status, headers: { 'Content-Type': 'application/json' } });
+  }
+
   try {
     const { requestId, maxRetries = 3 } = await req.json();
     if (!requestId) {

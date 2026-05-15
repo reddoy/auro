@@ -219,7 +219,7 @@ function HomePageContent() {
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                    <span>Reviewer fee split stays clear—no surprises when paid reviews return</span>
+                    <span>Reviewer fee split is clear — no surprises at checkout</span>
                   </div>
                   <div className="flex items-center justify-center gap-2">
                     <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
@@ -379,7 +379,7 @@ function HomePageContent() {
               Straightforward payouts for reviewers
             </h2>
             <p className="text-lg md:text-xl text-white/85 leading-relaxed">
-              Reviewers keep <span className="font-semibold text-white">80%</span> of each completed paid review. The rest covers payments, support, and running Auro. When paid reviews are live again, you will see the exact split before anyone checks out.
+              Reviewers keep <span className="font-semibold text-white">80%</span> of each completed paid review. The rest covers payments, support, and running Auro. You see the exact split before you check out.
             </p>
           </div>
         </div>
@@ -392,7 +392,7 @@ function HomePageContent() {
             <div className="space-y-4">
               <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">How it works for reviewers</h2>
               <p className="text-lg leading-relaxed text-white/80 md:text-xl">
-                Apply and set up your reviewer profile now. When paid review requests are live for everyone, you can share your link and accept work on your schedule.
+                Set up your reviewer profile, share your link, and start accepting paid review requests on your schedule.
               </p>
             </div>
             
@@ -604,7 +604,7 @@ function HomePageContent() {
                 className="mobile-text-reveal text-xl leading-relaxed text-white/90 md:text-2xl"
                 style={{ animationDelay: '0.4s' }}
               >
-                We are ramping up paid review requests. Get reviewed now to hear when bookings open for everyone, or apply as a reviewer today.
+                Book a paid review request now, or apply as a reviewer and start earning today.
               </p>
             </div>
             
@@ -639,7 +639,7 @@ function HomePageContent() {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                <span>Reviewer economics stay transparent when paid reviews are live for everyone</span>
+                <span>Reviewer economics are transparent — you see exactly what you earn per review</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />

@@ -4,23 +4,10 @@ import { findNearestCheckoutTierDollars } from '../../../../lib/checkout-web-tie
 
 export async function POST(req: Request) {
   try {
-    console.log('🚀 [CHECKOUT] Starting checkout session creation...');
-    
     const body = await req.json();
     const { creatorId, creatorSlug, reviewPayload, requestId, uploadSessionId, fallbackUserId, fallbackEmail, fallbackFullName } = body || {};
-    
-    console.log('📋 [CHECKOUT] Request data:', {
-      creatorId,
-      creatorSlug,
-      fallbackUserId,
-      fallbackEmail,
-      fallbackFullName,
-      uploadSessionId,
-      hasReviewPayload: !!reviewPayload
-    });
-    
+
     if (!creatorId && !creatorSlug) {
-      console.error('❌ [CHECKOUT] Missing creatorId or creatorSlug');
       return new Response(JSON.stringify({ error: 'Missing creatorId or creatorSlug' }), { status: 400 });
     }
     if (!fallbackUserId || typeof fallbackUserId !== 'string') {
@@ -68,10 +55,8 @@ export async function POST(req: Request) {
 
     const secret = process.env.STRIPE_SECRET_KEY || '';
     if (!secret) {
-      console.error('❌ [CHECKOUT] Missing STRIPE_SECRET_KEY');
       return new Response(JSON.stringify({ error: 'Missing STRIPE_SECRET_KEY' }), { status: 500 });
     }
-    console.log('✅ [CHECKOUT] Stripe secret key found');
     const stripe = new Stripe(secret);
     // Optionally resolve creatorId from slug
     let resolvedCreatorId = creatorId as string | undefined;
@@ -91,11 +76,8 @@ export async function POST(req: Request) {
 
     // Require a valid reviewer id
     if (!resolvedCreatorId) {
-      console.error('❌ [CHECKOUT] Reviewer not found');
       return new Response(JSON.stringify({ error: 'Reviewer not found. Please select a valid reviewer.' }), { status: 400 });
     }
-    
-    console.log('✅ [CHECKOUT] Resolved creator ID:', resolvedCreatorId);
 
     // Determine price (in cents) from creators_public or profiles.hourly_rate
     // hourly_rate is what the customer pays, not what the reviewer gets
@@ -308,14 +290,6 @@ export async function POST(req: Request) {
                 // Double-check: verify this profile is actually the reviewer (not reviewee) and is approved
                 if (reviewerProfile && reviewerProfile.id === reviewerId && reviewerProfile.id !== revieweeId && reviewerProfile.is_reviewer === 'approved') {
                   if (reviewerProfile.push_token) {
-                    console.log('[create-session] Sending notification to reviewer', {
-                      reviewerId,
-                      revieweeId,
-                      requestId: ensuredRequestId,
-                      hasPushToken: !!reviewerProfile.push_token,
-                    });
-                    
-                    // Send push notification via Expo API to the REVIEWER only
                     await fetch('https://exp.host/--/api/v2/push/send', {
                       method: 'POST',
                       headers: {
@@ -335,27 +309,8 @@ export async function POST(req: Request) {
                         priority: 'high',
                       }),
                     }).catch(err => console.error('Failed to send new request notification:', err));
-                  } else {
-                    console.log('[create-session] Reviewer has no push token, skipping notification', {
-                      reviewerId,
-                      requestId: ensuredRequestId,
-                    });
                   }
-                } else {
-                  console.warn('[create-session] Skipping notification: reviewer validation failed', {
-                    reviewerId,
-                    revieweeId,
-                    reviewerProfileId: reviewerProfile?.id,
-                    isReviewer: reviewerProfile?.is_reviewer,
-                    requestId: ensuredRequestId,
-                  });
                 }
-              } else {
-                console.warn('[create-session] Skipping notification: invalid reviewer ID or reviewer is same as reviewee', {
-                  reviewerId,
-                  revieweeId,
-                  requestId: ensuredRequestId,
-                });
               }
             } catch (notifError) {
               // Don't fail the request creation if notification fails
@@ -436,40 +391,7 @@ export async function POST(req: Request) {
       );
     }
     
-    console.log('[create-session] ===== CREATING STRIPE CHECKOUT SESSION =====');
-    console.log('[create-session] Session params:', JSON.stringify(sessionParams, null, 2));
-    
     const session = await stripe.checkout.sessions.create(sessionParams);
-    
-    console.log('[create-session] Session created successfully');
-    console.log('[create-session] Session ID:', session.id);
-    console.log('[create-session] Session URL:', session.url);
-    console.log('[create-session] Request ID:', ensuredRequestId);
-    console.log('[create-session] Session details:', {
-      id: session.id,
-      payment_status: session.payment_status,
-      amount_total: session.amount_total,
-      currency: session.currency,
-      mode: session.mode,
-      payment_intent: session.payment_intent,
-      customer_email: session.customer_email,
-      success_url: session.success_url,
-      cancel_url: session.cancel_url
-    });
-    
-    // Log the Stripe secret key type to verify we're using test keys
-    console.log('[create-session] Stripe key type:', secret.startsWith('sk_test_') ? 'TEST' : 'LIVE');
-    console.log('[create-session] Stripe key prefix:', secret.substring(0, 20) + '...');
-    
-    // Get the account ID from the Stripe key to see which account we're using
-    try {
-      const account = await stripe.accounts.retrieve();
-      console.log('[create-session] Stripe account ID:', account.id);
-      console.log('[create-session] Stripe account type:', account.type);
-      console.log('[create-session] Stripe account country:', account.country);
-    } catch (accountError) {
-      console.log('[create-session] Could not retrieve account info:', accountError);
-    }
 
     // Store computed financial fields on the request for later UI
     try {

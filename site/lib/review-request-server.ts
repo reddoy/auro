@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 import { processRefund } from '@/lib/refund-server';
+import { INTERNAL_AURO_HEADER, getInternalJobSecret } from '@/lib/internal-fetch-secret';
 
 function serverOrigin(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL;
@@ -165,7 +166,7 @@ export async function serverDenyReviewRequest(admin: SupabaseClient, actorUserId
     try {
       await fetch(`${serverOrigin()}/api/notifications/send`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', [INTERNAL_AURO_HEADER]: getInternalJobSecret() },
         body: JSON.stringify({
           userId: recipientId,
           title: 'Request declined',
@@ -258,7 +259,7 @@ export async function serverSubmitReviewRequest(
     try {
       await fetch(`${serverOrigin()}/api/notifications/send`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', [INTERNAL_AURO_HEADER]: getInternalJobSecret() },
         body: JSON.stringify({
           userId: row.user_id,
           title: 'Your review is ready',

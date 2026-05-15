@@ -32,12 +32,13 @@ function requirePlatformAccountId() {
 }
 
 function isAuthorizedCronRequest(req: Request) {
-  if (req.method !== "GET") return true;
   if (req.headers.get(CRON_HEADER)) return true;
-  const token = new URL(req.url).searchParams.get("token");
   const expected = process.env.CRON_SECRET;
   if (!expected) return false;
-  return token === expected;
+  const token = new URL(req.url).searchParams.get("token");
+  if (token === expected) return true;
+  const headerToken = (req.headers.get("x-auro-internal") || "").trim();
+  return headerToken === expected;
 }
 
 async function processRetryJob(
@@ -305,9 +306,9 @@ async function processRetryJob(
 }
 
 export async function POST(req: Request) {
-  // Note: Admin panel is already protected by /api/admin/check-access
-  // This endpoint can be called from authenticated admin sessions
-  // For additional security, you could add a token check here if needed
+  if (!isAuthorizedCronRequest(req)) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+  }
   const body = await req.json().catch(() => ({}));
   return processRetryJob(body, false);
 }
