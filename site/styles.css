@@ -5421,11 +5421,6 @@ footer {
   text-align: center;
 }
 
-.creator-selection-footer {
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
 .creator-selection-continue {
   width: 100%;
   max-width: none;
@@ -5669,6 +5664,185 @@ button.creator-card.creator-card--select:focus-visible {
   .creator-selection .creator-card.creator-card--row {
     padding: 12px;
     gap: 12px;
+  }
+}
+
+/* === Reviewer sort chips (replaces <details> accordion) === */
+.reviewer-sort-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+  margin-bottom: 8px;
+}
+
+.reviewer-sort-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.reviewer-sort-chip {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.78);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 36px;
+}
+
+.reviewer-sort-chip:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.reviewer-sort-chip.is-active {
+  border-color: #ff6f00;
+  background: rgba(255, 111, 0, 0.18);
+  color: #fdba74;
+}
+
+.reviewer-sort-chips .reviewer-count {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* === Rating star display (request flow) === */
+.creator-selection .creator-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  margin: 3px 0 6px;
+  color: inherit;
+}
+
+.creator-rating-star {
+  color: #fbbf24;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.creator-rating-value {
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.creator-rating-count {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 12px;
+}
+
+/* === Mobile swipe carousel (≤639px) === */
+@media (max-width: 639px) {
+  .creator-selection .creators-grid--list {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 10px;
+    padding: 4px 20px 12px;
+    margin-left: -16px;
+    margin-right: -16px;
+  }
+
+  .creator-selection .creators-grid--list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .creator-selection .creator-card.creator-card--row {
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 78vw;
+    max-width: 290px;
+    min-height: 220px;
+    scroll-snap-align: center;
+    align-items: flex-start;
+    padding: 16px;
+    position: relative;
+    gap: 0;
+  }
+
+  .creator-selection .creator-card--row .creator-avatar {
+    margin-bottom: 12px;
+    flex-shrink: 0;
+  }
+
+  .creator-selection .creator-card--row .creator-avatar [role='img'] {
+    width: 68px !important;
+    height: 68px !important;
+    min-width: 68px !important;
+    min-height: 68px !important;
+  }
+
+  .creator-selection .creator-card.creator-card--row .creator-card-check {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    align-self: auto;
+    width: auto;
+  }
+
+  .creator-selection .creator-card--row .creator-info {
+    width: 100%;
+  }
+
+  .creator-selection .creator-card--row .creator-card-topline {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    align-items: flex-start;
+  }
+
+  /* Hide bio on carousel cards to keep them compact */
+  .creator-selection .creator-card--row .creator-bio {
+    display: none;
+  }
+
+  /* Show up to 2 skills on carousel cards */
+  .creator-selection .creator-card--row .creator-skills--left .skill-tag:nth-of-type(n + 3) {
+    display: none;
+  }
+
+  .creator-selection .creator-card--row .creator-skills--left .skill-more {
+    display: none;
+  }
+}
+
+/* === Footer: animate in when reviewer is selected === */
+
+/* Desktop: always visible, button disabled when no selection */
+.creator-selection-footer {
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Mobile: slide up from bottom on selection */
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
+  .creator-selection-footer--sticky-mobile .creator-selection-footer-inner {
+    transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+  }
+
+  .creator-selection-footer--sticky-mobile:not(.creator-selection-footer--active) .creator-selection-footer-inner {
+    transform: translateY(110%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .creator-selection-footer--sticky-mobile.creator-selection-footer--active .creator-selection-footer-inner {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
   }
 }
 

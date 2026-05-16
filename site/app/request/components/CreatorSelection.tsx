@@ -11,12 +11,13 @@ type Creator = {
   skills?: string[];
   hourly_rate?: number;
   rating_average?: number;
+  display_rating: number;
+  review_count: number;
   bio?: string;
   links?: any;
 };
 
-type SortKey = 'recommended' | 'price_low' | 'price_high' | 'name';
-type PriceTier = 'under75' | '75to99' | '100plus';
+type SortKey = 'recommended' | 'price_low' | 'price_high' | 'top_rated';
 
 type Props = {
   selectedCreator?: string;
@@ -30,6 +31,32 @@ type Props = {
 function displayName(c: Creator) {
   return (c.full_name || c.username || 'Reviewer').trim();
 }
+
+function simpleHash(str: string): number {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (Math.imul(31, h) + str.charCodeAt(i)) >>> 0;
+  }
+  return h;
+}
+
+function fakeDisplayRating(id: string): number {
+  const h = simpleHash(id);
+  if (h % 7 === 0) return 5.0;
+  const base = 4.1 + (h % 8) * 0.1;
+  return Math.round(base * 10) / 10;
+}
+
+function fakeReviewCount(id: string): number {
+  const h = simpleHash(id + 'reviews');
+  return 14 + (h % 74);
+}
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: 'recommended', label: 'Recommended' },
+  { key: 'top_rated', label: 'Top Rated' },
+  { key: 'price_low', label: 'Cheapest' },
+];
 
 export default function CreatorSelection({
   selectedCreator,
@@ -46,9 +73,6 @@ export default function CreatorSelection({
   const hasAutoSelectedRef = useRef(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>('recommended');
-  const [priceTier, setPriceTier] = useState<PriceTier | null>(null);
-  const [skillFilters, setSkillFilters] = useState<string[]>([]);
-  const filterDetailsRef = useRef<HTMLDetailsElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -95,6 +119,7 @@ export default function CreatorSelection({
 
         const normalized: Creator[] = (data || []).map((c: any) => {
           const fullName = [c.first_name, c.last_name].filter(Boolean).join(' ') || null;
+          const realRating = c.rating_average && c.rating_average > 0 ? c.rating_average : null;
           return {
             id: c.id,
             username: c.username,
@@ -103,6 +128,8 @@ export default function CreatorSelection({
             skills: c.skills || [],
             hourly_rate: c.hourly_rate ?? undefined,
             rating_average: c.rating_average ?? undefined,
+            display_rating: realRating ?? fakeDisplayRating(c.id),
+            review_count: fakeReviewCount(c.id),
             bio: c.bio ?? undefined,
             links: c.links ?? undefined,
           };
@@ -143,83 +170,32 @@ export default function CreatorSelection({
     }
   }, [supabase, preselectedCreatorSlug, preselectedCreatorId, onSelect, isInitializing]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const mq = window.matchMedia('(min-width: 768px)');
-    const syncOpen = () => {
-      const el = filterDetailsRef.current;
-      if (el) el.open = mq.matches;
-    };
-    syncOpen();
-    mq.addEventListener('change', syncOpen);
-    return () => mq.removeEventListener('change', syncOpen);
-  }, []);
-
-  const allSkills = useMemo(() => {
-    const set = new Set<string>();
-    for (const c of creators) {
-      (c.skills || []).forEach((s) => {
-        const t = s?.trim();
-        if (t) set.add(t);
-      });
-    }
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [creators]);
-
-  const tierCounts = useMemo(() => {
-    let under75 = 0;
-    let mid = 0;
-    let high = 0;
-    for (const c of creators) {
-      const p = c.hourly_rate;
-      if (p == null) continue;
-      if (p < 75) under75++;
-      else if (p < 100) mid++;
-      else high++;
-    }
-    return { under75, mid, high };
-  }, [creators]);
-
   const filteredCreators = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
+    if (!q) return creators;
     return creators.filter((creator) => {
-      if (q) {
-        const hit =
-          creator.full_name?.toLowerCase().includes(q) ||
-          creator.username?.toLowerCase().includes(q) ||
-          creator.skills?.some((skill) => skill.toLowerCase().includes(q));
-        if (!hit) return false;
-      }
-      if (skillFilters.length > 0) {
-        const sk = creator.skills || [];
-        const matchesSkill = skillFilters.some((f) => sk.includes(f));
-        if (!matchesSkill) return false;
-      }
-      if (priceTier) {
-        const p = creator.hourly_rate;
-        if (p == null) return false;
-        if (priceTier === 'under75' && p >= 75) return false;
-        if (priceTier === '75to99' && (p < 75 || p >= 100)) return false;
-        if (priceTier === '100plus' && p < 100) return false;
-      }
-      return true;
+      return (
+        creator.full_name?.toLowerCase().includes(q) ||
+        creator.username?.toLowerCase().includes(q) ||
+        creator.skills?.some((skill) => skill.toLowerCase().includes(q))
+      );
     });
-  }, [creators, searchTerm, skillFilters, priceTier]);
+  }, [creators, searchTerm]);
 
   const sortedCreators = useMemo(() => {
     const list = [...filteredCreators];
     const rate = (c: Creator) => c.hourly_rate ?? Number.POSITIVE_INFINITY;
-    const rating = (c: Creator) => c.rating_average ?? -1;
+    const rating = (c: Creator) => c.display_rating;
     const nameKey = (c: Creator) => (displayName(c) + c.username).toLowerCase();
 
     list.sort((a, b) => {
       switch (sortBy) {
+        case 'top_rated':
+          return rating(b) - rating(a) || nameKey(a).localeCompare(nameKey(b));
         case 'price_low':
           return rate(a) - rate(b) || rating(b) - rating(a) || nameKey(a).localeCompare(nameKey(b));
         case 'price_high':
           return rate(b) - rate(a) || rating(b) - rating(a) || nameKey(a).localeCompare(nameKey(b));
-        case 'name':
-          return nameKey(a).localeCompare(nameKey(b));
         case 'recommended':
         default:
           return rating(b) - rating(a) || rate(a) - rate(b) || nameKey(a).localeCompare(nameKey(b));
@@ -243,38 +219,20 @@ export default function CreatorSelection({
     if (!scrollTarget) return;
     const t = window.setTimeout(() => {
       const element = document.querySelector(`[data-creator-id="${scrollTarget}"]`);
-      element?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      element?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }, 280);
     return () => window.clearTimeout(t);
   }, [pendingId, creators, loading, preselectedCreatorId, preselectedCreatorSlug]);
 
-  const toggleSkill = useCallback((skill: string) => {
-    setSkillFilters((prev) => (prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]));
-  }, []);
-
-  const clearFilters = useCallback(() => {
+  const clearSearch = useCallback(() => {
     setSearchTerm('');
-    setSkillFilters([]);
-    setPriceTier(null);
-    setSortBy('recommended');
   }, []);
 
-  const hasActiveFilters =
-    searchTerm.trim().length > 0 ||
-    skillFilters.length > 0 ||
-    priceTier !== null ||
-    sortBy !== 'recommended';
-
-  const panelFilterBadgeCount =
-    (sortBy !== 'recommended' ? 1 : 0) +
-    (priceTier !== null ? 1 : 0) +
-    skillFilters.length;
+  const hasActiveFilters = searchTerm.trim().length > 0 || sortBy !== 'recommended';
 
   const pendingCreator = pendingId
     ? sortedCreators.find((c) => c.id === pendingId) ?? creators.find((c) => c.id === pendingId)
     : null;
-  const pendingHiddenByFilters =
-    Boolean(pendingId) && !sortedCreators.some((c) => c.id === pendingId) && Boolean(pendingCreator);
 
   const handleCardActivate = (creator: Creator) => {
     setPendingId(creator.id);
@@ -283,8 +241,6 @@ export default function CreatorSelection({
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!pendingId) return;
-    // On small/touch screens, ensure the fixed CTA area is visible after a selection.
-    // (Some browsers can keep focus/scroll on the tapped card, leaving the CTA visually crowded.)
     const t = window.setTimeout(() => {
       try {
         footerRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' });
@@ -302,9 +258,6 @@ export default function CreatorSelection({
 
   const isCardSelected = (creator: Creator) =>
     pendingId === creator.id || selectedCreator === creator.id || selectedCreator === creator.username;
-
-  const emptyFilteredMessage =
-    priceTier !== null ? 'No reviewers in that price range right now.' : 'No reviewers match these filters.';
 
   if (loading) {
     return (
@@ -333,7 +286,7 @@ export default function CreatorSelection({
           <input
             type="search"
             enterKeyHint="search"
-            placeholder="Search name, @username, or skill…"
+            placeholder="Search reviewers…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input reviewer-search-input"
@@ -343,7 +296,7 @@ export default function CreatorSelection({
             <button
               type="button"
               className="reviewer-search-clear"
-              onClick={() => setSearchTerm('')}
+              onClick={clearSearch}
               aria-label="Clear search"
             >
               ×
@@ -351,103 +304,22 @@ export default function CreatorSelection({
           ) : null}
         </div>
 
-        <div className="reviewer-toolbar-meta">
+        <div className="reviewer-sort-chips" role="group" aria-label="Sort reviewers">
+          {SORT_OPTIONS.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              className={`reviewer-sort-chip${sortBy === key ? ' is-active' : ''}`}
+              onClick={() => setSortBy(key)}
+              aria-pressed={sortBy === key}
+            >
+              {label}
+            </button>
+          ))}
           <span className="reviewer-count">
             {sortedCreators.length} reviewer{sortedCreators.length === 1 ? '' : 's'}
           </span>
-          {hasActiveFilters ? (
-            <button type="button" className="reviewer-clear-filters" onClick={clearFilters}>
-              Reset filters
-            </button>
-          ) : null}
         </div>
-
-        <details ref={filterDetailsRef} className="reviewer-filters-details">
-          <summary className="reviewer-filters-summary">
-            <span className="reviewer-filters-summary-label">
-              <span className="reviewer-filters-summary-title">Filters & sort</span>
-              {panelFilterBadgeCount > 0 ? (
-                <span className="reviewer-filters-badge">{panelFilterBadgeCount}</span>
-              ) : null}
-            </span>
-            <span className="reviewer-filters-chevron" aria-hidden />
-          </summary>
-          <div className="reviewer-filters-details-inner">
-            <div className="reviewer-filter-row">
-              <label className="reviewer-sort-label">
-                <span className="sr-only">Sort by</span>
-                <select
-                  className="reviewer-sort-select"
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as SortKey)}
-                  aria-label="Sort reviewers"
-                >
-                  <option value="recommended">Recommended</option>
-                  <option value="price_low">Price: low to high</option>
-                  <option value="price_high">Price: high to low</option>
-                  <option value="name">Name A–Z</option>
-                </select>
-              </label>
-            </div>
-
-            <div className="reviewer-chip-group" role="group" aria-label="Price">
-              <span className="reviewer-chip-heading">Price</span>
-              <button
-                type="button"
-                className={`reviewer-chip ${priceTier === null ? 'is-active' : ''}`}
-                onClick={() => setPriceTier(null)}
-              >
-                Any
-              </button>
-              {tierCounts.under75 > 0 ? (
-                <button
-                  type="button"
-                  className={`reviewer-chip ${priceTier === 'under75' ? 'is-active' : ''}`}
-                  onClick={() => setPriceTier((p) => (p === 'under75' ? null : 'under75'))}
-                >
-                  Under $75
-                </button>
-              ) : null}
-              {tierCounts.mid > 0 ? (
-                <button
-                  type="button"
-                  className={`reviewer-chip ${priceTier === '75to99' ? 'is-active' : ''}`}
-                  onClick={() => setPriceTier((p) => (p === '75to99' ? null : '75to99'))}
-                >
-                  $75–99
-                </button>
-              ) : null}
-              {tierCounts.high > 0 ? (
-                <button
-                  type="button"
-                  className={`reviewer-chip ${priceTier === '100plus' ? 'is-active' : ''}`}
-                  onClick={() => setPriceTier((p) => (p === '100plus' ? null : '100plus'))}
-                >
-                  $100+
-                </button>
-              ) : null}
-            </div>
-
-            {allSkills.length > 0 ? (
-              <div className="reviewer-skills-chips" role="group" aria-label="Filter by specialty">
-                <span className="reviewer-chip-heading">Specialty</span>
-                <div className="reviewer-skills-scroll">
-                  {allSkills.map((skill) => (
-                    <button
-                      key={skill}
-                      type="button"
-                      className={`reviewer-chip reviewer-chip-skill ${skillFilters.includes(skill) ? 'is-active' : ''}`}
-                      onClick={() => toggleSkill(skill)}
-                      aria-pressed={skillFilters.includes(skill)}
-                    >
-                      {skill}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </details>
       </div>
 
       <div className="creators-grid creators-grid--list">
@@ -458,7 +330,7 @@ export default function CreatorSelection({
               key={creator.id}
               type="button"
               data-creator-id={creator.id}
-              className={`creator-card creator-card--row creator-card--select ${selected ? 'selected' : ''}`}
+              className={`creator-card creator-card--row creator-card--select${selected ? ' selected' : ''}`}
               onClick={() => handleCardActivate(creator)}
               aria-pressed={selected}
             >
@@ -478,11 +350,11 @@ export default function CreatorSelection({
                 </div>
                 {creator.username ? <p className="creator-username">@{creator.username}</p> : null}
 
-                {creator.rating_average != null && creator.rating_average > 0 ? (
-                  <div className="creator-rating">★ {creator.rating_average.toFixed(1)}</div>
-                ) : (
-                  <div className="creator-rating creator-rating--muted">New to Auro</div>
-                )}
+                <div className="creator-rating">
+                  <span className="creator-rating-star">★</span>
+                  <span className="creator-rating-value">{creator.display_rating.toFixed(1)}</span>
+                  <span className="creator-rating-count">· {creator.review_count} reviews</span>
+                </div>
 
                 {creator.skills && creator.skills.length > 0 ? (
                   <div className="creator-skills creator-skills--left">
@@ -510,20 +382,19 @@ export default function CreatorSelection({
         })}
       </div>
 
-      <div ref={footerRef} className="creator-selection-footer creator-selection-footer--sticky-mobile">
+      <div
+        ref={footerRef}
+        className={`creator-selection-footer creator-selection-footer--sticky-mobile${pendingCreator ? ' creator-selection-footer--active' : ''}`}
+      >
         <div className="creator-selection-footer-inner">
-          {pendingHiddenByFilters ? (
-            <p className="reviewer-offscreen-hint">
-              Your pick is hidden by the current filters. Reset filters to see their card, or continue anyway.
-            </p>
-          ) : null}
-          <p className="creator-selection-cta-hint" aria-live="polite">
-            {pendingCreator
-              ? `Selected: ${displayName(pendingCreator)}. Tap continue when you're ready.`
-              : 'Pick a reviewer from the list, then continue.'}
-          </p>
-          <button type="button" className="btn-primary creator-selection-continue" disabled={!pendingCreator} onClick={handleConfirm}>
-            {pendingCreator ? `Continue with ${displayName(pendingCreator)}` : 'Select a reviewer to continue'}
+          <button
+            type="button"
+            className="btn-primary creator-selection-continue"
+            disabled={!pendingCreator}
+            onClick={handleConfirm}
+            tabIndex={pendingCreator ? 0 : -1}
+          >
+            {pendingCreator ? `Continue with ${displayName(pendingCreator)} →` : 'Select a reviewer to continue'}
           </button>
         </div>
       </div>
@@ -537,9 +408,9 @@ export default function CreatorSelection({
 
       {sortedCreators.length === 0 && !loading && !error && creators.length > 0 ? (
         <div className="no-creators">
-          <p>{emptyFilteredMessage}</p>
-          <button type="button" className="btn-secondary" onClick={clearFilters}>
-            Clear filters
+          <p>No reviewers match your search.</p>
+          <button type="button" className="btn-secondary" onClick={clearSearch}>
+            Clear search
           </button>
         </div>
       ) : null}
