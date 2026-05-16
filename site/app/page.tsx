@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { ArrowRight, Sparkles, DollarSign, Clock, TrendingUp, CheckCircle } from 'lucide-react';
+import { ArrowRight, Sparkles, DollarSign, Clock, TrendingUp, CheckCircle, Heart, Globe, Users, ShieldCheck } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -123,7 +123,7 @@ function HomePageContent() {
                   className="mx-auto max-w-lg px-4 text-lg font-medium leading-relaxed text-white/85 mobile-text-reveal text-pretty sm:text-xl"
                   style={{ animationDelay: '1s' }}
                 >
-                  Book profile feedback now or apply as a reviewer today.
+                  Real feedback from women you'd actually want to date — not a coaching service. Web-only, no app to download.
                 </p>
               </div>
 
@@ -247,7 +247,7 @@ function HomePageContent() {
                   </h1>
 
                   <p className="max-w-xl text-lg font-medium leading-relaxed text-white/85 xl:text-xl text-pretty hyphens-none">
-                    Book profile feedback now or apply as a reviewer today.
+                    Real feedback from women you'd actually want to date — not a coaching service. Web-only, no app to download.
                   </p>
                 </div>
                 
@@ -325,6 +325,88 @@ function HomePageContent() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Auro is different */}
+      <section className="bg-background py-16 lg:py-24">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto space-y-12">
+            <div className="text-center space-y-4">
+              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
+                Why Auro is different
+              </h2>
+              <p className="text-lg text-white/80 max-w-xl mx-auto leading-relaxed">
+                Most profile review services are coaching businesses with a review product bolted on. Auro is built differently.
+              </p>
+            </div>
+
+            <div className="grid gap-6 sm:grid-cols-2">
+              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
+                <CardContent className="p-8">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-rose-500/15 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Heart className="w-6 h-6 text-rose-400" aria-hidden />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold text-white">Women you'd actually date</h3>
+                      <p className="text-base leading-relaxed text-white/75">
+                        Not professional coaches or full-time reviewers. The women on Auro are the ones you're trying to impress — their take is the one that actually matters.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
+                <CardContent className="p-8">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-blue-500/15 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Globe className="w-6 h-6 text-blue-400" aria-hidden />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold text-white">No app to download</h3>
+                      <p className="text-base leading-relaxed text-white/75">
+                        Book in your browser. No install, no app store, no waiting. The whole thing works in under 60 seconds from any device.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
+                <CardContent className="p-8">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-amber-500/15 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Users className="w-6 h-6 text-amber-400" aria-hidden />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold text-white">You pick your reviewer</h3>
+                      <p className="text-base leading-relaxed text-white/75">
+                        Browse real profiles, read sample feedback, see clear pricing upfront. Book the person that fits — not whoever the platform assigns you.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
+                <CardContent className="p-8">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-green-500/15 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <ShieldCheck className="w-6 h-6 text-green-400" aria-hidden />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold text-white">Transparent on both sides</h3>
+                      <p className="text-base leading-relaxed text-white/75">
+                        You see what you pay. Reviewers see exactly what they earn — 80% of every completed review. No hidden cuts, no surprises at checkout.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
@@ -498,13 +580,13 @@ function HomePageContent() {
         <div className="container mx-auto px-4">
           <div className="text-center space-y-16">
             <div className="space-y-4">
-              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">What reviewers are saying</h2>
+              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">What people are saying</h2>
               <p className="text-lg leading-relaxed text-white/80 md:text-xl">
                 Honest notes, flexible sessions, built for the web.
               </p>
             </div>
             
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
               <Card className="border-white/20 bg-white/10 backdrop-blur-md transition-all duration-300 hover:border-primary/45 hover:bg-white/[0.15] mobile-card-hover">
                 <CardContent className="p-8 space-y-5">
                   <p className="text-white text-base leading-relaxed italic">
@@ -545,6 +627,23 @@ function HomePageContent() {
                     <div>
                       <p className="font-bold text-white text-xl md:text-2xl">Katie</p>
                       <p className="text-sm text-white/80">Reviewer</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-white/20 bg-white/10 backdrop-blur-md transition-all duration-300 hover:border-primary/45 hover:bg-white/[0.15] mobile-card-hover md:col-span-2 lg:col-span-1">
+                <CardContent className="p-8 space-y-5">
+                  <p className="text-white text-base leading-relaxed italic">
+                    "Booked a review on my lunch break, had specific feedback by the next morning. Moved photo 3 to slot 1 and my match rate jumped that week."
+                  </p>
+                  <div className="flex items-center gap-4 pt-2">
+                    <Avatar className="h-20 w-20 overflow-hidden ring-2 ring-primary/50 md:h-24 md:w-24">
+                      <AvatarFallback className="bg-white/10 text-white font-semibold text-2xl">J</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-bold text-white text-xl md:text-2xl">Jordan</p>
+                      <p className="text-sm text-white/80">Got reviewed · 27</p>
                     </div>
                   </div>
                 </CardContent>
