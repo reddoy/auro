@@ -126,6 +126,17 @@ export default function IntroStep({ onNext }: Props) {
               </p>
             </div>
 
+            {/* CTA Button */}
+            <div className="desktop-cta">
+              <button 
+                onClick={onNext}
+                className="cta-button-desktop"
+              >
+                <span>Request a review</span>
+                <ArrowRight className="cta-arrow" />
+              </button>
+            </div>
+
             {/* Benefits Grid */}
             <div className="desktop-benefits">
               <div className="desktop-benefit-card">
@@ -157,17 +168,6 @@ export default function IntroStep({ onNext }: Props) {
                   <p className="benefit-desc">What to change first, backed by reviewer experience</p>
                 </div>
               </div>
-            </div>
-
-            {/* CTA Button */}
-            <div className="desktop-cta">
-              <button 
-                onClick={onNext}
-                className="cta-button-desktop"
-              >
-                <span>Request a review</span>
-                <ArrowRight className="cta-arrow" />
-              </button>
             </div>
           </div>
           
@@ -227,6 +227,7 @@ export default function IntroStep({ onNext }: Props) {
           flex-direction: column;
           gap: 2rem;
           padding: 1rem;
+          padding-bottom: 96px;
           max-width: 600px;
           margin: 0 auto;
         }
@@ -277,9 +278,29 @@ export default function IntroStep({ onNext }: Props) {
           flex-shrink: 0;
         }
 
-        .intro-cta {
-          display: flex;
-          justify-content: center;
+        /* Mobile-only: sticky CTA bar at bottom of viewport */
+        @media (max-width: 1023px) {
+          .intro-cta {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+            background: linear-gradient(to top, rgba(12, 3, 37, 0.98) 0%, rgba(12, 3, 37, 0.92) 70%, transparent 100%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 30;
+            display: flex;
+            justify-content: center;
+          }
+        }
+
+        /* Desktop: inline CTA, no fixed positioning */
+        @media (min-width: 1024px) {
+          .intro-cta {
+            display: flex;
+            justify-content: flex-start;
+          }
         }
 
         .cta-button {

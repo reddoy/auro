@@ -4349,21 +4349,13 @@ footer {
 .request-content:has(.auth-step),
 .request-content:has(.download-app) {
   max-width: 600px;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  background: transparent;
 }
 
 /* Payment step: wider shell so two-column checkout layout can breathe */
 .request-content:has(.payment-step) {
   max-width: min(100%, 920px);
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  background: transparent;
 }
 
 /* Apply page specific container improvements */
@@ -5132,7 +5124,7 @@ footer {
 }
 
 .request-content:has(.creator-selection) .creator-selection-toolbar {
-  background: linear-gradient(to bottom, rgba(30, 30, 36, 0.97) 0%, rgba(30, 30, 36, 0.88) 72%, transparent 100%);
+  background: linear-gradient(to bottom, rgba(12, 3, 37, 0.97) 0%, rgba(12, 3, 37, 0.88) 72%, transparent 100%);
 }
 
 .creator-selection .sr-only {
@@ -5584,42 +5576,54 @@ button.creator-card.creator-card--select:focus-visible {
   outline-offset: 2px;
 }
 
-/* Mobile + touch viewports: keep picker Continue always reachable */
-@media (max-width: 900px), (hover: none) and (pointer: coarse) {
-  .creator-selection {
-    /* Reserve space so the last card is never hidden behind the fixed CTA */
-    padding-bottom: calc(132px + env(safe-area-inset-bottom));
-  }
+/* Always keep picker Continue reachable — reserve space for the fixed CTA */
+.creator-selection {
+  padding-bottom: calc(132px + env(safe-area-inset-bottom));
+}
 
-  .creator-selection-footer.creator-selection-footer--sticky-mobile {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 35;
-    padding-top: 0;
-    border-top: none;
-    pointer-events: none;
-    margin: 0;
-    background: transparent;
-    box-shadow: none;
-  }
+/* Fixed CTA footer — visible at all viewport sizes */
+.creator-selection-footer.creator-selection-footer--sticky-mobile {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 35;
+  padding-top: 0;
+  border-top: none;
+  pointer-events: none;
+  margin: 0;
+  background: transparent;
+  box-shadow: none;
+}
 
+.creator-selection-footer--sticky-mobile .creator-selection-footer-inner {
+  pointer-events: auto;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-top: 14px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(12, 3, 37, 0.98) 0%, rgba(12, 3, 37, 0.92) 75%, transparent 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Desktop: give the footer-inner a touch more breathing room */
+@media (min-width: 901px) {
   .creator-selection-footer--sticky-mobile .creator-selection-footer-inner {
-    pointer-events: auto;
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
-    padding-top: 14px;
-    padding-bottom: max(12px, env(safe-area-inset-bottom));
-    background: linear-gradient(to top, rgba(26, 26, 31, 0.98) 0%, rgba(26, 26, 31, 0.92) 75%, transparent 100%);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    max-width: 640px;
+    padding-top: 18px;
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
   }
+}
 
+/* Mobile + touch: hide bio and trim skills on cards */
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
   .creator-selection .creator-bio {
     display: none;
   }
@@ -5819,31 +5823,23 @@ button.creator-card.creator-card--select:focus-visible {
   }
 }
 
-/* === Footer: animate in when reviewer is selected === */
+/* === Footer: animate in when reviewer is selected (all viewports) === */
 
-/* Desktop: always visible, button disabled when no selection */
-.creator-selection-footer {
-  padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+/* Slide-up animation applies everywhere */
+.creator-selection-footer--sticky-mobile .creator-selection-footer-inner {
+  transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
 }
 
-/* Mobile: slide up from bottom on selection */
-@media (max-width: 900px), (hover: none) and (pointer: coarse) {
-  .creator-selection-footer--sticky-mobile .creator-selection-footer-inner {
-    transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
-  }
+.creator-selection-footer--sticky-mobile:not(.creator-selection-footer--active) .creator-selection-footer-inner {
+  transform: translateY(110%);
+  opacity: 0;
+  pointer-events: none;
+}
 
-  .creator-selection-footer--sticky-mobile:not(.creator-selection-footer--active) .creator-selection-footer-inner {
-    transform: translateY(110%);
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .creator-selection-footer--sticky-mobile.creator-selection-footer--active .creator-selection-footer-inner {
-    transform: translateY(0);
-    opacity: 1;
-    pointer-events: auto;
-  }
+.creator-selection-footer--sticky-mobile.creator-selection-footer--active .creator-selection-footer-inner {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* Photo Upload */
