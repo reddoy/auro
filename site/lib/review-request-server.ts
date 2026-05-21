@@ -275,7 +275,10 @@ export async function serverSubmitReviewRequest(
   try {
     const res = await fetch(`${serverOrigin()}/api/payments/distribute-reviewer-payment`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        [INTERNAL_AURO_HEADER]: getInternalJobSecret(),
+      },
       body: JSON.stringify({ requestId }),
     });
     const payoutBody = await res.json().catch(() => ({} as Record<string, unknown>));

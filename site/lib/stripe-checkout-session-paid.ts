@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { notifyReviewerOfPaidRequest } from '@/lib/reviewer-request-notifications';
 
 type ApplyArgs = {
   stripe: Stripe;
@@ -103,6 +104,8 @@ export async function applyCheckoutSessionPaidUpdate({ stripe, event, session }:
     return;
   }
   console.log('[checkout-paid] Database update successful:', data);
+
+  await notifyReviewerOfPaidRequest(admin, requestId);
 
   try {
     await admin.from('webhook_events').update({ status: 'completed' }).eq('stripe_event_id', event.id);

@@ -7,7 +7,7 @@
 ### Core Journey
 1. **New web visitor**
    - Load `/request` with clean storage; confirm intro renders after auth check.
-   - Complete creator selection, upload at least three photos, provide prompts, accept consent, authenticate, pay, reach download screen.
+   - Complete creator selection, upload photos, authenticate, pay (Stripe test card), confirm payment disclaimer is visible, land on checkout success then `/app/requests`.
 2. **Mobile deep link**
    - Tap CTA from social/mobile browser: ensures URL parameters prefill reviewer and skip to photo upload where supported.
    - Verify iOS in-app browser messaging appears when checkout is blocked in embedded browser contexts.
@@ -47,6 +47,8 @@
 - [ ] Runbook for support escalations linked in `docs/runbooks.md`.
 - [ ] Manual refund instructions verified (`docs/payments-refunds.md`).
 - [ ] On-call contact for launch window confirmed.
+
+Full staging matrix: see [`staging-e2e-matrix.md`](staging-e2e-matrix.md).
 
 ### Reviewer app + API (staging)
 - [ ] Sign in as the assigned reviewer; open `/app/requests/reviewer/<id>`; **Accept** moves request to in-progress (check `accept_by` / `deliver_by`).

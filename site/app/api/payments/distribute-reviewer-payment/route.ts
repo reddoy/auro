@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { requireAdmin } from '@/lib/admin-server';
+import { isTrustedInternalRequest } from '@/lib/internal-fetch-secret';
 
 const REVIEWER_SHARE_BPS = 8000;
 const MAX_RETRIES = 3;
@@ -80,9 +81,12 @@ async function updateRequestSafe(
 }
 
 export async function POST(req: Request) {
-  const auth = await requireAdmin(req);
-  if (!auth.ok) {
-    return new Response(JSON.stringify(auth.body), { status: auth.status, headers: { 'Content-Type': 'application/json' } });
+  const internalOk = isTrustedInternalRequest(req);
+  if (!internalOk) {
+    const auth = await requireAdmin(req);
+    if (!auth.ok) {
+      return new Response(JSON.stringify(auth.body), { status: auth.status, headers: { 'Content-Type': 'application/json' } });
+    }
   }
 
   let requestId = '';

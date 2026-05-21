@@ -217,9 +217,16 @@ export default function ReviewRequestClient({ id }: { id: string }) {
         )}
 
         {request.status === 'paid' && (
-          <p className="mt-8 text-white/70">
-            Payment complete — your reviewer will accept and start soon.
-          </p>
+          <div className="mt-8 space-y-2 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm text-white/75">
+            <p className="font-medium text-white">Payment received</p>
+            <p>
+              Your reviewer can accept or decline this request. If they decline, you will receive a full
+              refund (typically 5–10 business days on your card).
+            </p>
+            <p className="text-white/60">
+              If they do not respond within 2 weeks, you are automatically refunded.
+            </p>
+          </div>
         )}
 
         {request.status === 'in_progress' && (

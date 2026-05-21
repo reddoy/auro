@@ -37,11 +37,32 @@ function isAuthorizedCronRequest(req: Request) {
   return headerToken === expected;
 }
 
+async function markTimedOutRequests(admin: ReturnType<typeof buildSupabaseAdmin>): Promise<{
+  marked: number;
+  error?: string;
+}> {
+  const { data, error } = await admin.rpc('handle_request_timeouts');
+  if (error) {
+    console.error('[timeout-refunds] handle_request_timeouts failed:', error);
+    return { marked: 0, error: error.message };
+  }
+  const marked = typeof data === 'number' ? data : Number(data) || 0;
+  if (marked > 0) {
+    console.log(`[timeout-refunds] Marked ${marked} request(s) as timeout`);
+  }
+  return { marked };
+}
+
 async function processTimeoutRefunds(options: TimeoutOptions, triggeredByCron: boolean): Promise<Response> {
   try {
     const { processAll = false, limit = DEFAULT_LIMIT } = options;
     const stripe = buildStripeClient();
     const admin = buildSupabaseAdmin();
+
+    const timeoutMark = await markTimedOutRequests(admin);
+    if (timeoutMark.error && triggeredByCron) {
+      await sendOpsAlert('[Cron] Timeout marking failed', { error: timeoutMark.error });
+    }
 
     const { data: timeoutRequests, error: queryError } = await admin
       .from("requests")
@@ -177,6 +198,7 @@ async function processTimeoutRefunds(options: TimeoutOptions, triggeredByCron: b
       JSON.stringify({
         success: true,
         message: `Processed ${results.processed} timeout requests`,
+        timeoutsMarked: timeoutMark.marked,
         results,
       }),
       { status: 200 }

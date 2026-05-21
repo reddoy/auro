@@ -279,7 +279,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
                   <span className="review-includes-check" aria-hidden="true">
                     ✓
                   </span>
-                  <span className="review-includes-text">One personalized video review</span>
+                  <span className="review-includes-text">One personalized video review if your reviewer accepts</span>
                 </li>
                 <li className="review-includes-item">
                   <span className="review-includes-check" aria-hidden="true">
@@ -317,16 +317,16 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
               <div className="security-badge">
                 <span className="security-icon">⚡</span>
                 <div>
-                  <strong>Guaranteed Timelines</strong>
-                  <p>Reviewer has 2 weeks to accept, then 48 hours to complete</p>
+                  <strong>Refund timelines</strong>
+                  <p>Reviewer has 2 weeks to accept, then 48 hours to complete — or you get a full refund</p>
                 </div>
               </div>
               
               <div className="security-badge">
-                <span className="security-icon">💝</span>
+                <span className="security-icon">↩️</span>
                 <div>
-                  <strong>Satisfaction Guaranteed</strong>
-                  <p>Quality feedback</p>
+                  <strong>Decline = full refund</strong>
+                  <p>If your reviewer declines, you are refunded (typically 5–10 business days)</p>
                 </div>
               </div>
             </div>
@@ -342,6 +342,15 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
             )}
 
             <div className="payment-note">
+              <p className="payment-note-row payment-note-highlight">
+                <span className="payment-note-icon" aria-hidden="true">
+                  ℹ️
+                </span>
+                <span className="payment-note-text">
+                  Payment secures your request — it does not guarantee a review. Your reviewer can accept or
+                  decline. If they decline, you receive a full refund.
+                </span>
+              </p>
               <p className="payment-note-row">
                 <span className="payment-note-icon" aria-hidden="true">
                   🏦

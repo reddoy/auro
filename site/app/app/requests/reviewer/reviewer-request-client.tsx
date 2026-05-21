@@ -288,14 +288,6 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm text-white/75">
-              <p className="font-semibold text-white">Or: screen recording with mic</p>
-              <p className="mt-2 text-white/70">
-                Save the photos to your camera roll, screen-record while talking through them, and make
-                sure your microphone is enabled.
-              </p>
-            </div>
-
             <p className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs text-white/65">
               We always encourage you to have your face on camera — it makes feedback feel personal and
               builds trust.

@@ -8,9 +8,10 @@ This document explains how payments are collected from customers, held, and dist
 ## 1. Payment Collection Flow
 
 ### Step 1: Customer Initiates Payment
-- Customer creates a review request and pays via **Stripe PaymentSheet**
-- Payment is processed through `/api/payments/create-sheet` (Supabase Edge Function)
-- PaymentIntent is created and customer completes payment
+- Customer completes the `/request` funnel (pick reviewer → photos → sign in → pay)
+- Payment is processed via **Stripe Checkout** through `POST /api/checkout/create-session`
+- On success, `checkout.session.completed` (or async payment succeeded) webhook marks the request `paid`
+- Legacy mobile **PaymentSheet** (`payments-create-sheet` Edge Function) is not the primary web path
 
 ### Step 2: Payment Captured
 - Once payment succeeds, the `requests` table is updated with:

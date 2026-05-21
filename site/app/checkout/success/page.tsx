@@ -16,7 +16,9 @@ export default function CheckoutSuccessPage() {
       const csId = url.searchParams.get('rid');
       
       if (csId) {
-        setMessage('Payment confirmed. Your review request is being prepared.');
+        setMessage(
+          'Payment confirmed. Your reviewer can accept or decline — you will be refunded if they decline.'
+        );
         (async () => {
           const { data: { session } = { session: null } } = (await supabase?.auth.getSession()) || {};
           const token = session?.access_token;
@@ -119,21 +121,21 @@ export default function CheckoutSuccessPage() {
             <h3>Your Payment is Protected</h3>
           </div>
           <p className="protection-description">
-            <strong>Escrow System:</strong> Your payment is held securely until your review is completed. 
-            The reviewer only gets paid after delivering your review, ensuring quality service.
+            <strong>Payment secures your request</strong> — it does not guarantee a review. Your reviewer
+            can accept or decline. If they decline, you receive a full refund (typically 5–10 business days).
           </p>
           <div className="protection-features">
             <div className="feature-item">
               <div className="feature-dot"></div>
-              <span>Payment held until review completion</span>
+              <span>Payment held until your reviewer accepts and completes the review</span>
             </div>
             <div className="feature-item">
               <div className="feature-dot"></div>
-              <span>Full refund if review not delivered within 48 hours</span>
+              <span>Full refund if not accepted within 2 weeks, or not completed within 48 hours after accept</span>
             </div>
             <div className="feature-item">
               <div className="feature-dot"></div>
-              <span>Automatic payment to reviewer upon completion</span>
+              <span>Reviewer is paid only after they submit your video review</span>
             </div>
           </div>
         </div>
