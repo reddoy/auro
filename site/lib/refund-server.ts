@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type Stripe from 'stripe';
+import { profileDisplayName } from '@/lib/profile-display-name';
 
 export type RefundResult =
   | {
@@ -87,13 +88,18 @@ export async function processRefund(
     return { ok: false, status: 404, error: 'Request not found' };
   }
 
-  type CustomerProfile = { full_name?: string | null; email?: string | null; username?: string | null };
+  type CustomerProfile = {
+    first_name?: string | null;
+    last_name?: string | null;
+    email?: string | null;
+    username?: string | null;
+  };
   let customer: CustomerProfile | null = null;
   if (request.user_id) {
     try {
       const { data: profileData } = await admin
         .from('profiles')
-        .select('id, email, full_name, username')
+        .select('id, email, first_name, last_name, username')
         .eq('id', request.user_id)
         .maybeSingle();
       customer = (profileData as CustomerProfile | null) ?? null;
@@ -101,6 +107,7 @@ export async function processRefund(
       console.error('[processRefund] Failed to fetch customer profile:', profileError);
     }
   }
+  const customerName = profileDisplayName(customer);
 
   if (request.refund_status === 'refunded') {
     return {
@@ -112,7 +119,7 @@ export async function processRefund(
       isFullyRefunded: true,
       idempotencyKey: effectiveIdempotencyKey,
       alreadyRefunded: true,
-      customerName: customer?.full_name || customer?.username || null,
+      customerName,
       customerEmail: customer?.email || null,
       message: 'Request already refunded',
     };
@@ -131,7 +138,7 @@ export async function processRefund(
           isFullyRefunded: (request.refunded_amount_cents || 0) >= (request.amount_cents || 0),
           idempotencyKey: effectiveIdempotencyKey,
           alreadyRefunded: true,
-          customerName: customer?.full_name || customer?.username || null,
+          customerName,
           customerEmail: customer?.email || null,
           message: 'Refund already processed',
         };
@@ -205,9 +212,12 @@ export async function processRefund(
       refunded_at: new Date().toISOString(),
       stripe_refund_id: refund.id,
     };
+    updateData.payment_status = 'refunded';
     if (isFullyRefunded) {
-      updateData.status = 'refunded';
-      updateData.payment_status = 'refunded';
+      // Keep terminal UX statuses; only move active payment states to refunded.
+      if (request.status === 'paid' || request.status === 'in_progress' || request.status === 'timeout') {
+        updateData.status = 'refunded';
+      }
     }
 
     const { error: updateError } = await admin
@@ -228,7 +238,7 @@ export async function processRefund(
       isFullyRefunded,
       idempotencyKey: effectiveIdempotencyKey,
       alreadyRefunded: false,
-      customerName: customer?.full_name || customer?.username || null,
+      customerName,
       customerEmail: customer?.email || null,
       message: isFullyRefunded ? 'Request fully refunded' : 'Partial refund processed',
     };

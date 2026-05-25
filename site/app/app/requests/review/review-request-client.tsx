@@ -342,6 +342,13 @@ export default function ReviewRequestClient({ id }: { id: string }) {
           <p className="mt-8 text-white/70">This request was declined. A refund has been issued — it should appear on your card within a few business days.</p>
         )}
 
+        {request.status === 'timeout' && (
+          <p className="mt-8 text-white/70">
+            This review expired before it could be completed. You have been refunded (or your refund is processing) — it
+            should appear on your card within a few business days.
+          </p>
+        )}
+
         {request.status === 'refunded' && (
           <p className="mt-8 text-white/70">This request was refunded. The refund should appear on your card within a few business days.</p>
         )}

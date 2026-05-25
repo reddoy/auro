@@ -27,7 +27,8 @@ export async function POST(req: Request) {
         profiles!requests_user_id_fkey (
           id,
           email,
-          full_name,
+          first_name,
+          last_name,
           username
         )
       `)
@@ -139,13 +140,15 @@ export async function GET(req: Request) {
         profiles!disputes_customer_id_fkey (
           id,
           username,
-          full_name,
+          first_name,
+          last_name,
           email
         ),
         profiles!disputes_reviewer_id_fkey (
           id,
           username,
-          full_name,
+          first_name,
+          last_name,
           email
         )
       `)

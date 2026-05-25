@@ -3487,6 +3487,23 @@ footer {
   flex-wrap: wrap;
   gap: 10px;
   justify-content: flex-end;
+  position: relative;
+  z-index: 1001;
+  pointer-events: auto;
+  isolation: isolate;
+}
+
+.conditional-nav .nav-ribbon-ctas .landing-ctas,
+.conditional-nav .nav-ribbon-ctas .landing-ctas a {
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.nav .nav-cta-section {
+  position: relative;
+  z-index: 1001;
+  pointer-events: auto;
 }
 
 .conditional-nav .nav-ribbon-ctas > .cta-nav-integrated,

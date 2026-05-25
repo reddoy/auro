@@ -2,18 +2,14 @@
 
 import { useEffect, useRef, Suspense } from 'react';
 import { Button } from '../components/ui/button';
+import LandingCTAs from '../components/LandingCTAs';
+import { LANDING_CTA_PRIMARY } from '../components/landing-cta-styles';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { ArrowRight, Sparkles, DollarSign, Clock, TrendingUp, CheckCircle, Heart, Globe, Users, ShieldCheck } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
-
-/** Match gradient + glass-outline CTAs used in cards below (e.g. Get Reviewed). */
-const LANDING_CTA_PRIMARY =
-  'group w-full sm:w-auto text-lg px-8 py-4 font-semibold shadow-2xl hover:shadow-3xl transition-all duration-300';
-const LANDING_CTA_SECONDARY =
-  'group w-full sm:w-auto text-lg px-8 py-4 font-semibold border-white/20 bg-white/[0.06] text-white shadow-lg transition-all duration-300 hover:bg-white/[0.12] hover:text-white focus-visible:ring-white/30';
 
 function HomePageContent() {
   const desktopVideoRef = useRef<HTMLVideoElement>(null);
@@ -129,35 +125,10 @@ function HomePageContent() {
 
               {/* CTA Buttons - both core paths */}
               <div
-                className="mx-auto flex w-full max-w-sm flex-col items-stretch justify-center gap-3 px-4 mobile-text-reveal sm:max-w-none sm:flex-row sm:justify-center"
+                className="mx-auto w-full max-w-sm px-4 mobile-text-reveal sm:max-w-none"
                 style={{ animationDelay: '1.1s' }}
               >
-                <Button size="xl" variant="gradient" className={LANDING_CTA_PRIMARY} asChild>
-                  <a
-                    href="/reviewers/apply"
-                    className="flex items-center justify-center gap-2"
-                    aria-label="Apply to become a reviewer"
-                  >
-                    <span className="truncate">Become a Reviewer</span>
-                    <ArrowRight
-                      className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1"
-                      aria-hidden
-                    />
-                  </a>
-                </Button>
-                <Button size="xl" variant="outline" className={LANDING_CTA_SECONDARY} asChild>
-                  <a
-                    href="/request"
-                    className="flex items-center justify-center gap-2"
-                    aria-label="Request a profile review"
-                  >
-                    <span className="truncate">Get Reviewed</span>
-                    <ArrowRight
-                      className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1"
-                      aria-hidden
-                    />
-                  </a>
-                </Button>
+                <LandingCTAs variant="hero" />
               </div>
 
               <ul
@@ -252,20 +223,7 @@ function HomePageContent() {
                 </div>
                 
                 {/* CTA Buttons */}
-                <div className="flex flex-wrap gap-3 justify-start">
-                  <Button size="xl" variant="gradient" className={LANDING_CTA_PRIMARY} asChild>
-                    <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
-                      <span className="mobile-button-text">Become a Reviewer</span>
-                      <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
-                    </a>
-                  </Button>
-                  <Button size="xl" variant="outline" className={LANDING_CTA_SECONDARY} asChild>
-                    <a href="/request" className="flex items-center justify-center gap-2" aria-label="Request a profile review">
-                      <span className="mobile-button-text">Get Reviewed</span>
-                      <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
-                    </a>
-                  </Button>
-                </div>
+                <LandingCTAs variant="hero" className="!flex-row !justify-start" />
 
                 {/* Trust line — column layout aligns checks with headline (no ragged wrap grid) */}
                 <ul className="m-0 flex list-none flex-col gap-2.5 p-0 pt-2 text-sm text-white/90" aria-label="Key benefits">
@@ -707,22 +665,8 @@ function HomePageContent() {
               </p>
             </div>
             
-            <div
-              className="mobile-text-reveal flex flex-col items-stretch justify-center gap-3 px-4 sm:flex-row sm:items-center"
-              style={{ animationDelay: '0.6s' }}
-            >
-              <Button size="xl" variant="gradient" className={LANDING_CTA_PRIMARY} asChild>
-                <a href="/reviewers/apply" className="flex items-center justify-center gap-2">
-                  <span className="mobile-button-text">Become a Reviewer</span>
-                  <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1 sm:h-6 sm:w-6" />
-                </a>
-              </Button>
-              <Button size="xl" variant="outline" className={LANDING_CTA_SECONDARY} asChild>
-                <a href="/request" className="flex items-center justify-center gap-2">
-                  <span className="mobile-button-text">Get Reviewed</span>
-                  <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1 sm:h-6 sm:w-6" />
-                </a>
-              </Button>
+            <div className="mobile-text-reveal px-4" style={{ animationDelay: '0.6s' }}>
+              <LandingCTAs variant="hero" />
             </div>
             <p className="text-sm font-medium text-white/70 mobile-text-reveal" style={{ animationDelay: '0.65s' }}>
               Reviewer onboarding is live and review requests are open.

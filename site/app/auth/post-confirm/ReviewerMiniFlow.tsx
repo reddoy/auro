@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import PriceTierSelector from '@/components/PriceTierSelector';
+import ReviewerRateInput, { isValidReviewerRate, parseReviewerRate } from '@/components/ReviewerRateInput';
 import WebAvatarUploader from '@/components/WebAvatarUploader';
 
 type Props = {
@@ -64,8 +64,8 @@ export default function ReviewerMiniFlow({ returnHref }: Props) {
       setError('Please enter your first and last name.');
       return;
     }
-    if (!hourlyRate || Number.isNaN(Number(hourlyRate)) || Number(hourlyRate) <= 0) {
-      setError('Please set your review rate.');
+    if (!isValidReviewerRate(hourlyRate)) {
+      setError('Enter a whole-dollar amount of at least $1 (up to $10,000).');
       return;
     }
     if (!avatarUrl || !avatarPath) {
@@ -98,7 +98,7 @@ export default function ReviewerMiniFlow({ returnHref }: Props) {
         body: JSON.stringify({
           bio: '',
           focusAreas: '',
-          hourlyRate: Number(hourlyRate),
+          hourlyRate: parseReviewerRate(hourlyRate),
           avatarUrl,
           avatarPath,
           socials: [],
@@ -184,10 +184,10 @@ export default function ReviewerMiniFlow({ returnHref }: Props) {
         <div className="space-y-5">
           <div>
             <h2 className="text-2xl font-semibold">Set your rate</h2>
-            <p className="mt-2 text-white/75">Pick what you want to earn per review.</p>
+            <p className="mt-2 text-white/75">Set any whole-dollar price per review (minimum $1).</p>
           </div>
           {error ? <p className="rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-200">{error}</p> : null}
-          <PriceTierSelector value={hourlyRate} onChange={setHourlyRate} />
+          <ReviewerRateInput value={hourlyRate} onChange={setHourlyRate} />
           <div className="flex gap-3">
             <button type="button" onClick={() => setStep('profile')} className={secondaryButtonClass}>
               Back
@@ -195,8 +195,8 @@ export default function ReviewerMiniFlow({ returnHref }: Props) {
             <button
               type="button"
               onClick={() => {
-                if (!hourlyRate) {
-                  setError('Please select your rate.');
+                if (!isValidReviewerRate(hourlyRate)) {
+                  setError('Enter a whole-dollar amount of at least $1 (up to $10,000).');
                   return;
                 }
                 setError('');

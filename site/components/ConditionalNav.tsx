@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import LandingCTAs from './LandingCTAs';
 
 const signInLinkStyle: React.CSSProperties = {
   color: 'white',
@@ -30,7 +31,7 @@ export default function ConditionalNav() {
     >
       <Link
         href="/auth/sign-in"
-        className="nav-signin-link"
+        className="nav-signin-link relative z-[1]"
         style={signInLinkStyle}
         onMouseOver={(e) => {
           e.currentTarget.style.opacity = '1';
@@ -43,19 +44,11 @@ export default function ConditionalNav() {
       </Link>
 
       <div className="nav-ribbon-ctas" aria-label="Primary actions">
-        {!isOnApplyPage && (
-          <Link className="cta-nav-integrated" href="/reviewers/apply">
-            <div className="cta-text-section">
-              <span className="cta-main-text">Become a Reviewer</span>
-            </div>
-          </Link>
-        )}
-
-        {!isOnRequestFlow && (
-          <Link className="cta-nav cta-nav--get-reviewed" href="/request">
-            Get Reviewed
-          </Link>
-        )}
+        <LandingCTAs
+          variant="nav"
+          showBecomeReviewer={!isOnApplyPage}
+          showGetReviewed={!isOnRequestFlow}
+        />
       </div>
     </div>
   );

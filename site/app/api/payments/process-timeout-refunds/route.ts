@@ -73,13 +73,7 @@ async function processTimeoutRefunds(options: TimeoutOptions, triggeredByCron: b
         amount_cents,
         stripe_payment_intent_id,
         refund_status,
-        refund_reason,
-        profiles!requests_user_id_fkey (
-          id,
-          email,
-          full_name,
-          username
-        )
+        refund_reason
       `
       )
       .eq("status", "timeout")

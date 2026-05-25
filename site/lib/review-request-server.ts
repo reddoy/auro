@@ -90,9 +90,9 @@ export async function serverAcceptReviewRequest(
     );
   }
   const now = new Date();
-  const updateData = {
+  const updateData: Record<string, string> = {
     status: 'in_progress',
-    accept_by: now.toISOString(),
+    accepted_at: now.toISOString(),
     deliver_by: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
   };
   const { data, error } = await admin
@@ -127,7 +127,7 @@ export async function serverDenyReviewRequest(admin: SupabaseClient, actorUserId
 
   const { data: updated, error: updErr } = await admin
     .from('requests')
-    .update({ status: 'rejected' })
+    .update({ status: 'rejected', denied_at: new Date().toISOString() })
     .eq('id', requestId)
     .select(REQUEST_SELECT)
     .maybeSingle();
@@ -150,6 +150,13 @@ export async function serverDenyReviewRequest(admin: SupabaseClient, actorUserId
           error: result.error,
           errorType: result.errorType,
         });
+        await admin
+          .from('requests')
+          .update({
+            refund_status: 'failed',
+            refund_reason: `reviewer_denied: ${result.error}`,
+          })
+          .eq('id', requestId);
       }
     } catch (e) {
       console.error('[serverDenyReviewRequest] refund error', e);

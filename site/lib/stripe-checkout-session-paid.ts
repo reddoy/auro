@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { notifyReviewerOfPaidRequest } from '@/lib/reviewer-request-notifications';
+import { markRequestPaidFromCheckoutSession } from '@/lib/mark-request-paid-from-checkout';
 
 type ApplyArgs = {
   stripe: Stripe;
@@ -22,53 +22,6 @@ export async function applyCheckoutSessionPaidUpdate({ stripe, event, session }:
     '';
   const stripeAccountId = (event as { account?: string }).account as string | undefined;
 
-  let applicationFeeCentsFromMetadata: number | undefined;
-  if (metadata.auro_fee_cents) {
-    const parsed = parseInt(metadata.auro_fee_cents, 10);
-    if (!Number.isNaN(parsed)) applicationFeeCentsFromMetadata = parsed;
-  }
-
-  let stripeFeeCents: number | undefined;
-  let netAmountCents: number | undefined;
-  let amountCents: number | undefined;
-  let applicationFeeCents: number | undefined;
-
-  try {
-    const paymentIntentId =
-      typeof session.payment_intent === 'string'
-        ? session.payment_intent
-        : (session.payment_intent as { id?: string } | null)?.id;
-    if (paymentIntentId) {
-      const pi = stripeAccountId
-        ? await stripe.paymentIntents.retrieve(paymentIntentId, { stripeAccount: stripeAccountId })
-        : await stripe.paymentIntents.retrieve(paymentIntentId);
-      amountCents = typeof pi.amount === 'number' ? pi.amount : undefined;
-      const piApplicationFee =
-        typeof pi.application_fee_amount === 'number' ? pi.application_fee_amount : undefined;
-      applicationFeeCents = piApplicationFee || applicationFeeCentsFromMetadata;
-
-      const chargeList = stripeAccountId
-        ? await stripe.charges.list({ payment_intent: paymentIntentId, limit: 1 }, { stripeAccount: stripeAccountId })
-        : await stripe.charges.list({ payment_intent: paymentIntentId, limit: 1 });
-      const chargeId = chargeList.data[0]?.id;
-      if (chargeId) {
-        const charge = stripeAccountId
-          ? await stripe.charges.retrieve(chargeId, { stripeAccount: stripeAccountId })
-          : await stripe.charges.retrieve(chargeId);
-        const balTxId = (charge as { balance_transaction?: string }).balance_transaction;
-        if (balTxId) {
-          const balTx = stripeAccountId
-            ? await stripe.balanceTransactions.retrieve(balTxId, { stripeAccount: stripeAccountId })
-            : await stripe.balanceTransactions.retrieve(balTxId);
-          stripeFeeCents = typeof balTx.fee === 'number' ? balTx.fee : undefined;
-          netAmountCents = typeof balTx.net === 'number' ? balTx.net : undefined;
-        }
-      }
-    }
-  } catch (feeErr) {
-    console.error('[checkout-paid] fee calc error', feeErr);
-  }
-
   if (!requestId) return;
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -76,36 +29,19 @@ export async function applyCheckoutSessionPaidUpdate({ stripe, event, session }:
   if (!url || !key) return;
 
   const admin = createClient(url, key) as SupabaseClient;
-  const paymentIntentId =
-    typeof session.payment_intent === 'string'
-      ? session.payment_intent
-      : (session.payment_intent as { id?: string } | null)?.id;
 
-  const updateData: Record<string, unknown> = {
-    status: 'paid',
-    payment_status: 'paid',
-    stripe_session_id: session.id,
-    stripe_payment_intent_id: paymentIntentId || null,
-    stripe_fee_cents: typeof stripeFeeCents === 'number' ? stripeFeeCents : null,
-    net_amount_cents: typeof netAmountCents === 'number' ? netAmountCents : null,
-    amount_cents: typeof amountCents === 'number' ? amountCents : undefined,
-    accept_by: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-  };
-
-  if (typeof applicationFeeCents === 'number') {
-    updateData.application_fee_cents = applicationFeeCents;
-  } else if (applicationFeeCentsFromMetadata) {
-    updateData.application_fee_cents = applicationFeeCentsFromMetadata;
-  }
-
-  const { data, error } = await admin.from('requests').update(updateData).eq('id', requestId).select();
-  if (error) {
-    console.error('[checkout-paid] Database update error:', error);
+  const paidResult = await markRequestPaidFromCheckoutSession({
+    admin,
+    stripe,
+    session,
+    requestId,
+    stripeAccountId,
+  });
+  if (!paidResult.ok) {
+    console.error('[checkout-paid] mark paid failed:', paidResult.error);
     return;
   }
-  console.log('[checkout-paid] Database update successful:', data);
-
-  await notifyReviewerOfPaidRequest(admin, requestId);
+  console.log('[checkout-paid] Request marked paid:', requestId);
 
   try {
     await admin.from('webhook_events').update({ status: 'completed' }).eq('stripe_event_id', event.id);

@@ -5,12 +5,24 @@ import { AUTH_EMAIL_RATE_LIMIT_MESSAGE, isAuthEmailRateLimitError } from '../../
 import { supabase } from '../../../lib/supabase';
 import { useRouter } from 'next/navigation';
 import FunnelTopBar from '../../../components/FunnelTopBar';
+import FunnelStepper, { type FunnelStepConfig } from '../../../components/FunnelStepper';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
 import { ArrowLeft, ArrowRight, Bell, Check, DollarSign, Star, UserCheck, Shield, Mail, Lock, User, FileText, Target, Phone, Instagram, Music } from 'lucide-react';
 import WebAvatarUploader from '../../../components/WebAvatarUploader';
-import PriceTierSelector from '../../../components/PriceTierSelector';
+import ReviewerRateInput, { isValidReviewerRate, parseReviewerRate } from '../../../components/ReviewerRateInput';
+import { FUNNEL_PRIMARY_BTN, FUNNEL_SECONDARY_BTN } from '../../../lib/funnel-button-styles';
 import { getDisplayAvatarUrl } from '../../../lib/avatar';
+
+const REVIEWER_FUNNEL_STEPS: FunnelStepConfig[] = [
+  { id: '1', short: '1', label: 'Intro' },
+  { id: '2', short: '2', label: 'Account' },
+  { id: '3', short: '3', label: 'Password' },
+  { id: '4', short: '4', label: 'Photo' },
+  { id: '5', short: '5', label: 'Rate' },
+  { id: '6', short: '6', label: 'Phone' },
+  { id: '7', short: '7', label: 'Done' },
+];
 
 type RotatingReviewer = {
   firstName: string;
@@ -770,14 +782,12 @@ export default function ReviewerApplyPage() {
       return;
     }
     if (step === 5) {
-      // Rate step - required (must be a valid tier)
       if (!hourlyRate || hourlyRate.trim() === '') {
-        setError('Please select a price tier to continue');
+        setError('Enter your price per review to continue');
         return;
       }
-      const rateNumber = parseFloat(hourlyRate);
-      if (isNaN(rateNumber) || rateNumber <= 0) {
-        setError('Please select a valid price tier');
+      if (!isValidReviewerRate(hourlyRate)) {
+        setError('Enter a whole-dollar amount of at least $1 (up to $10,000)');
         return;
       }
       setStep(6);
@@ -863,7 +873,7 @@ export default function ReviewerApplyPage() {
         const requestData = {
           bio: '',
           focusAreas: '',
-          hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+          hourlyRate: isValidReviewerRate(hourlyRate) ? parseReviewerRate(hourlyRate) : null,
           avatarUrl: avatarUrl,
           avatarPath: avatarPath,
           socials: [],
@@ -945,82 +955,6 @@ export default function ReviewerApplyPage() {
     }
   };
 
-  // Modern Stepper Component - Mobile optimized
-  const Stepper = () => {
-    const steps = [
-      { id: 1, label: 'Intro', shortLabel: 'Intro', icon: Star },
-      { id: 2, label: 'Account', shortLabel: 'Account', icon: User },
-      { id: 3, label: 'Password', shortLabel: 'Pass', icon: Lock },
-      { id: 4, label: 'Photo', shortLabel: 'Photo', icon: User },
-      { id: 5, label: 'Rate', shortLabel: 'Rate', icon: DollarSign },
-      { id: 6, label: 'Phone', shortLabel: 'Phone', icon: Phone },
-      { id: 7, label: 'Done', shortLabel: 'Done', icon: Check }
-    ];
-
-    // Calculate progress percentage, capping at 100%
-    const lastStepId = Math.max(...steps.map(s => s.id));
-    const progressPercent = Math.min(100, ((step - 1) / (lastStepId - 1)) * 100);
-
-    return (
-      <div className="w-full px-2 py-3 md:px-4 md:py-6 bg-gradient-to-b from-background/50 to-transparent">
-        <div className="flex items-center justify-between relative max-w-5xl mx-auto">
-          {/* Progress line */}
-          <div className="absolute top-3.5 sm:top-4 md:top-6 left-0 right-0 h-0.5 bg-white/10">
-            <div 
-              className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500 ease-out shadow-sm shadow-primary/50"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          
-          {steps.map((stepItem, idx) => {
-            const isCompleted = step > stepItem.id;
-            const isCurrent = step === stepItem.id;
-            const isClickable = step > stepItem.id;
-            const Icon = stepItem.icon;
-            
-            return (
-              <div
-                key={stepItem.id}
-                className="flex min-w-0 flex-col items-center relative z-10 flex-1"
-                onClick={isClickable ? () => setStep(stepItem.id) : undefined}
-                style={{ cursor: isClickable ? 'pointer' : 'default' }}
-              >
-                <div
-                  className={`
-                    w-7 h-7 md:w-12 md:h-12 shrink-0 rounded-full flex items-center justify-center text-sm font-semibold
-                    transition-all duration-300 ease-out
-                    ${isCompleted 
-                      ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/30' 
-                      : isCurrent 
-                        ? 'bg-gradient-to-r from-primary to-secondary text-white shadow-xl shadow-primary/50 scale-110' 
-                        : 'bg-white/10 border border-white/20 text-gray-400'
-                    }
-                  `}
-                >
-                  {isCompleted ? (
-                    <Check className="w-3 h-3 md:w-5 md:h-5" />
-                  ) : (
-                    <Icon className="w-3 h-3 md:w-5 md:h-5" />
-                  )}
-                </div>
-                <span
-                  className={[
-                    'mt-1 md:mt-2 max-w-[4.25rem] sm:max-w-[5rem] text-center text-[10px] md:text-xs font-medium leading-tight hyphens-none',
-                    'line-clamp-2 break-words',
-                    isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-white' : 'text-gray-500',
-                  ].join(' ')}
-                  title={stepItem.label}
-                >
-                  {stepItem.shortLabel}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
   // Show loading state while checking signup status
   if (isCheckingStatus) {
     return (
@@ -1058,7 +992,7 @@ export default function ReviewerApplyPage() {
               <div className="flex gap-3">
                 <Button
                   asChild
-                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white"
+                  className={`w-full ${FUNNEL_PRIMARY_BTN}`}
                 >
                   <a href="/">
                     Back to Home
@@ -1076,7 +1010,12 @@ export default function ReviewerApplyPage() {
     <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-white">
       <FunnelTopBar variant="reviewer-apply" />
       <div className="w-full">
-        <Stepper />
+        <FunnelStepper
+          steps={REVIEWER_FUNNEL_STEPS}
+          currentIndex={Math.max(0, step - 1)}
+          ariaLabel="Reviewer application progress"
+          onStepClick={(idx) => setStep(idx + 1)}
+        />
       </div>
       
       {step === 1 && (
@@ -1102,7 +1041,7 @@ export default function ReviewerApplyPage() {
                       </div>
                       <div className="text-center px-0.5 min-h-[3.5rem] md:min-h-[3.75rem] flex flex-col items-center justify-center">
                         <div className="text-sm md:text-lg font-bold text-white leading-tight">Your rate</div>
-                        <div className="text-xs text-gray-300 leading-snug">$5–$1,000 tiers</div>
+                        <div className="text-xs text-gray-300 leading-snug">You set your price (min $1)</div>
                       </div>
                     </div>
                   </div>
@@ -1137,7 +1076,7 @@ export default function ReviewerApplyPage() {
                 {/* Main CTA */}
                 <Button 
                   size="xl" 
-                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white py-4 md:py-6 text-sm md:text-lg font-bold rounded-2xl shadow-2xl shadow-primary/30 hover:shadow-primary/50 transition-all duration-300 border-2 border-white/10 min-h-[3.25rem]"
+                  className={`w-full ${FUNNEL_PRIMARY_BTN} py-4 md:py-6 text-sm md:text-lg min-h-[3.25rem]`}
                   onClick={() => setStep(2)}
                 >
                   <div className="flex items-center justify-center gap-2 sm:gap-3 px-2 text-center whitespace-nowrap">
@@ -1239,16 +1178,15 @@ export default function ReviewerApplyPage() {
 
                 <div className="flex gap-3">
                   <Button
-                    variant="outline"
                     onClick={() => setStep(1)}
-                    className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+                    className={`flex-1 ${FUNNEL_SECONDARY_BTN}`}
                   >
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back
                   </Button>
                   <Button
                     onClick={() => setStep(4)}
-                    className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white"
+                    className={`flex-1 ${FUNNEL_PRIMARY_BTN}`}
                   >
                     Continue
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -1334,9 +1272,8 @@ export default function ReviewerApplyPage() {
               {/* Actions */}
               <div className="flex gap-3">
                 <Button
-                  variant="outline"
                   onClick={() => setStep(1)}
-                  className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+                  className={`flex-1 ${FUNNEL_SECONDARY_BTN}`}
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
@@ -1344,7 +1281,7 @@ export default function ReviewerApplyPage() {
                 <Button
                   onClick={handleNext}
                   disabled={loading || !email}
-                  className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white"
+                  className={`flex-1 ${FUNNEL_PRIMARY_BTN}`}
                 >
                   {loading ? 'Please wait...' : 'Continue'}
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -1374,16 +1311,15 @@ export default function ReviewerApplyPage() {
 
                 <div className="flex gap-3">
                   <Button
-                    variant="outline"
                     onClick={() => setStep(2)}
-                    className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+                    className={`flex-1 ${FUNNEL_SECONDARY_BTN}`}
                   >
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back
                   </Button>
                   <Button
                     onClick={() => setStep(4)}
-                    className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white"
+                    className={`flex-1 ${FUNNEL_PRIMARY_BTN}`}
                   >
                     Continue
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -1492,9 +1428,8 @@ export default function ReviewerApplyPage() {
               {/* Actions */}
               <div className="flex gap-3">
                 <Button
-                  variant="outline"
                   onClick={() => setStep(2)}
-                  className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+                  className={`flex-1 ${FUNNEL_SECONDARY_BTN}`}
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
@@ -1502,7 +1437,7 @@ export default function ReviewerApplyPage() {
                 <Button
                   onClick={handleNext}
                   disabled={loading || !isPasswordValid || !passwordsMatch}
-                  className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white"
+                  className={`flex-1 ${FUNNEL_PRIMARY_BTN}`}
                 >
                   {loading ? 'Creating...' : 'Continue'}
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -1558,9 +1493,8 @@ export default function ReviewerApplyPage() {
             {/* Actions */}
             <div className="flex gap-3 pt-4">
               <Button
-                variant="outline"
                 onClick={() => setStep(isGoogleAuthed ? 2 : 3)}
-                className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+                className={`flex-1 ${FUNNEL_SECONDARY_BTN}`}
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
@@ -1568,7 +1502,7 @@ export default function ReviewerApplyPage() {
               <Button
                 onClick={handleNext}
                 disabled={!avatarUrl || !avatarPath}
-                className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`flex-1 ${FUNNEL_PRIMARY_BTN} disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 Continue
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -1605,18 +1539,12 @@ export default function ReviewerApplyPage() {
                 <label className="text-sm font-medium text-gray-300 text-center block">
                   Your Rate Per Review
                 </label>
-                <PriceTierSelector
-                  value={hourlyRate}
-                  onChange={setHourlyRate}
-                />
-                <p className="text-xs text-gray-400 text-center">
-                  Select a price tier from the dropdown (e.g., $25, $50, $75, etc.)
-                </p>
+                <ReviewerRateInput value={hourlyRate} onChange={setHourlyRate} />
               </div>
 
               {/* Earnings Calculator */}
-              {hourlyRate && !isNaN(parseFloat(hourlyRate)) && parseFloat(hourlyRate) > 0 && (() => {
-                const rate = parseFloat(hourlyRate);
+              {isValidReviewerRate(hourlyRate) && (() => {
+                const rate = parseReviewerRate(hourlyRate)!;
                 const takeHomeRate = rate * 0.8; // 80% take home
                 const platformFee = rate * 0.2; // 20% platform fee
                 
@@ -1664,7 +1592,7 @@ export default function ReviewerApplyPage() {
               })()}
 
               {/* Default Earnings Info */}
-              {(!hourlyRate || isNaN(parseFloat(hourlyRate)) || parseFloat(hourlyRate) <= 0) && (
+              {!isValidReviewerRate(hourlyRate) && (
                 <div className="bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20 border border-primary/30 rounded-xl p-5">
                   <div className="text-center space-y-2">
                     <p className="text-sm font-semibold text-white">Typical Rate</p>
@@ -1680,16 +1608,15 @@ export default function ReviewerApplyPage() {
             {/* Actions */}
             <div className="flex gap-3 pt-4">
               <Button
-                variant="outline"
                 onClick={() => setStep(4)}
-                className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+                className={`flex-1 ${FUNNEL_SECONDARY_BTN}`}
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
               <Button
                 onClick={handleNext}
-                className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white"
+                className={`flex-1 ${FUNNEL_PRIMARY_BTN}`}
               >
                 Continue
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -1765,9 +1692,8 @@ export default function ReviewerApplyPage() {
             {/* Actions */}
             <div className="flex flex-col gap-3 pt-2">
               <Button
-                variant="outline"
                 onClick={() => setStep(5)}
-                className="w-full bg-transparent border-white/20 text-white hover:bg-white/10"
+                className={FUNNEL_SECONDARY_BTN}
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
@@ -1775,7 +1701,7 @@ export default function ReviewerApplyPage() {
               <Button
                 onClick={handleNext}
                 disabled={loading || !phone || !firstName || !lastName}
-                className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white py-6 text-base font-semibold rounded-xl shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all duration-300"
+                className={`w-full ${FUNNEL_PRIMARY_BTN} py-6 text-base`}
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -1862,7 +1788,7 @@ export default function ReviewerApplyPage() {
               <div className="space-y-4 pt-2">
                 <Button 
                   asChild
-                  className="w-full bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white py-6 text-base font-semibold rounded-xl shadow-lg shadow-primary/30 hover:shadow-primary/50 transition-all duration-300"
+  className={`w-full ${FUNNEL_PRIMARY_BTN} py-6 text-base`}
                 >
                   <a href="/">
                     Back to Home
