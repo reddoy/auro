@@ -78,7 +78,191 @@
   .hover-lift {
     @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg;
   }
+
+  /* Shared header brand mark (ConditionalChrome, FunnelTopBar, AppShell) */
+  .brand-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    text-decoration: none;
+    color: inherit;
+    flex-shrink: 0;
+    border-radius: 0.5rem;
+  }
+
+  .brand-mark:focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+  }
+
+  .brand-mark__img {
+    display: block;
+    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .brand-mark--lg .brand-mark__img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .brand-mark__name {
+    color: #ffffff;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
   
+  /* Landing atmosphere — shared page / hero / section washes */
+  .landing-page {
+    position: relative;
+    background: hsl(var(--background));
+  }
+
+  .landing-atmosphere {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .landing-atmosphere--page {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .landing-atmosphere__wash {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      ellipse 120% 80% at 50% -10%,
+      hsl(var(--primary) / 0.14) 0%,
+      hsl(var(--primary) / 0.06) 40%,
+      transparent 72%
+    );
+  }
+
+  .landing-atmosphere__wash--hero {
+    background: radial-gradient(
+      ellipse 100% 70% at 50% 20%,
+      hsl(var(--primary) / 0.16) 0%,
+      hsl(var(--primary) / 0.07) 45%,
+      transparent 78%
+    );
+  }
+
+  .landing-atmosphere__wash--section {
+    background: radial-gradient(
+      ellipse 90% 60% at 50% 0%,
+      hsl(var(--primary) / 0.06) 0%,
+      transparent 65%
+    );
+  }
+
+  .landing-atmosphere__orb {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, hsl(var(--primary) / 0.22) 0%, hsl(var(--primary) / 0.04) 72%);
+    filter: blur(40px);
+    opacity: 0.65;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .landing-atmosphere__orb--a,
+    .landing-atmosphere__orb--hero-a {
+      animation: float-orb 10s ease-in-out infinite;
+    }
+
+    .landing-atmosphere__orb--b,
+    .landing-atmosphere__orb--hero-b {
+      animation: float-orb 12s ease-in-out infinite;
+      animation-delay: -4s;
+    }
+
+    .landing-atmosphere__orb--c {
+      animation: float-orb 14s ease-in-out infinite;
+      animation-delay: -7s;
+    }
+  }
+
+  .landing-atmosphere__orb--a {
+    width: 280px;
+    height: 280px;
+    top: 8%;
+    left: -8%;
+  }
+
+  .landing-atmosphere__orb--b {
+    width: 200px;
+    height: 200px;
+    top: 35%;
+    right: -6%;
+    opacity: 0.45;
+  }
+
+  .landing-atmosphere__orb--c {
+    width: 240px;
+    height: 240px;
+    bottom: 15%;
+    left: 20%;
+    opacity: 0.35;
+  }
+
+  .landing-atmosphere__orb--hero-a {
+    width: 320px;
+    height: 320px;
+    top: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .landing-atmosphere__orb--hero-b {
+    width: 220px;
+    height: 220px;
+    bottom: 5%;
+    right: 10%;
+    opacity: 0.4;
+  }
+
+  .landing-section {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-accent-phrase {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--primary)) 0%,
+      hsl(28 90% 72%) 45%,
+      hsl(var(--primary)) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 20px hsl(var(--primary) / 0.28));
+  }
+
+  .hero-accent-phrase::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.2em;
+    height: 3px;
+    border-radius: 9999px;
+    background: linear-gradient(
+      90deg,
+      hsl(var(--primary) / 0.75) 0%,
+      hsl(var(--primary)) 50%,
+      hsl(var(--primary) / 0.65) 100%
+    );
+  }
+
   /* Mobile accent wash kept intentionally subtle */
   .mobile-hero-bg {
     background: radial-gradient(ellipse at center, rgba(255, 111, 0, 0.12) 0%, rgba(255, 111, 0, 0.06) 45%, transparent 75%);
@@ -114,8 +298,8 @@
     background: linear-gradient(
       180deg,
       transparent 0%,
-      hsl(var(--background) / 0.15) 55%,
-      hsl(var(--background) / 0.55) 100%
+      hsl(var(--background) / 0.08) 70%,
+      hsl(var(--background) / 0.35) 100%
     );
   }
 
@@ -159,7 +343,7 @@
   }
 
   .mobile-iphone-frame--hero {
-    max-height: min(52vh, 420px);
+    max-height: min(48vh, 400px);
     height: min(420px, calc((100vw - 48px) * 1.85));
   }
 
@@ -184,41 +368,23 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
     padding: 0.75rem max(1rem, env(safe-area-inset-right)) max(0.75rem, env(safe-area-inset-bottom))
       max(1rem, env(safe-area-inset-left));
-    background: linear-gradient(to top, hsl(var(--background) / 0.98) 0%, hsl(var(--background) / 0.9) 65%, transparent 100%);
+    background: linear-gradient(
+      to top,
+      hsl(var(--background) / 0.97) 0%,
+      hsl(var(--background) / 0.75) 35%,
+      hsl(var(--background) / 0.25) 70%,
+      transparent 100%
+    );
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
 
-  .mobile-hero-sticky-primary {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .mobile-hero-sticky-cta .landing-ctas {
     width: 100%;
     max-width: 320px;
-    min-height: 48px;
-    padding: 0.875rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    color: hsl(var(--primary-foreground));
-    background: hsl(var(--primary));
-    border-radius: 0.75rem;
-    text-decoration: none;
-    box-shadow: 0 10px 28px -6px hsl(var(--primary) / 0.45);
-  }
-
-  .mobile-hero-sticky-secondary {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.75);
-    text-decoration: none;
-    padding: 0.25rem 0.5rem;
-  }
-
-  .mobile-hero-sticky-secondary:hover {
-    color: rgba(255, 255, 255, 0.95);
+    gap: 0.75rem;
   }
   
   .mobile-iphone-container {
@@ -229,35 +395,40 @@
     padding: 0 20px;
   }
   
-  .mobile-iphone-glow {
+  .mobile-iphone-glow,
+  .landing-phone-glow {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 130%;
-    height: 130%;
+    width: 140%;
+    height: 120%;
     background: radial-gradient(
-      circle,
-      hsl(var(--primary) / 0.28) 0%,
-      hsl(var(--primary) / 0.1) 45%,
-      transparent 75%
+      ellipse at center,
+      hsl(var(--primary) / 0.22) 0%,
+      hsl(var(--primary) / 0.1) 35%,
+      hsl(var(--primary) / 0.04) 55%,
+      transparent 85%
     );
-    border-radius: 40px;
-    filter: blur(24px);
+    border-radius: 50%;
+    filter: blur(32px);
     z-index: -1;
+    pointer-events: none;
   }
   
-  .mobile-iphone-shadow {
+  .mobile-iphone-shadow,
+  .landing-phone-shadow {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 105%;
-    height: 105%;
-    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
-    border-radius: 35px;
-    filter: blur(12px);
+    width: 110%;
+    height: 110%;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.25) 100%);
+    border-radius: 50%;
+    filter: blur(16px);
     z-index: -2;
+    pointer-events: none;
   }
   
   .mobile-text-reveal {
@@ -1156,16 +1327,22 @@ body {
     gap: 16px;
   }
 
-  .brand {
-    gap: 8px;
+  .brand-mark {
+    gap: 0.5rem;
   }
 
-  .brand__name {
-    font-size: 20px;
+  .brand-mark__name {
+    font-size: 1rem;
   }
 
-  .brand img {
-    height: 32px;
+  .brand-mark--md .brand-mark__img {
+    width: 36px;
+    height: 36px;
+  }
+
+  .brand-mark--lg .brand-mark__img {
+    width: 44px;
+    height: 44px;
   }
 
   .nav-cta-group {
@@ -1213,8 +1390,8 @@ body {
 
 /* Ensure brand text is visible on all mobile sizes */
 @media (max-width: 500px) {
-  .brand__name {
-    font-size: 16px;
+  .brand-mark__name {
+    font-size: 0.9375rem;
     white-space: nowrap;
   }
 }
@@ -1232,8 +1409,8 @@ body {
     gap: 12px;
   }
 
-  .brand__name {
-    font-size: 14px; /* Keep text visible but smaller on very small screens */
+  .brand-mark__name {
+    font-size: 0.875rem;
     white-space: nowrap;
   }
 
@@ -3816,7 +3993,7 @@ footer {
 
   /* Homepage: single compact header row (logo + Sign In); hero holds primary CTAs */
   body.marketing-home {
-    --nav-h: 70px;
+    --nav-h: 76px;
   }
 
   .nav.nav--home .nav-content {

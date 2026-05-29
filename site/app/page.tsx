@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useRef, Suspense } from 'react';
+import { useRef, Suspense } from 'react';
 import { Button } from '../components/ui/button';
 import LandingCTAs from '../components/LandingCTAs';
 import MobileHero from '../components/landing/MobileHero';
+import LandingAtmosphere from '../components/landing/LandingAtmosphere';
+import HeroAccentPhrase from '../components/landing/HeroAccentPhrase';
 import { LANDING_CTA_PRIMARY } from '../components/landing-cta-styles';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -14,51 +16,18 @@ export const dynamic = 'force-dynamic';
 
 function HomePageContent() {
   const desktopVideoRef = useRef<HTMLVideoElement>(null);
-  const desktopOverlayRef = useRef<HTMLAnchorElement>(null);
-
-  // Video handling for desktop
-  useEffect(() => {
-    const video = desktopVideoRef.current;
-    const overlay = desktopOverlayRef.current;
-
-    if (!video || !overlay) return;
-
-    const handleVideoEnd = () => {
-      overlay.style.opacity = '1';
-      overlay.style.pointerEvents = 'auto';
-      setTimeout(() => {
-        overlay.style.opacity = '0';
-        overlay.style.pointerEvents = 'none';
-        video.currentTime = 0;
-        video.play();
-      }, 5000);
-    };
-
-    const handleVideoClick = (e: MouseEvent) => {
-      // Only toggle mute if clicking video, not overlay
-      if (e.target === video) {
-        video.muted = !video.muted;
-      }
-    };
-
-    video.addEventListener('ended', handleVideoEnd);
-    video.addEventListener('click', handleVideoClick);
-    return () => {
-      video.removeEventListener('ended', handleVideoEnd);
-      video.removeEventListener('click', handleVideoClick);
-    };
-  }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground mobile-smooth-scroll">
+    <div className="landing-page min-h-screen text-foreground mobile-smooth-scroll">
+      <LandingAtmosphere variant="page" />
+      <div className="relative z-10">
       {/* Hero Section */}
       <section
         className="relative min-h-screen overflow-x-hidden overflow-y-visible pt-16 lg:overflow-hidden lg:pt-0"
         role="banner"
         aria-label="Hero section"
       >
-        {/* Clean Background */}
-        <div className="absolute inset-0 bg-background" />
+        <LandingAtmosphere variant="hero" />
         
         <MobileHero />
         
@@ -73,8 +42,7 @@ function HomePageContent() {
                 <div className="space-y-6">
                   <h1 className="max-w-2xl hyphens-none text-pretty text-4xl font-bold leading-tight tracking-[-0.02em] text-white sm:text-5xl sm:leading-tight xl:text-[2.75rem] xl:leading-tight 2xl:text-5xl 2xl:leading-tight">
                     <span className="[text-wrap:balance]">
-                      Get dating profile feedback{' '}
-                      <span className="text-white/95">from real women</span>
+                      Get dating profile feedback <HeroAccentPhrase />
                     </span>
                   </h1>
 
@@ -104,6 +72,8 @@ function HomePageContent() {
               {/* Right Content - Desktop iPhone Video */}
               <div className="relative animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
                 <div className="relative">
+                  <div className="landing-phone-glow" />
+                  <div className="landing-phone-shadow" />
                   <div className="desktop-iphone-frame">
                     <video 
                       ref={desktopVideoRef}
@@ -112,18 +82,13 @@ function HomePageContent() {
                       autoPlay 
                       playsInline
                       muted
+                      loop
+                      onClick={() => {
+                        const video = desktopVideoRef.current;
+                        if (video) video.muted = !video.muted;
+                      }}
                       aria-label="Demo video showing how a sample review works"
                     />
-                    <a
-                      ref={desktopOverlayRef}
-                      href="/reviewers/apply"
-                      className="desktop-iphone-overlay"
-                    >
-                      <div className="overlay-content">
-                        <h3>Watch a full example review</h3>
-                        <p>Real feedback on photos and prompts</p>
-                      </div>
-                    </a>
                   </div>
                   
                   {/* Floating Benefit Callouts */}
@@ -148,8 +113,9 @@ function HomePageContent() {
       </section>
 
       {/* Why Auro is different */}
-      <section className="bg-background py-16 lg:py-24">
-        <div className="container mx-auto px-4">
+      <section className="landing-section py-16 lg:py-24">
+        <LandingAtmosphere variant="section" />
+        <div className="container relative z-10 mx-auto px-4">
           <div className="max-w-5xl mx-auto space-y-12">
             <div className="text-center space-y-4">
               <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
@@ -168,7 +134,9 @@ function HomePageContent() {
                       <Heart className="w-6 h-6 text-rose-400" aria-hidden />
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-lg font-semibold text-white">Women you&apos;d actually date</h3>
+                      <h3 className="text-lg font-semibold text-white">
+                        <HeroAccentPhrase>Women</HeroAccentPhrase> you&apos;d actually date
+                      </h3>
                       <p className="text-base leading-relaxed text-white/75">
                         Not coaches—the women you&apos;re trying to impress. Their take is the one that matters.
                       </p>
@@ -230,8 +198,9 @@ function HomePageContent() {
       </section>
 
       {/* Review request entry */}
-      <section className="bg-background py-16 lg:py-24">
-        <div className="container mx-auto px-4">
+      <section className="landing-section py-16 lg:py-24">
+        <LandingAtmosphere variant="section" />
+        <div className="container relative z-10 mx-auto px-4">
           <div className="max-w-5xl mx-auto">
             <Card className="border-white/20 bg-white/5 backdrop-blur-sm">
               <CardContent className="p-8 md:p-10">
@@ -263,8 +232,9 @@ function HomePageContent() {
       </section>
 
       {/* Payouts — one clear mention; details also in reviewer flow */}
-      <section id="platform-economics" className="bg-background py-16 lg:py-24">
-        <div className="container mx-auto px-4">
+      <section id="platform-economics" className="landing-section py-16 lg:py-24">
+        <LandingAtmosphere variant="section" />
+        <div className="container relative z-10 mx-auto px-4">
           <div className="max-w-2xl mx-auto text-center space-y-6">
             <Badge variant="gradient" className="text-sm px-4 py-2 font-semibold">
               REVIEW REQUESTS — LIVE
@@ -280,8 +250,9 @@ function HomePageContent() {
       </section>
 
       {/* How It Works Section */}
-      <section className="bg-background py-16 lg:py-24">
-        <div className="container mx-auto px-4">
+      <section className="landing-section py-16 lg:py-24">
+        <LandingAtmosphere variant="section" />
+        <div className="container relative z-10 mx-auto px-4">
           <div className="text-center space-y-16">
             <div className="space-y-4">
               <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">How it works for reviewers</h2>
@@ -385,8 +356,9 @@ function HomePageContent() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="bg-background py-16 lg:py-24">
-        <div className="container mx-auto px-4">
+      <section className="landing-section py-16 lg:py-24">
+        <LandingAtmosphere variant="section" />
+        <div className="container relative z-10 mx-auto px-4">
           <div className="text-center space-y-16">
             <div className="space-y-4">
               <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">What people are saying</h2>
@@ -463,8 +435,9 @@ function HomePageContent() {
       </section>
 
       {/* Founder Section */}
-      <section className="bg-background py-16 lg:py-24">
-        <div className="container mx-auto px-4">
+      <section className="landing-section py-16 lg:py-24">
+        <LandingAtmosphere variant="section" />
+        <div className="container relative z-10 mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-10">
             <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Why I built Auro</h2>
             
@@ -478,7 +451,7 @@ function HomePageContent() {
                   width={160}
                   height={160}
                 />
-          </div>
+              </div>
           
               <div className="space-y-5 text-left">
                 <p className="text-xl leading-relaxed text-white/90">
@@ -494,9 +467,10 @@ function HomePageContent() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="relative overflow-hidden bg-background py-16 lg:py-24">
+      <section className="landing-section relative overflow-hidden py-16 lg:py-24">
+        <LandingAtmosphere variant="section" />
         
-        <div className="container mx-auto px-6 sm:px-4 relative z-10">
+        <div className="container relative z-10 mx-auto px-6 sm:px-4">
           <div className="max-w-4xl mx-auto text-center space-y-10">
             <div className="space-y-6">
               <h2
@@ -533,6 +507,7 @@ function HomePageContent() {
           </div>
         </div>
       </section>
+      </div>
 
       {/* iPhone Frame Styles */}
       <style jsx>{`

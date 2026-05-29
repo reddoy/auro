@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useLayoutEffect, useRef } from 'react';
+import BrandMark from './BrandMark';
 
 export type FunnelTopBarVariant = 'request' | 'reviewer-apply';
 
@@ -44,33 +45,13 @@ export default function FunnelTopBar({ variant }: Props) {
         {/* Mobile: logo-only row */}
         <div className="sm:hidden">
           <div className="flex items-center">
-            <Link
-              href="/"
-              className="flex min-w-0 items-center gap-2.5 shrink-0 text-white no-underline rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-              aria-label="Auro Home"
-            >
-              <img
-                src="/auro_aura_logo.png"
-                alt=""
-                width={34}
-                height={34}
-                className="rounded-[11px]"
-              />
-              <span className="font-semibold text-[15px] tracking-tight">Auro</span>
-            </Link>
+            <BrandMark size="md" />
           </div>
         </div>
 
         {/* Desktop: keep existing layout, but avoid odd wraps */}
         <div className="hidden sm:flex items-center justify-between gap-6">
-          <Link
-            href="/"
-            className="flex min-w-0 items-center gap-2.5 shrink-0 text-white no-underline rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-            aria-label="Auro Home"
-          >
-            <img src="/auro_aura_logo.png" alt="" width={36} height={36} className="rounded-[11px]" />
-            <span className="font-semibold text-[15px] tracking-tight">Auro</span>
-          </Link>
+          <BrandMark size="md" />
 
           <div className="flex min-w-0 items-center justify-end gap-5 text-sm">
             {variant === 'reviewer-apply' ? (

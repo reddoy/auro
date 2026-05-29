@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import ConditionalNav from './ConditionalNav';
+import BrandMark from './BrandMark';
 
 type Props = {
   children: React.ReactNode;
@@ -36,16 +37,10 @@ export default function ConditionalChrome({ children }: Props) {
       <header className={`nav${isMarketingHome ? ' nav--home' : ''}`}>
         <div className="container">
           <div className="nav-content">
-            <a href="/" className="brand mobile-brand-centered" aria-label="Auro Home">
-              <img
-                src="/auro_aura_logo.png"
-                alt="Auro logo"
-                width={40}
-                height={40}
-                style={{ borderRadius: 12 }}
-              />
-              <span className="brand__name">Auro</span>
-            </a>
+            <BrandMark
+              size={isMarketingHome ? 'lg' : 'md'}
+              className="mobile-brand-centered"
+            />
             <nav className="nav-cta-section">
               <ConditionalNav />
             </nav>
