@@ -250,9 +250,13 @@ export async function POST(req: Request) {
     }
     
     // Store contact/marketing consent in preferences JSON
+    const normalizedPhone =
+      typeof phone === 'string' && phone.replace(/\D/g, '').length >= 10 ? phone.trim() : null;
     const nextPreferences: Record<string, unknown> = {
       marketing_consent: !!marketingConsent,
-      phone: phone || null,
+      phone: normalizedPhone,
+      email_notifications: true,
+      sms_notifications: !!normalizedPhone,
     };
     if (
       reviewerAcknowledgments &&

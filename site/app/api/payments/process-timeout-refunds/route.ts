@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { sendOpsAlert } from "@/lib/ops/alerts";
+import { notifyUser } from "@/lib/notifications/notify-user";
 
 type TimeoutOptions = {
   processAll?: boolean;
@@ -70,6 +71,7 @@ async function processTimeoutRefunds(options: TimeoutOptions, triggeredByCron: b
         `
         id,
         user_id,
+        influencer_id,
         amount_cents,
         stripe_payment_intent_id,
         refund_status,
@@ -156,6 +158,25 @@ async function processTimeoutRefunds(options: TimeoutOptions, triggeredByCron: b
         } else {
           results.successful++;
           console.log(`[timeout-refunds] Successfully processed refund for request ${request.id}`);
+
+          const revieweeId = (request as { user_id?: string }).user_id;
+          const reviewerId = (request as { influencer_id?: string }).influencer_id;
+          if (revieweeId) {
+            notifyUser(admin, {
+              userId: revieweeId,
+              type: 'timeout_refund_reviewee',
+              entityId: request.id,
+              data: { requestId: request.id },
+            }).catch((err) => console.error('[timeout-refunds] reviewee notify failed', err));
+          }
+          if (reviewerId) {
+            notifyUser(admin, {
+              userId: reviewerId,
+              type: 'timeout_refund_reviewer',
+              entityId: request.id,
+              data: { requestId: request.id },
+            }).catch((err) => console.error('[timeout-refunds] reviewer notify failed', err));
+          }
         }
 
         await new Promise((resolve) => setTimeout(resolve, 100));

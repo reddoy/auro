@@ -61,7 +61,28 @@ export default function AuthStep({
   const [awaitingEmailConfirmation, setAwaitingEmailConfirmation] = useState(false);
   /** Shown after failed password sign-in — often means email not confirmed yet. */
   const [showConfirmEmailHint, setShowConfirmEmailHint] = useState(false);
-  // SMS 2FA removed
+  const [phone, setPhone] = useState('');
+  const [smsOptIn, setSmsOptIn] = useState(true);
+
+  const persistNotificationPreferences = async (accessToken: string) => {
+    if (!phone.trim() && !smsOptIn) return;
+    try {
+      await fetch('/api/profile/notification-preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          phone: phone.trim() || null,
+          sms_notifications: smsOptIn && !!phone.trim(),
+          email_notifications: true,
+        }),
+      });
+    } catch (err) {
+      console.warn('[AuthStep] Failed to save notification preferences', err);
+    }
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -212,6 +233,10 @@ export default function AuthStep({
           } catch {}
           clearSignupDraftKeys();
           setPassword('');
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData.session?.access_token) {
+            await persistNotificationPreferences(sessionData.session.access_token);
+          }
           onNext();
         } else {
           // Typical production: confirm email before a session exists — do not redirect to /app
@@ -309,6 +334,10 @@ export default function AuthStep({
         } catch {}
         clearSignupDraftKeys();
         setPassword('');
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData.session?.access_token) {
+          await persistNotificationPreferences(sessionData.session.access_token);
+        }
         onNext();
       } else {
         setError('Sign-in did not complete. Please try again.');
@@ -690,6 +719,39 @@ export default function AuthStep({
                   </span>
                 )}
               </div>
+
+              {isSignUp && (
+                <>
+                  <div className="form-field">
+                    <label htmlFor="phone">Mobile number (optional)</label>
+                    <input
+                      id="phone"
+                      name="tel"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+1 (555) 123-4567"
+                      autoComplete="tel"
+                    />
+                  </div>
+                  <label className="flex items-start gap-2 text-sm text-gray-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={smsOptIn}
+                      onChange={(e) => setSmsOptIn(e.target.checked)}
+                      disabled={!phone.trim()}
+                      className="mt-1"
+                    />
+                    <span>
+                      Text me when my review is ready and for order updates. Message and data rates may apply. See our{' '}
+                      <a href="/privacy" className="text-[#F26955] underline" target="_blank" rel="noopener noreferrer">
+                        Privacy Policy
+                      </a>
+                      .
+                    </span>
+                  </label>
+                </>
+              )}
 
               <button 
                 type="button"

@@ -188,6 +188,9 @@ export interface ProfileLinks {
 export interface ProfilePreferences {
   email_notifications?: boolean;
   push_notifications?: boolean;
+  sms_notifications?: boolean;
+  phone?: string | null;
+  marketing_consent?: boolean;
   onboarding_role?: 'reviewer' | 'reviewee';
   onboarding_step?: string | null;
   onboarding_completed?: boolean;

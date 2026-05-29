@@ -2,12 +2,15 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 import { processRefund } from '@/lib/refund-server';
 import { INTERNAL_AURO_HEADER, getInternalJobSecret } from '@/lib/internal-fetch-secret';
+import { notifyUser } from '@/lib/notifications/notify-user';
+import { getRequestNotificationContext } from '@/lib/notifications/request-context';
+import { sendOpsAlert } from '@/lib/ops/alerts';
 
 function serverOrigin(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL;
   if (explicit) return explicit.replace(/\/$/, '');
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return 'https://appauro.com';
+  return 'https://www.appauro.com';
 }
 
 function mapRequestRow(row: Record<string, unknown>) {
@@ -107,6 +110,24 @@ export async function serverAcceptReviewRequest(
     if (!refetched.data) throw new Error('Request not found after update');
     return mapRequestRow(refetched.data as Record<string, unknown>);
   }
+
+  const accepted = data as { user_id?: string; influencer_id?: string };
+  if (accepted.user_id && accepted.user_id !== accepted.influencer_id) {
+    const ctx = await getRequestNotificationContext(admin, requestId);
+    notifyUser(admin, {
+      userId: accepted.user_id,
+      type: 'request_accepted_reviewee',
+      entityId: requestId,
+      data: ctx
+        ? {
+            requestId,
+            reviewerName: ctx.reviewerName,
+            revieweeName: ctx.revieweeName,
+          }
+        : { requestId },
+    }).catch((err) => console.error('[serverAcceptReviewRequest] notify failed', err));
+  }
+
   return mapRequestRow(data as Record<string, unknown>);
 }
 
@@ -157,6 +178,11 @@ export async function serverDenyReviewRequest(admin: SupabaseClient, actorUserId
             refund_reason: `reviewer_denied: ${result.error}`,
           })
           .eq('id', requestId);
+        await sendOpsAlert('[Refund] Reviewer decline refund failed', {
+          requestId,
+          error: result.error,
+          errorType: result.errorType,
+        });
       }
     } catch (e) {
       console.error('[serverDenyReviewRequest] refund error', e);
@@ -167,23 +193,17 @@ export async function serverDenyReviewRequest(admin: SupabaseClient, actorUserId
     );
   }
 
-  // Notify the reviewee that their request was declined and refund is processing.
   const recipientId = (row as { user_id?: string }).user_id;
   if (recipientId && recipientId !== actorUserId) {
-    try {
-      await fetch(`${serverOrigin()}/api/notifications/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', [INTERNAL_AURO_HEADER]: getInternalJobSecret() },
-        body: JSON.stringify({
-          userId: recipientId,
-          title: 'Request declined',
-          body: 'Your reviewer declined this request. Your refund is processing and should appear on your card within a few business days.',
-          data: { type: 'review_declined', requestId },
-        }),
-      }).catch((err) => console.error('[serverDenyReviewRequest] notification failed', err));
-    } catch (e) {
-      console.error('[serverDenyReviewRequest] notification error', e);
-    }
+    const ctx = await getRequestNotificationContext(admin, requestId);
+    notifyUser(admin, {
+      userId: recipientId,
+      type: 'request_declined_reviewee',
+      entityId: requestId,
+      data: ctx
+        ? { requestId, reviewerName: ctx.reviewerName, revieweeName: ctx.revieweeName }
+        : { requestId },
+    }).catch((err) => console.error('[serverDenyReviewRequest] notify failed', err));
   }
 
   if (!updated) {
@@ -261,22 +281,16 @@ export async function serverSubmitReviewRequest(
 
   const row = data as { influencer_id?: string; user_id?: string };
 
-  // Notify the reviewee that their video review is ready to watch.
   if (row.user_id && row.user_id !== row.influencer_id) {
-    try {
-      await fetch(`${serverOrigin()}/api/notifications/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', [INTERNAL_AURO_HEADER]: getInternalJobSecret() },
-        body: JSON.stringify({
-          userId: row.user_id,
-          title: 'Your review is ready',
-          body: 'Your reviewer just submitted your video review. Tap to watch it.',
-          data: { type: 'review_completed', requestId },
-        }),
-      }).catch((err) => console.error('[serverSubmitReviewRequest] notification failed', err));
-    } catch (e) {
-      console.error('[serverSubmitReviewRequest] notification error', e);
-    }
+    const ctx = await getRequestNotificationContext(admin, requestId);
+    notifyUser(admin, {
+      userId: row.user_id,
+      type: 'review_completed_reviewee',
+      entityId: requestId,
+      data: ctx
+        ? { requestId, reviewerName: ctx.reviewerName, revieweeName: ctx.revieweeName }
+        : { requestId },
+    }).catch((err) => console.error('[serverSubmitReviewRequest] notify failed', err));
   }
 
   try {

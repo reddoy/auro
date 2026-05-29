@@ -64,6 +64,7 @@ export async function processRefund(
         amount_cents,
         stripe_payment_intent_id,
         stripe_session_id,
+        stripe_connect_account_id,
         refunded_amount_cents,
         refund_status,
         refund_reason,
@@ -151,7 +152,25 @@ export async function processRefund(
     }
   }
 
-  const paymentIntentId = request.stripe_payment_intent_id;
+  let paymentIntentId = request.stripe_payment_intent_id as string | null;
+  if (!paymentIntentId && request.stripe_session_id) {
+    try {
+      const session = await stripe.checkout.sessions.retrieve(request.stripe_session_id as string);
+      paymentIntentId =
+        typeof session.payment_intent === 'string'
+          ? session.payment_intent
+          : (session.payment_intent as { id?: string } | null)?.id ?? null;
+      if (paymentIntentId) {
+        await admin
+          .from('requests')
+          .update({ stripe_payment_intent_id: paymentIntentId })
+          .eq('id', requestId);
+      }
+    } catch (sessionErr) {
+      console.warn('[processRefund] Could not recover payment intent from session:', sessionErr);
+    }
+  }
+
   if (!paymentIntentId) {
     return {
       ok: false,
@@ -214,8 +233,13 @@ export async function processRefund(
     };
     updateData.payment_status = 'refunded';
     if (isFullyRefunded) {
-      // Keep terminal UX statuses; only move active payment states to refunded.
-      if (request.status === 'paid' || request.status === 'in_progress' || request.status === 'timeout') {
+      // Keep terminal UX statuses (rejected/completed); move active payment states to refunded.
+      if (
+        request.status === 'paid' ||
+        request.status === 'in_progress' ||
+        request.status === 'timeout' ||
+        request.status === 'accepted'
+      ) {
         updateData.status = 'refunded';
       }
     }

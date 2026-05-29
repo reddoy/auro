@@ -35,9 +35,19 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env.vercel.*
+
+# local E2E / test artifacts (may contain credentials)
+test_accounts.txt
+test_dating_photo.png
+test_review_video.mp4
+
+# supabase CLI temp
+supabase/.temp/
 
 # typescript
 *.tsbuildinfo
 
 # Next.js build output (never commit)
 site/.next/
+.vercel

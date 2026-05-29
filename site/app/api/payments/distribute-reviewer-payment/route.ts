@@ -2,6 +2,7 @@ import Stripe from 'stripe';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { requireAdmin } from '@/lib/admin-server';
 import { isTrustedInternalRequest } from '@/lib/internal-fetch-secret';
+import { notifyUser } from '@/lib/notifications/notify-user';
 
 const REVIEWER_SHARE_BPS = 8000;
 const MAX_RETRIES = 3;
@@ -510,6 +511,19 @@ export async function POST(req: Request) {
       },
       'SUCCESS'
     );
+
+    const reviewerUserId = (request as { influencer_id?: string }).influencer_id;
+    if (reviewerUserId) {
+      notifyUser(admin, {
+        userId: reviewerUserId,
+        type: 'payout_sent_reviewer',
+        entityId: requestId,
+        data: {
+          requestId,
+          amount: `$${(reviewerAmount / 100).toFixed(2)}`,
+        },
+      }).catch((err) => console.error('[distribute-reviewer-payment] notify failed', err));
+    }
 
     return new Response(
       JSON.stringify({

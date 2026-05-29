@@ -1,65 +1,50 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-
-const EXPO_PUSH_API_URL = 'https://exp.host/--/api/v2/push/send';
+import { notifyUser } from '@/lib/notifications/notify-user';
+import { getRequestNotificationContext } from '@/lib/notifications/request-context';
 
 /**
- * Notify an approved reviewer that a paid review request is ready to accept or decline.
+ * Notify reviewer (new paid request) and reviewee (payment receipt) after checkout payment.
  */
 export async function notifyReviewerOfPaidRequest(
   admin: SupabaseClient,
   requestId: string
 ): Promise<void> {
   try {
-    const { data: requestData } = await admin
-      .from('requests')
-      .select('influencer_id, user_id, status')
-      .eq('id', requestId)
-      .maybeSingle();
-
-    if (!requestData || (requestData as { status?: string }).status !== 'paid') {
-      return;
-    }
-
-    const reviewerId = (requestData as { influencer_id?: string }).influencer_id;
-    const revieweeId = (requestData as { user_id?: string }).user_id;
-
-    if (!reviewerId || !revieweeId || reviewerId === revieweeId) {
+    const ctx = await getRequestNotificationContext(admin, requestId);
+    if (!ctx?.reviewerId || !ctx.revieweeId || ctx.reviewerId === ctx.revieweeId) {
       return;
     }
 
     const { data: reviewerProfile } = await admin
       .from('profiles')
-      .select('push_token, is_reviewer, id')
-      .eq('id', reviewerId)
+      .select('is_reviewer')
+      .eq('id', ctx.reviewerId)
       .maybeSingle();
 
-    if (
-      !reviewerProfile?.push_token ||
-      reviewerProfile.id !== reviewerId ||
-      reviewerProfile.is_reviewer !== 'approved'
-    ) {
+    if ((reviewerProfile as { is_reviewer?: string } | null)?.is_reviewer !== 'approved') {
       return;
     }
 
-    await fetch(EXPO_PUSH_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'Accept-Encoding': 'gzip, deflate',
-      },
-      body: JSON.stringify({
-        to: reviewerProfile.push_token,
-        sound: 'default',
-        title: 'New paid review request',
-        body: 'Payment received — accept to start or decline for a refund.',
-        data: {
-          type: 'new_request',
-          requestId,
-        },
-        priority: 'high',
-      }),
-    }).catch((err) => console.error('[notifyReviewerOfPaidRequest] push failed', err));
+    const data = {
+      requestId,
+      reviewerName: ctx.reviewerName,
+      revieweeName: ctx.revieweeName,
+      amount: ctx.amountLabel ?? undefined,
+    };
+
+    await notifyUser(admin, {
+      userId: ctx.reviewerId,
+      type: 'request_paid_reviewer',
+      entityId: requestId,
+      data,
+    });
+
+    await notifyUser(admin, {
+      userId: ctx.revieweeId,
+      type: 'payment_receipt_reviewee',
+      entityId: `${requestId}:receipt`,
+      data,
+    });
   } catch (e) {
     console.error('[notifyReviewerOfPaidRequest] error', e);
   }

@@ -12,7 +12,6 @@ import {
   getRequestById,
   getReviewerReviewByRequestId,
   markReviewAsViewed,
-  submitReviewerReview,
   type ReviewerReview,
 } from '@/lib/api';
 import { APP_INBOX_QUERY_KEY } from '@/hooks/useAppInboxQuery';
@@ -123,12 +122,25 @@ export default function ReviewRequestClient({ id }: { id: string }) {
     setSubmittingRating(true);
     try {
       const trimmed = comment.trim();
-      const result = await submitReviewerReview({
-        requestId: request.id,
-        rating,
-        comment: trimmed ? trimmed : undefined,
+      const { supabase: sb } = await import('@/lib/supabase');
+      const { data: sessionData } = await sb.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error('Not signed in');
+      const res = await fetch('/api/reviews/submit-reviewer-rating', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          requestId: request.id,
+          rating,
+          comment: trimmed || undefined,
+        }),
       });
-      setReviewerReview(result);
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || 'Could not submit rating');
+      setReviewerReview(body.review);
       showToast('Thanks for rating your reviewer');
       // Refresh inbox so the 'Rate your reviewer' pill clears from the list.
       void queryClient.invalidateQueries({ queryKey: APP_INBOX_QUERY_KEY });

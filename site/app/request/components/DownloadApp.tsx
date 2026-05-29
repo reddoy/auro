@@ -77,7 +77,7 @@ The Auro Team`);
               <div className="timeline-step">4</div>
               <div className="timeline-content">
                 <strong>Notification</strong>
-                <p>You'll be notified via email and app when your review is ready</p>
+                <p>You&apos;ll be notified by email and text when your review is ready</p>
               </div>
             </div>
           </div>

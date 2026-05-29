@@ -1,4 +1,5 @@
 import { requireAdmin } from '@/lib/admin-server';
+import { notifyUser } from '@/lib/notifications/notify-user';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,6 +67,13 @@ export async function POST(req: Request) {
       headers: { 'Content-Type': 'application/json' },
     });
   }
+
+  notifyUser(gate.admin, {
+    userId,
+    type: 'reviewer_application_decision',
+    entityId: `${userId}:${nextStatus}`,
+    data: { decision: nextStatus },
+  }).catch((err) => console.error('[admin/reviewers/decision] notify failed', err));
 
   return new Response(JSON.stringify({ ok: true, userId, is_reviewer: nextStatus }), {
     status: 200,

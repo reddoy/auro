@@ -3,57 +3,23 @@
 import { useEffect, useRef, Suspense } from 'react';
 import { Button } from '../components/ui/button';
 import LandingCTAs from '../components/LandingCTAs';
+import MobileHero from '../components/landing/MobileHero';
 import { LANDING_CTA_PRIMARY } from '../components/landing-cta-styles';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { ArrowRight, Sparkles, DollarSign, Clock, TrendingUp, CheckCircle, Heart, Globe, Users, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Sparkles, DollarSign, Clock, TrendingUp, CheckCircle, Heart, Users, ShieldCheck } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 function HomePageContent() {
   const desktopVideoRef = useRef<HTMLVideoElement>(null);
   const desktopOverlayRef = useRef<HTMLAnchorElement>(null);
-  const mobileVideoRef = useRef<HTMLVideoElement>(null);
-  const mobileOverlayRef = useRef<HTMLAnchorElement>(null);
 
   // Video handling for desktop
   useEffect(() => {
     const video = desktopVideoRef.current;
     const overlay = desktopOverlayRef.current;
-
-    if (!video || !overlay) return;
-
-    const handleVideoEnd = () => {
-      overlay.style.opacity = '1';
-      overlay.style.pointerEvents = 'auto';
-      setTimeout(() => {
-        overlay.style.opacity = '0';
-        overlay.style.pointerEvents = 'none';
-        video.currentTime = 0;
-        video.play();
-      }, 5000);
-    };
-
-    const handleVideoClick = (e: MouseEvent) => {
-      // Only toggle mute if clicking video, not overlay
-      if (e.target === video) {
-        video.muted = !video.muted;
-      }
-    };
-
-    video.addEventListener('ended', handleVideoEnd);
-    video.addEventListener('click', handleVideoClick);
-    return () => {
-      video.removeEventListener('ended', handleVideoEnd);
-      video.removeEventListener('click', handleVideoClick);
-    };
-  }, []);
-
-  // Video handling for mobile
-  useEffect(() => {
-    const video = mobileVideoRef.current;
-    const overlay = mobileOverlayRef.current;
 
     if (!video || !overlay) return;
 
@@ -94,112 +60,7 @@ function HomePageContent() {
         {/* Clean Background */}
         <div className="absolute inset-0 bg-background" />
         
-        {/* Mobile Background Gradient */}
-        <div className="absolute inset-0 bg-background/95 lg:hidden" />
-        
-        
-        {/* Hero Content - Mobile Only */}
-        <div className="container mx-auto px-4 relative z-10 pt-8 pb-14 sm:pt-10 lg:hidden">
-          <div className="text-center space-y-7 mobile-hero-content w-full sm:space-y-8">
-              {/* Removed redundant badge to save space and reduce clutter */}
-              
-              {/* Headline + sub: generous leading so descenders never collide; CTAs before checklist to match desktop rhythm */}
-              <div className="space-y-6">
-                <h1
-                  className="text-3xl font-bold leading-tight text-center tracking-[-0.02em] text-white [text-wrap:balance] hyphens-none max-w-lg px-3 mobile-text-reveal min-[400px]:text-4xl sm:text-5xl sm:leading-tight"
-                  style={{ animationDelay: '0.4s' }}
-                >
-                  <span className="[text-wrap:balance]">
-                    Get dating profile feedback{' '}
-                    <span className="text-white/95">from real women</span>
-                  </span>
-                </h1>
-
-                <p
-                  className="mx-auto max-w-lg px-4 text-lg font-medium leading-relaxed text-white/85 mobile-text-reveal text-pretty sm:text-xl"
-                  style={{ animationDelay: '1s' }}
-                >
-                  Real feedback from women you'd actually want to date — not a coaching service. Web-only, no app to download.
-                </p>
-              </div>
-
-              {/* CTA Buttons - both core paths */}
-              <div
-                className="mx-auto w-full max-w-sm px-4 mobile-text-reveal sm:max-w-none"
-                style={{ animationDelay: '1.1s' }}
-              >
-                <LandingCTAs variant="hero" />
-              </div>
-
-              <ul
-                className="mobile-text-reveal mx-auto w-full max-w-lg list-none space-y-2.5 px-4 pt-1 text-left sm:px-5"
-                style={{ animationDelay: '1.15s' }}
-              >
-                <li className="flex items-start gap-2.5 text-base text-white/85">
-                  <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                  <span className="min-w-0 font-medium leading-snug">Specific notes on photos and prompts</span>
-                </li>
-                <li className="flex items-start gap-2.5 text-base text-white/85">
-                  <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                  <span className="min-w-0 font-medium leading-snug">
-                    Book directly with available reviewers
-                  </span>
-                </li>
-                <li className="flex items-start gap-2.5 text-base text-white/85">
-                  <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                  <span className="min-w-0 font-medium leading-snug">Built for web and mobile web</span>
-                </li>
-              </ul>
-
-              {/* Mobile iPhone Video - Moved below CTA with proper spacing */}
-              <div className="flex justify-center mobile-text-reveal mt-6" style={{ animationDelay: '1.3s' }}>
-                <div className="mobile-iphone-container">
-                  <div className="mobile-iphone-glow"></div>
-                  <div className="mobile-iphone-shadow"></div>
-                  <div className="mobile-iphone-frame">
-                    <video 
-                      ref={mobileVideoRef}
-                      className="mobile-iphone-video"
-                      src="/katie_demo.mov" 
-                      autoPlay 
-                      playsInline
-                      muted
-                      aria-label="Demo video showing how Auro app works - reviewing a guy's profile and style"
-                    />
-                    <a
-                      ref={mobileOverlayRef}
-                      href="/reviewers/apply"
-                      className="mobile-iphone-overlay"
-                      aria-label="Watch a sample review in the product demo"
-                    >
-                      <div className="overlay-content">
-                        <h3>Watch a full example review</h3>
-                        <p>Real feedback on photos and prompts</p>
-                      </div>
-                    </a>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="mobile-text-reveal mobile-stats px-6" style={{ animationDelay: '1.6s' }}>
-                <div className="flex flex-col gap-3 text-sm text-white/90">
-                  <div className="flex items-center justify-center gap-2">
-                    <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                    <span>Reviewers keep 80% per completed review</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2">
-                    <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                    <span>Reviewer fee split is clear — no surprises at checkout</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2">
-                    <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                    <span>No app store tax on your personal link</span>
-                  </div>
-                </div>
-              </div>
-          </div>
-        </div>
+        <MobileHero />
         
         {/* Desktop Layout - Only visible on large screens */}
         <div className="hidden lg:flex items-center justify-center min-h-screen">
@@ -218,12 +79,14 @@ function HomePageContent() {
                   </h1>
 
                   <p className="max-w-xl text-lg font-medium leading-relaxed text-white/85 xl:text-xl text-pretty hyphens-none">
-                    Real feedback from women you'd actually want to date — not a coaching service. Web-only, no app to download.
+                    Honest feedback from women you&apos;d actually want to date—not coaches, not vague advice.
                   </p>
                 </div>
                 
                 {/* CTA Buttons */}
-                <LandingCTAs variant="hero" className="!flex-row !justify-start" />
+                <div className="flex flex-col items-start pt-1">
+                  <LandingCTAs variant="hero" />
+                </div>
 
                 {/* Trust line — column layout aligns checks with headline (no ragged wrap grid) */}
                 <ul className="m-0 flex list-none flex-col gap-2.5 p-0 pt-2 text-sm text-white/90" aria-label="Key benefits">
@@ -233,11 +96,7 @@ function HomePageContent() {
                   </li>
                   <li className="flex items-start gap-2">
                     <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                    <span>Book directly with available reviewers</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                    <span>Built for web and mobile web</span>
+                    <span>Pick your reviewer and book directly</span>
                   </li>
                 </ul>
               </div>
@@ -253,7 +112,7 @@ function HomePageContent() {
                       autoPlay 
                       playsInline
                       muted
-                      aria-label="Demo video showing how Auro app works - reviewing a guy's profile and style"
+                      aria-label="Demo video showing how a sample review works"
                     />
                     <a
                       ref={desktopOverlayRef}
@@ -297,7 +156,7 @@ function HomePageContent() {
                 Why Auro is different
               </h2>
               <p className="text-lg text-white/80 max-w-xl mx-auto leading-relaxed">
-                Most profile review services are coaching businesses with a review product bolted on. Auro is built differently.
+                Profile reviews built for honest feedback—not coaching upsells.
               </p>
             </div>
 
@@ -309,9 +168,9 @@ function HomePageContent() {
                       <Heart className="w-6 h-6 text-rose-400" aria-hidden />
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-lg font-semibold text-white">Women you'd actually date</h3>
+                      <h3 className="text-lg font-semibold text-white">Women you&apos;d actually date</h3>
                       <p className="text-base leading-relaxed text-white/75">
-                        Not professional coaches or full-time reviewers. The women on Auro are the ones you're trying to impress — their take is the one that actually matters.
+                        Not coaches—the women you&apos;re trying to impress. Their take is the one that matters.
                       </p>
                     </div>
                   </div>
@@ -322,12 +181,12 @@ function HomePageContent() {
                 <CardContent className="p-8">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-blue-500/15 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Globe className="w-6 h-6 text-blue-400" aria-hidden />
+                      <Clock className="w-6 h-6 text-blue-400" aria-hidden />
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-lg font-semibold text-white">No app to download</h3>
+                      <h3 className="text-lg font-semibold text-white">Book in minutes</h3>
                       <p className="text-base leading-relaxed text-white/75">
-                        Book in your browser. No install, no app store, no waiting. The whole thing works in under 60 seconds from any device.
+                        Pick a reviewer, pay, upload photos. Most requests start the same day.
                       </p>
                     </div>
                   </div>
@@ -343,7 +202,7 @@ function HomePageContent() {
                     <div className="space-y-2">
                       <h3 className="text-lg font-semibold text-white">You pick your reviewer</h3>
                       <p className="text-base leading-relaxed text-white/75">
-                        Browse real profiles, read sample feedback, see clear pricing upfront. Book the person that fits — not whoever the platform assigns you.
+                        Browse profiles, see pricing upfront, and book who fits—not whoever gets assigned.
                       </p>
                     </div>
                   </div>
@@ -359,7 +218,7 @@ function HomePageContent() {
                     <div className="space-y-2">
                       <h3 className="text-lg font-semibold text-white">Transparent on both sides</h3>
                       <p className="text-base leading-relaxed text-white/75">
-                        You see what you pay. Reviewers see exactly what they earn — 80% of every completed review. No hidden cuts, no surprises at checkout.
+                        You see what you pay. Reviewers keep 80%—no hidden cuts at checkout.
                       </p>
                     </div>
                   </div>
@@ -382,16 +241,11 @@ function HomePageContent() {
                       FOR GUYS LEVELING UP
                     </Badge>
                     <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
-                      Book your review directly with available reviewers.
+                      Book a reviewer directly.
                     </h2>
                     <p className="text-lg leading-relaxed text-white/85">
-                      Browse reviewer profiles and submit your request right away.
+                      Browse profiles and submit your request.
                     </p>
-                    <div className="flex flex-wrap gap-3 pt-2">
-                      <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Dating profile feedback</Badge>
-                      <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Style + photo suggestions</Badge>
-                      <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Book live reviewer spots</Badge>
-                    </div>
                   </div>
                   <div className="flex md:justify-end">
                     <Button size="xl" variant="gradient" className={LANDING_CTA_PRIMARY} asChild>
@@ -419,7 +273,7 @@ function HomePageContent() {
               Straightforward payouts for reviewers
             </h2>
             <p className="text-lg md:text-xl text-white/85 leading-relaxed">
-              Reviewers keep <span className="font-semibold text-white">80%</span> of each completed paid review. The rest covers payments, support, and running Auro. You see the exact split before you check out.
+              Reviewers keep <span className="font-semibold text-white">80%</span> of each completed review. You see the split before checkout.
             </p>
           </div>
         </div>
@@ -432,7 +286,7 @@ function HomePageContent() {
             <div className="space-y-4">
               <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">How it works for reviewers</h2>
               <p className="text-lg leading-relaxed text-white/80 md:text-xl">
-                Set up your reviewer profile, share your link, and start accepting paid review requests on your schedule.
+                Set your rate, share your link, and accept paid reviews on your schedule.
               </p>
             </div>
             
@@ -447,11 +301,10 @@ function HomePageContent() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <CardDescription className="text-center text-base leading-relaxed text-white/80">
-                    Name your price per review and drop your Auro link where your audience already is. Guys can book review requests directly through your link.
+                    Set your price and share your link—guys book review requests directly.
                   </CardDescription>
                   <div className="flex flex-wrap gap-2 justify-center">
                     <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">You set your rates</Badge>
-                    <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Share on Instagram/TikTok</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -465,11 +318,10 @@ function HomePageContent() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <CardDescription className="text-center text-base leading-relaxed text-white/80">
-                    Open a request, skim their photos and prompts, then spell out what is helping or hurting them on a simple 1–5 scale—plus concrete fixes, not vibes.
+                    Rate photos and prompts 1–5, then spell out what helps and what to fix.
                   </CardDescription>
                   <div className="flex flex-wrap gap-2 justify-center">
-                    <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Rate 1-5 scale</Badge>
-                    <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Give improvement advice</Badge>
+                    <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Concrete fixes, not vibes</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -483,11 +335,10 @@ function HomePageContent() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <CardDescription className="text-center text-base leading-relaxed text-white/80">
-                    Finish the review, get paid, and—if they opt in—clip the best moments to socials so more guys know you take requests.
+                    Finish the review, get paid, and build your queue from there.
                   </CardDescription>
                   <div className="flex flex-wrap gap-2 justify-center">
                     <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Stripe payouts</Badge>
-                    <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Build your brand</Badge>
               </div>
                 </CardContent>
               </Card>
@@ -504,7 +355,7 @@ function HomePageContent() {
                     <div>
                       <h4 className="mb-2 text-xl font-semibold text-white">Work Your Schedule</h4>
                       <p className="text-base leading-relaxed text-white/80">
-                        Review profiles whenever you want—mornings, evenings, or weekends.
+                        Review whenever it fits your day.
                       </p>
                     </div>
                   </div>
@@ -520,7 +371,7 @@ function HomePageContent() {
                     <div>
                       <h4 className="mb-2 text-xl font-semibold text-white">Scale Your Income</h4>
                       <p className="text-base leading-relaxed text-white/80">
-                        Raise your price as your queue fills up and your reviews speak for themselves.
+                        Raise your rate as demand grows.
                       </p>
                 </div>
               </div>
@@ -540,7 +391,7 @@ function HomePageContent() {
             <div className="space-y-4">
               <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">What people are saying</h2>
               <p className="text-lg leading-relaxed text-white/80 md:text-xl">
-                Honest notes, flexible sessions, built for the web.
+                Honest notes you can act on.
               </p>
             </div>
             
@@ -631,10 +482,7 @@ function HomePageContent() {
           
               <div className="space-y-5 text-left">
                 <p className="text-xl leading-relaxed text-white/90">
-                  Most guys are guessing on dating apps—photos, prompts, and how they read in the feed. A clear woman&apos;s-eye view cuts through that noise fast.
-                </p>
-                <p className="text-xl leading-relaxed text-white/90">
-                  Auro pairs guys who want specifics with women who can deliver them. Reviewers earn for completed reviews; guys get a punch list instead of generic advice.
+                  Most guys guess on dating apps—photos, prompts, how they read. A woman&apos;s-eye view cuts through that fast.
                 </p>
                 <p className="text-xl font-semibold leading-relaxed text-white">
                   <span className="text-primary">Reviewer applications are open and review requests are live.</span>
@@ -661,16 +509,13 @@ function HomePageContent() {
                 className="mobile-text-reveal text-xl leading-relaxed text-white/90 md:text-2xl"
                 style={{ animationDelay: '0.4s' }}
               >
-                Book a paid review request now, or apply as a reviewer and start earning today.
+                Book a review or apply as a reviewer.
               </p>
             </div>
             
-            <div className="mobile-text-reveal px-4" style={{ animationDelay: '0.6s' }}>
+            <div className="mobile-text-reveal flex flex-col items-center px-4" style={{ animationDelay: '0.6s' }}>
               <LandingCTAs variant="hero" />
             </div>
-            <p className="text-sm font-medium text-white/70 mobile-text-reveal" style={{ animationDelay: '0.65s' }}>
-              Reviewer onboarding is live and review requests are open.
-            </p>
             
             <div
               className="mobile-text-reveal flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm text-white/80"
@@ -682,11 +527,7 @@ function HomePageContent() {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                <span>Reviewer economics are transparent — you see exactly what you earn per review</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                <span>Web-first—no app store cut on your link</span>
+                <span>Transparent reviewer payouts</span>
               </div>
             </div>
           </div>
@@ -764,66 +605,6 @@ function HomePageContent() {
 
         .desktop-iphone-overlay .overlay-content p {
           font-size: 0.9rem;
-          margin: 0;
-          opacity: 0.9;
-        }
-
-        .mobile-iphone-frame {
-          position: relative;
-          width: 280px;
-          height: 560px;
-          border: 6px solid #1a1a1a;
-          border-radius: 28px;
-          background: #000;
-          overflow: hidden;
-          box-shadow: 0 18px 40px rgba(0,0,0,0.55);
-          margin: 0 auto;
-          animation: none;
-        }
-
-
-        .mobile-iphone-video {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          border-radius: 22px;
-        }
-
-        .mobile-iphone-overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          border-radius: 22px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          background: rgba(20, 12, 34, 0.94);
-          color: white;
-          opacity: 0;
-          pointer-events: none;
-          transition: opacity 1s ease;
-          text-align: center;
-          padding: 1.5rem;
-          z-index: 3;
-          text-decoration: none;
-          cursor: pointer;
-        }
-        
-        .mobile-iphone-overlay:active {
-          background: rgba(20, 12, 34, 0.98);
-        }
-
-        .mobile-iphone-overlay .overlay-content h3 {
-          font-size: 1.1rem;
-          font-weight: bold;
-          margin-bottom: 0.5rem;
-          margin: 0;
-        }
-
-        .mobile-iphone-overlay .overlay-content p {
-          font-size: 0.85rem;
           margin: 0;
           opacity: 0.9;
         }

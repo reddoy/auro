@@ -183,9 +183,13 @@ export async function POST(req: Request) {
     
     // Store contact/marketing consent in preferences JSON
     // Merge with existing preferences to not lose other data
-    reviewerUpdates.preferences = { 
-      marketing_consent: !!marketingConsent, 
-      phone: phone || null 
+    const normalizedPhone =
+      typeof phone === 'string' && phone.replace(/\D/g, '').length >= 10 ? phone.trim() : null;
+    reviewerUpdates.preferences = {
+      marketing_consent: !!marketingConsent,
+      phone: normalizedPhone,
+      email_notifications: true,
+      sms_notifications: !!normalizedPhone,
     };
 
     const { error: upErr } = await admin.from('profiles').update(reviewerUpdates).eq('id', userId);

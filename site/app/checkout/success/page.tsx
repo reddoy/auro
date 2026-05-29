@@ -9,6 +9,9 @@ export default function CheckoutSuccessPage() {
   const [email, setEmail] = useState('');
   const [resendStatus, setResendStatus] = useState('');
   const [countdown, setCountdown] = useState(5);
+  const [phone, setPhone] = useState('');
+  const [smsOptIn, setSmsOptIn] = useState(true);
+  const [smsSaveStatus, setSmsSaveStatus] = useState('');
 
   useEffect(() => {
     try {
@@ -54,6 +57,38 @@ export default function CheckoutSuccessPage() {
 
     return () => clearInterval(timer);
   }, [router]);
+
+  const handleSaveSmsPrefs = async () => {
+    if (!phone.trim()) return;
+    setSmsSaveStatus('Saving...');
+    try {
+      const { data: { session } = { session: null } } = (await supabase?.auth.getSession()) || {};
+      const token = session?.access_token;
+      if (!token) {
+        setSmsSaveStatus('Sign in to save text preferences.');
+        return;
+      }
+      const res = await fetch('/api/profile/notification-preferences', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          phone: phone.trim(),
+          sms_notifications: smsOptIn,
+          email_notifications: true,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Failed to save');
+      }
+      setSmsSaveStatus('Text notifications enabled.');
+    } catch (e: unknown) {
+      setSmsSaveStatus(e instanceof Error ? e.message : 'Failed to save');
+    }
+  };
 
   const handleResendVerification = async () => {
     setResendStatus('Sending...');
@@ -167,6 +202,37 @@ export default function CheckoutSuccessPage() {
             )}
           </div>
         )}
+
+        <div className="email-section" style={{ marginTop: '24px' }}>
+          <div className="email-header">
+            <h3>Text notifications (optional)</h3>
+            <p>Get a text when your review is ready and for important order updates.</p>
+          </div>
+          <div className="email-actions" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '12px' }}>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+1 (555) 123-4567"
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '8px',
+                border: '1px solid rgba(255,255,255,0.2)',
+                background: 'rgba(0,0,0,0.3)',
+                color: '#fff',
+              }}
+            />
+            <label style={{ display: 'flex', gap: '8px', textAlign: 'left', fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)' }}>
+              <input type="checkbox" checked={smsOptIn} onChange={(e) => setSmsOptIn(e.target.checked)} disabled={!phone.trim()} />
+              <span>I agree to receive transactional texts from Auro. Message and data rates may apply.</span>
+            </label>
+            <button type="button" onClick={handleSaveSmsPrefs} className="verify-btn" disabled={!phone.trim()}>
+              Save text preferences
+            </button>
+            {smsSaveStatus && <div className="status-message">{smsSaveStatus}</div>}
+          </div>
+        </div>
       </div>
 
       <style jsx>{`
