@@ -1,16 +1,14 @@
 'use client';
 
 import { useRef, Suspense } from 'react';
-import { Button } from '../components/ui/button';
-import LandingCTAs from '../components/LandingCTAs';
 import MobileHero from '../components/landing/MobileHero';
 import LandingAtmosphere from '../components/landing/LandingAtmosphere';
 import HeroAccentPhrase from '../components/landing/HeroAccentPhrase';
-import { LANDING_CTA_PRIMARY } from '../components/landing-cta-styles';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
+import LandingTwoPaths from '../components/landing/LandingTwoPaths';
+import LandingStickyCTA from '../components/landing/LandingStickyCTA';
+import LandingCTAs from '../components/LandingCTAs';
+import { Card, CardContent } from '../components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { ArrowRight, Sparkles, DollarSign, Clock, TrendingUp, CheckCircle, Heart, Users, ShieldCheck } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,496 +18,172 @@ function HomePageContent() {
   return (
     <div className="landing-page min-h-screen text-foreground mobile-smooth-scroll">
       <LandingAtmosphere variant="page" />
+      <LandingStickyCTA />
+
       <div className="relative z-10">
-      {/* Hero Section */}
-      <section
-        className="relative min-h-screen overflow-x-hidden overflow-y-visible pt-16 lg:overflow-hidden lg:pt-0"
-        role="banner"
-        aria-label="Hero section"
-      >
-        <LandingAtmosphere variant="hero" />
-        
-        <MobileHero />
-        
-        {/* Desktop Layout - Only visible on large screens */}
-        <div className="hidden lg:flex items-center justify-center min-h-screen">
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              {/* Left Content — min-w-0 lets copy wrap inside the grid track instead of overflowing under the phone */}
-              <div className="text-left space-y-8 min-w-0 pr-2 xl:pr-6">
-                {/* Removed redundant badge to save space and reduce clutter */}
-                
-                <div className="space-y-6">
-                  <h1 className="max-w-2xl hyphens-none text-pretty text-4xl font-bold leading-tight tracking-[-0.02em] text-white sm:text-5xl sm:leading-tight xl:text-[2.75rem] xl:leading-tight 2xl:text-5xl 2xl:leading-tight">
-                    <span className="[text-wrap:balance]">
-                      Get dating profile feedback <HeroAccentPhrase />
-                    </span>
-                  </h1>
+        {/* Hero Section */}
+        <section
+          className="relative min-h-screen overflow-x-hidden overflow-y-visible lg:overflow-hidden lg:pt-0"
+          role="banner"
+          aria-label="Hero section"
+        >
+          <MobileHero />
 
-                  <p className="max-w-xl text-lg font-medium leading-relaxed text-white/85 xl:text-xl text-pretty hyphens-none">
-                    Honest feedback from women you&apos;d actually want to date—not coaches, not vague advice.
-                  </p>
-                </div>
-                
-                {/* CTA Buttons */}
-                <div className="flex flex-col items-start pt-1">
-                  <LandingCTAs variant="hero" />
-                </div>
+          {/* Desktop Layout */}
+          <div className="hidden lg:flex items-center justify-center min-h-screen">
+            <div className="container mx-auto px-4 relative z-10">
+              <div className="grid lg:grid-cols-2 gap-12 items-center">
+                <div className="text-left space-y-8 min-w-0 pr-2 xl:pr-6">
+                  <div className="space-y-6">
+                    <h1 className="max-w-2xl hyphens-none text-pretty text-4xl font-bold leading-tight tracking-[-0.02em] text-white sm:text-5xl sm:leading-tight xl:text-[2.75rem] xl:leading-tight 2xl:text-5xl 2xl:leading-tight">
+                      <span className="[text-wrap:balance]">
+                        Get dating profile feedback <HeroAccentPhrase />
+                      </span>
+                    </h1>
 
-                {/* Trust line — column layout aligns checks with headline (no ragged wrap grid) */}
-                <ul className="m-0 flex list-none flex-col gap-2.5 p-0 pt-2 text-sm text-white/90" aria-label="Key benefits">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                    <span>Specific notes on photos and prompts</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                    <span>Pick your reviewer and book directly</span>
-                  </li>
-                </ul>
-              </div>
-              
-              {/* Right Content - Desktop iPhone Video */}
-              <div className="relative animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
-                <div className="relative">
-                  <div className="landing-phone-glow" />
-                  <div className="landing-phone-shadow" />
-                  <div className="desktop-iphone-frame">
-                    <video 
-                      ref={desktopVideoRef}
-                      className="desktop-iphone-video"
-                      src="/katie_demo.mov" 
-                      autoPlay 
-                      playsInline
-                      muted
-                      loop
-                      onClick={() => {
-                        const video = desktopVideoRef.current;
-                        if (video) video.muted = !video.muted;
-                      }}
-                      aria-label="Demo video showing how a sample review works"
-                    />
-                  </div>
-                  
-                  {/* Floating Benefit Callouts */}
-                  <div className="absolute right-2 top-2 glass rounded-lg p-2 shadow-lg hover-lift">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-green-500" aria-hidden />
-                      <span className="text-sm font-medium text-white">Clear rates before checkout</span>
-                    </div>
-                  </div>
-                  
-                  <div className="absolute bottom-2 right-2 glass rounded-lg p-2 shadow-lg hover-lift">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-primary" aria-hidden />
-                      <span className="text-sm font-medium text-white">Notes you can act on fast</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Why Auro is different */}
-      <section className="landing-section py-16 lg:py-24">
-        <LandingAtmosphere variant="section" />
-        <div className="container relative z-10 mx-auto px-4">
-          <div className="max-w-5xl mx-auto space-y-12">
-            <div className="text-center space-y-4">
-              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
-                Why Auro is different
-              </h2>
-              <p className="text-lg text-white/80 max-w-xl mx-auto leading-relaxed">
-                Profile reviews built for honest feedback—not coaching upsells.
-              </p>
-            </div>
-
-            <div className="grid gap-6 sm:grid-cols-2">
-              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
-                <CardContent className="p-8">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-rose-500/15 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Heart className="w-6 h-6 text-rose-400" aria-hidden />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-semibold text-white">
-                        <HeroAccentPhrase>Women</HeroAccentPhrase> you&apos;d actually date
-                      </h3>
-                      <p className="text-base leading-relaxed text-white/75">
-                        Not coaches—the women you&apos;re trying to impress. Their take is the one that matters.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
-                <CardContent className="p-8">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-blue-500/15 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Clock className="w-6 h-6 text-blue-400" aria-hidden />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-semibold text-white">Book in minutes</h3>
-                      <p className="text-base leading-relaxed text-white/75">
-                        Pick a reviewer, pay, upload photos. Most requests start the same day.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
-                <CardContent className="p-8">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-amber-500/15 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Users className="w-6 h-6 text-amber-400" aria-hidden />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-semibold text-white">You pick your reviewer</h3>
-                      <p className="text-base leading-relaxed text-white/75">
-                        Browse profiles, see pricing upfront, and book who fits—not whoever gets assigned.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
-                <CardContent className="p-8">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-green-500/15 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <ShieldCheck className="w-6 h-6 text-green-400" aria-hidden />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-semibold text-white">Transparent on both sides</h3>
-                      <p className="text-base leading-relaxed text-white/75">
-                        You see what you pay. Reviewers keep 80%—no hidden cuts at checkout.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Review request entry */}
-      <section className="landing-section py-16 lg:py-24">
-        <LandingAtmosphere variant="section" />
-        <div className="container relative z-10 mx-auto px-4">
-          <div className="max-w-5xl mx-auto">
-            <Card className="border-white/20 bg-white/5 backdrop-blur-sm">
-              <CardContent className="p-8 md:p-10">
-                <div className="grid gap-8 md:grid-cols-[1.2fr_1fr] md:items-center">
-                  <div className="space-y-4">
-                    <Badge variant="outline" className="border-primary/40 bg-primary/15 text-primary">
-                      FOR GUYS LEVELING UP
-                    </Badge>
-                    <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
-                      Book a reviewer directly.
-                    </h2>
-                    <p className="text-lg leading-relaxed text-white/85">
-                      Browse profiles and submit your request.
+                    <p className="max-w-xl text-lg font-medium leading-relaxed text-white/85 xl:text-xl text-pretty hyphens-none">
+                      Honest notes from women you&apos;d actually want to date.
                     </p>
                   </div>
-                  <div className="flex md:justify-end">
-                    <Button size="xl" variant="gradient" className={LANDING_CTA_PRIMARY} asChild>
-                      <a href="/request" className="flex items-center justify-center gap-2" aria-label="Request a profile review">
-                        <span>Get Reviewed</span>
-                        <ArrowRight className="h-5 w-5 shrink-0 transition-transform group-hover:translate-x-1" />
-                      </a>
-                    </Button>
+
+                  <div className="flex flex-col items-start pt-1">
+                    <LandingCTAs variant="hero" />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
 
-      {/* Payouts — one clear mention; details also in reviewer flow */}
-      <section id="platform-economics" className="landing-section py-16 lg:py-24">
-        <LandingAtmosphere variant="section" />
-        <div className="container relative z-10 mx-auto px-4">
-          <div className="max-w-2xl mx-auto text-center space-y-6">
-            <Badge variant="gradient" className="text-sm px-4 py-2 font-semibold">
-              REVIEW REQUESTS — LIVE
-            </Badge>
-            <h2 className="text-3xl font-bold leading-tight tracking-tight text-white md:text-4xl lg:text-5xl">
-              Straightforward payouts for reviewers
-            </h2>
-            <p className="text-lg md:text-xl text-white/85 leading-relaxed">
-              Reviewers keep <span className="font-semibold text-white">80%</span> of each completed review. You see the split before checkout.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="landing-section py-16 lg:py-24">
-        <LandingAtmosphere variant="section" />
-        <div className="container relative z-10 mx-auto px-4">
-          <div className="text-center space-y-16">
-            <div className="space-y-4">
-              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">How it works for reviewers</h2>
-              <p className="text-lg leading-relaxed text-white/80 md:text-xl">
-                Set your rate, share your link, and accept paid reviews on your schedule.
-              </p>
-            </div>
-            
-            {/* Process Steps */}
-            <div className="grid gap-8 max-w-6xl mx-auto md:grid-cols-3">
-              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
-                <CardHeader className="text-center">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-xl font-semibold text-primary-foreground shadow-md">
-                    1
-                  </div>
-                  <CardTitle className="text-xl font-semibold text-white md:text-2xl">Set Your Rate & Share Your Link</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <CardDescription className="text-center text-base leading-relaxed text-white/80">
-                    Set your price and share your link—guys book review requests directly.
-                  </CardDescription>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">You set your rates</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
-                <CardHeader className="text-center">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-xl font-semibold text-primary-foreground shadow-md">
-                    2
-                  </div>
-                  <CardTitle className="text-xl font-semibold text-white md:text-2xl">Rate & Give Advice</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <CardDescription className="text-center text-base leading-relaxed text-white/80">
-                    Rate photos and prompts 1–5, then spell out what helps and what to fix.
-                  </CardDescription>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Concrete fixes, not vibes</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
-                <CardHeader className="text-center">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-xl font-semibold text-primary-foreground shadow-md">
-                    3
-                  </div>
-                  <CardTitle className="text-xl font-semibold text-white md:text-2xl">Get Paid & Build Your Brand</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <CardDescription className="text-center text-base leading-relaxed text-white/80">
-                    Finish the review, get paid, and build your queue from there.
-                  </CardDescription>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    <Badge variant="outline" className="border-white/25 bg-white/5 text-xs text-white/90">Stripe payouts</Badge>
-              </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            {/* Additional Benefits */}
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
-                <CardContent className="p-8">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Clock className="w-7 h-7 text-blue-400" />
-                    </div>
-                    <div>
-                      <h4 className="mb-2 text-xl font-semibold text-white">Work Your Schedule</h4>
-                      <p className="text-base leading-relaxed text-white/80">
-                        Review whenever it fits your day.
-                      </p>
+                <div className="relative animate-fade-in-up" style={{ animationDelay: '0.3s' }}>
+                  <div className="relative">
+                    <div className="landing-phone-shadow" />
+                    <div className="desktop-iphone-frame">
+                      <video
+                        ref={desktopVideoRef}
+                        className="desktop-iphone-video"
+                        src="/katie_demo.mov"
+                        autoPlay
+                        playsInline
+                        muted
+                        loop
+                        onClick={() => {
+                          const video = desktopVideoRef.current;
+                          if (video) video.muted = !video.muted;
+                        }}
+                        aria-label="Demo video showing how a sample review works"
+                      />
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white/5 backdrop-blur-md border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
-                <CardContent className="p-8">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-green-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <TrendingUp className="w-7 h-7 text-green-400" />
-                    </div>
-                    <div>
-                      <h4 className="mb-2 text-xl font-semibold text-white">Scale Your Income</h4>
-                      <p className="text-base leading-relaxed text-white/80">
-                        Raise your rate as demand grows.
-                      </p>
                 </div>
               </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            {/* Removed CTA to reduce clutter - keeping focus on main hero CTA */}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section className="landing-section py-16 lg:py-24">
-        <LandingAtmosphere variant="section" />
-        <div className="container relative z-10 mx-auto px-4">
-          <div className="text-center space-y-16">
-            <div className="space-y-4">
-              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">What people are saying</h2>
-              <p className="text-lg leading-relaxed text-white/80 md:text-xl">
-                Honest notes you can act on.
-              </p>
-            </div>
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              <Card className="border-white/20 bg-white/10 backdrop-blur-md transition-all duration-300 hover:border-primary/45 hover:bg-white/[0.15] mobile-card-hover">
-                <CardContent className="p-8 space-y-5">
-                  <p className="text-white text-base leading-relaxed italic">
-                    "So many guys are close to having solid profiles, they just need honest feedback. Auro makes it easy to help and get paid."
-                  </p>
-                  <div className="flex items-center gap-4 pt-2">
-                    <Avatar className="h-20 w-20 overflow-hidden ring-2 ring-primary/50 md:h-24 md:w-24">
-                      <AvatarImage 
-                        src="/jenna_headshot.jpg" 
-                        alt="Jenna - Reviewer"
-                        className="object-cover scale-125"
-                      />
-                      <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-2xl">J</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-bold text-white text-xl md:text-2xl">Jenna</p>
-                      <p className="text-sm text-white/80">Reviewer</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="border-white/20 bg-white/10 backdrop-blur-md transition-all duration-300 hover:border-primary/45 hover:bg-white/[0.15] mobile-card-hover">
-                <CardContent className="p-8 space-y-5">
-                  <p className="text-white text-base leading-relaxed italic">
-                    "Sometimes one tweak makes a huge difference in matches. I like that I can give direct feedback and get paid for it."
-                  </p>
-                  <div className="flex items-center gap-4 pt-2">
-                    <Avatar className="h-20 w-20 overflow-hidden ring-2 ring-primary/50 md:h-24 md:w-24">
-                      <AvatarImage 
-                        src="/katie_headshot.jpg" 
-                        alt="Katie - Reviewer"
-                        className="object-cover scale-y-110 scale-x-100"
-                        style={{ objectPosition: 'center 40%' }}
-                      />
-                      <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-2xl">K</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-bold text-white text-xl md:text-2xl">Katie</p>
-                      <p className="text-sm text-white/80">Reviewer</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-white/20 bg-white/10 backdrop-blur-md transition-all duration-300 hover:border-primary/45 hover:bg-white/[0.15] mobile-card-hover md:col-span-2 lg:col-span-1">
-                <CardContent className="p-8 space-y-5">
-                  <p className="text-white text-base leading-relaxed italic">
-                    "Booked a review on my lunch break, had specific feedback by the next morning. Moved photo 3 to slot 1 and my match rate jumped that week."
-                  </p>
-                  <div className="flex items-center gap-4 pt-2">
-                    <Avatar className="h-20 w-20 overflow-hidden ring-2 ring-primary/50 md:h-24 md:w-24">
-                      <AvatarFallback className="bg-white/10 text-white font-semibold text-2xl">J</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-bold text-white text-xl md:text-2xl">Jordan</p>
-                      <p className="text-sm text-white/80">Got reviewed · 27</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Founder Section */}
-      <section className="landing-section py-16 lg:py-24">
-        <LandingAtmosphere variant="section" />
-        <div className="container relative z-10 mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center space-y-10">
-            <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">Why I built Auro</h2>
-            
-            <div className="flex flex-col md:flex-row items-center gap-8">
-              <div className="flex-shrink-0 w-40 h-40 rounded-2xl overflow-hidden shadow-lg">
-                <img 
-                  src="/rohan-headshot.jpg" 
-                  alt="RJ, founder of Auro - helping men improve their style and helping women monetize their expertise" 
-                  className="w-full h-full object-cover scale-125" 
-                  loading="lazy"
-                  width={160}
-                  height={160}
-                />
-              </div>
-          
-              <div className="space-y-5 text-left">
-                <p className="text-xl leading-relaxed text-white/90">
-                  Most guys guess on dating apps—photos, prompts, how they read. A woman&apos;s-eye view cuts through that fast.
-                </p>
-                <p className="text-xl font-semibold leading-relaxed text-white">
-                  <span className="text-primary">Reviewer applications are open and review requests are live.</span>
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+        <LandingTwoPaths />
 
-      {/* Final CTA Section */}
-      <section className="landing-section relative overflow-hidden py-16 lg:py-24">
-        <LandingAtmosphere variant="section" />
-        
-        <div className="container relative z-10 mx-auto px-6 sm:px-4">
-          <div className="max-w-4xl mx-auto text-center space-y-10">
-            <div className="space-y-6">
-              <h2
-                className="mobile-text-reveal text-3xl font-bold tracking-tight text-white md:text-4xl lg:text-5xl"
-                style={{ animationDelay: '0.2s' }}
-              >
-              Get reviewed now
+        {/* Testimonials */}
+        <section className="landing-section py-16 lg:py-20">
+          <div className="container relative z-10 mx-auto px-4">
+            <div className="text-center space-y-12">
+              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
+                What people are saying
               </h2>
-              <p
-                className="mobile-text-reveal text-xl leading-relaxed text-white/90 md:text-2xl"
-                style={{ animationDelay: '0.4s' }}
-              >
-                Book a review or apply as a reviewer.
-              </p>
-            </div>
-            
-            <div className="mobile-text-reveal flex flex-col items-center px-4" style={{ animationDelay: '0.6s' }}>
-              <LandingCTAs variant="hero" />
-            </div>
-            
-            <div
-              className="mobile-text-reveal flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm text-white/80"
-              style={{ animationDelay: '0.8s' }}
-            >
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                <span>No commitment to start</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 shrink-0 text-green-500" aria-hidden />
-                <span>Transparent reviewer payouts</span>
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                <Card className="border-white/20 bg-white/10 backdrop-blur-md transition-all duration-300 hover:border-white/30 hover:bg-white/[0.12]">
+                  <CardContent className="p-8 space-y-5">
+                    <p className="text-white text-base leading-relaxed italic">
+                      &ldquo;So many guys are close to having solid profiles, they just need honest feedback. Auro makes it easy to help and get paid.&rdquo;
+                    </p>
+                    <div className="flex items-center gap-4 pt-2">
+                      <Avatar className="h-20 w-20 overflow-hidden ring-2 ring-white/20 md:h-24 md:w-24">
+                        <AvatarImage
+                          src="/jenna_headshot.jpg"
+                          alt="Jenna - Reviewer"
+                          className="object-cover scale-125"
+                        />
+                        <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-2xl">J</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-bold text-white text-xl md:text-2xl">Jenna</p>
+                        <p className="text-sm text-white/80">Reviewer</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-white/20 bg-white/10 backdrop-blur-md transition-all duration-300 hover:border-white/30 hover:bg-white/[0.12]">
+                  <CardContent className="p-8 space-y-5">
+                    <p className="text-white text-base leading-relaxed italic">
+                      &ldquo;Sometimes one tweak makes a huge difference in matches. I like that I can give direct feedback and get paid for it.&rdquo;
+                    </p>
+                    <div className="flex items-center gap-4 pt-2">
+                      <Avatar className="h-20 w-20 overflow-hidden ring-2 ring-white/20 md:h-24 md:w-24">
+                        <AvatarImage
+                          src="/katie_headshot.jpg"
+                          alt="Katie - Reviewer"
+                          className="object-cover scale-y-110 scale-x-100"
+                          style={{ objectPosition: 'center 40%' }}
+                        />
+                        <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-2xl">K</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-bold text-white text-xl md:text-2xl">Katie</p>
+                        <p className="text-sm text-white/80">Reviewer</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-white/20 bg-white/10 backdrop-blur-md transition-all duration-300 hover:border-white/30 hover:bg-white/[0.12] md:col-span-2 lg:col-span-1">
+                  <CardContent className="p-8 space-y-5">
+                    <p className="text-white text-base leading-relaxed italic">
+                      &ldquo;Booked a review on my lunch break, had specific feedback by the next morning. Moved photo 3 to slot 1 and my match rate jumped that week.&rdquo;
+                    </p>
+                    <div className="flex items-center gap-4 pt-2">
+                      <Avatar className="h-20 w-20 overflow-hidden ring-2 ring-white/20 md:h-24 md:w-24">
+                        <AvatarFallback className="bg-white/10 text-white font-semibold text-2xl">J</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-bold text-white text-xl md:text-2xl">Jordan</p>
+                        <p className="text-sm text-white/80">Got reviewed · 27</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        {/* Founder */}
+        <section className="landing-section py-16 lg:py-20">
+          <div className="container relative z-10 mx-auto px-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <div className="flex-shrink-0 w-40 h-40 rounded-2xl overflow-hidden shadow-lg">
+                  <img
+                    src="/rohan-headshot.jpg"
+                    alt="RJ, founder of Auro"
+                    className="w-full h-full object-cover scale-125"
+                    loading="lazy"
+                    width={160}
+                    height={160}
+                  />
+                </div>
+
+                <div className="space-y-4 text-left">
+                  <h2 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
+                    From the founder
+                  </h2>
+                  <p className="text-lg leading-relaxed text-white/90">
+                    I go over every single application. I started Auro because dating is brutal out there — especially for guys. Sometimes you just need a straight answer from the person you want to date.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
-      {/* iPhone Frame Styles */}
       <style jsx>{`
         .desktop-iphone-frame {
           position: relative;
@@ -520,9 +194,8 @@ function HomePageContent() {
           border-radius: 30px;
           background: #000;
           overflow: hidden;
-          box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
           margin: 0 auto;
-          animation: none;
         }
 
         .desktop-iphone-frame::before {
@@ -543,66 +216,6 @@ function HomePageContent() {
           height: 100%;
           object-fit: cover;
           border-radius: 22px;
-        }
-
-        .desktop-iphone-overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          border-radius: 22px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          background: rgba(20, 12, 34, 0.95);
-          color: white;
-          opacity: 0;
-          pointer-events: none;
-          transition: opacity 1s ease;
-          text-align: center;
-          padding: 1.5rem;
-          z-index: 3;
-          text-decoration: none;
-          cursor: pointer;
-        }
-        
-        .desktop-iphone-overlay:hover {
-          background: rgba(20, 12, 34, 0.98);
-        }
-
-        .desktop-iphone-overlay .overlay-content h3 {
-          font-size: 1.25rem;
-          font-weight: bold;
-          margin-bottom: 0.5rem;
-          margin: 0;
-        }
-
-        .desktop-iphone-overlay .overlay-content p {
-          font-size: 0.9rem;
-          margin: 0;
-          opacity: 0.9;
-        }
-
-        /* Enhanced shadow effects for CTA buttons */
-        .shadow-2xl {
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-
-        .shadow-3xl {
-          box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.35);
-        }
-
-        /* Mobile CTA button fixes */
-        @media (max-width: 640px) {
-          .mobile-text-reveal {
-            padding: 0 8px;
-          }
-          
-          .mobile-text-reveal .group {
-            max-width: calc(100vw - 32px);
-            box-sizing: border-box;
-          }
         }
       `}</style>
     </div>
