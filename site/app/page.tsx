@@ -23,7 +23,7 @@ function HomePageContent() {
       <div className="relative z-10">
         {/* Hero Section */}
         <section
-          className="relative min-h-screen overflow-x-hidden overflow-y-visible lg:overflow-hidden lg:pt-0"
+          className="relative min-h-screen overflow-x-hidden overflow-y-hidden lg:overflow-hidden lg:pt-0"
           role="banner"
           aria-label="Hero section"
         >
@@ -218,7 +218,8 @@ function HomePageContent() {
         .desktop-iphone-video {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
+          object-position: center;
           border-radius: 22px;
         }
       `}</style>

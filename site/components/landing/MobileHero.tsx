@@ -22,7 +22,7 @@ export default function MobileHero() {
 
   return (
     <div className="mobile-hero-shell container relative z-10 mx-auto px-4 pb-8 pt-6 sm:pt-8 lg:hidden">
-      <div className="mobile-hero-content relative z-10 flex w-full flex-col items-center space-y-5 text-center">
+      <div className="mobile-hero-content relative z-10 flex w-full flex-col items-center space-y-4 text-center">
         <div {...revealProps(revealed, 80, 'w-full space-y-4 px-1')}>
           <h1 className="mobile-heading-responsive max-w-lg hyphens-none text-balance font-bold leading-tight tracking-[-0.02em] text-white">
             <span className="[text-wrap:balance]">
