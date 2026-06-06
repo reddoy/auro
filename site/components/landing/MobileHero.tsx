@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import LandingCTAs from '../LandingCTAs';
 import HeroAccentPhrase from './HeroAccentPhrase';
 
 function revealProps(visible: boolean, delayMs: number, extraClass = '') {
@@ -22,7 +21,7 @@ export default function MobileHero() {
   }, []);
 
   return (
-    <div className="mobile-hero-shell container relative z-10 mx-auto px-4 pb-14 pt-6 sm:pt-8 lg:hidden">
+    <div className="mobile-hero-shell container relative z-10 mx-auto px-4 pb-8 pt-6 sm:pt-8 lg:hidden">
       <div className="mobile-hero-content relative z-10 flex w-full flex-col items-center space-y-5 text-center">
         <div {...revealProps(revealed, 80, 'w-full space-y-4 px-1')}>
           <h1 className="mobile-heading-responsive max-w-lg hyphens-none text-balance font-bold leading-tight tracking-[-0.02em] text-white">
@@ -31,8 +30,8 @@ export default function MobileHero() {
             </span>
           </h1>
 
-          <p className="mx-auto max-w-md text-pretty text-base font-medium leading-relaxed text-white/85 sm:text-lg">
-            Honest notes from women you&apos;d actually want to date.
+          <p className="mx-auto max-w-md text-base font-medium leading-relaxed text-white/85 [text-wrap:balance] hyphens-none sm:text-lg">
+            Honest notes from women you&apos;d actually want&nbsp;to&nbsp;date.
           </p>
         </div>
 
@@ -43,7 +42,7 @@ export default function MobileHero() {
               <video
                 ref={mobileVideoRef}
                 className="mobile-iphone-video"
-                src="/katie_demo.mov"
+                src="/katie_henry_review.mov"
                 autoPlay
                 playsInline
                 muted
@@ -56,10 +55,6 @@ export default function MobileHero() {
               />
             </div>
           </div>
-        </div>
-
-        <div {...revealProps(revealed, 260, 'flex w-full max-w-[320px] flex-col items-stretch px-2')}>
-          <LandingCTAs variant="hero" tone="mobileHero" />
         </div>
       </div>
     </div>

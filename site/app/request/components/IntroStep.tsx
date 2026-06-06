@@ -178,7 +178,7 @@ export default function IntroStep({ onNext }: Props) {
                 <video 
                   ref={desktopVideoRef}
                   className="desktop-iphone-video"
-                  src="/katie_demo.mov" 
+                  src="/katie_henry_review.mov" 
                   autoPlay 
                   muted 
                   playsInline

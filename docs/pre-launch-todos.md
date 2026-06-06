@@ -4,8 +4,9 @@ Last updated after notifications + payment hardening deploy.
 
 ## P0 — Before Stripe live / marketing
 
-- [ ] **Vercel env vars** (Production + Preview): `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` — see [site/NOTIFICATIONS_SETUP.md](../site/NOTIFICATIONS_SETUP.md)
-- [ ] **Confirm Supabase migration** `notification_deliveries` is applied on prod (applied 2026-05-29 via MCP; verify in dashboard if needed)
+- [ ] **Stripe live keys + webhook** — follow [go-live-checklist.md](go-live-checklist.md); Vercel still on `pk_test_` as of 2026-06-06
+- [ ] **Vercel env vars** (Production + Preview): `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` — deferred at launch; see [site/NOTIFICATIONS_SETUP.md](../site/NOTIFICATIONS_SETUP.md)
+- [x] **Confirm Supabase migration** `notification_deliveries` is applied on prod (verified 2026-06-06 via MCP)
 - [ ] **Reconcile decline refund DB sync** — E2E request `f7b01f0c` shows `refund_status=none` but Stripe may show refunded; run `/api/payments/refund` or manual DB sync after one fresh decline test
 - [ ] **Fresh E2E: decline + refund** — paid → reviewer decline → `refund_status=refunded` + Stripe refund visible
 - [ ] **Fresh E2E: timeout path** — backdate `paid`/`in_progress` → cron `process-timeout-refunds` → `status=timeout` + refund + reviewee/reviewer notifications

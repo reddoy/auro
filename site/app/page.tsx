@@ -41,8 +41,8 @@ function HomePageContent() {
                       </span>
                     </h1>
 
-                    <p className="max-w-xl text-lg font-medium leading-relaxed text-white/85 xl:text-xl text-pretty hyphens-none">
-                      Honest notes from women you&apos;d actually want to date.
+                    <p className="max-w-xl text-lg font-medium leading-relaxed text-white/85 xl:text-xl [text-wrap:balance] hyphens-none">
+                      Honest notes from women you&apos;d actually want&nbsp;to&nbsp;date.
                     </p>
                   </div>
 
@@ -58,7 +58,7 @@ function HomePageContent() {
                       <video
                         ref={desktopVideoRef}
                         className="desktop-iphone-video"
-                        src="/katie_demo.mov"
+                        src="/katie_henry_review.mov"
                         autoPlay
                         playsInline
                         muted
@@ -155,27 +155,31 @@ function HomePageContent() {
         </section>
 
         {/* Founder */}
-        <section className="landing-section py-16 lg:py-20">
+        <section className="landing-section landing-founder py-12 lg:py-20">
           <div className="container relative z-10 mx-auto px-4">
             <div className="max-w-4xl mx-auto">
-              <div className="flex flex-col md:flex-row items-center gap-8">
-                <div className="flex-shrink-0 w-40 h-40 rounded-2xl overflow-hidden shadow-lg">
+              <div className="flex flex-col items-center gap-6 md:flex-row md:items-start md:gap-8">
+                <div className="h-36 w-36 flex-shrink-0 overflow-hidden rounded-2xl shadow-lg ring-1 ring-white/10 md:h-40 md:w-40">
                   <img
-                    src="/rohan-headshot.jpg"
+                    src="/rohan-headshot-backyard-min.jpg"
                     alt="RJ, founder of Auro"
-                    className="w-full h-full object-cover scale-125"
+                    className="h-full w-full object-cover object-[center_20%]"
                     loading="lazy"
                     width={160}
                     height={160}
                   />
                 </div>
 
-                <div className="space-y-4 text-left">
-                  <h2 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
+                <div className="min-w-0 space-y-3 text-center md:flex-1 md:text-left">
+                  <h2 className="text-2xl font-bold tracking-tight text-white [text-wrap:balance] md:text-3xl">
                     From the founder
                   </h2>
-                  <p className="text-lg leading-relaxed text-white/90">
-                    I go over every single application. I started Auro because dating is brutal out there — especially for guys. Sometimes you just need a straight answer from the person you want to date.
+                  <p className="text-lg leading-relaxed text-white/90 [text-wrap:balance] hyphens-none">
+                    I review every application personally.
+                  </p>
+                  <p className="text-lg leading-relaxed text-white/90 [text-wrap:balance] hyphens-none">
+                    I built Auro because dating is brutal—especially for guys who want a straight answer from women they&apos;d
+                    actually&nbsp;want&nbsp;to&nbsp;date.
                   </p>
                 </div>
               </div>

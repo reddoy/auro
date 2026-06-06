@@ -1,6 +1,6 @@
 # Stripe live mode gate
 
-**Status: blocked** — do not enable Stripe live keys or live webhooks until staging E2E is green.
+**Status: live flip in progress** — see [`go-live-checklist.md`](go-live-checklist.md). Staging E2E was not fully green; launching with manual smoke test post-flip.
 
 ## Required before live
 
