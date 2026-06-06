@@ -218,7 +218,7 @@ function HomePageContent() {
         .desktop-iphone-video {
           width: 100%;
           height: 100%;
-          object-fit: contain;
+          object-fit: cover;
           object-position: center;
           border-radius: 22px;
         }
