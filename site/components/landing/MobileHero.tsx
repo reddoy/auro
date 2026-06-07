@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import HeroAccentPhrase from './HeroAccentPhrase';
+import HeroReviewsStat from './HeroReviewsStat';
 
 function revealProps(visible: boolean, delayMs: number, extraClass = '') {
   const base = `mobile-text-reveal${visible ? ' is-visible' : ''}`;
@@ -35,6 +36,10 @@ export default function MobileHero() {
           <p className="mx-auto max-w-md text-base font-medium leading-relaxed text-white/85 [text-wrap:balance] hyphens-none sm:text-lg">
             Honest notes from women you&apos;d actually want&nbsp;to&nbsp;date.
           </p>
+        </div>
+
+        <div {...revealProps(revealed, 130, 'w-full')}>
+          <HeroReviewsStat />
         </div>
 
         <div {...revealProps(revealed, 180, 'w-full')}>
