@@ -10,14 +10,11 @@ type Creator = {
   avatar_url?: string;
   skills?: string[];
   hourly_rate?: number;
-  rating_average?: number;
-  display_rating: number;
-  review_count: number;
   bio?: string;
   links?: any;
 };
 
-type SortKey = 'recommended' | 'price_low' | 'price_high' | 'top_rated';
+type SortKey = 'price_low' | 'price_high';
 
 type Props = {
   selectedCreator?: string;
@@ -32,30 +29,9 @@ function displayName(c: Creator) {
   return (c.full_name || c.username || 'Reviewer').trim();
 }
 
-function simpleHash(str: string): number {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) {
-    h = (Math.imul(31, h) + str.charCodeAt(i)) >>> 0;
-  }
-  return h;
-}
-
-function fakeDisplayRating(id: string): number {
-  const h = simpleHash(id);
-  if (h % 7 === 0) return 5.0;
-  const base = 4.1 + (h % 8) * 0.1;
-  return Math.round(base * 10) / 10;
-}
-
-function fakeReviewCount(id: string): number {
-  const h = simpleHash(id + 'reviews');
-  return 14 + (h % 74);
-}
-
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: 'recommended', label: 'Recommended' },
-  { key: 'top_rated', label: 'Top Rated' },
   { key: 'price_low', label: 'Cheapest' },
+  { key: 'price_high', label: 'Price High' },
 ];
 
 export default function CreatorSelection({
@@ -72,7 +48,7 @@ export default function CreatorSelection({
   const [error, setError] = useState<string>('');
   const hasAutoSelectedRef = useRef(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<SortKey>('recommended');
+  const [sortBy, setSortBy] = useState<SortKey | null>(null);
   const footerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -108,18 +84,16 @@ export default function CreatorSelection({
         const { data, error } = await supabase
           .from('profiles')
           .select(
-            'id, first_name, last_name, username, avatar_url, skills, hourly_rate, rating_average, bio, links, stripe_connect_account_id',
+            'id, first_name, last_name, username, avatar_url, skills, hourly_rate, bio, links, stripe_connect_account_id',
           )
           .eq('is_reviewer', 'approved')
           .not('hourly_rate', 'is', null)
-          .gt('hourly_rate', 0)
-          .order('rating_average', { ascending: false, nullsFirst: false });
+          .gt('hourly_rate', 0);
 
         if (error) throw error;
 
         const normalized: Creator[] = (data || []).map((c: any) => {
           const fullName = [c.first_name, c.last_name].filter(Boolean).join(' ') || null;
-          const realRating = c.rating_average && c.rating_average > 0 ? c.rating_average : null;
           return {
             id: c.id,
             username: c.username,
@@ -127,9 +101,6 @@ export default function CreatorSelection({
             full_name: fullName || '',
             skills: c.skills || [],
             hourly_rate: c.hourly_rate ?? undefined,
-            rating_average: c.rating_average ?? undefined,
-            display_rating: realRating ?? fakeDisplayRating(c.id),
-            review_count: fakeReviewCount(c.id),
             bio: c.bio ?? undefined,
             links: c.links ?? undefined,
           };
@@ -183,23 +154,17 @@ export default function CreatorSelection({
   }, [creators, searchTerm]);
 
   const sortedCreators = useMemo(() => {
+    if (!sortBy) return filteredCreators;
+
     const list = [...filteredCreators];
     const rate = (c: Creator) => c.hourly_rate ?? Number.POSITIVE_INFINITY;
-    const rating = (c: Creator) => c.display_rating;
     const nameKey = (c: Creator) => (displayName(c) + c.username).toLowerCase();
 
     list.sort((a, b) => {
-      switch (sortBy) {
-        case 'top_rated':
-          return rating(b) - rating(a) || nameKey(a).localeCompare(nameKey(b));
-        case 'price_low':
-          return rate(a) - rate(b) || rating(b) - rating(a) || nameKey(a).localeCompare(nameKey(b));
-        case 'price_high':
-          return rate(b) - rate(a) || rating(b) - rating(a) || nameKey(a).localeCompare(nameKey(b));
-        case 'recommended':
-        default:
-          return rating(b) - rating(a) || rate(a) - rate(b) || nameKey(a).localeCompare(nameKey(b));
+      if (sortBy === 'price_low') {
+        return rate(a) - rate(b) || nameKey(a).localeCompare(nameKey(b));
       }
+      return rate(b) - rate(a) || nameKey(a).localeCompare(nameKey(b));
     });
     return list;
   }, [filteredCreators, sortBy]);
@@ -227,8 +192,6 @@ export default function CreatorSelection({
   const clearSearch = useCallback(() => {
     setSearchTerm('');
   }, []);
-
-  const hasActiveFilters = searchTerm.trim().length > 0 || sortBy !== 'recommended';
 
   const pendingCreator = pendingId
     ? sortedCreators.find((c) => c.id === pendingId) ?? creators.find((c) => c.id === pendingId)
@@ -258,6 +221,10 @@ export default function CreatorSelection({
 
   const isCardSelected = (creator: Creator) =>
     pendingId === creator.id || selectedCreator === creator.id || selectedCreator === creator.username;
+
+  const handleSortClick = (key: SortKey) => {
+    setSortBy((current) => (current === key ? null : key));
+  };
 
   if (loading) {
     return (
@@ -310,15 +277,12 @@ export default function CreatorSelection({
               key={key}
               type="button"
               className={`reviewer-sort-chip${sortBy === key ? ' is-active' : ''}`}
-              onClick={() => setSortBy(key)}
+              onClick={() => handleSortClick(key)}
               aria-pressed={sortBy === key}
             >
               {label}
             </button>
           ))}
-          <span className="reviewer-count">
-            {sortedCreators.length} reviewer{sortedCreators.length === 1 ? '' : 's'}
-          </span>
         </div>
       </div>
 
@@ -349,12 +313,6 @@ export default function CreatorSelection({
                   ) : null}
                 </div>
                 {creator.username ? <p className="creator-username">@{creator.username}</p> : null}
-
-                <div className="creator-rating">
-                  <span className="creator-rating-star">★</span>
-                  <span className="creator-rating-value">{creator.display_rating.toFixed(1)}</span>
-                  <span className="creator-rating-count">· {creator.review_count} reviews</span>
-                </div>
 
                 {creator.skills && creator.skills.length > 0 ? (
                   <div className="creator-skills creator-skills--left">

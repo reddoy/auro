@@ -35,10 +35,11 @@ function HomePageContent() {
               <div className="grid lg:grid-cols-2 gap-12 items-center">
                 <div className="text-left space-y-8 min-w-0 pr-2 xl:pr-6">
                   <div className="space-y-6">
-                    <h1 className="max-w-2xl hyphens-none text-pretty text-4xl font-bold leading-tight tracking-[-0.02em] text-white sm:text-5xl sm:leading-tight xl:text-[2.75rem] xl:leading-tight 2xl:text-5xl 2xl:leading-tight">
-                      <span>
-                        Get dating profile feedback
-                        <br />
+                    <h1 className="max-w-2xl hyphens-none text-pretty text-4xl font-bold leading-tight tracking-[-0.02em] text-white sm:text-5xl sm:leading-tight lg:text-[2.25rem] lg:leading-tight xl:text-[2.75rem] xl:leading-tight 2xl:text-5xl 2xl:leading-tight">
+                      <span className="block lg:whitespace-nowrap">
+                        Get dating&nbsp;profile&nbsp;feedback
+                      </span>
+                      <span className="block">
                         <HeroAccentPhrase />
                       </span>
                     </h1>
@@ -89,7 +90,7 @@ function HomePageContent() {
                 What people are saying
               </h2>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
                 <Card className="border-white/20 bg-white/10 backdrop-blur-md transition-all duration-300 hover:border-white/30 hover:bg-white/[0.12]">
                   <CardContent className="p-8 space-y-5">
                     <p className="text-white text-base leading-relaxed italic">
@@ -134,23 +135,6 @@ function HomePageContent() {
                     </div>
                   </CardContent>
                 </Card>
-
-                <Card className="border-white/20 bg-white/10 backdrop-blur-md transition-all duration-300 hover:border-white/30 hover:bg-white/[0.12] md:col-span-2 lg:col-span-1">
-                  <CardContent className="p-8 space-y-5">
-                    <p className="text-white text-base leading-relaxed italic">
-                      &ldquo;Booked a review on my lunch break, had specific feedback by the next morning. Moved photo 3 to slot 1 and my match rate jumped that week.&rdquo;
-                    </p>
-                    <div className="flex items-center gap-4 pt-2">
-                      <Avatar className="h-20 w-20 overflow-hidden ring-2 ring-white/20 md:h-24 md:w-24">
-                        <AvatarFallback className="bg-white/10 text-white font-semibold text-2xl">J</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-bold text-white text-xl md:text-2xl">Jordan</p>
-                        <p className="text-sm text-white/80">Got reviewed · 27</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             </div>
           </div>
@@ -177,11 +161,12 @@ function HomePageContent() {
                     From the founder
                   </h2>
                   <p className="text-lg leading-relaxed text-white/90 [text-wrap:balance] hyphens-none">
-                    I review every application personally.
+                    On dating apps, you rarely know why you&apos;re getting swiped left. I built Auro to help guys level up
+                    their dating game with honest feedback from real women.
                   </p>
                   <p className="text-lg leading-relaxed text-white/90 [text-wrap:balance] hyphens-none">
-                    I built Auro because dating is brutal—especially for guys who want a straight answer from women they&apos;d
-                    actually&nbsp;want&nbsp;to&nbsp;date.
+                    I personally review every reviewer application to make sure they&apos;re a great fit for the platform
+                    and our community.
                   </p>
                 </div>
               </div>

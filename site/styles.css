@@ -328,12 +328,12 @@
   }
 
   .mobile-iphone-container--hero {
-    width: 100vw;
-    max-width: 100vw;
-    margin-left: calc(50% - 50vw);
-    margin-bottom: 0.25rem;
+    width: 100%;
+    margin: 0 auto 0.25rem;
     padding: 0;
     overflow: visible;
+    display: flex;
+    justify-content: center;
   }
 
   @media (prefers-reduced-motion: no-preference) {
@@ -629,14 +629,15 @@
 
   .mobile-iphone-frame.mobile-iphone-frame--hero {
     aspect-ratio: 9 / 19.5;
-    width: calc(100vw - 24px);
+    width: min(300px, 78vw);
     height: auto;
     max-height: none;
+    margin: 0 auto;
   }
 
   .mobile-iphone-frame.mobile-iphone-frame--hero::before {
-    width: min(120px, 26%);
-    height: 26px;
+    width: min(100px, 24%);
+    height: 24px;
     top: 10px;
     border-radius: 14px;
   }
