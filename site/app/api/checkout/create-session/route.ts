@@ -1,6 +1,6 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { findNearestCheckoutTierDollars } from '../../../../lib/checkout-web-tier';
+import { getCheckoutPriceDollars } from '../../../../lib/checkout-web-tier';
 
 export async function POST(req: Request) {
   try {
@@ -101,8 +101,7 @@ export async function POST(req: Request) {
           if (profile) {
             const hr = Number((profile as any)?.hourly_rate);
             if (!isNaN(hr) && hr > 0) {
-              const tierDollars = findNearestCheckoutTierDollars(hr);
-              priceCents = Math.round(tierDollars * 100);
+              priceCents = Math.round(getCheckoutPriceDollars(hr) * 100);
             }
             connectAccountId = (profile as any)?.stripe_connect_account_id || undefined;
           }
@@ -118,8 +117,7 @@ export async function POST(req: Request) {
           if (profile2) {
             const hr2 = Number((profile2 as any)?.hourly_rate);
             if (!isNaN(hr2) && hr2 > 0) {
-              const tierDollars = findNearestCheckoutTierDollars(hr2);
-              priceCents = Math.round(tierDollars * 100);
+              priceCents = Math.round(getCheckoutPriceDollars(hr2) * 100);
             }
             connectAccountId = (profile2 as any)?.stripe_connect_account_id || undefined;
           }

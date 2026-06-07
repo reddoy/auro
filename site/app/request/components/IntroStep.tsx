@@ -83,7 +83,7 @@ export default function IntroStep({ onNext }: Props) {
               <div className="benefit-icon-sm" aria-hidden>
                 <Video className="h-7 w-7 text-blue-400" />
               </div>
-              <span>Video<br />when helpful</span>
+              <span>Video<br />review</span>
             </div>
             <div className="quick-benefit">
               <div className="benefit-icon-sm" aria-hidden>
@@ -119,7 +119,7 @@ export default function IntroStep({ onNext }: Props) {
               </h1>
               
               <p className="intro-subtitle-desktop text-pretty">
-                Specific guidance on photos, prompts, and how you come across—with video when reviewers offer it.
+                Specific guidance on photos, prompts, and how you come across—including a personalized video review from your chosen reviewer.
                 <span className="block mt-3 text-lg text-white/78">
                   You pick your reviewer and pay securely when you&apos;re ready.
                 </span>
@@ -154,8 +154,8 @@ export default function IntroStep({ onNext }: Props) {
                   <Clock className="w-6 h-6 text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="benefit-title">Video when it helps</h3>
-                  <p className="benefit-desc">Walkthrough-style feedback when reviewers include it</p>
+                  <h3 className="benefit-title">Video review</h3>
+                  <p className="benefit-desc">Walkthrough-style feedback on your photos and profile</p>
                 </div>
               </div>
               

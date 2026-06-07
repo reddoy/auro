@@ -1522,7 +1522,7 @@ export default function ReviewerApplyPage() {
               </div>
               <CardTitle className="text-xl md:text-2xl font-bold text-white">Set Your Rate</CardTitle>
               <CardDescription className="text-sm md:text-base text-gray-300">
-                Choose how much you'd like to earn per review
+                Pick what you want to charge per review — it's entirely up to you
               </CardDescription>
             </CardHeader>
           
@@ -1591,15 +1591,16 @@ export default function ReviewerApplyPage() {
                 );
               })()}
 
-              {/* Default Earnings Info */}
+              {/* Rate guidance */}
               {!isValidReviewerRate(hourlyRate) && (
                 <div className="bg-gradient-to-br from-primary/20 via-accent/20 to-secondary/20 border border-primary/30 rounded-xl p-5">
                   <div className="text-center space-y-2">
-                    <p className="text-sm font-semibold text-white">Typical Rate</p>
+                    <p className="text-sm font-semibold text-white">Your rate, your call</p>
                     <p className="text-sm text-gray-300 text-center leading-relaxed px-1">
-                      Most reviewers: <span className="text-primary font-semibold tabular-nums">$25–50</span> per review
+                      Minimum <span className="text-primary font-semibold tabular-nums">$1</span>.
+                      We usually recommend around <span className="text-primary font-semibold tabular-nums">$5</span> per review.
                     </p>
-                    <p className="text-xs text-gray-400">Set your rate above or we'll suggest one</p>
+                    <p className="text-xs text-gray-400">You can always change your rate later from your profile.</p>
                   </div>
                 </div>
               )}

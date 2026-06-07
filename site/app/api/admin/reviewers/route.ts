@@ -50,6 +50,6 @@ export async function GET(req: Request) {
 
   return new Response(JSON.stringify({ profiles: data || [] }), {
     status: 200,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
   });
 }

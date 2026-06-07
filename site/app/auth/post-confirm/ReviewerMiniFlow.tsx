@@ -184,7 +184,9 @@ export default function ReviewerMiniFlow({ returnHref }: Props) {
         <div className="space-y-5">
           <div>
             <h2 className="text-2xl font-semibold">Set your rate</h2>
-            <p className="mt-2 text-white/75">Set any whole-dollar price per review (minimum $1).</p>
+            <p className="mt-2 text-white/75">
+              Pick any whole-dollar price per review (minimum $1). We usually recommend around $5 — and you can change it anytime.
+            </p>
           </div>
           {error ? <p className="rounded-lg bg-red-500/15 px-3 py-2 text-sm text-red-200">{error}</p> : null}
           <ReviewerRateInput value={hourlyRate} onChange={setHourlyRate} />

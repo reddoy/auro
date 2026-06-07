@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import type { RequestData } from '../page';
 import AsyncAvatar from './AsyncAvatar';
-import { findNearestCheckoutTierDollars } from '../../../lib/checkout-web-tier';
+import { getCheckoutPriceDollars } from '../../../lib/checkout-web-tier';
 
 type Props = {
   requestData: RequestData;
@@ -166,9 +166,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
     }
   };
 
-  // Get tier info for the reviewer's rate
-  const tierWebPrice = findNearestCheckoutTierDollars(price);
-  // Avatar URLs are resolved by AsyncAvatar
+  const checkoutPrice = getCheckoutPriceDollars(price);
 
   return (
     <div className="payment-step">
@@ -194,21 +192,19 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
                 </div>
                 <div className="reviewer-info">
                   <h4>{creatorInfo.full_name || creatorInfo.username}</h4>
-                  <p>Your selected reviewer</p>
+                  <p>
+                    Your selected reviewer
+                    {creatorInfo.username ? ` · @${creatorInfo.username}` : ''}
+                  </p>
                 </div>
               </div>
             )}
 
             <div className="order-details">
               <div className="order-item">
-                <span>Personal Review</span>
-                <span>${tierWebPrice}</span>
+                <span>Dating profile video review</span>
+                <span>${checkoutPrice}</span>
               </div>
-              {tierWebPrice !== price && (
-                <p className="order-rate-note">
-                  Nearest supported checkout amount to this reviewer&apos;s listed rate (${price}).
-                </p>
-              )}
               <div className="order-item">
                 <span>Processing Fee</span>
                 <span>$0</span>
@@ -218,7 +214,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
 
               <div className="order-total">
                 <span>Total</span>
-                <span>${tierWebPrice}</span>
+                <span>${checkoutPrice}</span>
               </div>
             </div>
 
@@ -245,10 +241,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
                       <p className="payment-option-subtitle">Secure Stripe checkout</p>
                     </div>
                     <div className="payment-option-price">
-                      <span className="price-amount">${tierWebPrice}</span>
-                      {tierWebPrice !== price && (
-                        <span className="price-note">Rounded from ${price}</span>
-                      )}
+                      <span className="price-amount">${checkoutPrice}</span>
                     </div>
                   </div>
                   <p className="payment-option-description">
@@ -269,7 +262,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
                   <span className="spinner"></span>
                   Processing...
                 </span>
-              ) : `Continue on the Web — $${tierWebPrice}`}
+              ) : `Continue on the Web — $${checkoutPrice}`}
             </button>
 
             <div className="review-includes">
@@ -279,25 +272,31 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
                   <span className="review-includes-check" aria-hidden="true">
                     ✓
                   </span>
-                  <span className="review-includes-text">One personalized video review if your reviewer accepts</span>
+                  <span className="review-includes-text">
+                    One personalized video review on your photos and dating profile
+                  </span>
                 </li>
                 <li className="review-includes-item">
                   <span className="review-includes-check" aria-hidden="true">
                     ✓
                   </span>
-                  <span className="review-includes-text">Direct, honest feedback on your photos</span>
+                  <span className="review-includes-text">
+                    Feedback on the photos you uploaded—what works and what to change
+                  </span>
                 </li>
                 <li className="review-includes-item">
                   <span className="review-includes-check" aria-hidden="true">
                     ✓
                   </span>
-                  <span className="review-includes-text">Clear suggestions you can apply right away</span>
+                  <span className="review-includes-text">Direct, honest notes you can apply right away</span>
                 </li>
                 <li className="review-includes-item">
                   <span className="review-includes-check" aria-hidden="true">
                     ✓
                   </span>
-                  <span className="review-includes-text">Delivery tracked inside your Requests tab</span>
+                  <span className="review-includes-text">
+                    Delivery in your Requests tab when your reviewer submits
+                  </span>
                 </li>
               </ul>
             </div>

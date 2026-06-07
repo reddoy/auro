@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import AsyncAvatar from './AsyncAvatar';
+import { getCheckoutPriceDollars } from '../../../lib/checkout-web-tier';
 
 type Creator = {
   id: string;
@@ -239,7 +240,7 @@ export default function CreatorSelection({
     <div className="creator-selection">
       <div className="step-header">
         <h2>Choose your reviewer</h2>
-        <p>Pick who gives your feedback—you can change this before checkout.</p>
+        <p>Pick who gives your feedback—you can change this before checkout. Prices are per review, set by each reviewer.</p>
       </div>
 
       <div className="creator-selection-toolbar">
@@ -307,7 +308,7 @@ export default function CreatorSelection({
                   <span className="creator-name">{displayName(creator)}</span>
                   {creator.hourly_rate != null ? (
                     <span className="creator-price-wrap">
-                      <span className="creator-price creator-price--badge">${creator.hourly_rate}</span>
+                      <span className="creator-price creator-price--badge">${getCheckoutPriceDollars(creator.hourly_rate)}</span>
                       <span className="creator-price-hint">per review</span>
                     </span>
                   ) : null}
@@ -352,7 +353,9 @@ export default function CreatorSelection({
             onClick={handleConfirm}
             tabIndex={pendingCreator ? 0 : -1}
           >
-            {pendingCreator ? `Continue with ${displayName(pendingCreator)} →` : 'Select a reviewer to continue'}
+            {pendingCreator
+              ? `Continue with ${displayName(pendingCreator)} — $${getCheckoutPriceDollars(pendingCreator.hourly_rate ?? 0)} →`
+              : 'Select a reviewer to continue'}
           </button>
         </div>
       </div>

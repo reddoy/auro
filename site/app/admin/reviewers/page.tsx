@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { RefreshCw, Search } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -153,6 +153,7 @@ export default function AdminReviewersPage() {
   const [search, setSearch] = useState('');
   const [listLoading, setListLoading] = useState(false);
   const [avatarSrcById, setAvatarSrcById] = useState<Record<string, string>>({});
+  const loadListRequestId = useRef(0);
 
   const authHeader = useCallback(async (): Promise<string | null> => {
     if (!supabase?.auth) return null;
@@ -201,12 +202,17 @@ export default function AdminReviewersPage() {
   const loadList = useCallback(async () => {
     const h = await authHeader();
     if (!h) return;
+    const requestId = ++loadListRequestId.current;
     setError(null);
     setListLoading(true);
     try {
       if (tab === 'users') {
-        const res = await fetch('/api/admin/users?limit=150&offset=0', { headers: { Authorization: h } });
+        const res = await fetch('/api/admin/users?limit=150&offset=0', {
+          headers: { Authorization: h },
+          cache: 'no-store',
+        });
         const j = await res.json().catch(() => ({}));
+        if (requestId !== loadListRequestId.current) return;
         if (!res.ok) {
           setError(j.error || 'Failed to load users');
           setProfiles([]);
@@ -218,8 +224,10 @@ export default function AdminReviewersPage() {
       }
       const res = await fetch(`/api/admin/reviewers?status=${encodeURIComponent(tab)}`, {
         headers: { Authorization: h },
+        cache: 'no-store',
       });
       const j = await res.json().catch(() => ({}));
+      if (requestId !== loadListRequestId.current) return;
       if (!res.ok) {
         setError(j.error || 'Failed to load reviewers');
         setProfiles([]);
@@ -228,7 +236,9 @@ export default function AdminReviewersPage() {
       setProfiles(j.profiles || []);
       setUserTotal(null);
     } finally {
-      setListLoading(false);
+      if (requestId === loadListRequestId.current) {
+        setListLoading(false);
+      }
     }
   }, [authHeader, tab]);
 
@@ -290,6 +300,7 @@ export default function AdminReviewersPage() {
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error || 'Request failed');
+      setProfiles((prev) => prev.filter((p) => p.id !== userId));
       await loadList();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to update');

@@ -41,14 +41,14 @@ export default function ReviewerRateInput({ value, onChange, className = '', id 
           step={1}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="25"
+          placeholder="5"
           className="w-full rounded-xl border-2 border-white/20 bg-white/10 py-4 pl-12 pr-6 text-center text-2xl font-semibold text-white placeholder:text-white/35 focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary tabular-nums"
           aria-describedby={`${id}-hint`}
         />
       </div>
       <p id={`${id}-hint`} className="mt-2 text-xs text-gray-400 text-center">
-        Enter any whole-dollar amount from ${REVIEWER_RATE_MIN} to ${REVIEWER_RATE_MAX.toLocaleString()}.
-        Checkout may round to the nearest supported amount.
+        Minimum ${REVIEWER_RATE_MIN}. We usually recommend around $5 per review.
+        You can change your rate anytime.
       </p>
     </div>
   );
