@@ -253,6 +253,40 @@
     text-decoration-thickness: 2px;
   }
 
+  .hero-reviews-stat {
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.025em;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  @media (min-width: 640px) {
+    .hero-reviews-stat {
+      font-size: 1rem;
+    }
+  }
+
+  .hero-reviews-stat__star {
+    font-size: 0.9em;
+    opacity: 0.85;
+  }
+
+  .hero-reviews-stat__number {
+    font-weight: 800;
+    background: linear-gradient(
+      135deg,
+      #f0dcc0 0%,
+      #e8b87a 28%,
+      #fff4e8 48%,
+      #d4a05c 68%,
+      #f5e2c8 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+  }
+
   /* Mobile accent wash kept intentionally subtle */
   .mobile-hero-bg {
     background: radial-gradient(ellipse at center, rgba(255, 111, 0, 0.12) 0%, rgba(255, 111, 0, 0.06) 45%, transparent 75%);
