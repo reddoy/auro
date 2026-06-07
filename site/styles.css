@@ -333,15 +333,6 @@
     overflow: hidden;
   }
 
-  .mobile-iphone-frame--hero {
-    height: min(
-      calc(min(260px, 100vw - 48px) * 19.5 / 9),
-      calc(100dvh - var(--nav-h) - var(--landing-sticky-cta-h) - 20rem)
-    );
-    width: auto;
-    max-width: min(260px, calc(100vw - 48px));
-  }
-
   @media (prefers-reduced-motion: no-preference) {
     .mobile-iphone-frame--hero {
       transform: perspective(800px) rotateX(2deg);
@@ -631,6 +622,18 @@
     border-radius: 12px;
     z-index: 2;
     pointer-events: none;
+  }
+
+  .mobile-iphone-frame.mobile-iphone-frame--hero {
+    --hero-phone-max-h: calc(100dvh - var(--nav-h) - var(--landing-sticky-cta-h) - 20rem);
+    aspect-ratio: 9 / 19.5;
+    width: min(
+      280px,
+      calc(100vw - 48px),
+      calc(var(--hero-phone-max-h) * 9 / 19.5)
+    );
+    height: auto;
+    max-height: var(--hero-phone-max-h);
   }
 
   .mobile-iphone-video {
