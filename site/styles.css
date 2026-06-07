@@ -254,7 +254,7 @@
   }
 
   .hero-reviews-stat {
-    font-size: 0.875rem;
+    font-size: 1.125rem;
     font-weight: 500;
     letter-spacing: 0.025em;
     color: rgba(255, 255, 255, 0.8);
@@ -262,7 +262,13 @@
 
   @media (min-width: 640px) {
     .hero-reviews-stat {
-      font-size: 1rem;
+      font-size: 1.25rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .hero-reviews-stat {
+      font-size: 1.375rem;
     }
   }
 
