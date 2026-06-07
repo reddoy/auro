@@ -36,8 +36,10 @@ function HomePageContent() {
                 <div className="text-left space-y-8 min-w-0 pr-2 xl:pr-6">
                   <div className="space-y-6">
                     <h1 className="max-w-2xl hyphens-none text-pretty text-4xl font-bold leading-tight tracking-[-0.02em] text-white sm:text-5xl sm:leading-tight xl:text-[2.75rem] xl:leading-tight 2xl:text-5xl 2xl:leading-tight">
-                      <span className="[text-wrap:balance]">
-                        Get dating profile feedback <HeroAccentPhrase />
+                      <span>
+                        Get dating profile feedback
+                        <br />
+                        <HeroAccentPhrase />
                       </span>
                     </h1>
 
