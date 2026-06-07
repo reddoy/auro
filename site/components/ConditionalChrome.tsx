@@ -42,7 +42,7 @@ export default function ConditionalChrome({ children }: Props) {
               size={isMarketingHome ? 'lg' : 'md'}
               className="mobile-brand-centered"
             />
-            <nav className="nav-cta-section">
+            <nav className="nav-cta-section hidden md:flex">
               <ConditionalNav />
             </nav>
           </div>

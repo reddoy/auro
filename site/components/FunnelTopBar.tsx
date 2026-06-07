@@ -43,14 +43,14 @@ export default function FunnelTopBar({ variant }: Props) {
     >
       <div className="max-w-6xl mx-auto px-4 py-3">
         {/* Mobile: logo-only row */}
-        <div className="sm:hidden">
+        <div className="md:hidden">
           <div className="flex items-center">
             <BrandMark size="md" />
           </div>
         </div>
 
         {/* Desktop: keep existing layout, but avoid odd wraps */}
-        <div className="hidden sm:flex items-center justify-between gap-6">
+        <div className="hidden md:flex items-center justify-between gap-6">
           <BrandMark size="md" />
 
           <div className="flex min-w-0 items-center justify-end gap-5 text-sm">

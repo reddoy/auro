@@ -1413,7 +1413,7 @@ body {
 
 @media (max-width: 640px) {
   :root {
-    --nav-h: 104px;
+    --nav-h: 60px;
   }
 
   .nav {
@@ -1500,7 +1500,7 @@ body {
 
 @media (max-width: 480px) {
   :root {
-    --nav-h: 100px;
+    --nav-h: 60px;
   }
 
   .nav-content {
@@ -4004,21 +4004,22 @@ footer {
   max-width: 100px;
 }
 
-/* Mobile responsive — stacked header: brand row, then sign-in + CTAs full width (no overlap) */
+/* Mobile responsive — logo-only header (Sign In + CTAs hidden below 768px) */
 @media (max-width: 768px) {
   :root {
-    --nav-h: 108px;
+    --nav-h: 60px;
   }
 
   .nav {
     min-height: 0;
+    padding: 10px 0;
   }
 
   .nav-content {
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
-    gap: 10px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     position: relative;
   }
 
@@ -4030,109 +4031,15 @@ footer {
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
-    align-self: flex-start;
+    align-self: center;
   }
 
-  .nav-cta-section {
-    display: flex;
-    flex-wrap: nowrap;
-    justify-content: stretch;
-    gap: 0;
-    width: 100%;
-    max-width: 100%;
-    margin-left: 0;
-  }
-
-  .conditional-nav {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 8px !important;
-    width: 100%;
-  }
-
-  .conditional-nav .nav-signin-link {
-    align-self: flex-end;
-    padding: 4px 2px;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-  }
-
-  .conditional-nav .cta-sub-text {
+  .nav .nav-cta-section {
     display: none;
   }
 
-  .conditional-nav .nav-ribbon-ctas {
-    width: 100%;
-    gap: 8px;
-    justify-content: stretch;
-    flex-wrap: nowrap;
-  }
-
-  .conditional-nav .nav-ribbon-ctas:has(> :nth-child(2)) {
-    width: 100%;
-    max-width: 100%;
-    justify-content: stretch;
-  }
-
-  .conditional-nav .nav-ribbon-ctas > .cta-nav-integrated,
-  .conditional-nav .nav-ribbon-ctas > .cta-nav.cta-nav--get-reviewed {
-    flex: 1 1 0;
-    min-width: 0;
-    max-width: none;
-    justify-content: center;
-  }
-
-  .conditional-nav .nav-ribbon-ctas > .cta-nav-integrated:only-child,
-  .conditional-nav .nav-ribbon-ctas > .cta-nav.cta-nav--get-reviewed:only-child {
-    flex: 1 1 auto;
-  }
-
-  .conditional-nav .nav-ribbon-ctas > .cta-nav-integrated {
-    padding: 10px 10px;
-  }
-
-  .conditional-nav .nav-ribbon-ctas > .cta-nav.cta-nav--get-reviewed {
-    padding: 10px 10px;
-    font-size: 13px;
-    white-space: nowrap;
-  }
-
-  /* Homepage: compact single-row header (logo + Sign In) */
   body.marketing-home {
-    --nav-h: 76px;
-  }
-
-  .nav.nav--home .nav-content {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .nav.nav--home .mobile-brand-centered {
-    align-self: center;
-    justify-self: start;
-  }
-
-  .nav.nav--home .nav-cta-section {
-    width: auto;
-    max-width: none;
-    justify-content: flex-end;
-    flex: 0 0 auto;
-  }
-
-  .nav.nav--home .conditional-nav {
-    flex-direction: row !important;
-    align-items: center !important;
-    width: auto;
-    gap: 0 !important;
-  }
-
-  .nav.nav--home .conditional-nav .nav-signin-link {
-    align-self: center;
-    padding: 6px 10px;
-    min-height: 44px;
+    --nav-h: 60px;
   }
 
   .nav-countdown-section {
