@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useLayoutEffect, useRef } from 'react';
 import BrandMark from './BrandMark';
 
-export type FunnelTopBarVariant = 'request' | 'reviewer-apply';
+export type FunnelTopBarVariant = 'request' | 'reviewer-apply' | 'auth';
 
 type Props = { variant: FunnelTopBarVariant };
 
@@ -54,7 +54,22 @@ export default function FunnelTopBar({ variant }: Props) {
           <BrandMark size="md" />
 
           <div className="flex min-w-0 items-center justify-end gap-5 text-sm">
-            {variant === 'reviewer-apply' ? (
+            {variant === 'auth' ? (
+              <>
+                <Link
+                  href="/reviewers/apply"
+                  className="text-white/72 hover:text-white transition-colors underline-offset-2 hover:underline whitespace-nowrap"
+                >
+                  Become a Reviewer
+                </Link>
+                <Link
+                  href="/request"
+                  className="text-white/72 hover:text-white transition-colors underline-offset-2 hover:underline whitespace-nowrap"
+                >
+                  Get Reviewed
+                </Link>
+              </>
+            ) : variant === 'reviewer-apply' ? (
               <Link
                 href="/request"
                 className="text-white/72 hover:text-white transition-colors underline-offset-2 hover:underline whitespace-nowrap"
@@ -69,12 +84,14 @@ export default function FunnelTopBar({ variant }: Props) {
                 Become a Reviewer
               </Link>
             )}
-            <Link
-              href="/auth/sign-in"
-              className="inline-flex items-center justify-center h-10 px-4 rounded-full bg-white/[0.06] border border-white/10 text-white font-semibold hover:bg-white/[0.1] transition whitespace-nowrap"
-            >
-              Sign In
-            </Link>
+            {variant !== 'auth' ? (
+              <Link
+                href="/auth/sign-in"
+                className="inline-flex items-center justify-center h-10 px-4 rounded-full bg-white/[0.06] border border-white/10 text-white font-semibold hover:bg-white/[0.1] transition whitespace-nowrap"
+              >
+                Sign In
+              </Link>
+            ) : null}
           </div>
         </div>
       </div>

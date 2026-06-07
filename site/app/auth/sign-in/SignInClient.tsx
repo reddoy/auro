@@ -101,7 +101,7 @@ function SignInInner() {
     <div className="min-h-screen bg-gradient-to-br from-background via-card to-background text-white flex flex-col">
       <div
         className="flex flex-1 flex-col justify-center px-4 py-10 sm:py-12"
-        style={{ minHeight: 'calc(100dvh - var(--nav-h, 60px) - 140px)' }}
+        style={{ minHeight: 'calc(100dvh - var(--funnel-header-height, 60px))' }}
       >
         <div className="request-content px-4 max-w-6xl mx-auto py-8 w-full">
         <AuthStep

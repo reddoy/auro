@@ -20,15 +20,16 @@ export default function ConditionalChrome({ children }: Props) {
   const isReviewerApplyFunnel =
     pathname === '/reviewers/apply' ||
     pathname?.startsWith('/reviewers/apply/');
+  const isAuthFlow = pathname?.startsWith('/auth');
   const isMarketingHome = pathname === '/';
 
   useEffect(() => {
-    if (!isMarketingHome || isWebApp || isRequestFunnel || isReviewerApplyFunnel) return;
+    if (!isMarketingHome || isWebApp || isRequestFunnel || isReviewerApplyFunnel || isAuthFlow) return;
     document.body.classList.add('marketing-home');
     return () => document.body.classList.remove('marketing-home');
-  }, [isMarketingHome, isWebApp, isRequestFunnel, isReviewerApplyFunnel]);
+  }, [isMarketingHome, isWebApp, isRequestFunnel, isReviewerApplyFunnel, isAuthFlow]);
 
-  if (isWebApp || isRequestFunnel || isReviewerApplyFunnel) {
+  if (isWebApp || isRequestFunnel || isReviewerApplyFunnel || isAuthFlow) {
     return <>{children}</>;
   }
 
