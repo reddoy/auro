@@ -2,23 +2,33 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Star, Search, Filter, TrendingUp, Award, Users } from 'lucide-react';
+import { profileDisplayName } from '../../lib/profile-display-name';
+import { Star, Filter, TrendingUp, Award, Users } from 'lucide-react';
 import Link from 'next/link';
-import BecomeReviewerButton from './BecomeReviewerButton';
+import LandingCTAs from '../../components/LandingCTAs';
+import AsyncAvatar from '../request/components/AsyncAvatar';
 
 type Reviewer = {
   id: string;
-  full_name: string;
+  displayName: string;
   username: string;
   avatar_url?: string;
   skills?: string[];
   hourly_rate?: number;
   rating_average?: number;
   bio?: string;
-  links?: any;
+  links?: unknown;
+  created_at?: string;
 };
 
 type FilterType = 'all' | 'top-rated' | 'new' | 'affordable';
+
+const FILTER_OPTIONS: { id: FilterType; label: string; icon: typeof Filter }[] = [
+  { id: 'all', label: 'All', icon: Filter },
+  { id: 'top-rated', label: 'Top Rated', icon: Award },
+  { id: 'new', label: 'New', icon: TrendingUp },
+  { id: 'affordable', label: 'Affordable', icon: Users },
+];
 
 export default function ReviewersIndexPage() {
   const [reviewers, setReviewers] = useState<Reviewer[]>([]);
@@ -38,28 +48,43 @@ export default function ReviewersIndexPage() {
         }
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, full_name, username, avatar_url, skills, hourly_rate, rating_average, bio, links')
+          .select(
+            'id, first_name, last_name, username, avatar_url, skills, hourly_rate, rating_average, bio, links, created_at',
+          )
           .eq('is_reviewer', 'approved')
           .order('rating_average', { ascending: false, nullsFirst: false });
 
         if (error) throw error;
 
-        const normalized: Reviewer[] = (data || []).map((c: any) => ({
+        const normalized: Reviewer[] = (data || []).map((c: {
+          id: string;
+          first_name?: string | null;
+          last_name?: string | null;
+          username?: string | null;
+          avatar_url?: string | null;
+          skills?: string[] | null;
+          hourly_rate?: number | null;
+          rating_average?: number | null;
+          bio?: string | null;
+          links?: unknown;
+          created_at?: string | null;
+        }) => ({
           id: c.id,
-          username: c.username,
-          avatar_url: c.avatar_url,
-          full_name: c.full_name,
+          username: c.username || '',
+          avatar_url: c.avatar_url ?? undefined,
+          displayName: profileDisplayName(c) || c.username || 'Reviewer',
           skills: c.skills || [],
           hourly_rate: c.hourly_rate ?? undefined,
           rating_average: c.rating_average ?? undefined,
           bio: c.bio ?? undefined,
           links: c.links ?? undefined,
+          created_at: c.created_at ?? undefined,
         }));
 
         setReviewers(normalized);
-      } catch (error: any) {
-        console.error('Error fetching reviewers:', error);
-        setError(error.message || 'Failed to fetch reviewers');
+      } catch (err: unknown) {
+        console.error('Error fetching reviewers:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch reviewers');
       } finally {
         setLoading(false);
       }
@@ -69,28 +94,32 @@ export default function ReviewersIndexPage() {
   }, []);
 
   const getFilteredReviewers = () => {
-    let filtered = reviewers.filter(reviewer => {
+    let filtered = reviewers.filter((reviewer) => {
       const searchLower = searchTerm.toLowerCase();
       if (!searchTerm.trim()) return true;
-      
+
       return (
-        reviewer.full_name?.toLowerCase().includes(searchLower) ||
+        reviewer.displayName.toLowerCase().includes(searchLower) ||
         reviewer.username?.toLowerCase().includes(searchLower) ||
-        reviewer.skills?.some(skill => skill.toLowerCase().includes(searchLower))
+        reviewer.skills?.some((skill) => skill.toLowerCase().includes(searchLower))
       );
     });
 
-    // Apply filter
     switch (selectedFilter) {
       case 'top-rated':
-        filtered = filtered.filter(c => c.rating_average && c.rating_average >= 4.5);
+        filtered = filtered.filter((c) => c.rating_average && c.rating_average >= 4.5);
         break;
       case 'new':
-        // For now, just reverse the order to show "newest" (you can add a created_at field later)
-        filtered = [...filtered].reverse();
+        filtered = [...filtered].sort((a, b) => {
+          const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return bTime - aTime;
+        });
         break;
       case 'affordable':
-        filtered = filtered.filter(c => c.hourly_rate && c.hourly_rate <= 50).sort((a, b) => (a.hourly_rate || 0) - (b.hourly_rate || 0));
+        filtered = filtered
+          .filter((c) => c.hourly_rate && c.hourly_rate <= 50)
+          .sort((a, b) => (a.hourly_rate || 0) - (b.hourly_rate || 0));
         break;
       default:
         break;
@@ -101,155 +130,72 @@ export default function ReviewersIndexPage() {
 
   const filteredReviewers = getFilteredReviewers();
 
-  const getAvatarUrl = (avatarPath?: string) => {
-    if (!avatarPath) return '/auro_aura_logo_nobg.png';
-    if (avatarPath.startsWith('http')) return avatarPath;
-    
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (supabaseUrl && avatarPath.startsWith('avatars/')) {
-      return `${supabaseUrl}/storage/v1/object/public/${avatarPath}`;
-    }
-    return avatarPath;
-  };
+  const clearSearch = () => setSearchTerm('');
 
   if (loading) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        background: 'var(--bg)'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div className="loading-spinner" style={{ 
-            border: '4px solid rgba(255,111,0,0.2)',
-            borderTop: '4px solid #F26955',
-            borderRadius: '50%',
-            width: '50px',
-            height: '50px',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto'
-          }}></div>
-          <p style={{ color: 'white', marginTop: '20px', fontSize: '18px' }}>Loading reviewers...</p>
+      <div className="min-h-screen bg-[var(--bg)]">
+        <div className="creator-selection loading">
+          <div className="loading-spinner" aria-hidden />
+          <p>Loading reviewers…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ 
-      minHeight: '100vh',
-      background: 'var(--bg)',
-      paddingBottom: '60px'
-    }}>
-      {/* Hero Section */}
-      <div style={{ 
-        padding: '40px 20px',
-        textAlign: 'center',
-        color: 'white'
-      }}>
-        <h1 style={{ 
-          fontSize: 'clamp(32px, 8vw, 56px)', 
-          fontWeight: '800',
-          margin: '0 0 16px 0',
-          textShadow: '0 2px 20px rgba(0,0,0,0.2)'
-        }}>
+    <div className="min-h-screen bg-[var(--bg)] pb-16">
+      {/* Hero */}
+      <section className="px-5 py-10 text-center text-white sm:py-14">
+        <h1 className="mb-4 text-[clamp(32px,8vw,56px)] font-extrabold tracking-tight">
           Discover Reviewers
         </h1>
-        <p style={{ 
-          fontSize: 'clamp(16px, 4vw, 20px)',
-          maxWidth: '600px',
-          margin: '0 auto 24px auto',
-          opacity: '0.95',
-          lineHeight: '1.6'
-        }}>
+        <p className="mx-auto mb-8 max-w-xl text-[clamp(16px,4vw,20px)] leading-relaxed text-white/90">
           Get honest feedback from verified reviewers on your style, photos, and more
         </p>
+        <LandingCTAs variant="hero" className="mx-auto max-w-xs" />
+      </section>
 
-        {/* Become a Reviewer CTA */}
-        <BecomeReviewerButton />
-      </div>
-
-      {/* Search & Filters Container */}
-      <div style={{ 
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '0 20px'
-      }}>
-        {/* Search Bar */}
-        <div style={{ 
-          position: 'relative',
-          marginBottom: '20px'
-        }}>
-          <Search 
-            style={{ 
-              position: 'absolute', 
-              left: '16px', 
-              top: '50%', 
-              transform: 'translateY(-50%)',
-              color: '#888',
-              width: '20px',
-              height: '20px'
-            }} 
-          />
+      {/* Search & Filters */}
+      <div className="mx-auto max-w-6xl px-5">
+        <div className="search-bar reviewer-search-wrap">
+          <span className="reviewer-search-icon" aria-hidden>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-3-3" strokeLinecap="round" />
+            </svg>
+          </span>
           <input
-            type="text"
-            placeholder="Search by name, username, or skills..."
+            type="search"
+            enterKeyHint="search"
+            placeholder="Search by name, username, or skills…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '16px 16px 16px 48px',
-              fontSize: '16px',
-              border: 'none',
-              borderRadius: '16px',
-              background: 'white',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-              outline: 'none',
-              transition: 'all 0.3s ease'
-            }}
+            className="search-input reviewer-search-input"
+            aria-label="Search reviewers"
           />
+          {searchTerm.trim() ? (
+            <button
+              type="button"
+              className="reviewer-search-clear"
+              onClick={clearSearch}
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          ) : null}
         </div>
 
-        {/* Filter Chips */}
-        <div style={{ 
-          display: 'flex',
-          gap: '10px',
-          marginBottom: '30px',
-          overflowX: 'auto',
-          paddingBottom: '10px',
-          WebkitOverflowScrolling: 'touch',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none'
-        }}>
-          {[
-            { id: 'all', label: 'All', icon: Filter },
-            { id: 'top-rated', label: 'Top Rated', icon: Award },
-            { id: 'new', label: 'New', icon: TrendingUp },
-            { id: 'affordable', label: 'Affordable', icon: Users }
-          ].map(({ id, label, icon: Icon }) => (
+        <div className="reviewer-sort-chips mb-8" role="group" aria-label="Filter reviewers">
+          {FILTER_OPTIONS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
-              onClick={() => setSelectedFilter(id as FilterType)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '10px 20px',
-                fontSize: '14px',
-                fontWeight: '600',
-                border: 'none',
-                borderRadius: '25px',
-                background: selectedFilter === id ? '#F26955' : 'rgba(255,255,255,0.1)',
-                color: 'white',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                whiteSpace: 'nowrap',
-                boxShadow: selectedFilter === id ? '0 4px 15px rgba(255, 45, 85, 0.3)' : 'none'
-              }}
+              type="button"
+              className={`reviewer-sort-chip flex items-center gap-1.5${selectedFilter === id ? ' is-active' : ''}`}
+              onClick={() => setSelectedFilter(id)}
+              aria-pressed={selectedFilter === id}
             >
-              <Icon size={16} />
+              <Icon size={14} aria-hidden />
               {label}
             </button>
           ))}
@@ -257,215 +203,95 @@ export default function ReviewersIndexPage() {
       </div>
 
       {/* Reviewers Grid */}
-      <div style={{ 
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '0 20px'
-      }}>
-        {error && (
-          <div style={{ 
-            background: '#ff4444',
-            color: 'white',
-            padding: '20px',
-            borderRadius: '16px',
-            marginBottom: '20px',
-            textAlign: 'center'
-          }}>
-            <p style={{ margin: 0 }}>Error: {error}</p>
+      <div className="mx-auto max-w-6xl px-5">
+        {error ? (
+          <div className="error-state mb-6 rounded-2xl border border-red-500/30 bg-red-500/10">
+            <p className="text-red-400">Error: {error}</p>
           </div>
-        )}
+        ) : null}
 
-        {filteredReviewers.length === 0 && !loading && !error && (
-          <div style={{ 
-            background: '#2A1B3D',
-            padding: '60px 20px',
-            borderRadius: '16px',
-            textAlign: 'center',
-            border: '1px solid rgba(255,255,255,0.06)'
-          }}>
-            <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.72)', margin: 0 }}>
-              {searchTerm ? `No reviewers found matching "${searchTerm}"` : 'No reviewers available yet'}
+        {filteredReviewers.length === 0 && !error ? (
+          <div className="no-creators rounded-2xl border border-white/8 bg-white/[0.04]">
+            <p>
+              {searchTerm
+                ? `No reviewers found matching "${searchTerm}"`
+                : 'No reviewers available yet'}
             </p>
+            {searchTerm ? (
+              <button type="button" className="btn-secondary mt-4" onClick={clearSearch}>
+                Clear search
+              </button>
+            ) : null}
           </div>
-        )}
+        ) : null}
 
-        <div style={{ 
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-          gap: '20px',
-        }}>
+        <div className="creators-grid">
           {filteredReviewers.map((reviewer) => (
             <Link
               key={reviewer.id}
               href={`/${reviewer.username || reviewer.id}`}
-              style={{ textDecoration: 'none' }}
+              className="creator-card group h-full text-left no-underline transition-all duration-300 hover:-translate-y-1 hover:border-[var(--grad-start)] hover:shadow-[0_12px_40px_rgba(255,111,0,0.15)]"
             >
-              <div
-                style={{
-                  background: '#2A1B3D',
-                  borderRadius: '20px',
-                  padding: '24px',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-                  transition: 'all 0.3s ease',
-                  cursor: 'pointer',
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  border: '1px solid rgba(255,255,255,0.06)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-8px)';
-                  e.currentTarget.style.boxShadow = '0 12px 40px rgba(255, 45, 85, 0.2)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 111, 0, 0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)';
-                }}
-              >
-                {/* Avatar & Basic Info */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
-                  <img
-                    src={getAvatarUrl(reviewer.avatar_url)}
-                    alt={reviewer.full_name || reviewer.username}
-                    style={{
-                      width: '70px',
-                      height: '70px',
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      border: '3px solid #f0f0f0'
-                    }}
-                  />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <h3 style={{ 
-                      margin: '0 0 4px 0',
-                      fontSize: '20px',
-                      fontWeight: '700',
-                      color: '#FFFFFF',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {reviewer.full_name || reviewer.username}
-                    </h3>
-                    {reviewer.username && reviewer.full_name && (
-                      <p style={{ 
-                        margin: 0,
-                        fontSize: '14px',
-                        color: 'rgba(255,255,255,0.72)',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        @{reviewer.username}
-                      </p>
-                    )}
-                  </div>
+              {/* Avatar & Basic Info */}
+              <div className="mb-4 flex w-full items-center gap-4 text-left">
+                <AsyncAvatar
+                  avatarPathOrUrl={reviewer.avatar_url}
+                  alt={reviewer.displayName}
+                  size={70}
+                />
+                <div className="min-w-0 flex-1">
+                  <h3 className="creator-name truncate text-left">{reviewer.displayName}</h3>
+                  {reviewer.username && reviewer.displayName !== reviewer.username ? (
+                    <p className="creator-username truncate text-left">@{reviewer.username}</p>
+                  ) : null}
                 </div>
-
-                {/* Rating & Price */}
-                <div style={{ 
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '16px',
-                  padding: '12px',
-                  background: 'rgba(255,111,0,0.1)',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255,111,0,0.2)'
-                }}>
-                  {reviewer.rating_average ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Star fill="#F26955" stroke="#F26955" size={18} />
-                      <span style={{ fontWeight: '700', fontSize: '16px', color: '#FFFFFF' }}>
-                        {reviewer.rating_average.toFixed(1)}
-                      </span>
-                    </div>
-                  ) : (
-                    <div style={{ color: 'rgba(255,255,255,0.72)', fontSize: '14px' }}>New</div>
-                  )}
-                  
-                  {reviewer.hourly_rate && (
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: '700', fontSize: '18px', color: '#F26955' }}>
-                        ${reviewer.hourly_rate}
-                      </div>
-                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.72)' }}>per review</div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Bio */}
-                {reviewer.bio && (
-                  <p style={{ 
-                    margin: '0 0 16px 0',
-                    fontSize: '14px',
-                    color: 'rgba(255,255,255,0.72)',
-                    lineHeight: '1.6',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden'
-                  }}>
-                    {reviewer.bio}
-                  </p>
-                )}
-
-                {/* Skills */}
-                {reviewer.skills && reviewer.skills.length > 0 && (
-                  <div style={{ 
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '8px',
-                    marginTop: 'auto'
-                  }}>
-                    {reviewer.skills.slice(0, 3).map((skill, index) => (
-                      <span
-                        key={index}
-                        style={{
-                          padding: '6px 12px',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          background: '#F26955',
-                          color: 'white',
-                          borderRadius: '20px'
-                        }}
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                    {reviewer.skills.length > 3 && (
-                      <span style={{
-                        padding: '6px 12px',
-                        fontSize: '12px',
-                        color: 'rgba(255,255,255,0.72)',
-                        background: 'rgba(255,255,255,0.1)',
-                        borderRadius: '20px'
-                      }}>
-                        +{reviewer.skills.length - 3}
-                      </span>
-                    )}
-                  </div>
-                )}
               </div>
+
+              {/* Rating & Price */}
+              <div className="mb-4 flex w-full items-center justify-between rounded-xl border border-[var(--grad-start)]/20 bg-[rgba(255,111,0,0.1)] px-3 py-3">
+                {reviewer.rating_average ? (
+                  <div className="creator-rating mb-0 flex items-center gap-1.5">
+                    <Star fill="var(--grad-start)" stroke="var(--grad-start)" size={18} />
+                    <span className="font-bold text-white">{reviewer.rating_average.toFixed(1)}</span>
+                  </div>
+                ) : (
+                  <span className="text-sm text-white/70">New</span>
+                )}
+
+                {reviewer.hourly_rate ? (
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-[var(--grad-start)]">
+                      ${reviewer.hourly_rate}
+                    </div>
+                    <div className="text-xs text-white/70">per review</div>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Bio */}
+              {reviewer.bio ? (
+                <p className="mb-4 line-clamp-3 text-left text-sm leading-relaxed text-white/70">
+                  {reviewer.bio}
+                </p>
+              ) : null}
+
+              {/* Skills */}
+              {reviewer.skills && reviewer.skills.length > 0 ? (
+                <div className="creator-skills mt-auto w-full justify-start">
+                  {reviewer.skills.slice(0, 3).map((skill, index) => (
+                    <span key={index} className="skill-tag">
+                      {skill}
+                    </span>
+                  ))}
+                  {reviewer.skills.length > 3 ? (
+                    <span className="skill-tag text-white/70">+{reviewer.skills.length - 3}</span>
+                  ) : null}
+                </div>
+              ) : null}
             </Link>
           ))}
         </div>
       </div>
-
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        
-        /* Hide scrollbar for filter chips */
-        div::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
     </div>
   );
 }
-

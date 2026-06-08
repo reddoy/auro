@@ -8,8 +8,7 @@ import HeroReviewsStat from '../components/landing/HeroReviewsStat';
 import LandingTwoPaths from '../components/landing/LandingTwoPaths';
 import LandingStickyCTA from '../components/landing/LandingStickyCTA';
 import LandingCTAs from '../components/LandingCTAs';
-import { Card, CardContent } from '../components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import TestimonialsSection from '../components/landing/TestimonialsSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,63 +84,7 @@ function HomePageContent() {
 
         <LandingTwoPaths />
 
-        {/* Testimonials */}
-        <section className="landing-section py-16 lg:py-20">
-          <div className="container relative z-10 mx-auto px-4">
-            <div className="text-center space-y-12">
-              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
-                What people are saying
-              </h2>
-
-              <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                <Card className="border-white/20 bg-white/10 backdrop-blur-md transition-all duration-300 hover:border-white/30 hover:bg-white/[0.12]">
-                  <CardContent className="p-8 space-y-5">
-                    <p className="text-white text-base leading-relaxed italic">
-                      &ldquo;So many guys are close to having solid profiles, they just need honest feedback. Auro makes it easy to help and get paid.&rdquo;
-                    </p>
-                    <div className="flex items-center gap-4 pt-2">
-                      <Avatar className="h-20 w-20 overflow-hidden ring-2 ring-white/20 md:h-24 md:w-24">
-                        <AvatarImage
-                          src="/jenna_headshot.jpg"
-                          alt="Jenna - Reviewer"
-                          className="object-cover scale-125"
-                        />
-                        <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-2xl">J</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-bold text-white text-xl md:text-2xl">Jenna</p>
-                        <p className="text-sm text-white/80">Reviewer</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-white/20 bg-white/10 backdrop-blur-md transition-all duration-300 hover:border-white/30 hover:bg-white/[0.12]">
-                  <CardContent className="p-8 space-y-5">
-                    <p className="text-white text-base leading-relaxed italic">
-                      &ldquo;Sometimes one tweak makes a huge difference in matches. I like that I can give direct feedback and get paid for it.&rdquo;
-                    </p>
-                    <div className="flex items-center gap-4 pt-2">
-                      <Avatar className="h-20 w-20 overflow-hidden ring-2 ring-white/20 md:h-24 md:w-24">
-                        <AvatarImage
-                          src="/katie_headshot.jpg"
-                          alt="Katie - Reviewer"
-                          className="object-cover scale-y-110 scale-x-100"
-                          style={{ objectPosition: 'center 40%' }}
-                        />
-                        <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-2xl">K</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-bold text-white text-xl md:text-2xl">Katie</p>
-                        <p className="text-sm text-white/80">Reviewer</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </section>
+        <TestimonialsSection />
 
         {/* Founder */}
         <section className="landing-section landing-founder py-12 lg:py-20">

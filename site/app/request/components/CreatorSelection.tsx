@@ -30,9 +30,18 @@ function displayName(c: Creator) {
   return (c.full_name || c.username || 'Reviewer').trim();
 }
 
+function shuffleCreators<T>(items: T[]): T[] {
+  const list = [...items];
+  for (let i = list.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  return list;
+}
+
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: 'price_low', label: 'Cheapest' },
-  { key: 'price_high', label: 'Price High' },
+  { key: 'price_low', label: 'Price · low' },
+  { key: 'price_high', label: 'Price · high' },
 ];
 
 export default function CreatorSelection({
@@ -111,7 +120,7 @@ export default function CreatorSelection({
           ? normalized.filter((creator) => creator.id !== currentUser.id)
           : normalized;
 
-        setCreators(filteredCreators);
+        setCreators(shuffleCreators(filteredCreators));
 
         if (filteredCreators.length > 0 && !hasAutoSelectedRef.current) {
           let preselectedCreator: Creator | undefined;
