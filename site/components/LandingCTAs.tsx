@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { Button } from './ui/button';
+import { trackCtaClick } from '@/lib/analytics';
 import {
   LANDING_CTA_MOBILE_HERO_PRIMARY,
   LANDING_CTA_MOBILE_HERO_SECONDARY,
@@ -32,6 +33,7 @@ export default function LandingCTAs({
 }: Props) {
   const isNav = variant === 'nav';
   const isMobileHero = !isNav && tone === 'mobileHero';
+  const location = isNav ? 'nav' : isMobileHero ? 'mobile_sticky' : 'hero';
   const primaryClass = isNav
     ? LANDING_CTA_NAV_PRIMARY
     : isMobileHero
@@ -57,6 +59,7 @@ export default function LandingCTAs({
             href="/reviewers/apply"
             className="relative z-[1] flex items-center justify-center gap-2 pointer-events-auto"
             aria-label="Apply to become a reviewer"
+            onClick={() => trackCtaClick('become_reviewer', location)}
           >
             <span>Become a Reviewer</span>
             {!isNav && (
@@ -74,6 +77,7 @@ export default function LandingCTAs({
             href="/request"
             className="relative z-[1] flex items-center justify-center gap-2 pointer-events-auto"
             aria-label="Request a profile review"
+            onClick={() => trackCtaClick('get_reviewed', location)}
           >
             <span>Get Reviewed</span>
             {!isNav && (

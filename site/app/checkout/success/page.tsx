@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { trackPurchase } from '@/lib/analytics';
 
 export default function CheckoutSuccessPage() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function CheckoutSuccessPage() {
       const csId = url.searchParams.get('rid');
       
       if (csId) {
+        trackPurchase({ transactionId: csId });
         setMessage(
           'Payment confirmed. Your reviewer can accept or decline — you will be refunded if they decline.'
         );

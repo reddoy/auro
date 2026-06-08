@@ -5,6 +5,7 @@ import AppLayoutClient from '@/components/app/AppLayoutClient';
 export const metadata: Metadata = {
   title: 'Auro',
   description: 'Your Auro dashboard and onboarding',
+  robots: { index: false, follow: false },
 };
 
 export default function WebAppLayout({ children }: { children: React.ReactNode }) {

@@ -13,6 +13,7 @@ import AuthStep from './components/AuthStep';
 import PaymentStep from './components/PaymentStep';
 import DownloadApp from './components/DownloadApp';
 import AsyncAvatar from './components/AsyncAvatar';
+import { trackFunnelStep } from '../../lib/analytics';
 
 export type RequestData = {
   creatorId?: string;
@@ -176,6 +177,7 @@ export default function RequestPage() {
   useEffect(() => {
     currentStepRef.current = currentStep;
     requestDataRef.current = requestData;
+    trackFunnelStep('request', currentStep);
   }, [currentStep, requestData]);
 
   const saveFlowState = useCallback(() => {
