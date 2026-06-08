@@ -153,7 +153,10 @@ export default function ReviewersIndexPage() {
         <p className="mx-auto mb-8 max-w-xl text-[clamp(16px,4vw,20px)] leading-relaxed text-white/90">
           Get honest feedback from verified reviewers on your style, photos, and more
         </p>
-        <LandingCTAs variant="hero" className="mx-auto max-w-xs" />
+        {/* Nav shows these from md+; hero CTAs are mobile-only to avoid duplicate left-aligned desktop layout */}
+        <div className="flex justify-center md:hidden">
+          <LandingCTAs variant="hero" tone="mobileHero" />
+        </div>
       </section>
 
       {/* Search & Filters */}

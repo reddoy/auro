@@ -37,18 +37,10 @@ type Testimonial = ReviewerTestimonial | CustomerTestimonial;
 const TESTIMONIALS: Testimonial[] = [
   {
     type: 'reviewer',
-    username: 'jennathiemann65',
-    fallbackName: 'Jenna',
-    quote:
-      'So many guys are close to having solid profiles, they just need honest feedback. Auro makes it easy to help and get paid.',
-    role: 'Reviewer',
-  },
-  {
-    type: 'reviewer',
     username: 'khdrake10',
     fallbackName: 'Katie',
     quote:
-      'Sometimes one tweak makes a huge difference in matches. I like that I can give direct feedback and get paid for it.',
+      "Most guys are closer than they think. I just tell them what's not working and what to change. Easy way to make a little extra too.",
     role: 'Reviewer',
   },
   {
@@ -56,7 +48,7 @@ const TESTIMONIALS: Testimonial[] = [
     username: 'aislinn306',
     fallbackName: 'Aislinn',
     quote:
-      'Most profiles are one honest note away from working. I like that Auro keeps feedback direct and respectful — and that my time actually counts.',
+      "I was nervous it'd feel awkward but it doesn't. You look at their profile, keep it honest, and that's it. Pretty straightforward.",
     role: 'Reviewer',
   },
   {
@@ -64,7 +56,7 @@ const TESTIMONIALS: Testimonial[] = [
     name: 'Adam',
     photo: '/Adam_Testimonial.jpg',
     quote:
-      "I finally understood why my photos weren't landing. One review pointed out what I was missing, and my matches picked up within a week.",
+      "Someone pointed out my first photo wasn't doing anything for me. Swapped it and got more matches within like a week.",
     role: 'Member',
   },
   {
@@ -72,15 +64,7 @@ const TESTIMONIALS: Testimonial[] = [
     name: 'Liam',
     photo: '/Liam_Testimonial.jpg',
     quote:
-      "My main photo was holding me back and I had no idea. The feedback was specific and actually useful — not generic advice I'd read online.",
-    role: 'Member',
-  },
-  {
-    type: 'customer',
-    name: 'Noah',
-    photo: '/Noah_Testimonial.jpg',
-    quote:
-      'Worth it. Clear notes on my profile and photos, no fluff. I updated everything the same night and felt a lot more confident swiping.',
+      "Way more helpful than asking friends who just say you look fine. She actually told me which pics to drop and which to lead with.",
     role: 'Member',
   },
 ];
@@ -197,7 +181,7 @@ export default function TestimonialsSection() {
             What people are saying
           </h2>
 
-          <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-2">
             {TESTIMONIALS.map((testimonial) =>
               testimonial.type === 'reviewer' ? (
                 <ReviewerCard
