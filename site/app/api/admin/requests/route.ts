@@ -1,5 +1,6 @@
 import { requireAdmin } from '@/lib/admin-server';
 import { formatDisplayName } from '@/lib/admin-display';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,19 +17,6 @@ const VALID_STATUSES = new Set([
 
 const PROFILE_SUMMARY =
   'id, email, username, first_name, last_name, avatar_url, preferences';
-
-const REQUEST_SELECT = `
-  id,
-  status,
-  payment_status,
-  amount_cents,
-  created_at,
-  photos,
-  user_id,
-  influencer_id,
-  reviewee:profiles!requests_user_id_fkey (${PROFILE_SUMMARY}),
-  reviewer:profiles!requests_influencer_id_fkey (${PROFILE_SUMMARY})
-`;
 
 type ProfileSummary = {
   id: string;
@@ -49,18 +37,9 @@ type RequestRow = {
   photos: string[] | null;
   user_id: string;
   influencer_id: string;
-  reviewee: ProfileSummary | ProfileSummary[] | null;
-  reviewer: ProfileSummary | ProfileSummary[] | null;
 };
 
-function unwrapProfile(
-  p: ProfileSummary | ProfileSummary[] | null | undefined
-): ProfileSummary | null {
-  if (!p) return null;
-  return Array.isArray(p) ? p[0] ?? null : p;
-}
-
-function summarizeParticipant(p: ProfileSummary | null) {
+function summarizeParticipant(p: ProfileSummary | undefined) {
   if (!p) return null;
   return {
     id: p.id,
@@ -70,25 +49,23 @@ function summarizeParticipant(p: ProfileSummary | null) {
   };
 }
 
-function formatRow(row: RequestRow) {
-  const reviewee = unwrapProfile(row.reviewee);
-  const reviewer = unwrapProfile(row.reviewer);
-  return {
-    id: row.id,
-    status: row.status,
-    payment_status: row.payment_status,
-    amount_cents: row.amount_cents,
-    created_at: row.created_at,
-    photo_count: row.photos?.length ?? 0,
-    reviewee: summarizeParticipant(reviewee),
-    reviewer: summarizeParticipant(reviewer),
-  };
+async function loadProfilesById(
+  admin: SupabaseClient,
+  ids: string[]
+): Promise<Map<string, ProfileSummary>> {
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (unique.length === 0) return new Map();
+
+  const { data, error } = await admin.from('profiles').select(PROFILE_SUMMARY).in('id', unique);
+  if (error) {
+    console.error('[admin/requests] profile batch load failed:', error);
+    return new Map();
+  }
+
+  return new Map((data || []).map((p) => [p.id as string, p as ProfileSummary]));
 }
 
-async function findProfileIdsBySearch(
-  admin: ReturnType<typeof import('@/lib/admin-server').getSupabaseAdmin>,
-  q: string
-): Promise<string[]> {
+async function findProfileIdsBySearch(admin: SupabaseClient, q: string): Promise<string[]> {
   const escaped = q.trim().replace(/"/g, '\\"');
   const term = `"%${escaped}%"`;
   const { data, error } = await admin
@@ -137,7 +114,10 @@ export async function GET(req: Request) {
   try {
     let query = gate.admin
       .from('requests')
-      .select(REQUEST_SELECT, { count: 'exact' })
+      .select(
+        'id, status, payment_status, amount_cents, created_at, photos, user_id, influencer_id',
+        { count: 'exact' }
+      )
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -173,13 +153,26 @@ export async function GET(req: Request) {
 
     if (error) {
       console.error('[admin/requests]', error);
-      return new Response(JSON.stringify({ error: 'Failed to load requests' }), {
+      return new Response(JSON.stringify({ error: 'Failed to load requests', details: error.message }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    const requests = ((data || []) as RequestRow[]).map(formatRow);
+    const rows = (data || []) as RequestRow[];
+    const profileIds = rows.flatMap((r) => [r.user_id, r.influencer_id]);
+    const profilesById = await loadProfilesById(gate.admin, profileIds);
+
+    const requests = rows.map((row) => ({
+      id: row.id,
+      status: row.status,
+      payment_status: row.payment_status,
+      amount_cents: row.amount_cents,
+      created_at: row.created_at,
+      photo_count: row.photos?.length ?? 0,
+      reviewee: summarizeParticipant(profilesById.get(row.user_id)),
+      reviewer: summarizeParticipant(profilesById.get(row.influencer_id)),
+    }));
 
     return new Response(JSON.stringify({ requests, count: count ?? requests.length, limit, offset }), {
       status: 200,

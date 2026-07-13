@@ -51,6 +51,8 @@ export async function POST(req: Request) {
     return new Response(
       JSON.stringify({
         error: 'Only pending reviewer applications can be approved or rejected from this screen.',
+        is_reviewer: row.is_reviewer,
+        alreadyDecided: true,
       }),
       { status: 409, headers: { 'Content-Type': 'application/json' } }
     );
@@ -75,9 +77,16 @@ export async function POST(req: Request) {
   }
 
   if (!updated) {
+    const { data: current } = await gate.admin
+      .from('profiles')
+      .select('is_reviewer')
+      .eq('id', userId)
+      .maybeSingle();
     return new Response(
       JSON.stringify({
         error: 'Only pending reviewer applications can be approved or rejected from this screen.',
+        is_reviewer: current?.is_reviewer ?? null,
+        alreadyDecided: true,
       }),
       { status: 409, headers: { 'Content-Type': 'application/json' } }
     );

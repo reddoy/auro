@@ -236,8 +236,8 @@ export default function AdminReviewersPage() {
         setUserTotal(typeof j.count === 'number' ? j.count : null);
         return;
       }
-      const res = await fetch(`/api/admin/reviewers?status=${encodeURIComponent(tab)}`, {
-        headers: { Authorization: h },
+      const res = await fetch(`/api/admin/reviewers?status=${encodeURIComponent(tab)}&_=${Date.now()}`, {
+        headers: { Authorization: h, 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
         cache: 'no-store',
       });
       const j = await res.json().catch(() => ({}));
@@ -257,7 +257,13 @@ export default function AdminReviewersPage() {
           }
         }
         const decided = recentlyDecidedIds.current;
-        setProfiles(rawProfiles.filter((p) => !decided.has(p.id)));
+        setProfiles(
+          rawProfiles.filter((p) => p.is_reviewer === 'pending' && !decided.has(p.id))
+        );
+      } else if (tab === 'approved') {
+        setProfiles(rawProfiles.filter((p) => p.is_reviewer === 'approved'));
+      } else if (tab === 'rejected') {
+        setProfiles(rawProfiles.filter((p) => p.is_reviewer === 'rejected'));
       } else {
         setProfiles(rawProfiles);
       }
@@ -272,6 +278,17 @@ export default function AdminReviewersPage() {
   useEffect(() => {
     if (isAuthorized !== true) return;
     void loadList();
+  }, [isAuthorized, loadList]);
+
+  useEffect(() => {
+    if (isAuthorized !== true) return;
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void loadList();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, [isAuthorized, loadList]);
 
   useEffect(() => {
@@ -326,6 +343,18 @@ export default function AdminReviewersPage() {
         body: JSON.stringify({ userId, action }),
       });
       const j = await res.json().catch(() => ({}));
+      if (res.status === 409) {
+        markRecentlyDecided(userId);
+        setProfiles((prev) => prev.filter((p) => p.id !== userId));
+        const status =
+          j.is_reviewer === 'approved'
+            ? 'Approved'
+            : j.is_reviewer === 'rejected'
+              ? 'Rejected'
+              : 'already decided';
+        setError(`This application is ${status}. Removed from Pending — check the ${status === 'already decided' ? 'Approved or Rejected' : status} tab.`);
+        return;
+      }
       if (!res.ok) throw new Error(j.error || 'Request failed');
       markRecentlyDecided(userId);
       setProfiles((prev) => prev.filter((p) => p.id !== userId));
