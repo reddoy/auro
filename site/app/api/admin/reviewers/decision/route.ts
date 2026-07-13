@@ -58,7 +58,13 @@ export async function POST(req: Request) {
 
   const nextStatus: 'approved' | 'rejected' = action === 'approve' ? 'approved' : 'rejected';
 
-  const { error: updErr } = await gate.admin.from('profiles').update({ is_reviewer: nextStatus }).eq('id', userId);
+  const { data: updated, error: updErr } = await gate.admin
+    .from('profiles')
+    .update({ is_reviewer: nextStatus })
+    .eq('id', userId)
+    .eq('is_reviewer', 'pending')
+    .select('id, is_reviewer')
+    .maybeSingle();
 
   if (updErr) {
     console.error('[admin/reviewers/decision]', updErr);
@@ -66,6 +72,15 @@ export async function POST(req: Request) {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
+  }
+
+  if (!updated) {
+    return new Response(
+      JSON.stringify({
+        error: 'Only pending reviewer applications can be approved or rejected from this screen.',
+      }),
+      { status: 409, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 
   notifyUser(gate.admin, {

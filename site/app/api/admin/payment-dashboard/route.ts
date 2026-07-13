@@ -1,18 +1,21 @@
-import { createClient } from '@supabase/supabase-js';
+import { requireAdmin } from '@/lib/admin-server';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
+  const gate = await requireAdmin(req);
+  if (!gate.ok) {
+    return new Response(JSON.stringify(gate.body), {
+      status: gate.status,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
     const url = new URL(req.url);
     const period = url.searchParams.get('period') || '7d'; // 7d, 30d, 90d, all
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-    if (!supabaseUrl || !supabaseKey) {
-      return new Response(JSON.stringify({ error: 'Server misconfigured' }), { status: 500 });
-    }
-    const admin = createClient(supabaseUrl, supabaseKey);
+    const admin = gate.admin;
 
     // Calculate date filter
     let dateFilter = '';

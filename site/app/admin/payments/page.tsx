@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import AdminNav from '@/app/admin/components/AdminNav';
 
@@ -62,6 +63,14 @@ export default function AdminPaymentsPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+
+  const authHeader = useCallback(async (): Promise<string | null> => {
+    if (!supabase?.auth) return null;
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    return session?.access_token ? `Bearer ${session.access_token}` : null;
+  }, []);
 
   const checkAuth = async () => {
     try {
@@ -135,20 +144,29 @@ export default function AdminPaymentsPage() {
       setRefreshing(true);
     }
     try {
+      const h = await authHeader();
+      if (!h) return;
+
+      const authHeaders = { Authorization: h };
+
       // Load stats
-      const statsResponse = await fetch('/api/admin/payment-dashboard?period=30d');
+      const statsResponse = await fetch('/api/admin/payment-dashboard?period=30d', {
+        headers: authHeaders,
+      });
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
         setStats(statsData.stats);
       }
 
       // Load pending payments
-      const pendingResponse = await fetch('/api/admin/pending-payments');
+      const pendingResponse = await fetch('/api/admin/pending-payments', {
+        headers: authHeaders,
+      });
       if (pendingResponse.ok) {
         const pendingData = await pendingResponse.json();
         setPendingPayments(pendingData.pendingPayments || []);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load data:', err);
     } finally {
       setLoading(false);
@@ -166,18 +184,21 @@ export default function AdminPaymentsPage() {
     setResult(null);
 
     try {
-      const response = await fetch('/api/payments/retry-failed-distributions', {
+      const h = await authHeader();
+      if (!h) throw new Error('Sign in required for this action');
+
+      const response = await fetch('/api/admin/maintenance', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ limit: 50 })
+        headers: { 'Content-Type': 'application/json', Authorization: h },
+        body: JSON.stringify({ tasks: ['retries'] }),
       });
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to process');
       setResult(data);
-      setTimeout(() => loadData(), 2000);
-    } catch (err: any) {
-      setError(err.message);
+      setTimeout(() => void loadData(), 2000);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to process');
     } finally {
       setProcessing(null);
     }
@@ -191,18 +212,21 @@ export default function AdminPaymentsPage() {
     setResult(null);
 
     try {
-      const response = await fetch('/api/payments/process-timeout-refunds', {
+      const h = await authHeader();
+      if (!h) throw new Error('Sign in required for this action');
+
+      const response = await fetch('/api/admin/maintenance', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ limit: 25 })
+        headers: { 'Content-Type': 'application/json', Authorization: h },
+        body: JSON.stringify({ tasks: ['timeouts'] }),
       });
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to process');
       setResult(data);
-      setTimeout(() => loadData(), 2000);
-    } catch (err: any) {
-      setError(err.message);
+      setTimeout(() => void loadData(), 2000);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to process');
     } finally {
       setProcessing(null);
     }
@@ -567,7 +591,12 @@ export default function AdminPaymentsPage() {
                 pendingPayments.map((payment) => (
                   <tr key={payment.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
                     <td style={{ padding: '12px', fontFamily: 'monospace', fontSize: '12px', color: 'rgba(255,255,255,0.72)' }}>
-                      {payment.id.slice(0, 8)}...
+                      <Link
+                        href={`/admin/requests/${payment.id}`}
+                        style={{ color: '#F26955', textDecoration: 'none' }}
+                      >
+                        {payment.id.slice(0, 8)}...
+                      </Link>
                     </td>
                     <td style={{ padding: '12px', color: '#FFFFFF' }}>
                       {payment.reviewer?.username || payment.reviewer?.email || 'Unknown'}

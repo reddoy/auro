@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-type Props = { current: 'payments' | 'people' };
+type Props = { current: 'requests' | 'people' | 'payments' };
 
 export default function AdminNav({ current }: Props) {
   const linkStyle = (active: boolean) =>
@@ -27,11 +27,14 @@ export default function AdminNav({ current }: Props) {
         alignItems: 'center',
       }}
     >
-      <Link href="/admin/payments" style={linkStyle(current === 'payments')}>
-        Payments
+      <Link href="/admin/requests" style={linkStyle(current === 'requests')}>
+        Requests
       </Link>
       <Link href="/admin/reviewers" style={linkStyle(current === 'people')}>
         People &amp; reviewers
+      </Link>
+      <Link href="/admin/payments" style={linkStyle(current === 'payments')}>
+        Payments
       </Link>
     </nav>
   );

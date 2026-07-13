@@ -142,6 +142,8 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
+const RECENTLY_DECIDED_TTL_MS = 60_000;
+
 export default function AdminReviewersPage() {
   const [loading, setLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState<boolean | 'forbidden' | null>(null);
@@ -154,6 +156,18 @@ export default function AdminReviewersPage() {
   const [listLoading, setListLoading] = useState(false);
   const [avatarSrcById, setAvatarSrcById] = useState<Record<string, string>>({});
   const loadListRequestId = useRef(0);
+  const recentlyDecidedIds = useRef<Map<string, number>>(new Map());
+
+  const pruneRecentlyDecidedIds = useCallback(() => {
+    const now = Date.now();
+    for (const [id, expiresAt] of recentlyDecidedIds.current) {
+      if (expiresAt <= now) recentlyDecidedIds.current.delete(id);
+    }
+  }, []);
+
+  const markRecentlyDecided = useCallback((id: string) => {
+    recentlyDecidedIds.current.set(id, Date.now() + RECENTLY_DECIDED_TTL_MS);
+  }, []);
 
   const authHeader = useCallback(async (): Promise<string | null> => {
     if (!supabase?.auth) return null;
@@ -233,14 +247,27 @@ export default function AdminReviewersPage() {
         setProfiles([]);
         return;
       }
-      setProfiles(j.profiles || []);
+      const rawProfiles: ProfileRow[] = j.profiles || [];
+      if (tab === 'pending') {
+        pruneRecentlyDecidedIds();
+        const rawIds = new Set(rawProfiles.map((p) => p.id));
+        for (const id of recentlyDecidedIds.current.keys()) {
+          if (!rawIds.has(id)) {
+            recentlyDecidedIds.current.delete(id);
+          }
+        }
+        const decided = recentlyDecidedIds.current;
+        setProfiles(rawProfiles.filter((p) => !decided.has(p.id)));
+      } else {
+        setProfiles(rawProfiles);
+      }
       setUserTotal(null);
     } finally {
       if (requestId === loadListRequestId.current) {
         setListLoading(false);
       }
     }
-  }, [authHeader, tab]);
+  }, [authHeader, pruneRecentlyDecidedIds, tab]);
 
   useEffect(() => {
     if (isAuthorized !== true) return;
@@ -300,8 +327,8 @@ export default function AdminReviewersPage() {
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error || 'Request failed');
+      markRecentlyDecided(userId);
       setProfiles((prev) => prev.filter((p) => p.id !== userId));
-      await loadList();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to update');
     } finally {
