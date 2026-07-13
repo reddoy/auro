@@ -1,5 +1,6 @@
 import { requireAdmin } from '@/lib/admin-server';
 import { formatDisplayName } from '@/lib/admin-display';
+import { signStoragePath } from '@/lib/admin-storage';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -39,14 +40,28 @@ type RequestRow = {
   influencer_id: string;
 };
 
-function summarizeParticipant(p: ProfileSummary | undefined) {
+function summarizeParticipant(p: ProfileSummary | undefined, avatarUrl: string | null | undefined) {
   if (!p) return null;
   return {
     id: p.id,
     email: p.email,
     username: p.username,
     displayName: formatDisplayName(p),
+    avatarUrl: avatarUrl ?? null,
   };
+}
+
+async function signAvatarUrls(
+  admin: SupabaseClient,
+  profiles: Map<string, ProfileSummary>
+): Promise<Map<string, string | null>> {
+  const entries = await Promise.all(
+    [...profiles.entries()].map(async ([id, profile]) => {
+      const url = profile.avatar_url ? await signStoragePath(admin, profile.avatar_url) : null;
+      return [id, url] as const;
+    })
+  );
+  return new Map(entries);
 }
 
 async function loadProfilesById(
@@ -162,6 +177,7 @@ export async function GET(req: Request) {
     const rows = (data || []) as RequestRow[];
     const profileIds = rows.flatMap((r) => [r.user_id, r.influencer_id]);
     const profilesById = await loadProfilesById(gate.admin, profileIds);
+    const avatarUrlsById = await signAvatarUrls(gate.admin, profilesById);
 
     const requests = rows.map((row) => ({
       id: row.id,
@@ -170,8 +186,14 @@ export async function GET(req: Request) {
       amount_cents: row.amount_cents,
       created_at: row.created_at,
       photo_count: row.photos?.length ?? 0,
-      reviewee: summarizeParticipant(profilesById.get(row.user_id)),
-      reviewer: summarizeParticipant(profilesById.get(row.influencer_id)),
+      reviewee: summarizeParticipant(
+        profilesById.get(row.user_id),
+        avatarUrlsById.get(row.user_id)
+      ),
+      reviewer: summarizeParticipant(
+        profilesById.get(row.influencer_id),
+        avatarUrlsById.get(row.influencer_id)
+      ),
     }));
 
     return new Response(JSON.stringify({ requests, count: count ?? requests.length, limit, offset }), {

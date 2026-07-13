@@ -9,6 +9,14 @@ import RequestStatusBadge from '@/app/admin/components/RequestStatusBadge';
 import { cn } from '@/lib/utils';
 import { formatCents } from '@/lib/admin-display';
 
+type ParticipantSummary = {
+  id: string;
+  email: string | null;
+  displayName: string;
+  username: string | null;
+  avatarUrl: string | null;
+};
+
 type RequestSummary = {
   id: string;
   status: string;
@@ -16,8 +24,8 @@ type RequestSummary = {
   amount_cents: number | null;
   created_at: string;
   photo_count: number;
-  reviewee: { id: string; email: string | null; displayName: string; username: string | null } | null;
-  reviewer: { id: string; email: string | null; displayName: string; username: string | null } | null;
+  reviewee: ParticipantSummary | null;
+  reviewer: ParticipantSummary | null;
 };
 
 type StatusFilter = '' | 'pending' | 'paid' | 'in_progress' | 'completed' | 'rejected' | 'timeout' | 'refunded';
@@ -37,6 +45,48 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0c0325] via-[#1a0b2e] to-[#0c0325] text-white">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">{children}</div>
+    </div>
+  );
+}
+
+function ParticipantCell({ participant }: { participant: ParticipantSummary | null }) {
+  const [broken, setBroken] = useState(false);
+
+  if (!participant) {
+    return <span className="text-white/45">—</span>;
+  }
+
+  const initials = participant.displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || '??';
+
+  return (
+    <div className="flex min-w-0 items-center gap-2.5">
+      {participant.avatarUrl && !broken ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={participant.avatarUrl}
+          alt=""
+          width={32}
+          height={32}
+          className="h-8 w-8 shrink-0 rounded-lg object-cover ring-1 ring-white/10"
+          onError={() => setBroken(true)}
+        />
+      ) : (
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-white/[0.12] to-white/[0.04] text-[10px] font-semibold text-white ring-1 ring-white/10">
+          {initials}
+        </div>
+      )}
+      <div className="min-w-0">
+        <p className="truncate font-medium text-white">{participant.displayName}</p>
+        {participant.email ? (
+          <p className="truncate text-xs text-white/45">{participant.email}</p>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -299,16 +349,10 @@ export default function AdminRequestsPage() {
                   ) : null}
                 </td>
                 <td className="px-4 py-3">
-                  <p className="font-medium text-white">{r.reviewee?.displayName || '—'}</p>
-                  {r.reviewee?.email ? (
-                    <p className="truncate text-xs text-white/45">{r.reviewee.email}</p>
-                  ) : null}
+                  <ParticipantCell participant={r.reviewee} />
                 </td>
                 <td className="px-4 py-3">
-                  <p className="font-medium text-white">{r.reviewer?.displayName || '—'}</p>
-                  {r.reviewer?.email ? (
-                    <p className="truncate text-xs text-white/45">{r.reviewer.email}</p>
-                  ) : null}
+                  <ParticipantCell participant={r.reviewer} />
                 </td>
                 <td className="px-4 py-3 text-white/80">{formatCents(r.amount_cents)}</td>
                 <td className="px-4 py-3 text-white/50">
