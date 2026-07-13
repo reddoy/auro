@@ -40,7 +40,7 @@ function enrichParticipant(p: ProfileRow | null) {
   };
 }
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: { id: string } }) {
   const gate = await requireAdmin(req);
   if (!gate.ok) {
     return new Response(JSON.stringify(gate.body), {
@@ -49,7 +49,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     });
   }
 
-  const { id } = await params;
+  const { id } = params;
   if (!id) {
     return new Response(JSON.stringify({ error: 'Missing request id' }), {
       status: 400,

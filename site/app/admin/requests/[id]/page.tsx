@@ -81,18 +81,14 @@ function TimelineItem({ label, value }: { label: string; value: string | null | 
   );
 }
 
-export default function AdminRequestDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const [requestId, setRequestId] = useState<string | null>(null);
+export default function AdminRequestDetailPage({ params }: { params: { id: string } }) {
+  const requestId = params.id;
   const [loading, setLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState<boolean | 'forbidden' | null>(null);
   const [detail, setDetail] = useState<RequestDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    void params.then((p) => setRequestId(p.id));
-  }, [params]);
 
   const authHeader = useCallback(async (): Promise<string | null> => {
     if (!supabase?.auth) return null;
