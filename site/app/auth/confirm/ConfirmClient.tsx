@@ -149,6 +149,9 @@ function Inner() {
           if (error) {
             setStatus("error");
             setMessage(error.message || "Unable to verify your email.");
+          } else if (isRecovery) {
+            router.replace("/auth/reset-password");
+            return;
           } else if (isSignup || isInvite) {
             router.replace(postConfirmHref);
             return;
@@ -166,6 +169,9 @@ function Inner() {
           if (error) {
             setStatus("error");
             setMessage(error.message || "Unable to verify your email.");
+          } else if (isRecovery) {
+            router.replace("/auth/reset-password");
+            return;
           } else if (isSignup || isInvite) {
             router.replace(postConfirmHref);
             return;
