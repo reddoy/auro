@@ -16,6 +16,7 @@ import {
 } from '@/lib/api';
 import { APP_INBOX_QUERY_KEY } from '@/hooks/useAppInboxQuery';
 import { getDisplayAvatarUrl } from '@/lib/avatar';
+import { downloadUrlAsFile, slugForFilename } from '@/lib/download-blob';
 import { getSignedStorageUrl } from '@/lib/storage-media-url';
 import { supabase } from '@/lib/supabase';
 import type { DbRequestSummary } from '@/types';
@@ -35,6 +36,7 @@ export default function ReviewRequestClient({ id }: { id: string }) {
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
   const [submittingRating, setSubmittingRating] = useState(false);
+  const [downloadingVideo, setDownloadingVideo] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -112,6 +114,20 @@ export default function ReviewRequestClient({ id }: { id: string }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  const onDownloadVideo = useCallback(async () => {
+    if (!videoSrc) return;
+    setDownloadingVideo(true);
+    try {
+      const slug = slugForFilename(reviewerName, 'reviewer');
+      await downloadUrlAsFile(videoSrc, `auro-review-${slug}.mp4`);
+      showToast('Video downloaded');
+    } catch (e: unknown) {
+      showToast(e instanceof Error ? e.message : 'Could not download video');
+    } finally {
+      setDownloadingVideo(false);
+    }
+  }, [videoSrc, reviewerName, showToast]);
 
   const onSubmitRating = useCallback(async () => {
     if (!request) return;
@@ -242,18 +258,33 @@ export default function ReviewRequestClient({ id }: { id: string }) {
         )}
 
         {request.status === 'in_progress' && (
-          <p className="mt-8 text-white/70">
-            Your reviewer is working on this request. Once they upload and submit the final video, it will appear here.
-          </p>
+          <div className="mt-8 space-y-2 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+            <p className="font-medium text-white">Waiting for your review</p>
+            <p className="text-sm text-white/70">
+              {reviewerName} is recording your video review. It will show up here as soon as they
+              submit it.
+            </p>
+          </div>
         )}
 
         {request.status === 'completed' && review && (
           <div className="mt-8 space-y-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p className="text-lg font-semibold text-white">
-              {reviewerName}&apos;s review
-            </p>
+            <div>
+              <p className="text-lg font-semibold text-white">Your review is ready</p>
+              <p className="mt-1 text-sm text-white/60">From {reviewerName}</p>
+            </div>
             {videoSrc ? (
-              <video src={videoSrc} controls className="w-full rounded-xl" />
+              <>
+                <video src={videoSrc} controls playsInline className="aspect-video w-full rounded-xl bg-black/40" />
+                <button
+                  type="button"
+                  disabled={downloadingVideo}
+                  onClick={onDownloadVideo}
+                  className="min-h-[48px] w-full rounded-2xl border border-white/20 py-3 font-semibold text-white transition active:bg-white/10 disabled:opacity-50"
+                >
+                  {downloadingVideo ? 'Downloading…' : 'Download video'}
+                </button>
+              </>
             ) : (
               <p className="text-sm text-white/60">Your reviewer didn&apos;t attach a video.</p>
             )}
