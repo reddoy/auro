@@ -90,7 +90,9 @@ export default function ReviewRequestClient({ id }: { id: string }) {
 
       const v = (row.review as { media?: { videoUrl?: string | null } } | null)?.media?.videoUrl;
       if (v) {
-        setVideoSrc(/^https?:/i.test(v) ? v : (await getSignedStorageUrl(v, 'request-media')) || v);
+        // Stored value is a signed URL that expires (30 days). Re-sign from the
+        // underlying object path so the video keeps playing indefinitely.
+        setVideoSrc((await getSignedStorageUrl(v, 'request-media')) || v);
       } else {
         setVideoSrc(null);
       }

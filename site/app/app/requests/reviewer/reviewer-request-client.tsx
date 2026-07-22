@@ -65,7 +65,9 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
 
   const resolveVideoSrc = useCallback(async (raw: string | null | undefined) => {
     if (!raw) return null;
-    if (/^https?:\/\//i.test(raw) || raw.startsWith('blob:')) return raw;
+    // Local object-URL previews are used as-is; everything else (bare paths and
+    // Supabase signed URLs, which expire) is re-signed from its object path.
+    if (raw.startsWith('blob:')) return raw;
     return (await getSignedStorageUrl(raw, 'request-media')) || raw;
   }, []);
 
@@ -565,7 +567,10 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
               </p>
               {(request.review as { media?: { videoUrl?: string | null } }).media?.videoUrl && (
                 <video
-                  src={(request.review as { media: { videoUrl: string } }).media.videoUrl}
+                  src={
+                    draftPreviewSrc ||
+                    (request.review as { media: { videoUrl: string } }).media.videoUrl
+                  }
                   controls
                   playsInline
                   className="mt-4 aspect-video w-full rounded-xl"
