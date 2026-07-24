@@ -12,6 +12,7 @@ import {
   acceptRequest,
   denyRequest,
   getRequestById,
+  RequestTimeoutError,
   saveRequestReviewDraft,
   submitRequestReview,
 } from '@/lib/api';
@@ -236,7 +237,29 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
       showToast('Review submitted');
       router.push('/app/requests?tab=active');
     } catch (e: unknown) {
-      showToast(e instanceof Error ? e.message : 'Submit failed');
+      // The submit may have succeeded server-side even if the response was slow
+      // or aborted (e.g. mobile timeout, or payout latency in an older build).
+      // Re-check status before surfacing a failure so we never trap the reviewer
+      // on "Submitting…" for a review that was actually delivered.
+      try {
+        const latest = await getRequestById(request.id);
+        if (latest && latest.status === 'completed') {
+          setRequest(latest);
+          clearLocalVideo();
+          showToast('Review submitted');
+          router.push('/app/requests?tab=active');
+          return;
+        }
+      } catch {
+        // Ignore re-check failures; fall through to the error toast below.
+      }
+      const msg =
+        e instanceof RequestTimeoutError
+          ? 'This is taking longer than expected. Check your connection and try again — if it already went through, it will show as submitted.'
+          : e instanceof Error
+            ? e.message
+            : 'Submit failed';
+      showToast(msg);
     } finally {
       setBusy(false);
     }
@@ -533,7 +556,7 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
               {videoFile ? (
                 <button
                   type="button"
-                  disabled={draftSaving}
+                  disabled={draftSaving || busy}
                   onClick={onSaveDraftVideo}
                   className="min-h-[48px] w-full rounded-2xl border border-white/20 py-3 font-semibold text-white disabled:opacity-50"
                 >
@@ -548,7 +571,7 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
 
               <button
                 type="button"
-                disabled={busy || !hasVideoReady}
+                disabled={busy || draftSaving || !hasVideoReady}
                 onClick={onSubmitReview}
                 className="min-h-[52px] w-full rounded-2xl bg-primary py-3 font-bold text-primary-foreground disabled:opacity-50 hover:bg-primary/90"
               >

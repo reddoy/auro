@@ -56,20 +56,48 @@ async function ensureProfileRowForUser(user: ProfileBootstrapUser): Promise<bool
   }
 }
 
-async function authenticatedJsonFetch<T>(path: string, body: unknown): Promise<T> {
+/** Thrown when a request aborts on its client-side timeout (vs. a server error). */
+export class RequestTimeoutError extends Error {
+  constructor(message = 'Request timed out') {
+    super(message);
+    this.name = 'RequestTimeoutError';
+  }
+}
+
+async function authenticatedJsonFetch<T>(
+  path: string,
+  body: unknown,
+  opts: { timeoutMs?: number } = {}
+): Promise<T> {
   const { data: sessionData } = await sb().auth.getSession();
   const token = sessionData.session?.access_token;
   if (!token) {
     throw new Error('Not signed in');
   }
-  const res = await fetch(`${getSiteBaseUrl()}${path}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-  });
+  const controller = opts.timeoutMs ? new AbortController() : null;
+  const timer =
+    controller && opts.timeoutMs
+      ? setTimeout(() => controller.abort(), opts.timeoutMs)
+      : null;
+  let res: Response;
+  try {
+    res = await fetch(`${getSiteBaseUrl()}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+      signal: controller?.signal,
+    });
+  } catch (e: unknown) {
+    if (e instanceof DOMException && e.name === 'AbortError') {
+      throw new RequestTimeoutError();
+    }
+    throw e;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
   const json = (await res.json().catch(() => ({}))) as T & { error?: string };
   if (!res.ok) {
     throw new Error((json as { error?: string }).error || `Request failed (${res.status})`);
@@ -507,10 +535,11 @@ export async function submitRequestReview(params: {
     throw new Error('Video review is required');
   }
 
-  const json = await authenticatedJsonFetch<{ ok?: boolean; request: Record<string, unknown> }>('/api/reviews/submit', {
-    requestId,
-    videoUrl,
-  });
+  const json = await authenticatedJsonFetch<{ ok?: boolean; request: Record<string, unknown> }>(
+    '/api/reviews/submit',
+    { requestId, videoUrl },
+    { timeoutMs: 30000 }
+  );
   return mapRequestRow(json.request);
 }
 

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
+import { waitUntil } from '@vercel/functions';
 import { processRefund } from '@/lib/refund-server';
 import { INTERNAL_AURO_HEADER, getInternalJobSecret } from '@/lib/internal-fetch-secret';
 import { notifyUser } from '@/lib/notifications/notify-user';
@@ -293,6 +294,19 @@ export async function serverSubmitReviewRequest(
     }).catch((err) => console.error('[serverSubmitReviewRequest] notify failed', err));
   }
 
+  // Payout distribution is non-critical to the submit: the review is already
+  // delivered and the DB is marked completed above. Distributing the payout
+  // makes several sequential Stripe calls that can be slow or stall on mobile,
+  // so it MUST NOT gate the response — otherwise the reviewer's UI hangs on
+  // "Submitting…" even though the submission succeeded. Run it in the background
+  // via waitUntil (keeps the function alive after the response is sent). The
+  // daily `retry-failed-distributions` cron reconciles anything dropped/failed.
+  waitUntil(triggerReviewerPayout(requestId));
+
+  return mapRequestRow(data as Record<string, unknown>);
+}
+
+async function triggerReviewerPayout(requestId: string): Promise<void> {
   try {
     const res = await fetch(`${serverOrigin()}/api/payments/distribute-reviewer-payment`, {
       method: 'POST',
@@ -318,6 +332,4 @@ export async function serverSubmitReviewRequest(
   } catch (e) {
     console.error('[serverSubmitReviewRequest] distribute fetch error', e);
   }
-
-  return mapRequestRow(data as Record<string, unknown>);
 }
