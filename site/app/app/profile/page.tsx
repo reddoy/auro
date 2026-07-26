@@ -262,6 +262,7 @@ export default function AppProfilePage() {
   const stripeOutstanding = stripeRequirements?.outstanding ?? [];
   const stripePendingVerificationOnly =
     !!stripeRequirements?.pendingVerification && stripeOutstanding.length === 0;
+  const stripeRequiresIdentityInfo = !!stripeRequirements?.requiresIdentityInfo;
   const connectStripeStatusLoading =
     profile?.is_reviewer === 'approved' && hasStripeConnectAccountId && connectStripeSummary?.loading === true;
   const reviewerStatus = profile?.is_reviewer ?? null;
@@ -487,6 +488,30 @@ export default function AppProfilePage() {
                 <p className="mt-2.5 text-xs leading-relaxed text-amber-100/80">
                   {stripeRequirements.disabledReason}
                 </p>
+              ) : null}
+              {!connectStripeStatusLoading && !stripeOnboardingComplete ? (
+                stripeRequiresIdentityInfo ? (
+                  <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5">
+                    <p className="text-xs leading-relaxed text-white/70">
+                      Stripe — our payments processor — collects this to verify your identity and send your money.
+                      Auro never sees your SSN, date of birth, or bank details. It&apos;s the same ID check used to
+                      get paid on any platform.
+                    </p>
+                    <a
+                      href="https://support.stripe.com/questions/know-your-customer-obligations"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-1.5 inline-flex text-xs font-semibold text-primary hover:underline"
+                    >
+                      Why does Stripe need this? <span aria-hidden className="ml-1">→</span>
+                    </a>
+                  </div>
+                ) : (
+                  <p className="mt-2.5 text-xs leading-relaxed text-white/45">
+                    Stripe verifies your identity to send payouts — Auro never sees your SSN, date of birth, or bank
+                    details.
+                  </p>
+                )
               ) : null}
               {!hasStripeConnectAccountId ? (
                 <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-2.5">

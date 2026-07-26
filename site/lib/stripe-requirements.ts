@@ -29,6 +29,11 @@ export interface AccountRequirementsSummary {
   /** Humanized `requirements.disabled_reason`, or null when payouts aren't blocked for this reason. */
   disabledReason: string | null;
   errors: RequirementError[];
+  /**
+   * True when an outstanding item is sensitive identity/tax info (SSN, DOB, ID doc).
+   * Used to surface a trust note reassuring reviewers that Stripe (not Auro) collects it.
+   */
+  requiresIdentityInfo: boolean;
 }
 
 /**
@@ -59,6 +64,20 @@ const REQUIREMENT_PREFIX_LABELS: Array<{ prefix: string; label: string }> = [
   { prefix: 'individual.address', label: 'Home address' },
   { prefix: 'individual.verification', label: 'Identity verification' },
 ];
+
+/** Requirement keys that ask for sensitive identity/tax info reviewers tend to hesitate over. */
+const IDENTITY_REQUIREMENT_PREFIXES = [
+  'individual.verification',
+  'individual.dob',
+  'individual.id_number',
+  'individual.ssn_last_4',
+];
+
+function isIdentityRequirement(code: string): boolean {
+  return IDENTITY_REQUIREMENT_PREFIXES.some(
+    (prefix) => code === prefix || code.startsWith(`${prefix}.`)
+  );
+}
 
 /** Humanized copy for `requirements.disabled_reason` values Stripe can return. */
 const DISABLED_REASON_LABELS: Record<string, string> = {
@@ -140,5 +159,6 @@ export function summarizeAccountRequirements(acct: Stripe.Account): AccountRequi
     pendingVerification: pendingVerificationList.length > 0,
     disabledReason,
     errors,
+    requiresIdentityInfo: orderedCodes.some(isIdentityRequirement),
   };
 }
