@@ -1,6 +1,10 @@
 import Stripe from 'stripe';
 import { requireAuthenticatedUser } from '@/lib/require-authenticated-user';
 import { isReviewerApprovedForStripeConnect } from '@/lib/reviewer-connect-gate';
+import {
+  summarizeAccountRequirements,
+  type AccountRequirementsSummary,
+} from '@/lib/stripe-requirements';
 
 /**
  * Returns whether the signed-in user may use Stripe Connect APIs (`express-onboarding` / `express-login`).
@@ -42,6 +46,7 @@ export async function GET(req: Request) {
   let stripeDetailsSubmitted: boolean | null = null;
   let stripeChargesEnabled: boolean | null = null;
   let stripePayoutsEnabled: boolean | null = null;
+  let requirements: AccountRequirementsSummary | null = null;
 
   if (eligibleForOnboarding && connectAccountId) {
     const secret = process.env.STRIPE_SECRET_KEY || '';
@@ -52,6 +57,7 @@ export async function GET(req: Request) {
         stripeDetailsSubmitted = !!acct.details_submitted;
         stripeChargesEnabled = !!acct.charges_enabled;
         stripePayoutsEnabled = !!acct.payouts_enabled;
+        requirements = summarizeAccountRequirements(acct);
       } catch (e: unknown) {
         if (e instanceof Stripe.errors.StripeError) {
           console.warn('[connect-eligibility] Stripe retrieve failed', e.code, e.message);
@@ -73,6 +79,7 @@ export async function GET(req: Request) {
       stripeChargesEnabled,
       stripePayoutsEnabled,
       canOpenExpressDashboard,
+      requirements,
     }),
     { status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8' } }
   );

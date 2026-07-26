@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { getCurrentProfileWeb } from '@/lib/profile-web';
 import { readJsonResponseBody } from '@/lib/read-json-response-body';
 import { supabase } from '@/lib/supabase';
+import type { AccountRequirementsSummary } from '@/lib/stripe-requirements';
 import type { Profile } from '@/types';
 
 function profileAvatarViewUrl(avatar_url: string | null | undefined): string | undefined {
@@ -31,6 +32,7 @@ export default function AppProfilePage() {
   const [connectStripeSummary, setConnectStripeSummary] = useState<{
     loading: boolean;
     detailsSubmitted: boolean | null;
+    requirements: AccountRequirementsSummary | null;
   } | null>(null);
   /** Per-request payouts that have failed (attempts > 0, not yet distributed, not refunded). */
   const [failedPayouts, setFailedPayouts] = useState<{
@@ -65,10 +67,10 @@ export default function AppProfilePage() {
       return;
     }
     let cancelled = false;
-    setConnectStripeSummary({ loading: true, detailsSubmitted: null });
+    setConnectStripeSummary({ loading: true, detailsSubmitted: null, requirements: null });
     (async () => {
       if (!supabase) {
-        if (!cancelled) setConnectStripeSummary({ loading: false, detailsSubmitted: null });
+        if (!cancelled) setConnectStripeSummary({ loading: false, detailsSubmitted: null, requirements: null });
         return;
       }
       const {
@@ -76,7 +78,7 @@ export default function AppProfilePage() {
       } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) {
-        if (!cancelled) setConnectStripeSummary({ loading: false, detailsSubmitted: null });
+        if (!cancelled) setConnectStripeSummary({ loading: false, detailsSubmitted: null, requirements: null });
         return;
       }
       try {
@@ -85,15 +87,17 @@ export default function AppProfilePage() {
         });
         const j = (await readJsonResponseBody(res)) as {
           stripeDetailsSubmitted?: boolean;
+          requirements?: AccountRequirementsSummary | null;
         };
         if (cancelled) return;
         setConnectStripeSummary({
           loading: false,
           detailsSubmitted:
             typeof j.stripeDetailsSubmitted === 'boolean' ? j.stripeDetailsSubmitted : null,
+          requirements: j.requirements ?? null,
         });
       } catch {
-        if (!cancelled) setConnectStripeSummary({ loading: false, detailsSubmitted: null });
+        if (!cancelled) setConnectStripeSummary({ loading: false, detailsSubmitted: null, requirements: null });
       }
     })();
     const onVisible = () => {
@@ -109,12 +113,16 @@ export default function AppProfilePage() {
           const res = await fetch('/api/stripe/connect-eligibility', {
             headers: { Authorization: `Bearer ${token}` },
           });
-          const j = (await readJsonResponseBody(res)) as { stripeDetailsSubmitted?: boolean };
+          const j = (await readJsonResponseBody(res)) as {
+            stripeDetailsSubmitted?: boolean;
+            requirements?: AccountRequirementsSummary | null;
+          };
           if (cancelled) return;
           setConnectStripeSummary({
             loading: false,
             detailsSubmitted:
               typeof j.stripeDetailsSubmitted === 'boolean' ? j.stripeDetailsSubmitted : null,
+            requirements: j.requirements ?? null,
           });
         } catch {
           /* ignore */
@@ -250,6 +258,10 @@ export default function AppProfilePage() {
   const reviewerish = profile?.is_reviewer === 'approved' || profile?.is_reviewer === 'pending';
   const hasStripeConnectAccountId = !!profile?.stripe_connect_account_id?.trim();
   const stripeOnboardingComplete = connectStripeSummary?.detailsSubmitted === true;
+  const stripeRequirements = connectStripeSummary?.requirements ?? null;
+  const stripeOutstanding = stripeRequirements?.outstanding ?? [];
+  const stripePendingVerificationOnly =
+    !!stripeRequirements?.pendingVerification && stripeOutstanding.length === 0;
   const connectStripeStatusLoading =
     profile?.is_reviewer === 'approved' && hasStripeConnectAccountId && connectStripeSummary?.loading === true;
   const reviewerStatus = profile?.is_reviewer ?? null;
@@ -437,9 +449,45 @@ export default function AppProfilePage() {
                   : stripeOnboardingComplete
                     ? 'You can receive payouts for completed reviews.'
                     : hasStripeConnectAccountId
-                      ? 'Stripe started your payout profile — finish the steps on Stripe to enable the dashboard and payouts.'
+                      ? stripePendingVerificationOnly
+                        ? 'Stripe is reviewing the details you submitted — no action needed right now.'
+                        : stripeOutstanding.length > 0
+                          ? "Here's what Stripe still needs from you:"
+                          : 'Stripe started your payout profile — finish the steps on Stripe to enable the dashboard and payouts.'
                       : 'Connect Stripe to receive payouts when reviews complete.'}
               </p>
+              {!connectStripeStatusLoading && !stripeOnboardingComplete && stripeOutstanding.length > 0 ? (
+                <ul className="mt-2.5 space-y-1.5" aria-label="Outstanding Stripe requirements">
+                  {stripeOutstanding.map((item) => (
+                    <li key={item.code} className="flex items-start gap-2 text-sm text-white/80">
+                      <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300/80" />
+                      <span>
+                        {item.label}
+                        {item.pastDue ? (
+                          <span className="ml-1.5 text-xs font-medium uppercase tracking-[0.03em] text-amber-200/90">
+                            · overdue
+                          </span>
+                        ) : null}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {!connectStripeStatusLoading && !stripeOnboardingComplete && stripeRequirements?.errors?.length ? (
+                <div className="mt-2.5 space-y-1">
+                  {stripeRequirements.errors.map((err, i) => (
+                    <p key={`${err.requirement}-${i}`} className="text-xs leading-relaxed text-amber-100/80">
+                      {err.reason}
+                    </p>
+                  ))}
+                </div>
+              ) : !connectStripeStatusLoading &&
+                !stripeOnboardingComplete &&
+                stripeRequirements?.disabledReason ? (
+                <p className="mt-2.5 text-xs leading-relaxed text-amber-100/80">
+                  {stripeRequirements.disabledReason}
+                </p>
+              ) : null}
               {!hasStripeConnectAccountId ? (
                 <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-2.5">
                   <div className="flex flex-wrap gap-2.5">
@@ -510,7 +558,11 @@ export default function AppProfilePage() {
               <p className="mt-2 text-sm text-amber-50">
                 {!hasStripeConnectAccountId
                   ? 'Your reviewer profile is approved, but payouts are locked until you connect Stripe.'
-                  : 'Your reviewer profile is approved, but payouts stay locked until you finish every step in Stripe (identity, bank account, etc.).'}
+                  : stripeOutstanding.length > 0
+                    ? 'Your reviewer profile is approved, but payouts stay locked until you finish the Stripe steps listed above.'
+                    : stripePendingVerificationOnly
+                      ? "Your reviewer profile is approved. Stripe is reviewing your details — payouts unlock once it's verified."
+                      : 'Your reviewer profile is approved, but payouts stay locked until you finish every step in Stripe (identity, bank account, etc.).'}
               </p>
             </section>
           ) : null}
