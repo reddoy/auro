@@ -3,8 +3,9 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { requireAdmin } from '@/lib/admin-server';
 import { isTrustedInternalRequest } from '@/lib/internal-fetch-secret';
 import { notifyUser } from '@/lib/notifications/notify-user';
+import { sendOpsAlert } from '@/lib/ops/alerts';
+import { REVIEWER_SHARE_BPS, PLATFORM_FEE_BPS, computePlatformFeeCents } from '@/lib/platform-fee';
 
-const REVIEWER_SHARE_BPS = 8000;
 const MAX_RETRIES = 3;
 
 type ErrorType =
@@ -270,6 +271,26 @@ export async function POST(req: Request) {
           sourceTransactionId = latest.id;
         }
         if (tdDestination && tdDestination === connectAccountId) {
+          // Verify the destination charge actually pulled the platform fee back.
+          // A non-null application_fee_amount materially below 20% means the
+          // charge was mis-created and the platform under-collected; alert so it
+          // can be reconciled (non-fatal — the funds already moved at checkout).
+          const piApplicationFee =
+            typeof (pi as { application_fee_amount?: number | null }).application_fee_amount === 'number'
+              ? (pi as { application_fee_amount: number }).application_fee_amount
+              : null;
+          const expectedFee = computePlatformFeeCents(request.amount_cents || 0);
+          if (piApplicationFee !== null && piApplicationFee < expectedFee) {
+            await sendOpsAlert('Destination charge under-collected platform fee', {
+              requestId,
+              reviewerId: request.influencer_id,
+              connectAccountId,
+              paymentIntentId: piId,
+              applicationFeeAmount: piApplicationFee,
+              expectedFee,
+              feeBps: PLATFORM_FEE_BPS,
+            });
+          }
           await updateRequestSafe(
             admin,
             requestId,
@@ -393,6 +414,36 @@ export async function POST(req: Request) {
     const totalAmount = request.amount_cents || 0;
     const reviewerAmount = Math.floor((totalAmount * REVIEWER_SHARE_BPS) / 10000);
     const auroFee = totalAmount - reviewerAmount;
+
+    // Fail closed: never transfer more than the reviewer's 80% share. If the
+    // resolved platform fee is below the expected minimum, something has drifted
+    // (bad amount_cents, tampered row) and we must not over-pay the reviewer.
+    const expectedMinFee = computePlatformFeeCents(totalAmount);
+    if (totalAmount > 0 && auroFee < expectedMinFee) {
+      await sendOpsAlert('Payout blocked: platform fee below 20% minimum', {
+        requestId,
+        reviewerId: request.influencer_id,
+        totalAmount,
+        reviewerAmount,
+        auroFee,
+        expectedMinFee,
+      });
+      await updateRequestSafe(
+        admin,
+        requestId,
+        {
+          payment_distribution_error: `Platform fee ${auroFee} below expected minimum ${expectedMinFee}; payout blocked.`,
+          payment_distribution_failed_at: new Date().toISOString(),
+          payment_status: 'queued',
+        },
+        'INVALID_AMOUNT'
+      );
+      return paymentError('INVALID_AMOUNT', 'Payout blocked: platform fee below the 20% minimum.', 400, {
+        requestId,
+        reviewerAmount,
+        detail: `auroFee=${auroFee}, expectedMinFee=${expectedMinFee}, totalAmount=${totalAmount}`,
+      });
+    }
     if (reviewerAmount <= 0) {
       await updateRequestSafe(
         admin,

@@ -1,6 +1,7 @@
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { sendOpsAlert } from "@/lib/ops/alerts";
+import { PLATFORM_FEE_BPS } from "@/lib/platform-fee";
 
 type RetryOptions = {
   retryAll?: boolean;
@@ -41,6 +42,74 @@ function isAuthorizedCronRequest(req: Request) {
   return headerToken === expected;
 }
 
+type FeeMismatch = {
+  requestId: string;
+  amountCents: number;
+  recordedFeeCents: number | null;
+  effectiveFeeCents: number;
+  expectedFeeCents: number;
+};
+
+/**
+ * Reconciliation pass: flag any completed request whose effective platform fee
+ * fell below the expected 20%. Column-to-column arithmetic isn't expressible in
+ * PostgREST filters, so we pull completed rows and compute in JS (volume is tiny
+ * and bounded). Emits a single ops alert if any under-collected rows are found.
+ */
+async function runFeeReconciliation(admin: SupabaseClient): Promise<FeeMismatch[]> {
+  const { data, error } = await admin
+    .from("requests")
+    .select("id, amount_cents, application_fee_cents, reviewer_amount_cents")
+    .eq("status", "completed")
+    .limit(1000);
+
+  if (error) {
+    console.error("[fee-reconciliation] query failed", error.message);
+    await sendOpsAlert("Platform fee reconciliation query failed", { error: error.message });
+    return [];
+  }
+
+  const mismatches: FeeMismatch[] = [];
+  for (const row of data || []) {
+    const amountCents = (row as { amount_cents?: number }).amount_cents || 0;
+    if (amountCents <= 0) continue;
+    const recordedFeeCents =
+      typeof (row as { application_fee_cents?: number | null }).application_fee_cents === "number"
+        ? (row as { application_fee_cents: number }).application_fee_cents
+        : null;
+    const reviewerAmountCents =
+      typeof (row as { reviewer_amount_cents?: number | null }).reviewer_amount_cents === "number"
+        ? (row as { reviewer_amount_cents: number }).reviewer_amount_cents
+        : null;
+
+    // Prefer the actual money split (amount - reviewer payout) when distributed;
+    // otherwise fall back to the recorded fee. A missing fee is treated as 0.
+    const effectiveFeeCents =
+      reviewerAmountCents !== null ? amountCents - reviewerAmountCents : recordedFeeCents ?? 0;
+    const expectedFeeCents = Math.floor((amountCents * PLATFORM_FEE_BPS) / 10000);
+
+    // 1-cent tolerance absorbs rounding.
+    if (recordedFeeCents === null || effectiveFeeCents < expectedFeeCents - 1) {
+      mismatches.push({
+        requestId: (row as { id: string }).id,
+        amountCents,
+        recordedFeeCents,
+        effectiveFeeCents,
+        expectedFeeCents,
+      });
+    }
+  }
+
+  if (mismatches.length > 0) {
+    await sendOpsAlert("Platform fee reconciliation: under-charged requests", {
+      count: mismatches.length,
+      feeBps: PLATFORM_FEE_BPS,
+      requests: mismatches.slice(0, 20),
+    });
+  }
+  return mismatches;
+}
+
 async function processRetryJob(
   options: RetryOptions,
   triggeredByCron: boolean
@@ -50,6 +119,9 @@ async function processRetryJob(
     const stripe = buildStripeClient();
     const admin = buildSupabaseAdmin();
     const platformAccountId = requirePlatformAccountId();
+
+    // Independent of retries: verify no completed request under-collected the 20%.
+    const feeMismatches = await runFeeReconciliation(admin);
 
     // Query for failed distributions, held payments, and pending distributions
     // Includes:
@@ -93,7 +165,12 @@ async function processRetryJob(
     }
 
     if (!failedDistributions || failedDistributions.length === 0) {
-      const payload = { success: true, message: "No failed distributions found for retry", processed: 0 };
+      const payload = {
+        success: true,
+        message: "No failed distributions found for retry",
+        processed: 0,
+        feeMismatches: feeMismatches.length,
+      };
       if (triggeredByCron) {
         await sendOpsAlert("[Cron] Retry payouts — nothing to process");
       }
@@ -289,6 +366,7 @@ async function processRetryJob(
         success: true,
         message: `Processed ${results.processed} failed distributions`,
         results,
+        feeMismatches: feeMismatches.length,
       }),
       { status: 200 }
     );

@@ -1,8 +1,7 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { requireAdmin } from '@/lib/admin-server';
-
-const REVIEWER_SHARE_BPS = 8000;
+import { REVIEWER_SHARE_BPS } from '@/lib/platform-fee';
 
 function requireEnv(name: string): string {
   const value = process.env[name]?.trim();

@@ -1,6 +1,8 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { getCheckoutPriceDollars } from '../../../../lib/checkout-web-tier';
+import { PLATFORM_FEE_BPS, computePlatformFeeCents, assertFeeInvariant } from '@/lib/platform-fee';
+import { sendOpsAlert } from '@/lib/ops/alerts';
 
 export async function POST(req: Request) {
   try {
@@ -83,8 +85,8 @@ export async function POST(req: Request) {
     // hourly_rate is what the customer pays, not what the reviewer gets
     let priceCents = 1000; // default $10 fallback
     let connectAccountId: string | undefined = undefined;
-    // Standard fee: 20% for all reviewers (2000 basis points)
-    const auroFeeBps = 2000;
+    // Standard fee: 20% for all reviewers, from the shared platform-fee source of truth.
+    const auroFeeBps = PLATFORM_FEE_BPS;
     try {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
       const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -267,13 +269,31 @@ export async function POST(req: Request) {
       return new Response(JSON.stringify({ error: `Failed to create request: ${(e as any)?.message || 'unknown'}` }), { status: 400 });
     }
 
-    // Compute application fee from auroFeeBps based on customer price
-    // SIMPLE MODEL: Customer pays X, Reviewer gets 80%, Auro absorbs Stripe fee
-    // Standard fee: 20% for all reviewers (2000 basis points)
-    const applicationFeeCents = Math.floor((priceCents * auroFeeBps) / 10000);
-    
-    // Ensure application fee doesn't exceed the total amount
-    const finalApplicationFeeCents = Math.min(applicationFeeCents, priceCents - 50); // Leave at least 50 cents for the creator
+    // Compute application fee from the shared platform-fee source of truth.
+    // SIMPLE MODEL: Customer pays X, Reviewer gets 80%, Auro absorbs Stripe fee.
+    // computePlatformFeeCents also applies the "leave at least MIN_REVIEWER_CENTS
+    // for the reviewer" cap that previously lived inline here.
+    const finalApplicationFeeCents = computePlatformFeeCents(priceCents);
+
+    // Fail closed: never create a session that would give away the platform cut.
+    // If the invariant is violated we refuse the checkout and alert, rather than
+    // silently charging the customer with a zero/under platform fee.
+    try {
+      assertFeeInvariant(priceCents, finalApplicationFeeCents);
+    } catch (feeErr) {
+      const detail = feeErr instanceof Error ? feeErr.message : String(feeErr);
+      await sendOpsAlert('Checkout blocked: platform fee invariant failed', {
+        priceCents,
+        finalApplicationFeeCents,
+        creatorId: resolvedCreatorId || null,
+        requestId: ensuredRequestId || null,
+        detail,
+      });
+      return new Response(
+        JSON.stringify({ error: 'Unable to start checkout due to a pricing configuration error. Please try again later.' }),
+        { status: 500 }
+      );
+    }
 
     // If we have a connected account, create a Direct Charge (session created on connected account)
     // so Stripe fees are charged to the connected account and the platform collects the application fee.
@@ -322,6 +342,21 @@ export async function POST(req: Request) {
       }
     }
     if (useConnectDestination && connectAccountId && connectReady) {
+      // Guard: a destination charge routes the full amount to the reviewer and
+      // only pulls the application fee back to the platform. A zero/missing fee
+      // here would hand the reviewer 100%, so re-assert before wiring it up.
+      if (!finalApplicationFeeCents || finalApplicationFeeCents <= 0) {
+        await sendOpsAlert('Checkout blocked: destination charge with non-positive application fee', {
+          priceCents,
+          finalApplicationFeeCents,
+          connectAccountId,
+          requestId: ensuredRequestId || null,
+        });
+        return new Response(
+          JSON.stringify({ error: 'Unable to start checkout due to a pricing configuration error. Please try again later.' }),
+          { status: 500 }
+        );
+      }
       sessionParams.payment_intent_data = {
         transfer_data: {
           destination: connectAccountId as string,
