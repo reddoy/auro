@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import Cropper from 'react-easy-crop';
 import { Button } from '../../../../components/ui/button';
 import { X, RotateCw } from 'lucide-react';
@@ -16,6 +17,21 @@ export default function ImageCropModal({ image, onCropComplete, onClose }: Props
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  // Portals require the DOM; only render after mount to stay SSR-safe.
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Lock background scroll while the modal is open.
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
 
   const onCropChange = (location: { x: number; y: number }) => {
     setCrop(location);
@@ -89,12 +105,17 @@ export default function ImageCropModal({ image, onCropComplete, onClose }: Props
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-      <div className="bg-gradient-to-br from-background to-card rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden border border-white/10">
+  if (!mounted) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-3 md:p-4"
+      style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))', paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+    >
+      <div className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-background to-card md:max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <h3 className="text-xl font-bold text-white">Crop Profile Picture</h3>
+        <div className="flex flex-shrink-0 items-center justify-between border-b border-white/10 p-4">
+          <h3 className="text-lg font-bold text-white md:text-xl">Crop Profile Picture</h3>
           <button
             onClick={onClose}
             className="p-2 hover:bg-white/10 rounded-lg transition-colors"
@@ -103,78 +124,84 @@ export default function ImageCropModal({ image, onCropComplete, onClose }: Props
           </button>
         </div>
 
-        {/* Cropper Area */}
-        <div className="relative h-[400px] md:h-[500px] bg-black/50">
-          <Cropper
-            image={image}
-            crop={crop}
-            zoom={zoom}
-            rotation={rotation}
-            aspect={1}
-            cropShape="round"
-            showGrid={false}
-            onCropChange={onCropChange}
-            onCropComplete={onCropAreaChange}
-            onZoomChange={setZoom}
-            onRotationChange={setRotation}
-          />
+        {/* Scrollable region: cropper + controls */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          {/* Cropper Area */}
+          <div className="relative flex-shrink-0 bg-black/50" style={{ height: 'min(55vh, 500px)', minHeight: '200px' }}>
+            <Cropper
+              image={image}
+              crop={crop}
+              zoom={zoom}
+              rotation={rotation}
+              aspect={1}
+              cropShape="round"
+              showGrid={false}
+              onCropChange={onCropChange}
+              onCropComplete={onCropAreaChange}
+              onZoomChange={setZoom}
+              onRotationChange={setRotation}
+            />
+          </div>
+
+          {/* Controls */}
+          <div className="space-y-4 p-4 md:p-6">
+            {/* Zoom Slider */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">Zoom</label>
+              <input
+                type="range"
+                value={zoom}
+                min={1}
+                max={3}
+                step={0.1}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider"
+              />
+            </div>
+
+            {/* Rotation */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-gray-300">Rotation</label>
+                <button
+                  onClick={() => setRotation((prev) => (prev + 90) % 360)}
+                  className="flex items-center gap-2 text-xs text-primary hover:text-primary/85"
+                >
+                  <RotateCw className="w-4 h-4" />
+                  Rotate 90°
+                </button>
+              </div>
+              <input
+                type="range"
+                value={rotation}
+                min={0}
+                max={360}
+                step={1}
+                onChange={(e) => setRotation(Number(e.target.value))}
+                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider"
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Controls */}
-        <div className="p-6 space-y-4">
-          {/* Zoom Slider */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Zoom</label>
-            <input
-              type="range"
-              value={zoom}
-              min={1}
-              max={3}
-              step={0.1}
-              onChange={(e) => setZoom(Number(e.target.value))}
-              className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider"
-            />
-          </div>
-
-          {/* Rotation */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-300">Rotation</label>
-              <button
-                onClick={() => setRotation((prev) => (prev + 90) % 360)}
-                className="flex items-center gap-2 text-xs text-primary hover:text-primary/85"
-              >
-                <RotateCw className="w-4 h-4" />
-                Rotate 90°
-              </button>
-            </div>
-            <input
-              type="range"
-              value={rotation}
-              min={0}
-              max={360}
-              step={1}
-              onChange={(e) => setRotation(Number(e.target.value))}
-              className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider"
-            />
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCrop}
-              className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white"
-            >
-              Apply Crop
-            </Button>
-          </div>
+        {/* Pinned footer — always visible even on short laptop-landscape viewports */}
+        <div
+          className="flex flex-shrink-0 gap-3 border-t border-white/10 p-4"
+          style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+        >
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="flex-1 bg-transparent border-white/20 text-white hover:bg-white/10"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleCrop}
+            className="flex-1 bg-gradient-to-r from-primary to-secondary hover:from-primary hover:to-secondary text-white"
+          >
+            Apply Crop
+          </Button>
         </div>
       </div>
 
@@ -207,7 +234,8 @@ export default function ImageCropModal({ image, onCropComplete, onClose }: Props
           box-shadow: 0 2px 12px rgba(255, 111, 0, 0.6);
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   );
 }
 

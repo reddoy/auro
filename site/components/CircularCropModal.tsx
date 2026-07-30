@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import Cropper from 'react-easy-crop';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -23,6 +24,12 @@ export default function CircularCropModal({
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  // Portals require the DOM; only render after mount to stay SSR-safe.
+  const [mounted, setMounted] = useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Reset crop position when modal opens
   React.useEffect(() => {
@@ -31,6 +38,16 @@ export default function CircularCropModal({
       setZoom(1);
       setRotation(0);
     }
+  }, [isOpen]);
+
+  // Lock background scroll while the modal is open.
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
   }, [isOpen]);
 
   const onCropChange = (location: { x: number; y: number }) => {
@@ -161,12 +178,12 @@ export default function CircularCropModal({
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-2 md:p-4" style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))', paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
-      <Card className="flex max-h-[90vh] w-full max-w-sm flex-col overflow-hidden border-white/20 bg-background md:max-h-[85vh]">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 md:pb-3 px-3 md:px-4 pt-3 md:pt-4 flex-shrink-0">
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-2 md:p-4" style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))', paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
+      <Card className="flex max-h-[92dvh] w-full max-w-sm flex-col overflow-hidden border-white/20 bg-background md:max-h-[85vh]">
+        <CardHeader className="flex flex-shrink-0 flex-row items-center justify-between space-y-0 px-3 pb-2 pt-3 md:px-4 md:pb-3 md:pt-4">
           <CardTitle className="text-sm md:text-base font-semibold text-white">Crop Your Photo</CardTitle>
           <Button
             variant="ghost"
@@ -177,10 +194,11 @@ export default function CircularCropModal({
             <X className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Button>
         </CardHeader>
-        
-        <CardContent className="space-y-2 md:space-y-3 flex-1 flex flex-col min-h-0 overflow-y-auto px-3 md:px-4 pb-3 md:pb-4">
+
+        {/* Scrollable region: crop + controls. Keeps the footer buttons always visible. */}
+        <CardContent className="flex min-h-0 flex-1 flex-col space-y-2 overflow-y-auto px-3 pb-2 md:space-y-3 md:px-4">
           {/* Crop Area */}
-          <div className="relative bg-black/50 rounded-lg overflow-hidden flex-shrink-0" style={{ touchAction: 'none', height: 'min(40vh, 280px)', minHeight: '220px', maxHeight: '320px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="relative bg-black/50 rounded-lg overflow-hidden flex-shrink-0" style={{ touchAction: 'none', height: 'min(40vh, 280px)', minHeight: '180px', maxHeight: '320px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: '100%', height: '100%', position: 'relative' }}>
               <Cropper
                 image={URL.createObjectURL(imageFile)}
@@ -241,24 +259,24 @@ export default function CircularCropModal({
               />
             </div>
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-2 pt-1 flex-shrink-0">
-            <Button
-              variant="outline"
-              onClick={onCancel}
-              className="flex-1 h-10 bg-transparent border-white/20 text-white hover:bg-white/10 text-sm font-medium"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCrop}
-              className="h-10 flex-1 text-sm font-medium"
-            >
-              Use Photo
-            </Button>
-          </div>
         </CardContent>
+
+        {/* Pinned footer — always visible even on short laptop-landscape viewports */}
+        <div className="flex flex-shrink-0 gap-2 border-t border-white/10 px-3 pb-3 pt-2 md:px-4 md:pb-4" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+          <Button
+            variant="outline"
+            onClick={onCancel}
+            className="flex-1 h-10 bg-transparent border-white/20 text-white hover:bg-white/10 text-sm font-medium"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleCrop}
+            className="h-10 flex-1 text-sm font-medium"
+          >
+            Use Photo
+          </Button>
+        </div>
       </Card>
 
       <style jsx global>{`
@@ -307,6 +325,7 @@ export default function CircularCropModal({
           z-index: 1 !important;
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   );
 }
