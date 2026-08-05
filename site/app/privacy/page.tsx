@@ -4,7 +4,7 @@ export default function PrivacyPage() {
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         <h1 className="section-title" style={{ marginBottom: 24 }}>Privacy Policy</h1>
         <p style={{ color: 'white', marginBottom: 32, fontSize: '16px' }}>
-          <strong>Last Updated:</strong> October 9, 2025
+          <strong>Last Updated:</strong> August 4, 2026
         </p>
 
         <div style={{ lineHeight: 1.6, color: 'white' }}>
@@ -233,8 +233,14 @@ export default function PrivacyPage() {
           </section>
 
           <section style={{ marginBottom: 32 }}>
-            <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>9. Children's Privacy</h2>
-            <p>Our Service is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us immediately.</p>
+            <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>9. Age Requirements and Children's Privacy</h2>
+            <p>
+              Our Service is intended only for users who are at least 18 years of age. By using the Service, you represent that you are 18 or older. We do not knowingly collect personal information from anyone under 18.
+            </p>
+            <p>
+              If you are a parent or guardian and believe your child under 18 has provided us with personal information, please contact us immediately at{' '}
+              <a href="mailto:privacy@appauro.com" style={{ color: 'white' }}>privacy@appauro.com</a>. We will promptly delete such information from our records.
+            </p>
           </section>
 
           <section style={{ marginBottom: 32 }}>
@@ -276,6 +282,8 @@ export default function PrivacyPage() {
             <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>14. Contact Us</h2>
             <p>If you have any questions about this Privacy Policy or our privacy practices, please contact us:</p>
             <ul style={{ marginLeft: 20, marginBottom: 16 }}>
+              <li><strong>Company:</strong> Cool Hand Studios LLC</li>
+              <li><strong>Mailing Address:</strong> Cool Hand Studios LLC, Seattle, Washington, United States</li>
               <li>Email: <a href="mailto:privacy@appauro.com" style={{ color: 'white' }}>privacy@appauro.com</a></li>
               <li>General Support: <a href="mailto:support@appauro.com" style={{ color: 'white' }}>support@appauro.com</a></li>
               <li>Website: <a href="https://appauro.com" style={{ color: 'white' }}>appauro.com</a></li>

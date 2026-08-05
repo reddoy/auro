@@ -4,7 +4,7 @@ export default function TermsPage() {
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
         <h1 className="section-title" style={{ marginBottom: 24 }}>Terms of Service</h1>
         <p style={{ color: 'white', marginBottom: 32, fontSize: '16px' }}>
-          <strong>Last Updated:</strong> October 8, 2025
+          <strong>Last Updated:</strong> August 4, 2026
         </p>
 
         <div style={{ lineHeight: 1.6, color: 'white' }}>
@@ -32,7 +32,12 @@ export default function TermsPage() {
           <section style={{ marginBottom: 32 }}>
             <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>3. User Accounts</h2>
             
-            <h3 style={{ color: 'white', marginBottom: 12, fontSize: '20px' }}>3.1 Account Creation</h3>
+            <h3 style={{ color: 'white', marginBottom: 12, fontSize: '20px' }}>3.1 Eligibility</h3>
+            <p>
+              You must be at least 18 years old to use the Service. By creating an account or using the Service, you represent and warrant that you are 18 years of age or older and have the legal capacity to enter into these Terms. We may terminate accounts that we reasonably believe belong to users under 18.
+            </p>
+
+            <h3 style={{ color: 'white', marginBottom: 12, fontSize: '20px' }}>3.2 Account Creation</h3>
             <p>To use certain features of our Service, you must create an account. You agree to:</p>
             <ul style={{ marginLeft: 20, marginBottom: 16 }}>
               <li>Provide accurate, current, and complete information</li>
@@ -42,7 +47,7 @@ export default function TermsPage() {
               <li>Notify us immediately of any unauthorized use</li>
             </ul>
 
-            <h3 style={{ color: 'white', marginBottom: 12, fontSize: '20px' }}>3.2 Account Termination</h3>
+            <h3 style={{ color: 'white', marginBottom: 12, fontSize: '20px' }}>3.3 Account Termination</h3>
             <p>We reserve the right to suspend or terminate your account at any time for violations of these Terms or for any other reason at our sole discretion.</p>
           </section>
 
@@ -142,7 +147,8 @@ export default function TermsPage() {
           <section style={{ marginBottom: 32 }}>
             <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>8. Privacy and Data Protection</h2>
             <p>
-              Your privacy is important to us. Our collection and use of personal information is governed by our Privacy Policy, which is incorporated into these Terms by reference. By using our Service, you consent to the collection and use of information as described in our Privacy Policy.
+              Your privacy is important to us. Our collection and use of personal information is governed by our{' '}
+              <a href="/privacy" style={{ color: 'white' }}>Privacy Policy</a>, which is incorporated into these Terms by reference. By using our Service, you consent to the collection and use of information as described in our Privacy Policy.
             </p>
           </section>
 
@@ -237,6 +243,8 @@ export default function TermsPage() {
             <h2 style={{ color: 'white', marginBottom: 16, fontSize: '24px' }}>18. Contact Information</h2>
             <p>If you have any questions about these Terms, please contact us:</p>
             <ul style={{ marginLeft: 20, marginBottom: 16 }}>
+              <li><strong>Company:</strong> Cool Hand Studios LLC</li>
+              <li><strong>Mailing Address:</strong> Cool Hand Studios LLC, Seattle, Washington, United States</li>
               <li>Email: <a href="mailto:legal@appauro.com" style={{ color: 'white' }}>legal@appauro.com</a></li>
               <li>General Support: <a href="mailto:support@appauro.com" style={{ color: 'white' }}>support@appauro.com</a></li>
               <li>Website: <a href="https://appauro.com" style={{ color: 'white' }}>appauro.com</a></li>
