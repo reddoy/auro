@@ -5,6 +5,7 @@ import { isTrustedInternalRequest } from '@/lib/internal-fetch-secret';
 import { notifyUser } from '@/lib/notifications/notify-user';
 import { sendOpsAlert } from '@/lib/ops/alerts';
 import { REVIEWER_SHARE_BPS, PLATFORM_FEE_BPS, computePlatformFeeCents } from '@/lib/platform-fee';
+import { canReviewerReceivePlatformTransfer } from '@/lib/reviewer-connect-gate';
 
 const MAX_RETRIES = 3;
 
@@ -394,18 +395,19 @@ export async function POST(req: Request) {
         detail: acctErr?.message,
       });
     }
-    if (!account.payouts_enabled) {
+    if (!canReviewerReceivePlatformTransfer(account)) {
       await updateRequestSafe(
         admin,
         requestId,
         {
-          payment_distribution_error: 'Reviewer payouts are not enabled in Stripe Connect.',
+          payment_distribution_error:
+            'Reviewer cannot receive platform transfers yet (Stripe Connect transfers capability not active).',
           payment_distribution_failed_at: new Date().toISOString(),
           payment_status: 'queued',
         },
         'PAYOUTS_DISABLED'
       );
-      return paymentError('PAYOUTS_DISABLED', 'Reviewer account is not payout-ready.', 400, {
+      return paymentError('PAYOUTS_DISABLED', 'Reviewer account is not transfer-ready.', 400, {
         requestId,
         connectAccountId,
       });

@@ -12,3 +12,10 @@ export function isReviewerApprovedForStripeConnect(raw: unknown): boolean {
   if (s.toLowerCase() === 'true') return true;
   return false;
 }
+
+/** Platform transfers require the Connect account's transfers capability, not bank payouts. */
+export function canReviewerReceivePlatformTransfer(account: {
+  capabilities?: { transfers?: string | null } | null;
+}): boolean {
+  return account.capabilities?.transfers === 'active';
+}
