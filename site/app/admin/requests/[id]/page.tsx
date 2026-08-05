@@ -16,9 +16,11 @@ type Timeline = {
   accepted_at: string | null;
   denied_at: string | null;
   fulfilled_at: string | null;
+  review_submitted_at: string | null;
   deliver_by: string | null;
   accept_by: string | null;
   review_viewed_at: string | null;
+  payment_distributed_at: string | null;
 };
 
 type PaymentInfo = {
@@ -264,7 +266,9 @@ export default function AdminRequestDetailPage({ params }: { params: { id: strin
           <TimelineItem label="Accept by" value={detail.timeline.accept_by} />
           <TimelineItem label="Accepted" value={detail.timeline.accepted_at} />
           <TimelineItem label="Deliver by" value={detail.timeline.deliver_by} />
+          <TimelineItem label="Review submitted" value={detail.timeline.review_submitted_at} />
           <TimelineItem label="Completed" value={detail.timeline.fulfilled_at} />
+          <TimelineItem label="Payout distributed" value={detail.timeline.payment_distributed_at} />
           <TimelineItem label="Denied" value={detail.timeline.denied_at} />
           <TimelineItem label="Review viewed" value={detail.timeline.review_viewed_at} />
         </div>
@@ -302,6 +306,11 @@ export default function AdminRequestDetailPage({ params }: { params: { id: strin
           >
             {p.payment_distributed ? 'Payout distributed' : 'Payout pending'}
           </span>
+          {p.payment_distributed && p.payment_distributed_at ? (
+            <span className="rounded-full bg-white/[0.06] px-2.5 py-0.5 text-xs font-semibold text-white/70 ring-1 ring-white/10">
+              Paid {formatDate(p.payment_distributed_at)}
+            </span>
+          ) : null}
           {p.refund_status && p.refund_status !== 'none' ? (
             <span className="rounded-full bg-white/[0.06] px-2.5 py-0.5 text-xs font-semibold text-white/70 ring-1 ring-white/10">
               Refund: {p.refund_status}

@@ -85,6 +85,11 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     const review = row.review as { media?: { videoUrl?: string | null }; submittedAt?: string } | null;
     const videoPath = review?.media?.videoUrl;
     const videoUrl = videoPath ? await signStoragePath(gate.admin, videoPath) : null;
+    const reviewSubmittedAt =
+      typeof review?.submittedAt === 'string' && review.submittedAt.trim().length > 0
+        ? review.submittedAt
+        : null;
+    const completedAt = row.fulfilled_at || reviewSubmittedAt;
 
     const revieweeProfile = revieweeRes.data as ProfileRow | null;
     const reviewerProfile = reviewerRes.data as ProfileRow | null;
@@ -121,10 +126,12 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
             created_at: row.created_at,
             accepted_at: row.accepted_at,
             denied_at: row.denied_at,
-            fulfilled_at: row.fulfilled_at,
+            fulfilled_at: completedAt,
+            review_submitted_at: reviewSubmittedAt,
             deliver_by: row.deliver_by,
             accept_by: row.accept_by,
             review_viewed_at: row.review_viewed_at,
+            payment_distributed_at: row.payment_distributed_at,
           },
           payment: {
             amount_cents: row.amount_cents,

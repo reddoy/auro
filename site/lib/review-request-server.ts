@@ -264,10 +264,11 @@ export async function serverSubmitReviewRequest(
     media: { videoUrl, imageUrl: null },
     submittedAt: new Date().toISOString(),
   };
+  const completedAt = reviewPayload.submittedAt;
 
   const { data, error } = await admin
     .from('requests')
-    .update({ review: reviewPayload, status: 'completed' })
+    .update({ review: reviewPayload, status: 'completed', fulfilled_at: completedAt })
     .eq('id', requestId)
     .in('status', ['in_progress', 'paid'])
     .select(REQUEST_SELECT)

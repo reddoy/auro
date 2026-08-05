@@ -30,6 +30,20 @@ interface PendingPayment {
   } | null;
 }
 
+type RetryTaskResult = {
+  processed?: number;
+  successful?: number;
+  failed?: number;
+  skipped?: number;
+  message?: string;
+  feeMismatches?: number;
+  results?: RetryTaskResult;
+};
+
+function getRetryTaskResult(maintenanceResult: { results?: { retries?: RetryTaskResult } } | null): RetryTaskResult | null {
+  return maintenanceResult?.results?.retries ?? null;
+}
+
 export default function AdminPaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -354,6 +368,7 @@ export default function AdminPaymentsPage() {
   const totalPendingAmount = pendingPayments.reduce((sum, p) => sum + (p.reviewer_amount_cents || 0), 0);
   const withStripe = pendingPayments.filter(p => p.reviewer?.stripe_connect_account_id).length;
   const withoutStripe = pendingPayments.filter(p => !p.reviewer?.stripe_connect_account_id).length;
+  const retryResult = getRetryTaskResult(result);
 
   return (
     <div style={{ 
@@ -508,14 +523,24 @@ export default function AdminPaymentsPage() {
         }}>
           <h3 style={{ marginTop: 0, color: '#3DDC84', marginBottom: '15px' }}>✅ Processing Complete</h3>
           <div style={{ background: '#1F1629', padding: '15px', borderRadius: '4px', fontFamily: 'monospace', fontSize: '14px', color: 'rgba(255,255,255,0.72)' }}>
-            {result.results && (
+            {retryResult ? (
               <>
-                <div style={{ color: '#FFFFFF' }}><strong>Processed:</strong> {result.results.processed || 0}</div>
-                <div style={{ color: '#3DDC84' }}><strong>Successful:</strong> {result.results.successful || 0}</div>
-                <div style={{ color: '#FF4D4F' }}><strong>Failed:</strong> {result.results.failed || 0}</div>
-                <div style={{ color: '#FFB300' }}><strong>Skipped:</strong> {result.results.skipped || 0}</div>
+                <div style={{ color: '#FFFFFF' }}><strong>Processed:</strong> {retryResult.processed ?? 0}</div>
+                <div style={{ color: '#3DDC84' }}><strong>Successful:</strong> {retryResult.successful ?? 0}</div>
+                <div style={{ color: '#FF4D4F' }}><strong>Failed:</strong> {retryResult.failed ?? 0}</div>
+                <div style={{ color: '#FFB300' }}><strong>Skipped:</strong> {retryResult.skipped ?? 0}</div>
+                {retryResult.message ? (
+                  <div style={{ color: 'rgba(255,255,255,0.72)', marginTop: '10px' }}>
+                    <strong>Details:</strong> {retryResult.message}
+                  </div>
+                ) : null}
+                {(retryResult.processed ?? 0) === 0 && totalPending === 0 ? (
+                  <div style={{ color: '#3DDC84', marginTop: '10px' }}>
+                    All completed reviews are already paid — nothing left to retry.
+                  </div>
+                ) : null}
               </>
-            )}
+            ) : null}
             {result.message && <div style={{ color: 'rgba(255,255,255,0.72)', marginTop: '10px' }}><strong>Message:</strong> {result.message}</div>}
           </div>
         </div>
