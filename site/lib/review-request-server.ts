@@ -5,6 +5,7 @@ import { processRefund } from '@/lib/refund-server';
 import { INTERNAL_AURO_HEADER, getInternalJobSecret } from '@/lib/internal-fetch-secret';
 import { notifyUser } from '@/lib/notifications/notify-user';
 import { getRequestNotificationContext } from '@/lib/notifications/request-context';
+import { REVIEW_DELIVER_WINDOW_MS } from '@/lib/request-deadlines';
 import { sendOpsAlert } from '@/lib/ops/alerts';
 
 function serverOrigin(): string {
@@ -97,7 +98,7 @@ export async function serverAcceptReviewRequest(
   const updateData: Record<string, string> = {
     status: 'in_progress',
     accepted_at: now.toISOString(),
-    deliver_by: new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString(),
+    deliver_by: new Date(now.getTime() + REVIEW_DELIVER_WINDOW_MS).toISOString(),
   };
   const { data, error } = await admin
     .from('requests')

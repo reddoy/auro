@@ -12,3 +12,25 @@ export function appRequestUrl(requestId: string, role: 'reviewer' | 'reviewee'):
   }
   return `${base}/app/requests/review/${requestId}`;
 }
+
+export function appProfileUrl(): string {
+  return `${getSiteOrigin()}/app/profile`;
+}
+
+export function appRequestsUrl(): string {
+  return `${getSiteOrigin()}/app/requests`;
+}
+
+export function appSignInUrl(redirectTo?: string): string {
+  const base = `${getSiteOrigin()}/auth/sign-in`;
+  if (!redirectTo) return base;
+  return `${base}?redirect_to=${encodeURIComponent(redirectTo)}`;
+}
+
+export function appForgotPasswordUrl(): string {
+  return `${getSiteOrigin()}/auth/forgot-password`;
+}
+
+export function appSupportUrl(): string {
+  return `${getSiteOrigin()}/support`;
+}

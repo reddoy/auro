@@ -317,7 +317,7 @@ export default function PaymentStep({ requestData, onSuccess, onBack, supabase }
                 <span className="security-icon">⚡</span>
                 <div>
                   <strong>Refund timelines</strong>
-                  <p>Reviewer has 2 weeks to accept, then 48 hours to complete — or you get a full refund</p>
+                  <p>Reviewer has 2 weeks to accept, then 72 hours to complete — or you get a full refund</p>
                 </div>
               </div>
               

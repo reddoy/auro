@@ -1,3 +1,4 @@
+import { REVIEW_DELIVER_WINDOW_MS } from '@/lib/request-deadlines';
 import { supabase } from '@/lib/supabase';
 import type { DbInfluencerSummary, DbRequestSummary, DbUserProfile, DbReviewerSummary } from '@/types';
 
@@ -504,8 +505,8 @@ export async function updateRequestStatus(requestId: string, status: string): Pr
     const now = new Date();
     // Set accept_by to now (when reviewer accepts)
     updateData.accept_by = now.toISOString();
-    // Set deliver_by to 48 hours from now (when reviewer must complete)
-    updateData.deliver_by = new Date(now.getTime() + 48 * 60 * 60 * 1000).toISOString();
+    // Set deliver_by to 72 hours from now (when reviewer must complete)
+    updateData.deliver_by = new Date(now.getTime() + REVIEW_DELIVER_WINDOW_MS).toISOString();
   }
   
   const { data, error } = await sb()

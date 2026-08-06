@@ -69,7 +69,7 @@ The Auro Team`);
               <div className="timeline-step">3</div>
               <div className="timeline-content">
                 <strong>Review Process</strong>
-                <p>Once accepted, your reviewer will provide detailed feedback within 48 hours. If not completed within 48 hours, you will be automatically refunded.</p>
+                <p>Once accepted, your reviewer will provide detailed feedback within 72 hours. If not completed within 72 hours, you will be automatically refunded.</p>
               </div>
             </div>
             

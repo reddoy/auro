@@ -19,7 +19,7 @@ export function buildProductSmsMessage(
     case 'payment_receipt_reviewee':
       return `Auro: Payment received. ${reviewerName} has 14 days to accept. ${getSiteOrigin()}/app/requests`;
     case 'request_accepted_reviewee':
-      return `${reviewerName} accepted your Auro review — expect it within 48h. ${requestId ? appRequestUrl(requestId, 'reviewee') : getSiteOrigin()}`;
+      return `${reviewerName} accepted your Auro review — expect it within 72h. ${requestId ? appRequestUrl(requestId, 'reviewee') : getSiteOrigin()}`;
     case 'review_completed_reviewee':
       return `Auro: Your video review is ready. Watch now: ${requestId ? appRequestUrl(requestId, 'reviewee') : getSiteOrigin()}`;
     case 'request_declined_reviewee':

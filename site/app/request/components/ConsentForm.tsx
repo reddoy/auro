@@ -123,7 +123,7 @@ export default function ConsentForm({ consent, onConsentChange, onNext, onBack }
               <h5>5. Payment & Refunds</h5>
               <ul>
                 <li>Payments are processed securely through Stripe</li>
-                <li>Reviews are typically completed within 48 hours</li>
+                <li>Reviews are typically completed within 72 hours</li>
                 <li>Refunds may be issued at our discretion for incomplete or inappropriate reviews</li>
               </ul>
             </div>

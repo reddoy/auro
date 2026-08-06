@@ -121,7 +121,7 @@ export default function TermsPage() {
             <p>Refunds are handled on a case-by-case basis. Generally:</p>
             <ul style={{ marginLeft: 20, marginBottom: 16 }}>
               <li><strong>Reviewer decline:</strong> If your reviewer declines your request after payment, you receive a full refund (typically 5–10 business days on your card)</li>
-              <li><strong>Automatic refunds:</strong> If a reviewer does not accept or deny within 14 days of payment, or does not complete an accepted review within 48 hours of acceptance, you will automatically receive a full refund</li>
+              <li><strong>Automatic refunds:</strong> If a reviewer does not accept or deny within 14 days of payment, or does not complete an accepted review within 72 hours of acceptance, you will automatically receive a full refund</li>
               <li>Refunds may be issued for technical issues preventing service delivery</li>
               <li>No refunds for completed reviews or user dissatisfaction with review content</li>
               <li>Manual refund requests must be submitted within 30 days of purchase</li>

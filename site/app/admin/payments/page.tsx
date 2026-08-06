@@ -456,7 +456,7 @@ export default function AdminPaymentsPage() {
           <button
             onClick={handleProcessTimeoutRefunds}
             disabled={processing !== null}
-            title="Processes requests that have timed out (reviewer didn't accept within 14 days or complete within 48 hours) and automatically refunds the customer via Stripe"
+            title="Processes requests that have timed out (reviewer didn't accept within 14 days or complete within 72 hours) and automatically refunds the customer via Stripe"
             style={{
               background: processing === 'timeout' ? '#342346' : '#F26955',
               color: 'white',

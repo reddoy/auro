@@ -168,7 +168,7 @@ export default function CheckoutSuccessPage() {
             </div>
             <div className="feature-item">
               <div className="feature-dot"></div>
-              <span>Full refund if not accepted within 2 weeks, or not completed within 48 hours after accept</span>
+              <span>Full refund if not accepted within 2 weeks, or not completed within 72 hours after accept</span>
             </div>
             <div className="feature-item">
               <div className="feature-dot"></div>
