@@ -332,7 +332,9 @@ export default function ReviewerRequestClient({ id }: { id: string }) {
   }
 
   const showWorkspace = request.status === 'paid' || request.status === 'in_progress';
-  const notes = (request.notes || '').trim();
+  // notes is jsonb: freeform text OR structured media metadata from checkout.
+  // Only show freeform string notes — never stringify the media payload.
+  const notes = typeof request.notes === 'string' ? request.notes.trim() : '';
   const activePreview = localPreviewUrl || draftPreviewSrc;
   const hasVideoReady = Boolean(videoFile || draftVideoUrl);
 

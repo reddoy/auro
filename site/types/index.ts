@@ -105,7 +105,8 @@ export interface DbRequestSummary {
     | 'timeout'
     | 'refunded';
   photos: string[];
-  notes?: string | null;
+  /** jsonb: freeform string notes, or structured media metadata from checkout */
+  notes?: string | Record<string, unknown> | null;
   review?: {
     ratings?: {
       overall?: number;
