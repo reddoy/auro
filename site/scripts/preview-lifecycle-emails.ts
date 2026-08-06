@@ -25,9 +25,9 @@ function loadEnvLocal(): void {
 
 loadEnvLocal();
 
-const PREVIEW_TO = process.argv[2] || process.env.PREVIEW_EMAIL_TO;
+const previewTo = process.argv[2] || process.env.PREVIEW_EMAIL_TO;
 
-if (!PREVIEW_TO) {
+if (!previewTo) {
   console.error('Usage: PREVIEW_EMAIL_TO=you@example.com npx tsx scripts/preview-lifecycle-emails.ts');
   process.exit(1);
 }
@@ -56,7 +56,7 @@ const lifecycleTypes: ProductNotificationType[] = [
 async function main() {
   for (const type of lifecycleTypes) {
     const result = await sendProductEmail({
-      to: PREVIEW_TO,
+      to: previewTo,
       type,
       data: sampleData,
     });
@@ -66,7 +66,7 @@ async function main() {
       process.exit(1);
     }
 
-    console.log(`Sent ${type} → ${PREVIEW_TO} (${result.id})`);
+    console.log(`Sent ${type} → ${previewTo} (${result.id})`);
     await new Promise((resolve) => setTimeout(resolve, 600));
   }
 
