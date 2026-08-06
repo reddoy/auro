@@ -3,6 +3,7 @@ export function wrapProductEmailHtml(params: {
   bodyHtml: string;
   ctaLabel?: string;
   ctaUrl?: string;
+  footerHtml?: string;
 }): string {
   const ctaBlock =
     params.ctaLabel && params.ctaUrl
@@ -12,6 +13,15 @@ export function wrapProductEmailHtml(params: {
         </td>
       </tr>`
       : '';
+
+  const footerBlock =
+    params.footerHtml === ''
+      ? ''
+      : `<tr>
+            <td style="color:#8B7FA8;font-size:13px;line-height:20px;padding-top:16px;border-top:1px solid #2A1F45;">
+              ${params.footerHtml ?? 'You received this because you have an Auro account. Manage notifications in your account settings.'}
+            </td>
+          </tr>`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -37,11 +47,7 @@ export function wrapProductEmailHtml(params: {
             </td>
           </tr>
           ${ctaBlock}
-          <tr>
-            <td style="color:#8B7FA8;font-size:13px;line-height:20px;padding-top:16px;border-top:1px solid #2A1F45;">
-              You received this because you have an Auro account. Manage notifications in your account settings.
-            </td>
-          </tr>
+          ${footerBlock}
         </table>
       </td>
     </tr>

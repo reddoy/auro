@@ -91,6 +91,8 @@ export default function AdminRequestDetailPage({ params }: { params: { id: strin
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [repairStatus, setRepairStatus] = useState<string | null>(null);
+  const [founderEmailStatus, setFounderEmailStatus] = useState<string | null>(null);
 
   const authHeader = useCallback(async (): Promise<string | null> => {
     if (!supabase?.auth) return null;
@@ -152,6 +154,48 @@ export default function AdminRequestDetailPage({ params }: { params: { id: strin
     } finally {
       setRefreshing(false);
       setLoading(false);
+    }
+  }, [authHeader, requestId]);
+
+  const repairUploads = useCallback(async () => {
+    const h = await authHeader();
+    if (!h) return;
+    setRepairStatus('Repairing…');
+    try {
+      const res = await fetch(`/api/admin/requests/${requestId}/repair-uploads`, {
+        method: 'POST',
+        headers: { Authorization: h, 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setRepairStatus(j.error || 'Repair failed');
+        return;
+      }
+      setRepairStatus(j.moved ? 'Photos moved to permanent storage.' : 'Photo paths updated.');
+      await loadDetail();
+    } catch {
+      setRepairStatus('Repair failed');
+    }
+  }, [authHeader, requestId, loadDetail]);
+
+  const sendFounderUpdate = useCallback(async () => {
+    const h = await authHeader();
+    if (!h) return;
+    setFounderEmailStatus('Sending…');
+    try {
+      const res = await fetch(`/api/admin/requests/${requestId}/send-founder-update`, {
+        method: 'POST',
+        headers: { Authorization: h },
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setFounderEmailStatus(j.skipped ? 'Resend not configured — send manually (see chat).' : j.error || 'Send failed');
+        return;
+      }
+      setFounderEmailStatus(`Sent to ${j.to}`);
+    } catch {
+      setFounderEmailStatus('Send failed');
     }
   }, [authHeader, requestId]);
 
@@ -243,16 +287,38 @@ export default function AdminRequestDetailPage({ params }: { params: { id: strin
             ) : null}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => void loadDetail()}
-          disabled={refreshing}
-          className="inline-flex items-center gap-2 self-start rounded-xl border border-white/15 bg-white/[0.06] px-4 py-2 text-sm font-semibold text-white/90 disabled:opacity-50"
-        >
-          <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
-          Refresh
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => void loadDetail()}
+            disabled={refreshing}
+            className="inline-flex items-center gap-2 self-start rounded-xl border border-white/15 bg-white/[0.06] px-4 py-2 text-sm font-semibold text-white/90 disabled:opacity-50"
+          >
+            <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
+            Refresh
+          </button>
+          <button
+            type="button"
+            onClick={() => void repairUploads()}
+            className="inline-flex items-center gap-2 self-start rounded-xl border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary disabled:opacity-50"
+          >
+            Repair photos
+          </button>
+          <button
+            type="button"
+            onClick={() => void sendFounderUpdate()}
+            className="inline-flex items-center gap-2 self-start rounded-xl border border-white/15 bg-white/[0.06] px-4 py-2 text-sm font-semibold text-white/90"
+          >
+            Email reviewee (founder note)
+          </button>
+        </div>
       </div>
+      {repairStatus ? (
+        <p className="mt-2 text-sm text-white/60">{repairStatus}</p>
+      ) : null}
+      {founderEmailStatus ? (
+        <p className="mt-1 text-sm text-white/60">{founderEmailStatus}</p>
+      ) : null}
 
       <div className="mt-8 grid gap-4 lg:grid-cols-2">
         <ParticipantCard label="Reviewee" participant={detail.reviewee} />

@@ -33,7 +33,7 @@ export async function logNotificationDelivery(
   admin: SupabaseClient,
   params: {
     userId: string;
-    type: ProductNotificationType;
+    type: ProductNotificationType | string;
     entityId?: string;
     channel: NotificationChannel;
     status: 'sent' | 'failed' | 'skipped';

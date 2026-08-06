@@ -106,6 +106,58 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
     };
   }, []);
 
+  function StoredPhoto({
+    pathOrUrl,
+    alt,
+    onRemove,
+  }: {
+    pathOrUrl: string;
+    alt: string;
+    onRemove: () => void;
+  }) {
+    const [src, setSrc] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+      let cancelled = false;
+      void (async () => {
+        if (/^https?:\/\//i.test(pathOrUrl)) {
+          if (!cancelled) setSrc(pathOrUrl);
+          return;
+        }
+        const params = new URLSearchParams({
+          path: pathOrUrl.replace(/^\/+/, ''),
+          expiresIn: '3600',
+        });
+        try {
+          const res = await fetch(`/api/storage/signed-view?${params.toString()}`);
+          if (!res.ok) return;
+          const json = await res.json();
+          if (!cancelled) setSrc((json?.url as string) || null);
+        } catch {
+          /* ignore */
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [pathOrUrl]);
+
+    return (
+      <div className="photo-item">
+        {src ? (
+          <img src={src} alt={alt} />
+        ) : (
+          <div className="upload-progress" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
+            <div className="spinner"></div>
+          </div>
+        )}
+        <button type="button" className="remove-photo" onClick={onRemove}>
+          ×
+        </button>
+      </div>
+    );
+  }
+
   const uploadToSupabase = async (file: File, category: string): Promise<string> => {
     setUploadProgress(prev => ({ ...prev, [category]: 0 }));
 
@@ -150,22 +202,8 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
       throw new Error(`Signed upload failed: ${uploadErr.message}`);
     }
 
-    // Create short-lived signed URL for display
-    // Ask server to sign a view URL to avoid client storage perms
-    const viewRes = await fetch('/api/storage/signed-upload', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'sign-view', path, expiresIn: 60 * 60 * 24 })
-    });
-    if (!viewRes.ok) {
-      const errText = await viewRes.text();
-      throw new Error(`Failed to sign view URL: ${errText}`);
-    }
-    const viewJson = await viewRes.json();
-    const signedViewUrl = viewJson?.signedUrl as string;
-
     setUploadProgress(prev => ({ ...prev, [category]: 100 }));
-    return signedViewUrl || '';
+    return path || '';
   };
 
   const handleFileUpload = async (files: FileList | null, category: 'outfits' | 'roomTourPhotos' | 'datingProfileScreenshots', isMultiple: boolean = false) => {
@@ -276,16 +314,12 @@ export default function PhotoUpload({ photos, onPhotosChange, onNext, onBack, su
           
           <div className="photo-grid">
             {photos.datingProfileScreenshots.map((shot, index) => (
-              <div key={index} className="photo-item">
-                <img src={shot} alt={`Dating profile ${index + 1}`} />
-                <button
-                  type="button"
-                  className="remove-photo"
-                  onClick={() => removePhoto('datingProfileScreenshots', index)}
-                >
-                  ×
-                </button>
-              </div>
+              <StoredPhoto
+                key={`${shot}-${index}`}
+                pathOrUrl={shot}
+                alt={`Dating profile ${index + 1}`}
+                onRemove={() => removePhoto('datingProfileScreenshots', index)}
+              />
             ))}
             {localPreviews.datingProfileScreenshots.map((preview, index) => (
               <div key={`preview-dating-${index}`} className="photo-item">

@@ -103,7 +103,9 @@ export async function notifyUser(
           status: 'sent',
           providerId: emailResult.id,
         });
-      } else if (!emailResult.skipped) {
+      } else if (emailResult.skipped) {
+        console.warn('[notifyUser] email skipped (not configured)', type, userId, emailResult.error);
+      } else {
         await logNotificationDelivery(admin, {
           userId,
           type,

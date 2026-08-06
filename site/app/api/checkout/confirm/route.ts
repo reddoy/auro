@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { applyCheckoutSessionSideEffects } from '@/lib/finalize-request-uploads';
 import { requireAuthenticatedUser } from '@/lib/require-authenticated-user';
 import { markRequestPaidFromCheckoutSession } from '@/lib/mark-request-paid-from-checkout';
 
@@ -78,6 +79,7 @@ export async function POST(req: Request) {
         console.error('[checkout-confirm] mark paid failed:', paidResult.error);
         return new Response(JSON.stringify({ error: 'Database update failed' }), { status: 500 });
       }
+      await applyCheckoutSessionSideEffects(admin, session, requestId);
       console.log('[checkout-confirm] Database update successful');
     } else {
       console.log('[checkout-confirm] Payment not completed, status:', session.payment_status);

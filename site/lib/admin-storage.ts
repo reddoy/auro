@@ -1,4 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import {
+  bucketForStoragePath,
+  extractSupabaseStoragePath,
+  normalizeStoragePath,
+} from '@/lib/supabase-storage-path';
 
 export async function signStoragePath(
   admin: SupabaseClient,
@@ -7,15 +12,15 @@ export async function signStoragePath(
 ): Promise<string | null> {
   const raw = (pathOrUrl || '').trim();
   if (!raw) return null;
-  if (/^https?:\/\//i.test(raw)) return raw;
 
-  const requestMediaBucket =
-    process.env.NEXT_PUBLIC_SUPABASE_REQUEST_MEDIA_BUCKET || 'request-media';
-  const avatarBucket = process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET || 'avatars';
-  const path = raw.replace(/^\/+/, '');
-  const bucket =
-    path.includes('/avatar/') || path.includes('/selfie/') ? avatarBucket : requestMediaBucket;
+  const extracted = /^https?:\/\//i.test(raw) ? extractSupabaseStoragePath(raw) : null;
+  const path = extracted?.path ?? normalizeStoragePath(raw);
+  if (!path) {
+    if (/^https?:\/\//i.test(raw)) return raw;
+    return null;
+  }
 
+  const bucket = extracted?.bucket ?? bucketForStoragePath(path);
   const { data, error } = await admin.storage.from(bucket).createSignedUrl(path, expiresIn);
   if (error || !data?.signedUrl) return null;
   return data.signedUrl;

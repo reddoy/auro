@@ -1,22 +1,10 @@
-const REQUEST_MEDIA_BUCKET =
-  process.env.NEXT_PUBLIC_SUPABASE_REQUEST_MEDIA_BUCKET || 'request-media';
+import {
+  extractSupabaseStoragePath,
+  normalizeStoragePath,
+  requestMediaBucketName,
+} from '@/lib/supabase-storage-path';
 
-/**
- * If the input is a Supabase Storage URL (signed / public / authenticated),
- * extract the bucket and object path so we can re-sign a fresh URL.
- * Returns null for non-Supabase-storage inputs (e.g. genuinely external URLs).
- */
-function extractSupabaseStoragePath(
-  input: string
-): { bucket: string; path: string } | null {
-  // Match .../storage/v1/object/(sign|public|authenticated)/<bucket>/<path>
-  // (also tolerate the shorter /object/... form seen in some stored values).
-  const re = /\/(?:storage\/v1\/)?object\/(?:sign|public|authenticated)\/([^/?]+)\/([^?]+)/;
-  const withoutQuery = input.split('?')[0] || input;
-  const m = withoutQuery.match(re);
-  if (!m || !m[1] || !m[2]) return null;
-  return { bucket: decodeURIComponent(m[1]), path: decodeURIComponent(m[2]) };
-}
+const REQUEST_MEDIA_BUCKET = requestMediaBucketName();
 
 async function fetchSignedUrl(path: string, bucket: string): Promise<string | null> {
   const params = new URLSearchParams({
@@ -46,18 +34,15 @@ export async function getSignedStorageUrl(
 
   const isHttp = /^https?:\/\//i.test(raw);
   if (isHttp) {
-    // Supabase Storage URLs (signed/public/authenticated) expire, so re-sign
-    // from the underlying object path rather than trusting the stored URL.
     const extracted = extractSupabaseStoragePath(raw);
     if (extracted) {
       const fresh = await fetchSignedUrl(extracted.path, extracted.bucket);
-      // Fall back to the original URL only if re-signing fails.
       return fresh || raw;
     }
-    // Genuinely external URL (not Supabase storage) — use as-is.
     return raw;
   }
 
-  // Bare object path — sign it directly.
-  return fetchSignedUrl(raw, bucket);
+  const path = normalizeStoragePath(raw);
+  if (!path) return null;
+  return fetchSignedUrl(path, bucket);
 }
