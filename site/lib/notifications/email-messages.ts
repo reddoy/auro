@@ -1,4 +1,11 @@
 import { appRequestUrl, getSiteOrigin } from '@/lib/notifications/site-url';
+import {
+  emailGreeting,
+  founderContactHtml,
+  founderContactText,
+  founderSignOffHtml,
+  founderSignOffText,
+} from '@/lib/notifications/email-copy-helpers';
 import { wrapProductEmailHtml } from '@/lib/notifications/email-layout';
 import type { ProductNotificationType } from '@/lib/notifications/types';
 
@@ -20,57 +27,154 @@ export function buildProductEmailMessage(
   const rating = typeof data.rating === 'number' ? data.rating : typeof data.rating === 'string' ? data.rating : '';
   const decision = typeof data.decision === 'string' ? data.decision : '';
   const commentSnippet = typeof data.commentSnippet === 'string' ? data.commentSnippet : '';
+  const recipientFirstName =
+    typeof data.recipientFirstName === 'string' ? data.recipientFirstName : undefined;
+  const profileUrl = `${getSiteOrigin()}/app/profile`;
 
   switch (type) {
     case 'request_paid_reviewer': {
       const url = requestId ? appRequestUrl(requestId, 'reviewer') : `${getSiteOrigin()}/app/requests`;
+      const greeting = emailGreeting(recipientFirstName);
       return {
-        subject: 'New paid review request on Auro',
-        text: `Payment received from ${revieweeName}. Accept or decline within 14 days: ${url}`,
+        subject: 'New paid review request — how to accept and get paid',
+        text: [
+          greeting,
+          '',
+          `${revieweeName} just paid for a review on Auro. Here is how to handle it:`,
+          '',
+          '1. Open the request and Accept or Decline within 14 days. If you decline, they are refunded automatically.',
+          '2. Review their photos and notes. Be honest, specific, and actionable — that is what they are paying for.',
+          '3. Record your video review in the app. Talk through what is working, what is not, and what to change.',
+          '4. Submit when you are done. You have 48 hours after accepting to deliver.',
+          '5. Get paid. If you have not finished Stripe Connect setup yet, do that in your profile first — payout runs after you submit.',
+          '',
+          founderContactText(),
+          '',
+          founderSignOffText(),
+          '',
+          url,
+          profileUrl,
+        ].join('\n'),
         html: wrapProductEmailHtml({
           title: 'New paid review request',
-          bodyHtml: `<p>Hi there,</p><p><strong>${revieweeName}</strong> just paid for a review. You have <strong>14 days</strong> to accept or decline.</p><p>If you decline, they are refunded automatically.</p>`,
+          bodyHtml: `
+            <p>${greeting}</p>
+            <p><strong>${revieweeName}</strong> just paid for a review on Auro. Here is how to handle it:</p>
+            <ol style="padding-left:20px;margin:16px 0;">
+              <li style="margin-bottom:10px;"><strong>Accept or decline</strong> within 14 days. If you decline, they are refunded automatically.</li>
+              <li style="margin-bottom:10px;"><strong>Review their photos and notes.</strong> Be honest, specific, and actionable — that is what they are paying for.</li>
+              <li style="margin-bottom:10px;"><strong>Record your video review</strong> in the app. Talk through what is working, what is not, and what to change.</li>
+              <li style="margin-bottom:10px;"><strong>Submit</strong> when you are done. You have 48 hours after accepting to deliver.</li>
+              <li style="margin-bottom:10px;"><strong>Get paid.</strong> Finish Stripe Connect in your profile if you have not already — payout runs after you submit.</li>
+            </ol>
+            <p>${founderContactHtml()}</p>
+            ${founderSignOffHtml()}
+          `,
           ctaLabel: 'View request',
           ctaUrl: url,
+          footerHtml: '',
         }),
       };
     }
     case 'payment_receipt_reviewee': {
       const url = requestId ? appRequestUrl(requestId, 'reviewee') : `${getSiteOrigin()}/app/requests`;
+      const greeting = emailGreeting(recipientFirstName);
       return {
-        subject: 'Your Auro payment receipt',
-        text: `We received your payment${amount ? ` (${amount})` : ''}. Your reviewer will respond within 14 days. ${url}`,
+        subject: 'Thanks for choosing Auro',
+        text: [
+          greeting,
+          '',
+          `Thanks for choosing Auro${amount ? ` — your payment of ${amount} is confirmed` : ''}.`,
+          '',
+          `I'm RJ. I work with all of our reviewers personally, and I'm reaching out to ${reviewerName} now to make sure they accept your request as soon as possible.`,
+          '',
+          'I used to struggle on dating apps too — it was hard to find someone I could actually trust for honest feedback. That is what we are building here, and it means a lot that you chose us.',
+          '',
+          founderContactText(),
+          '',
+          founderSignOffText(),
+          '',
+          url,
+        ].join('\n'),
         html: wrapProductEmailHtml({
-          title: 'Payment confirmed',
-          bodyHtml: `<p>Thanks for your order${amount ? ` — <strong>${amount}</strong>` : ''}.</p><p><strong>${reviewerName}</strong> can accept or decline within 14 days. If they decline, you are refunded automatically.</p>`,
+          title: 'Thanks for choosing Auro',
+          bodyHtml: `
+            <p>${greeting}</p>
+            <p>Thanks for choosing Auro${amount ? ` — your payment of <strong>${amount}</strong> is confirmed` : ''}.</p>
+            <p>I'm RJ. I work with all of our reviewers personally, and I'm reaching out to <strong>${reviewerName}</strong> now to make sure they accept your request as soon as possible.</p>
+            <p>I used to struggle on dating apps too — it was hard to find someone I could actually trust for honest feedback. That is what we are building here, and it means a lot that you chose us.</p>
+            <p>${founderContactHtml()}</p>
+            ${founderSignOffHtml()}
+          `,
           ctaLabel: 'View your request',
           ctaUrl: url,
+          footerHtml: '',
         }),
       };
     }
     case 'request_accepted_reviewee': {
       const url = requestId ? appRequestUrl(requestId, 'reviewee') : `${getSiteOrigin()}/app/requests`;
+      const greeting = emailGreeting(recipientFirstName);
       return {
         subject: `${reviewerName} accepted your review request`,
-        text: `${reviewerName} is working on your review. Expect it within 48 hours: ${url}`,
+        text: [
+          greeting,
+          '',
+          `Good news — ${reviewerName} accepted your request and is working on your review now.`,
+          '',
+          'You can expect it within 48 hours. I will email you as soon as it is submitted and ready to watch.',
+          '',
+          founderContactText(),
+          '',
+          founderSignOffText(),
+          '',
+          url,
+        ].join('\n'),
         html: wrapProductEmailHtml({
           title: 'Review in progress',
-          bodyHtml: `<p><strong>${reviewerName}</strong> accepted your request and is recording your review now.</p><p>You'll be notified when it's ready (usually within 48 hours).</p>`,
+          bodyHtml: `
+            <p>${greeting}</p>
+            <p>Good news — <strong>${reviewerName}</strong> accepted your request and is working on your review now.</p>
+            <p>You can expect it within 48 hours. I will email you as soon as it is submitted and ready to watch.</p>
+            <p>${founderContactHtml()}</p>
+            ${founderSignOffHtml()}
+          `,
           ctaLabel: 'View request',
           ctaUrl: url,
+          footerHtml: '',
         }),
       };
     }
     case 'review_completed_reviewee': {
       const url = requestId ? appRequestUrl(requestId, 'reviewee') : `${getSiteOrigin()}/app/requests`;
+      const greeting = emailGreeting(recipientFirstName);
       return {
-        subject: 'Your video review is ready',
-        text: `${reviewerName} submitted your review. Watch it now: ${url}`,
+        subject: 'Your video review is ready to watch',
+        text: [
+          greeting,
+          '',
+          `${reviewerName} just submitted your review. It is ready to watch now.`,
+          '',
+          'Tap the link below for honest, actionable feedback you can put to work right away.',
+          '',
+          founderContactText(),
+          '',
+          founderSignOffText(),
+          '',
+          url,
+        ].join('\n'),
         html: wrapProductEmailHtml({
           title: 'Your review is ready',
-          bodyHtml: `<p><strong>${reviewerName}</strong> just submitted your video review.</p><p>Tap below to watch honest, actionable feedback.</p>`,
+          bodyHtml: `
+            <p>${greeting}</p>
+            <p><strong>${reviewerName}</strong> just submitted your review. It is ready to watch now.</p>
+            <p>Tap below for honest, actionable feedback you can put to work right away.</p>
+            <p>${founderContactHtml()}</p>
+            ${founderSignOffHtml()}
+          `,
           ctaLabel: 'Watch your review',
           ctaUrl: url,
+          footerHtml: '',
         }),
       };
     }

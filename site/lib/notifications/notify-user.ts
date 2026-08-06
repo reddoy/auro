@@ -91,7 +91,10 @@ export async function notifyUser(
       const emailResult = await sendProductEmail({
         to: recipient.email,
         type,
-        data,
+        data: {
+          ...data,
+          recipientFirstName: recipient.firstName ?? undefined,
+        },
       });
       if (emailResult.ok) {
         result.email = true;

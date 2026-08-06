@@ -1,4 +1,15 @@
 import { Resend } from 'resend';
+import {
+  emailGreeting,
+  founderContactHtml,
+  founderContactText,
+  founderSignOffHtml,
+  founderSignOffText,
+} from '@/lib/notifications/email-copy-helpers';
+import {
+  founderEmailFrom,
+  founderEmailReplyTo,
+} from '@/lib/notifications/founder-email-config';
 import { appRequestUrl } from '@/lib/notifications/site-url';
 import { wrapProductEmailHtml } from '@/lib/notifications/email-layout';
 
@@ -15,20 +26,19 @@ export function buildFounderRequestUpdateEmail(params: FounderRequestUpdateParam
   text: string;
 } {
   const { revieweeFirstName, reviewerName, requestId } = params;
-  const firstName = revieweeFirstName.trim() || 'there';
   const reviewer = reviewerName.trim() || 'your reviewer';
   const requestUrl = appRequestUrl(requestId, 'reviewee');
 
   const text = [
-    `Hi ${firstName},`,
+    emailGreeting(revieweeFirstName),
     '',
     `I'm RJ — I run Auro. Thanks for signing up.`,
     '',
     `I work with our reviewers directly. I'm talking to ${reviewer} about your request now.`,
     '',
-    `If you have questions, just reply here or email rj@appauro.com.`,
+    founderContactText(),
     '',
-    'RJ',
+    founderSignOffText(),
     '',
     requestUrl,
   ].join('\n');
@@ -36,11 +46,11 @@ export function buildFounderRequestUpdateEmail(params: FounderRequestUpdateParam
   const html = wrapProductEmailHtml({
     title: 'Quick note',
     bodyHtml: `
-      <p>Hi ${firstName},</p>
+      <p>${emailGreeting(revieweeFirstName)}</p>
       <p>I'm RJ — I run Auro. Thanks for signing up.</p>
       <p>I work with our reviewers directly. I'm talking to ${reviewer} about your request now.</p>
-      <p>If you have questions, reply here or email <a href="mailto:rj@appauro.com" style="color:#FF6B35;text-decoration:none;">rj@appauro.com</a>.</p>
-      <p style="margin-top:24px;color:#FFFFFF;">RJ</p>
+      <p>${founderContactHtml()}</p>
+      ${founderSignOffHtml()}
     `,
     ctaLabel: 'Your request',
     ctaUrl: requestUrl,
@@ -64,11 +74,8 @@ export async function sendFounderEmail(params: FounderRequestUpdateParams): Prom
     return { ok: false, error: 'RESEND_API_KEY not configured', skipped: true };
   }
 
-  const from =
-    process.env.RESEND_FOUNDER_FROM_EMAIL ||
-    process.env.RESEND_FROM_EMAIL ||
-    'RJ from Auro <notifications@appauro.com>';
-  const replyTo = process.env.FOUNDER_REPLY_TO_EMAIL || 'rj@appauro.com';
+  const from = founderEmailFrom();
+  const replyTo = founderEmailReplyTo();
 
   const message = buildFounderRequestUpdateEmail(params);
 

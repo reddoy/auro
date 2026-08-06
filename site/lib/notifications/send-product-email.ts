@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { buildProductEmailMessage } from '@/lib/notifications/email-messages';
+import { productEmailFrom, productEmailReplyTo } from '@/lib/notifications/founder-email-config';
 import type { ProductNotificationType } from '@/lib/notifications/types';
 
 export type SendProductEmailResult =
@@ -16,9 +17,8 @@ export async function sendProductEmail(params: {
     return { ok: false, error: 'RESEND_API_KEY not configured', skipped: true };
   }
 
-  const from =
-    process.env.RESEND_FROM_EMAIL || process.env.RESEND_PRODUCT_FROM || 'Auro <notifications@appauro.com>';
-
+  const from = productEmailFrom(params.type);
+  const replyTo = productEmailReplyTo(params.type);
   const message = buildProductEmailMessage(params.type, params.data);
 
   try {
@@ -26,6 +26,7 @@ export async function sendProductEmail(params: {
     const { data, error } = await resend.emails.send({
       from,
       to: params.to,
+      ...(replyTo ? { replyTo } : {}),
       subject: message.subject,
       html: message.html,
       text: message.text,
