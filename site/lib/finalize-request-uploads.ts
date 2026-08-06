@@ -171,7 +171,11 @@ export async function finalizeAvatarUploads(
 /** Profile email sync + media finalize after checkout payment. */
 export async function applyCheckoutSessionSideEffects(
   admin: SupabaseClient,
-  session: { metadata?: Record<string, string> | null; customer_details?: { email?: string } | null; customer_email?: string | null },
+  session: {
+    metadata?: Record<string, string> | null;
+    customer_details?: { email?: string | null } | null;
+    customer_email?: string | null;
+  },
   requestId: string
 ): Promise<void> {
   const metadata = (session.metadata || {}) as Record<string, string>;
