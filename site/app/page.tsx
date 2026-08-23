@@ -4,7 +4,6 @@ import { useRef, Suspense } from 'react';
 import MobileHero from '../components/landing/MobileHero';
 import LandingAtmosphere from '../components/landing/LandingAtmosphere';
 import HeroAccentPhrase from '../components/landing/HeroAccentPhrase';
-import HeroReviewsStat from '../components/landing/HeroReviewsStat';
 import LandingTwoPaths from '../components/landing/LandingTwoPaths';
 import LandingStickyCTA from '../components/landing/LandingStickyCTA';
 import LandingCTAs from '../components/LandingCTAs';
@@ -47,8 +46,6 @@ function HomePageContent() {
                     <p className="max-w-xl text-lg font-medium leading-relaxed text-white/85 xl:text-xl [text-wrap:balance] hyphens-none">
                       Honest notes from women you&apos;d actually want&nbsp;to&nbsp;date.
                     </p>
-
-                    <HeroReviewsStat />
                   </div>
 
                   <div className="flex flex-col items-start pt-1">

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import HeroAccentPhrase from './HeroAccentPhrase';
-import HeroReviewsStat from './HeroReviewsStat';
 
 function revealProps(visible: boolean, delayMs: number, extraClass = '') {
   const base = `mobile-text-reveal${visible ? ' is-visible' : ''}`;
@@ -39,10 +38,6 @@ export default function MobileHero() {
         </div>
 
         <div {...revealProps(revealed, 130, 'w-full')}>
-          <HeroReviewsStat />
-        </div>
-
-        <div {...revealProps(revealed, 180, 'w-full')}>
           <div className="mobile-iphone-container mobile-iphone-container--hero">
             <div className="landing-phone-shadow" />
             <div className="mobile-iphone-frame mobile-iphone-frame--hero">
