@@ -4,6 +4,12 @@ Honest dating-profile feedback from real women. Users upload their dating-app ph
 
 **Live:** [auro-pearl.vercel.app](https://auro-pearl.vercel.app)
 
+**Status:** Inactive.
+
+## Background
+
+Auro was a dating-profile feedback service I tried to launch. The TikTok videos for it got a few million views, but that turned into only two sales, and one of those was refunded. I also learned how strict Apple's App Store rules are while trying to get the companion iOS app approved.
+
 ## Features
 
 - **Request flow:** choose a reviewer, upload photos, answer prompts, consent, sign in, and pay. Progress is saved locally, so an OAuth round trip doesn't lose anything.
