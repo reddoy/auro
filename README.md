@@ -2,7 +2,7 @@
 
 Honest dating-profile feedback from real women. Users upload their dating-app photos and prompts, pick a reviewer, pay, and get back actionable feedback on how they come across.
 
-**Live:** [appauro.com](https://www.appauro.com)
+**Live:** [auro-pearl.vercel.app](https://auro-pearl.vercel.app)
 
 ## Features
 
