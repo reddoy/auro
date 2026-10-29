@@ -53,7 +53,7 @@ export default function ConditionalChrome({ children }: Props) {
         <div className="container footer__inner">
           <div className="text-center sm:text-left">
             <a
-              href="https://coolhandstudios.xyz"
+              href="https://coolhand.vercel.app"
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: 'var(--text-2)', textDecoration: 'none' }}

@@ -17,7 +17,7 @@ if (!serviceKey || !resendKey) {
 }
 
 const admin = createClient(supabaseUrl, serviceKey);
-const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com';
+const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL || 'https://auro-pearl.vercel.app';
 
 function displayName(p) {
   if (!p) return 'your reviewer';

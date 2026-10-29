@@ -247,7 +247,7 @@ export default function TermsPage() {
               <li><strong>Mailing Address:</strong> Cool Hand Studios LLC, Seattle, Washington, United States</li>
               <li>Email: <a href="mailto:legal@appauro.com" style={{ color: 'white' }}>legal@appauro.com</a></li>
               <li>General Support: <a href="mailto:support@appauro.com" style={{ color: 'white' }}>support@appauro.com</a></li>
-              <li>Website: <a href="https://appauro.com" style={{ color: 'white' }}>appauro.com</a></li>
+              <li>Website: <a href="https://auro-pearl.vercel.app" style={{ color: 'white' }}>auro-pearl.vercel.app</a></li>
             </ul>
           </section>
         </div>

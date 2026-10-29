@@ -5,7 +5,7 @@ async function identifyStripeAccount() {
     // Test the API endpoint to see what account it's actually checking
     const requestId = 'fe50888f-bb04-4230-a88a-b4585fc7faad';
     
-    const response = await fetch('https://www.appauro.com/api/payments/distribute-reviewer-payment', {
+    const response = await fetch('https://auro-pearl.vercel.app/api/payments/distribute-reviewer-payment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ requestId })

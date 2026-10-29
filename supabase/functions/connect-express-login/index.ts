@@ -51,7 +51,7 @@ serve(async (req) => {
     const connectAccountId = (profile as any)?.stripe_connect_account_id as string | undefined;
     if (!connectAccountId) return json({ error: "Reviewer is not connected to Stripe" }, 400);
 
-    const siteUrl = Deno.env.get("NEXT_PUBLIC_SITE_URL") || "https://www.appauro.com";
+    const siteUrl = Deno.env.get("NEXT_PUBLIC_SITE_URL") || "https://auro-pearl.vercel.app";
     const link = await stripe.accounts.createLoginLink(connectAccountId, { redirect_url: returnUrl || siteUrl });
     return json({ url: link.url });
   } catch (e) {

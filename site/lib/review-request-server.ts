@@ -12,7 +12,7 @@ function serverOrigin(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL;
   if (explicit) return explicit.replace(/\/$/, '');
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return 'https://www.appauro.com';
+  return 'https://auro-pearl.vercel.app';
 }
 
 function mapRequestRow(row: Record<string, unknown>) {

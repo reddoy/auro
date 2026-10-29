@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid authentication' }, { status: 401 });
     }
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com';
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://auro-pearl.vercel.app';
     const redirectTo = `${siteUrl}/auth/confirm?type=email_change&email=${encodeURIComponent(newEmail)}`;
 
     // Update email - Supabase will automatically send a verification email to the new address

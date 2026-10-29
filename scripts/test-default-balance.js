@@ -5,7 +5,7 @@ async function testDefaultBalance() {
     console.log('🔍 Testing default Stripe account balance...');
     
     // Test the API endpoint to see what account it's checking
-    const response = await fetch('https://www.appauro.com/api/payments/distribute-reviewer-payment', {
+    const response = await fetch('https://auro-pearl.vercel.app/api/payments/distribute-reviewer-payment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ requestId })

@@ -71,7 +71,7 @@ export async function POST(req: Request) {
       if (request?.stripe_payment_intent_id && refundAmountCents > 0) {
         try {
           const internal = getInternalJobSecret();
-          const refundResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/api/payments/refund`, {
+          const refundResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'https://auro-pearl.vercel.app'}/api/payments/refund`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

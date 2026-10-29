@@ -71,7 +71,7 @@ export async function POST(req: Request) {
           });
         } else {
           const refundResponse = await fetch(
-            `${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/api/payments/process-timeout-refunds`,
+            `${process.env.NEXT_PUBLIC_SITE_URL || 'https://auro-pearl.vercel.app'}/api/payments/process-timeout-refunds`,
             {
               method: 'POST',
               headers: internalFetchHeaders(),
@@ -105,7 +105,7 @@ export async function POST(req: Request) {
         console.log('[maintenance] Retrying failed distributions...');
 
         const retryResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/api/payments/retry-failed-distributions`,
+          `${process.env.NEXT_PUBLIC_SITE_URL || 'https://auro-pearl.vercel.app'}/api/payments/retry-failed-distributions`,
           {
             method: 'POST',
             headers: internalFetchHeaders(),

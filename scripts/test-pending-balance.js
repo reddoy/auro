@@ -5,7 +5,7 @@ async function testPendingBalance() {
     console.log('🔍 Testing API with pending balance support...');
     console.log('💰 This should now show both available and pending balances');
     
-    const response = await fetch('https://www.appauro.com/api/payments/distribute-reviewer-payment', {
+    const response = await fetch('https://auro-pearl.vercel.app/api/payments/distribute-reviewer-payment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ requestId })

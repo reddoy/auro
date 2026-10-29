@@ -322,8 +322,8 @@ export async function POST(req: Request) {
         auro_fee_cents: finalApplicationFeeCents.toString(),
         auro_fee_bps: auroFeeBps.toString(), // Always 2000 (20%) for all reviewers
       },
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/checkout/success?rid={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/checkout/cancel`,
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://auro-pearl.vercel.app'}/checkout/success?rid={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://auro-pearl.vercel.app'}/checkout/cancel`,
     };
 
     // Destination charges: opt-in via STRIPE_CONNECT_DESTINATION_CHARGES=true and a Connect-ready account.

@@ -14,7 +14,7 @@ export default function ShareButton({ slug, displayName }: ShareButtonProps) {
 
   const url = typeof window !== 'undefined' 
     ? window.location.href 
-    : `${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/reviewers/${slug}`;
+    : `${process.env.NEXT_PUBLIC_SITE_URL || 'https://auro-pearl.vercel.app'}/reviewers/${slug}`;
 
   const shareText = `Check out my Auro reviewer profile! Get honest reviews from me at`;
 

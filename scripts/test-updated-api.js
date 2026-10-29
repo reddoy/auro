@@ -4,7 +4,7 @@ async function testUpdatedAPI() {
     
     console.log('🔍 Testing updated API with account acct_1S0Fm0BQDAObfzKx...');
     
-    const response = await fetch('https://www.appauro.com/api/payments/distribute-reviewer-payment', {
+    const response = await fetch('https://auro-pearl.vercel.app/api/payments/distribute-reviewer-payment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ requestId })

@@ -14,7 +14,7 @@ function json(body: unknown, status = 200) {
 }
 
 function siteOrigin(): string {
-  const raw = (Deno.env.get("NEXT_PUBLIC_SITE_URL") || "https://www.appauro.com").trim().replace(/\/$/, "");
+  const raw = (Deno.env.get("NEXT_PUBLIC_SITE_URL") || "https://auro-pearl.vercel.app").trim().replace(/\/$/, "");
   try {
     const u = new URL(raw);
     if (u.protocol !== "https:" && u.hostname !== "localhost") {
@@ -22,7 +22,7 @@ function siteOrigin(): string {
     }
     return u.origin;
   } catch {
-    return "https://www.appauro.com";
+    return "https://auro-pearl.vercel.app";
   }
 }
 

@@ -5,7 +5,7 @@
  * Use this to test with a real request ID from your database
  */
 
-const BASE_URL = 'https://www.appauro.com';
+const BASE_URL = 'https://auro-pearl.vercel.app';
 
 async function testPaymentDistribution(requestId) {
   if (!requestId) {

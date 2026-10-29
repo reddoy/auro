@@ -14,7 +14,7 @@
 3. Go to **Settings** → **Environment Variables**
 4. Add/Update this variable:
    - **Name**: `SUPABASE_SERVICE_ROLE_KEY`
-   - **Value**: `REDACTED_SERVICE_ROLE_KEY`
+   - **Value**: `<your Supabase service role key from Supabase → Project Settings → API>`
    - **Environment**: Production, Preview, Development (check all)
 5. Click **Save**
 

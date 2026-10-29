@@ -5,7 +5,7 @@
  * This script helps verify that the payment distribution is working correctly
  */
 
-const BASE_URL = process.env.TEST_BASE_URL || 'https://www.appauro.com';
+const BASE_URL = process.env.TEST_BASE_URL || 'https://auro-pearl.vercel.app';
 
 async function testPayoutDistribution(requestId) {
   console.log(`🧪 Testing payout distribution for request: ${requestId}`);

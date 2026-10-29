@@ -5,10 +5,10 @@
  *
  * Usage:
  *   node scripts/verify-live-readiness.mjs
- *   SITE_URL=https://www.appauro.com node scripts/verify-live-readiness.mjs
+ *   SITE_URL=https://auro-pearl.vercel.app node scripts/verify-live-readiness.mjs
  */
 
-const SITE_URL = (process.env.SITE_URL || 'https://www.appauro.com').replace(/\/$/, '');
+const SITE_URL = (process.env.SITE_URL || 'https://auro-pearl.vercel.app').replace(/\/$/, '');
 
 const checks = [];
 
@@ -84,8 +84,8 @@ async function main() {
       const platform = get('STRIPE_PLATFORM_ACCOUNT_ID');
       const site = get('NEXT_PUBLIC_SITE_URL');
 
-      if (site === 'https://www.appauro.com') pass('NEXT_PUBLIC_SITE_URL', site);
-      else fail('NEXT_PUBLIC_SITE_URL', site || 'missing — set https://www.appauro.com');
+      if (site === 'https://auro-pearl.vercel.app') pass('NEXT_PUBLIC_SITE_URL', site);
+      else fail('NEXT_PUBLIC_SITE_URL', site || 'missing — set https://auro-pearl.vercel.app');
 
       if (pk.startsWith('pk_live_')) pass('Stripe publishable key mode', 'live');
       else if (pk.startsWith('pk_test_')) fail('Stripe publishable key mode', 'still pk_test_ — update in Vercel Production');
@@ -103,9 +103,9 @@ async function main() {
   }
 
   console.log('\nManual dashboard steps (cannot automate):');
-  console.log('  1. Stripe Live → Webhook → https://www.appauro.com/api/stripe/webhook');
+  console.log('  1. Stripe Live → Webhook → https://auro-pearl.vercel.app/api/stripe/webhook');
   console.log('  2. Vercel Production → sk_live_, pk_live_, live whsec_, live acct_');
-  console.log('  3. Supabase Auth → Site URL + redirect URLs for www.appauro.com');
+  console.log('  3. Supabase Auth → Site URL + redirect URLs for auro-pearl.vercel.app');
   console.log('  4. Redeploy production after env changes');
   console.log('  5. Live smoke: smallest tier payment → webhook 200 in Stripe dashboard\n');
 

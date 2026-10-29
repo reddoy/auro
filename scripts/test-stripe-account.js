@@ -4,7 +4,7 @@
  * Test to check which Stripe account the API is using
  */
 
-const BASE_URL = 'https://www.appauro.com';
+const BASE_URL = 'https://auro-pearl.vercel.app';
 
 async function testStripeAccount() {
   console.log('🔍 Testing which Stripe account the API is checking...');

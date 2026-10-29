@@ -133,7 +133,7 @@ export default function AuthStep({
       // Get the site URL for email redirect
       const siteUrl = typeof window !== 'undefined' && window.location?.origin
         ? window.location.origin
-        : process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com';
+        : process.env.NEXT_PUBLIC_SITE_URL || 'https://auro-pearl.vercel.app';
       const confirmUrl = new URL(`${siteUrl}/auth/confirm`);
       confirmUrl.searchParams.set('type', 'signup');
       if (roleIntent) {

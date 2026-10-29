@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     }
 
     const admin = createClient(url, key);
-    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com').replace(/\/$/, '');
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://auro-pearl.vercel.app').replace(/\/$/, '');
     // Land on reset-password so PKCE ?code= and legacy token links can establish a session there.
     const redirectTo = `${siteUrl}/auth/reset-password`;
 

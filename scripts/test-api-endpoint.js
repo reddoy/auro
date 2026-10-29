@@ -4,7 +4,7 @@
  * Quick test to check if the payment distribution API is accessible
  */
 
-const BASE_URL = 'https://www.appauro.com';
+const BASE_URL = 'https://auro-pearl.vercel.app';
 
 async function testApiEndpoint() {
   console.log('🧪 Testing payment distribution API endpoint...');

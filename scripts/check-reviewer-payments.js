@@ -4,7 +4,7 @@
  * Check payment distribution status for a specific reviewer
  */
 
-const BASE_URL = 'https://www.appauro.com';
+const BASE_URL = 'https://auro-pearl.vercel.app';
 
 async function checkReviewerPayments(reviewerAccountId) {
   console.log(`🔍 Checking payments for reviewer account: ${reviewerAccountId}`);

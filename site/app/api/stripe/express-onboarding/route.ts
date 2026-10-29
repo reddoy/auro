@@ -3,7 +3,7 @@ import { requireAuthenticatedUser } from '@/lib/require-authenticated-user';
 import { isReviewerApprovedForStripeConnect } from '@/lib/reviewer-connect-gate';
 
 function canonicalSiteBase(): string {
-  const raw = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.appauro.com').trim().replace(/\/$/, '');
+  const raw = (process.env.NEXT_PUBLIC_SITE_URL || 'https://auro-pearl.vercel.app').trim().replace(/\/$/, '');
   try {
     const u = new URL(raw);
     if (u.protocol !== 'https:' && u.hostname !== 'localhost') {
@@ -11,7 +11,7 @@ function canonicalSiteBase(): string {
     }
     return u.origin;
   } catch {
-    return 'https://www.appauro.com';
+    return 'https://auro-pearl.vercel.app';
   }
 }
 

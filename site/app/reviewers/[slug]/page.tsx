@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
   const title = `${reviewer.displayName} – Auro Reviewer`;
   const description = `Request a review from ${reviewer.displayName} on Auro.`;
-  const url = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com'}/reviewers/${reviewer.slug}`;
+  const url = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://auro-pearl.vercel.app'}/reviewers/${reviewer.slug}`;
   return {
     title,
     description,

@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     }
 
     const admin = createClient(url, serviceKey);
-    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://appauro.com').replace(/\/$/, '');
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://auro-pearl.vercel.app').replace(/\/$/, '');
     const redirectTo = `${siteUrl}/auth/confirm?type=signup`;
 
     const { error } = await (admin.auth as any).resend({

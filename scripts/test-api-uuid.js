@@ -4,7 +4,7 @@
  * Test with a real UUID format to see if that helps
  */
 
-const BASE_URL = 'https://www.appauro.com';
+const BASE_URL = 'https://auro-pearl.vercel.app';
 
 async function testWithRealUuid() {
   console.log('🧪 Testing with real UUID format...');

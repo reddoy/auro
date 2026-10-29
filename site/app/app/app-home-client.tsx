@@ -302,7 +302,7 @@ export default function AppHomeClient() {
                       <span className="min-w-0 flex-1">
                         <span className="block font-semibold text-white">View public profile</span>
                         <span className="block truncate text-xs text-white/55">
-                          {typeof window !== 'undefined' ? window.location.host : 'appauro.com'}
+                          {typeof window !== 'undefined' ? window.location.host : 'auro-pearl.vercel.app'}
                           {profileHref}
                         </span>
                       </span>
