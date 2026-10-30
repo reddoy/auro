@@ -8639,3 +8639,26 @@ button.creator-card.creator-card--select:focus-visible {
     display: block;
   }
 }
+
+.shutdown-banner {
+  position: relative;
+  z-index: 1001;
+  padding: 10px 16px;
+  background: #f26955;
+  color: white;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.shutdown-banner p {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.shutdown-banner a {
+  color: white;
+  font-weight: 700;
+  text-decoration: underline;
+  white-space: nowrap;
+}

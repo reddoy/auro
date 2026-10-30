@@ -4,11 +4,11 @@ Honest dating-profile feedback from real women. Users upload their dating-app ph
 
 **Live:** [auro-pearl.vercel.app](https://auro-pearl.vercel.app)
 
-**Status:** Inactive.
+**Status:** Shut down. The site is still up with a shutdown notice, but sign-ups and payments are turned off.
 
 ## Background
 
-Auro was a dating-profile feedback service I tried to launch. The TikTok videos for it got a few million views, but that turned into only two sales, and one of those was refunded. I also learned how strict Apple's App Store rules are while trying to get the companion iOS app approved.
+Auro was a dating-profile feedback service. We launched it, and it failed. The TikTok videos for it got a few million views, but that turned into only two sales, and one of those was refunded. I also learned how strict Apple's App Store rules are while trying to get the companion iOS app approved. In the end we burned out and got bored, so we shut it down.
 
 ## Features
 

@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { isClosedPage } from './lib/shutdown';
 
 function buildCorsHeaders(req: NextRequest): Headers {
   const origin = req.headers.get('origin') || '*';
@@ -15,6 +16,22 @@ function buildCorsHeaders(req: NextRequest): Headers {
 
 export function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname || '';
+
+  if (isClosedPage(pathname)) {
+    const url = req.nextUrl.clone();
+    url.pathname = '/';
+    url.search = '';
+    return NextResponse.redirect(url, 307);
+  }
+
+  // Stripe can still send webhooks for old payments, so those stay open.
+  if (
+    pathname.startsWith('/api/') &&
+    !['GET', 'HEAD', 'OPTIONS'].includes(req.method) &&
+    pathname !== '/api/stripe/webhook'
+  ) {
+    return NextResponse.json({ error: 'Auro has shut down.' }, { status: 503 });
+  }
 
   // Handle redirects from old /reviewers/[slug] URLs to new /[username] URLs
   if (

@@ -5,6 +5,7 @@ import '../styles.css';
 import GoogleAnalytics from '../components/GoogleAnalytics';
 import ConditionalChrome from '../components/ConditionalChrome';
 import StructuredData from '../components/StructuredData';
+import ShutdownBanner from '../components/ShutdownBanner';
 import { getSiteUrl } from '../lib/site-url';
 
 // Fonts must be initialized at module scope
@@ -99,6 +100,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={poppins.className}>
         <StructuredData data={structuredData} />
         {GA_MEASUREMENT_ID && <GoogleAnalytics GA_MEASUREMENT_ID={GA_MEASUREMENT_ID} />}
+        <ShutdownBanner />
         <ConditionalChrome>{children}</ConditionalChrome>
       </body>
     </html>
